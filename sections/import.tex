@@ -1,0 +1,10 @@
+The most recent iteration of the Universal Composability framework introduces a new notion of polynomial time: \textit{import}.
+The import mechanism allocates to the environment some integer $n$ of units of import which it can consume or send to other ITIs.
+When writing to another ITI, $\mathcal{Z}$ can specify an amount of import to sent alongside the message, and the receiving ITI can now use this import accordingly.
+A good analogy to make for import is to consider them as tokens that are exchanged between ITIs. 
+The definition of a polynomially bounded syste of ITIs now becomes: 
+
+Latex definition: A system of ITIs has a polynomial run time if its execution can be bounded by some polynoial $T(n)$ where $n$ is the total amount of import in the system.
+
+
+
