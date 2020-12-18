@@ -1,6 +1,91 @@
 One of the main hurdles to existing UC models is that asynchronous/synchronous communication models uncecessarily complicate the design of protocols and ideal functionalities.
-It makes it difficult to understand them and more painstaking to check or falsify UC security proofs. 
-In this section we introduce a new alternative for sync/async communication models in the form of two shared functionalities, which allows delayed execution of entire code blocks rather than just delayed message delivery.
-Furthermore, the functionalities take advantage of the new import mechanism to achieve eventual delivery in the asynchronous world.
+Not only does it make writing and switching between models cumbersome and error-prone, but it also mmake security proofs difficult to understand and even harder to verify.
+Our construction removes all model-specific code from protocols and ideal functionalities, defines code that each ITI must be spawned with, and uses the new import mechanism to provide guarantees of {\em eventual delivery}.
+
+One of the key driving forces behind this work is an implementation of UC that simplifies working withe UC through simpler communication models and a domain-specific language. (\todo{$\leftarrow$ this is a real hot pile})
+In this section we define our synchronous and asynchronous communication models which enable delaying execution of entire code blocks and offloads all communication specific code from the protocols and functionalities. 
+We construct our models using the GUC-framework~\ref{guc} and enable the environment to force progress in protocols \todo{$\leftarrow$ probablt nt worth bringing up the environment part here}.
+
+Before we divulge the details of how our model is implemented, we first give an example illustrating the disadvantage of current asynchronous (w.l.o.g synchronous) models compared to ours.
+Take, for exampe, a simple atomic broadcast functionality in Figures \ref{fig:atomic:old} and \ref{fig:atomic:new}. 
+The top figure is the atomic broadcast written in traditional fetch-based asynchronous model, while the bottom text uses our model.
+Notice that our version uses the \Eventually keyword. 
+The purpose of this keyword is used simply for clarity in pseudo-code and replaces takes the place of a single message write to the shared functionality.
+The exact $\mathcal{F}_{atomic}$ description including the exact pseudo-code and messages is shown later when we GUC-realize $\mathcal{F}_{atomic}$.
+
+\begin{figure}[h]
+\begin{subfigure}{\columnwidth}
+	\input{figures/fatomic_old}
+	\caption{An atomic broadcast functionality in the fetch model for the asynchronous world.}
+	\label{fig:atomic:old}
+\end{subfigure}
+\begin{subfigure}{\columnwidth}
+	\input{figures/fatomic_new}
+	\caption{The same atomic broadcast functionality written with our async wrapper construction. Notice that there is no extra pseudo code needed to operate in this model.}
+\end{subfigure}
+\end{figure}
 
 
+\subsection{Balanced Environments}
+Some rough ideas on the writeup for this section.
+In the GUC setting the environment’s interaction with the shared functionality is intended to represent parties from other sessions of potentially different protocols. 
+Therefore, intuitively, it doesn’t make sense that participants of the challenge protocol have a different interface to those of other sessions. 
+Therefore, in order to fit within the GUC framework, we require that protocol parties also be able to call “poll” to the wrapper. 
+Although this seems counter intuitive, it has no impact on the delivery properties or functionality of the wrapper. 
+The reason is the balanced environments definition presented above. 
+As expected in UC, an environment that gives import to parties in order to call “poll” must give that import to the adversary as well. 
+Therefore, the adversary will always have enough import to effectively neutralize any calls to “poll” that parties of the challenge protocol make. 
+As the wrapper is a shared functionality, a simulator need only observe which protocol session’s party calls “poll” and add “delay” to the wrapper if it’s the challenge protocol session.  
+
+Specific to this wrapper construction is the idea that the environment doesn’t have to give the simulator the same construction as the ideal wrapper in this case. 
+This leads to a place where we explicitly reject the balanced environment condition for our wrapper construction as it further relaxes the constraints on the environment without sacrificing simulatability. 
+We show that the simulator always has enough import to at least delay codeblocks in the ideal world enough such that they can be delivered at the same time. 
+Therefore, the simulatability requirements are already satisfied by the wrapper delay incrementing on every scheduled code block and, hence, the simulator receiving as much import as the real world parties can always delay.
+
+It’s not enough that constant sized output shared functionalities be exempt from the balanced environment definition. Because you can still have a shared functionality that requires the adversary to react a \# of times proportional to the import of the shared functionality and then the adversary runs out of import because the environment can always give more import to the shared functionality than it does the adversary.
+In the case of the wrapper, however, we specifically require that the adversary run out of import eventually but not so quickly that it is unable to delay the codeblocks in the ideal world.
+
+
+
+Distinction in features and side effects
+\begin{itemize}
+\item Features: explicit design goals that the wrapper achieves. This includes:
+	\begin{itemize}
+	\item Simplifying through the removal of model-specific code in the pseudo-code. Improves using UC from people verifying proofs and creating there own. Towards the programmability we're aiming for?? but what exactly is the programmability message here
+	\item Uses import to achieve eventual delivery in asynchronous networks and input completeness in synchronous network.
+	\item Offloading work from protocols/functionalities to the wrapper and some work to the environment but without useless fetches.
+	\end{itemize}
+
+\item side effects:
+	\begin{itemize}
+	\item doesn't lose activation
+	\item all functionalities and must give control back to caller. p2p messages go through a functionality and must be delayed in the wrapper so functionalities can only write to other functionalities after being activated. Recursively, at some ponint either a code block is schedules or some local computation is completed and the functionality halts. In both cases, wrie back to caller instead --> makes riting code better. Not necessary but reomves conditions from environment.
+	\end{itemize}
+\end{itemize}
+
+
+
+The asynchronous wrapper, presented in Figure~\ref{fig:asyncwrapper:short}, is only a snippet of the important parts of the full wrapper code shown in ~\ref{fig:asyncwrapper:complete}.
+We first cover the basic operations of the wrapper.
+
+
+\subsection{Delayed Code Execution}
+In traditional synchronous and asynchronous communication models, adversrial delay usually takes the form of only message delay where parties require continuous activation in order to request new messgaes from a message passing functionality or cedeing control to the adversary mid-activation.
+An example of whot this can lead to more complicated environents and protocols is evident in the synchronous model of Katz et al.~\cite{katzclock}. 
+Even the original formulation of aysnchronous communication had issues where adversaries were able to indefinitely stall protocol progress.
+
+Our construction, on the other hand, offloads much of the communication model-specific code, to our shared wrapper.
+Further, it expands message delay to the delay of entire code blocks, and it also also simplifies
+example of this in figure~\ref{fig:rbc:both}.
+
+
+\paragraph{\textsc{Eventually} Keyword.}
+For the remainder of this work, we will make advantages of keywords that abstract the message passing between the sync/async wrappers and other ITIs.
+The most important codeword is the \textsc{Eventually} keyword which is used to indicate delayed execution of a code block within the code of some ITI.
+For example, the simple message passing functionality introduced in Figure~\ref{fig:fsmcasync}, is transformed into Figure~\ref{fig:fsmc:wrapper}.
+
+\begin{figure*}
+\input{figures/asyncwrapper_short}
+\caption{The wrapper mechanism for scheduling codeblocks and executing them.}
+\label{fig:asyncwrapper:short}
+\end{figure*}

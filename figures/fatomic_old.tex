@@ -1,0 +1,40 @@
+\begin{bbox}[title={$\mathcal{F}_\msf{Atomic}$}]
+
+Initialize: $\msf{BC} \leftarrow \emptyset$, $\msf{inputs} \leftarrow \emptyset$, $\msf{D}_1, \dots, \msf{D}_n \leftarrow 0$, 
+$\msf{pos}_1 , \dots, \msf{pos}_n \leftarrow 0$
+
+\OnInput \inmsg{tx} from \Partyi:
+    
+    \quad Append \msf{tx} to \msf{inputs}
+    
+    \quad Send \msf{tx} to \Adv
+    
+\OnInput \inmsg{FETCH} from \Partyi:
+
+    \quad If $D_i > 0$: $D_i \leftarrow D_i - 1$
+    
+    \quad Else if $\msf{pos}_i < |\msf{BC}|$: $\msf{pos}_i \leftarrow \msf{pos}_i + 1$
+        
+    \quad Else if $\msf{pos}_i == |\msf{BC}|$:
+        
+        \qquad Pop $\msf{tx}$ from $\msf{inputs}$
+        
+        \qquad If $\msf{tx} \neq \bot$, append $\msf{tx}$ to $\msf{BC}$ and set $\msf{pos}_i \leftarrow \msf{pos}_i + 1$
+        
+    \quad Send $\msf{BC}[1:\msf{pos}_i]$ to \Partyi
+    
+\OnInput \inmsg{\msf{DELAY}}{\Partyi}{\msf{T}} from \Adv:
+
+    \quad If \msf{T} is in unary notation: $\msf{D}_i \leftarrow \msf{D}_i + \msf{T}$
+    
+    \quad Send \msf{(OK,)} to \Adv
+
+\OnInput \inmsg{\msf{APPEND}}{\msf{idx}} from \Adv:
+
+    \quad Remove \msf{inputs[idx]} as \msf{tx}
+    
+    \quad Append \msf{tx} to \msf{BC}
+    
+    \quad Send \msf{(OK,)} to \Adv
+
+\end{bbox}
