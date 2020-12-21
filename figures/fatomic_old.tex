@@ -9,7 +9,7 @@ $\msf{pos}_1 , \dots, \msf{pos}_n \leftarrow 0$
     
     \quad Send \msf{tx} to \Adv
     
-\OnInput \inmsg{FETCH} from \Partyi:
+\OnInput \inmsg{\tsc{Fetch}} from \Partyi:
 
     \quad If $D_i > 0$: $D_i \leftarrow D_i - 1$
     
@@ -23,13 +23,13 @@ $\msf{pos}_1 , \dots, \msf{pos}_n \leftarrow 0$
         
     \quad Send $\msf{BC}[1:\msf{pos}_i]$ to \Partyi
     
-\OnInput \inmsg{\msf{DELAY}}{\Partyi}{\msf{T}} from \Adv:
+\OnInput \inmsg{\Delay}{\Partyi}{\msf{T}} from \Adv:
 
     \quad If \msf{T} is in unary notation: $\msf{D}_i \leftarrow \msf{D}_i + \msf{T}$
     
     \quad Send \msf{(OK,)} to \Adv
 
-\OnInput \inmsg{\msf{APPEND}}{\msf{idx}} from \Adv:
+\OnInput \inmsg{\tsc{Append}}{\msf{idx}} from \Adv:
 
     \quad Remove \msf{inputs[idx]} as \msf{tx}
     

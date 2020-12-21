@@ -1,16 +1,19 @@
-\begin{bbox}[title={\textbf{Wrapper} $\mathcal{W}_{\msf{async}}$} ] 
+\begin{bbox}[title={\textbf{Wrapper} $\Wasync$} ] 
 
-Intialize $\msf{runque} := \emptyset, \msf{leakbuffer} :+ \emptyset, delay := 0$
+Intialize $\msf{runqueue} := \emptyset, \msf{leakbuffer} := \emptyset, delay := 0$
 
 \vspace{2mm} \hrule \vspace{2mm}
 
-\OnInput \inmsg{\textsc{Eventually}}{f}{args} from $\mathcal{F}/P_i$:
-	\begin{renumerate}
+\OnInput \inmsg{\textsc{Schedule}}{f}{args} from $\mathcal{F}/P_i$:
+	\begin{enumerate}
 		\item Append ($\mathcal{F}/P_i, f, args$) to \msf{runqueue}
 		\item Append ($\mathcal{F}/P_i, f, args$) to \msf{leakbuffer}
 		\item $delay = delay + 1$
 		\item Send $OK \rightarrow \mathcal{F}/P_i$
-	\end{renumerate}
+	\end{enumerate}
+
+
+\OnInput
 
 \OnInput \inmsg{\textsc{Advance}} from $\mathcal{Z}$:
 	\begin{enumerate}
@@ -23,6 +26,6 @@ Intialize $\msf{runque} := \emptyset, \msf{leakbuffer} :+ \emptyset, delay := 0$
 			
 			\quad $(\mathcal{F}, f, args) \leftarrow$ pop $\msf{runqueue}$
 
-			\quad Send $(\msf{exec}, f, args) \rightarrow \mathcal{F}$
+			\quad Send $(\Exec, f, args) \rightarrow \mathcal{F}$
 	\end{enumerate}
 \end{bbox}

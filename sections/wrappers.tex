@@ -1,9 +1,9 @@
 One of the main hurdles to existing UC models is that asynchronous/synchronous communication models uncecessarily complicate the design of protocols and ideal functionalities.
 Not only does it make writing and switching between models cumbersome and error-prone, but it also mmake security proofs difficult to understand and even harder to verify.
-Our construction removes all model-specific code from protocols and ideal functionalities, defines code that each ITI must be spawned with, and uses the new import mechanism to provide guarantees of {\em eventual delivery}.
+Our construction removes all model-specific code from protocols and ideal functionalities, defines code that each ITI must be spawned with, and uses the new import mechanism to provide communiation guarantees.
 
 One of the key driving forces behind this work is an implementation of UC that simplifies working withe UC through simpler communication models and a domain-specific language. (\todo{$\leftarrow$ this is a real hot pile})
-In this section we define our synchronous and asynchronous communication models which enable delaying execution of entire code blocks and offloads all communication specific code from the protocols and functionalities. 
+In this section we define our synchronous and asynchronous communication models which enable delaying execution of entire code blocks and offload all communication specific code from the protocols and functionalities. 
 We construct our models using the GUC-framework~\ref{guc} and enable the environment to force progress in protocols \todo{$\leftarrow$ probablt nt worth bringing up the environment part here}.
 
 Before we divulge the details of how our model is implemented, we first give an example illustrating the disadvantage of current asynchronous (w.l.o.g synchronous) models compared to ours.
@@ -23,7 +23,36 @@ The exact $\mathcal{F}_{atomic}$ description including the exact pseudo-code and
 	\input{figures/fatomic_new}
 	\caption{The same atomic broadcast functionality written with our async wrapper construction. Notice that there is no extra pseudo code needed to operate in this model.}
 \end{subfigure}
+\begin{subfigure}{\columnwidth}
+	\input{figures/fatomic_real}
+	\label{fig:atomic:real}
+\end{subfigure}
 \end{figure}
+
+\todo{I absolutely hate having introduced the above {\em first} now}
+
+\subsection{Asynchronous Wrapper}
+The wrapper shared functionality functions as a scheduler of sorts that accepts codeblocks from other ITIs (protocol parties, functionaities, and the adversary) and executes them based on delay by the adversary.
+In Figure~\ref{fig:async:wrapper}, our async wrapper accepts code block in the form of a \msf{schedule}, or, alternatively, when code uses the \textsc{Evetually} keyword.
+A \msf{schedule} message is accompanied by an identifier that the wrapper will send back to the caller when it's time to execute the codeblock.
+The identifier is sent back to the scheduler of the codeblock telling it which codeblock to execute.
+For example, in the code in Figure~\ref{fig:atomic:real}, $\mathcal{F}_{atomic}$ is telling the wrapper to send it \msf{Broadcast} when it's time to execute it along with arguments required for executing the code.
+
+In addition to scheduling codeblocks with \Wasync, all ITIs that do so must also be spawned with the code to receive activation from the wrapper to execute the scheduled codeblock.
+
+
+
+
+
+
+
+
+The full wrapper can be seen in Figure~\ref{fig:wrapper:async}.
+
+The wrapper maintains accepts message through the \msf{schedule} interface which specifies the code block to be executed.
+The \Eventually keyword mentioned above is a stand in for this message write from an ITI to the wrapper.
+Upon \msf{schedule}, the wrapper records the codeblock in the \msf{runqueue} and increments a delay variable.
+The delay v
 
 
 \subsection{Balanced Environments}
@@ -84,8 +113,8 @@ For the remainder of this work, we will make advantages of keywords that abstrac
 The most important codeword is the \textsc{Eventually} keyword which is used to indicate delayed execution of a code block within the code of some ITI.
 For example, the simple message passing functionality introduced in Figure~\ref{fig:fsmcasync}, is transformed into Figure~\ref{fig:fsmc:wrapper}.
 
-\begin{figure*}
+\begin{figure}
 \input{figures/asyncwrapper_short}
 \caption{The wrapper mechanism for scheduling codeblocks and executing them.}
 \label{fig:asyncwrapper:short}
-\end{figure*}
+\end{figure}
