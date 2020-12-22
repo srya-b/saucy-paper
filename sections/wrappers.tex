@@ -1,3 +1,5 @@
+\todo{I realized that I should introduce the concept of environment forcing progress before all the details here}
+
 One of the main hurdles to existing UC models is that asynchronous/synchronous communication models uncecessarily complicate the design of protocols and ideal functionalities.
 Not only does it make writing and switching between models cumbersome and error-prone, but it also mmake security proofs difficult to understand and even harder to verify.
 Our construction removes all model-specific code from protocols and ideal functionalities, defines code that each ITI must be spawned with, and uses the new import mechanism to provide communiation guarantees.
@@ -32,21 +34,28 @@ The exact $\mathcal{F}_{atomic}$ description including the exact pseudo-code and
 \todo{I absolutely hate having introduced the above {\em first} now}
 
 \subsection{Asynchronous Wrapper}
+\todo{This intro of the section should be brief on the idea of scheduling codeblocks and being activated by the wrapper to execute them.}
 The wrapper shared functionality functions as a scheduler of sorts that accepts codeblocks from other ITIs (protocol parties, functionaities, and the adversary) and executes them based on delay by the adversary.
 In Figure~\ref{fig:async:wrapper}, our async wrapper accepts code block in the form of a \msf{schedule}, or, alternatively, when code uses the \textsc{Evetually} keyword.
 A \msf{schedule} message is accompanied by an identifier that the wrapper will send back to the caller when it's time to execute the codeblock.
 The identifier is sent back to the scheduler of the codeblock telling it which codeblock to execute.
-For example, in the code in Figure~\ref{fig:atomic:real}, $\mathcal{F}_{atomic}$ is telling the wrapper to send it \msf{Broadcast} when it's time to execute it along with arguments required for executing the code.
+When the codeblock is finally executed by the wrapper, the calling party is activated again with the \Exec message, shown in Figure~\ref{fig:asyncwrapper:short}, 	 	
 
-In addition to scheduling codeblocks with \Wasync, all ITIs that do so must also be spawned with the code to receive activation from the wrapper to execute the scheduled codeblock.
+For example, in the code in Figure~\ref{fig:atomic:real}, $\mathcal{F}_{atomic}$ wants to execute the code block for \textsc{Broadcast} with adversarial delay. 
+One scheduled, the codeblock is added to the \msf{runqueue} until it is executed by the wrapper (we will elaborate the conditions for executions later).
+When it's time to execute (triggered either by the adversary or the environment), \Wasync writes an \Exec message back to $\F_{\msf{atomic}}$ instructing it to execute the \textsc{Broadcast} code.
+This codeblock, in turn, schedules another code block to be executed and the process repeats.
+
+The \Exec interface that $\F_{\msf{atomic}}$ accepts is not illustrated in Figure~\ref{fig:atomic_real}, however it is an interface that all ITIs that wish to interact with \Wasync must implement.
+It is the only message that a scheduling ITI expects to receive from \Wasync and is a relatively lightweight addition. 
+
+\subsection{Executing Codeblocks}
+Codeblocks can be executed in two ways in both the synchronous and asynchronous wrappers: by the adversary and by the environment \footnote{Recall that the environment can force the wrappers to make progress by sending {\em enough} \Advance messages to it.}.
 
 
 
 
-
-
-
-
+\todo{below this line is no longer up to date}
 The full wrapper can be seen in Figure~\ref{fig:wrapper:async}.
 
 The wrapper maintains accepts message through the \msf{schedule} interface which specifies the code block to be executed.
