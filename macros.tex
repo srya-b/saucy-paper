@@ -1,5 +1,6 @@
 \newcommand{\mc}[1]{\ensuremath{\mathcal{#1}}}
 \newcommand{\msf}[1]{\ensuremath{{\mathsf {#1}}}}
+\newcommand{\mathc}[1]{\ensuremath{\mathcal{#1}}}
 \newcommand{\tsc}[1]{\textsc{#1}}
 \newcommand{\f}[1]{\ensuremath{\mathcal{#1}}}
 \newcommand{\F}{\f{F}}
@@ -16,8 +17,11 @@
 \newcommand{\Fclock}{\ensuremath{\F_{\msf{clock}}}}
 \newcommand{\Fpay}{\ensuremath{\F_{\msf{pay}}}}
 \newcommand{\Gledger}{\ensuremath{\f{G}_{\msf{ledger}}}}
-\newcommand{\Wsync}{\ensuremath{\mathcal{W}_{sync}}}
+\newcommand{\Wsync}{\ensuremath{\overline{\mathcal{W}}_{sync}}}
 \newcommand{\Wasync}{\ensuremath{\mathcal{W}_{\msf{async}}}}
+\newcommand{\Ssyncbracha}{\ensuremath{\mathc{S}_{\msf{sbracha}}}}
+\newcommand{\Fbracha}{\ensuremath{\mathcal{F}_{\msf{bracha}}}}
+\newcommand{\Dadv}{\ensuremath{\mathcal{D}}}
 \newcommand{\Schedule}{\tsc{Schedule}~}
 \newcommand{\Delay}{\tsc{Delay}~}
 \newcommand{\Advance}{\tsc{Advance}~}
@@ -36,6 +40,7 @@
 \newcommand{\OnInput}{{\bf \color{Black} On input}~}
 \newcommand{\Allinputs}{{\bf \color{Cerulean} All other input~}}
 \newcommand{\OnAdvInput}{{\bf \color{BrickRed} On input}~}
+\newcommand{\heading}[1]{\textbf{#1}}
 
 %\newcommand{\pluseq}{\mathrel{+}=}
 %\newcommand{\minuseq}{\mathrel{-}=}
@@ -45,7 +50,8 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
 \newtheorem{ddef}{Definition}
-
+\newtheorem{theorem}{Theorem}
+\newtheorem{claim}{Claim}
 
 %\newlist{renumerate}{enumerate}{1}
 %\setlist[renumerate]{before=\setlength{\baselineskip}{20pt}, itemsep=-2ex, topsep=-2ex}
