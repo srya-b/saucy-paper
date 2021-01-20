@@ -1,0 +1,23 @@
+\subsection{Universal Composability}
+The universal composability framework~\cite{uc} proposes a new framework for proving the security of cryptographic and distributed protocol.
+Compared to previous works, the UC framework provides a stronger notion of security where protocols that are UC-secure are secure even when composed with arbitrary other protocols running concurrently. 
+
+Such a strong notion of security is achieved through simulation-based security. 
+The framework consists of an ideal world encompassing an ideal implementation of a protocol, called the \textit{ideal functionality} $\mathcal{F}$, that acts as a trusted third party that protocol parties can call.
+This also implies that the ideal functionality is usually much simpler than a real implementation of a protocol---making proving the security of this ideal protocol very easy.
+There is also a real world, which parties running an actual implementation of the \textit{challenge} protocol, $\pi$, in the face of a real PPT adversary \Adversary.
+Finally, there is an environment \Environment which gives inputs to the adversaries and parties in both the worlds and observes their outputs trying to distinguish between the two worlds. 
+
+A security proof in UC takes the form of creating a simulator $\mathcal{S}$ in the ideal world that guarantees computational indistinguishability for all possible environments and adversaries. 
+We desired that the executions of the ideal world and real world remain indistinguishable from the point of view of the environment, such that
+
+$$ \text{EXEC}_{\mathcal{F},\mathcal{S},\Environment} \approx \text{EXEC}_{\pi,\mathcal{A},\Environment} $$
+
+If the two worlds are indistinguishable to any environment we say that the real world must possess the same security properties as the ideal world, whose security properties are easy to prove.
+
+
+\paragraph{GUC-Framework}
+
+
+
+

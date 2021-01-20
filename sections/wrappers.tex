@@ -67,17 +67,19 @@ The cost of each of the operations is detailed in Figure \ref{fig:asyncwrapper:s
 
 \subsection{Import}
 In the previous subsection we state that the environment can force progress to be made in the wrapper by exhausting the amount of import that the adversary can use to delay.
-However, from our previous discussion regarding \textit{balanced environments} in Section~\ref{sec:import} we arrive at a problem: \textit{for every unit of import that \Environment sends to an ITI, it must also send to \Adversary}.
+However, from our previous discussion regarding \textit{balanced environments} in Definition~\ref{def:balancedenvironments} we arrive at a problem: \textit{for every unit of import that \Environment sends to an ITI, it must also send to \Adversary}.
 This would suggest that the adversary will \textit{always} have enough import to prevent the environment from advancing the wrapper, and, therefore \Adversary can delay codeblocks indefinitely.
-We address this problem by relaxing the balanced environments constraint in the GUC framework for shared functionalities.
+We address this problem by relaxing the balanced environments constraint in the GUC framework for our shared functionality.
 
-We motivate our relaxing of the balanced environments constraint, first, by addressing ~\ref{prop:balancedenvironments}. 
+We motivate our relaxing of the balanced environments constraint, first, by addressing the original reason behind Definition~\ref{def:balancedenvironments}.
 In summary, the the argument states that when a protocol is extended trivially to instruct $\pi_i$ to send a message to \Adversary proportional to it's import, the environment can ensure the $\pi_i$ always has more import than the \Adversary and, therefore, the adversary is no longer simulatable. 
-We can conclude that the constraint exists to make the framework more expressive rather than as a technical requirement to achieve simulation or composition. 
-Therefore we relax the balanced environments constraint for our shared functionality in the following way and for the following reasons:
-\begin{itemize}
-\item We remove the requirement for \Environment to give import to \Adversary corresponding to the import spend calling \Advance in the wrapper.  
-\end{itemize}
+We can conclude that the balanced environments constraint exists to make the framework more expressive rather than as a technical requirement to achieve simulation or composition. 
+Therefore, we relax the balanced environments constraint specifically for calls of \Advance by the environment to our wrapper.
+The reaso behind this is that we require the adversary not be able to indefinitely delay codeblock execution and it does not limit the simulatability of protocols.
+We propose that any pair of protocols that were UC-emulatable under the balanced environments definition remain UC-emulatable under our weakening.
+
+
+
 
 \todo{below this line is no longer up to date}
 The full wrapper can be seen in Figure~\ref{fig:wrapper:async}.

@@ -5,4 +5,15 @@ A good analogy to make for import is to consider them as tokens that are exchang
 The definition of a polynomially bounded syste of ITIs now becomes: 
 
 
+\paragraph{Balanced Environments}
+The import mechanism above allows the environment give the protocol arbitrarily more import than the adversary.
+Such a siuation is unnatural and undesirable. Consider the following argument.
 
+Imagine a protocol $\pi$ and another protocol $\widetilde{\pi}$ which is identical to $\pi$ in every way except that the parties of $\widetilde{\pi}$ first send a message to the adversary proportional in length to their import and expects the adversary to echo the message back. 
+Then $\pi$ does not UC-emulate $\widetilde{\pi}$ according to standard UC-emulation for the following reason: $\mathcal{A}$ is an adversary tha delivers all protocol messages and halts. A simulator $\mathcal{S}$ would need sufficient import to handle these messages, but an environment $\mathcal{Z}$ can always give $\widetilde{\pi}$ more import than $\mathcal{S}$ rendering the protocol un-simulatable. 
+
+Such a restrictive definition in clearly unnatural. Therefore, the UC framework introducec an environment constraint: \textit{balanced environments}.
+
+\begin{definition} \label{def:balancedenvironments}
+An environment is \msf{balanced} if, at a certain point of execution, it provided import $n_1,...,n_k$ to $k$ ITIs overall, then the overall import of the inputs to the adversary is at least $n_1 + ... + n_k$.
+\end{definition}

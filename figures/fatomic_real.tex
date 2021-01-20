@@ -10,23 +10,20 @@ Initialize: $\msf{BC} \leftarrow \emptyset$
 
 	\end{enumerate}
    
-{\bf \color{Black} Code} \tsc{Broadcast} $(msg)$:
+{\color{Blue} {\bf Code} \tsc{Broadcast} $(msg)$:}
 
 	\begin{enumerate}
-		\item Append $msg$ to \msf{BC}, $\msf{pos} \leftarrow |\msf{BC}|$
+		\item {\color{Blue} Append $msg$ to \msf{BC}, $\msf{pos} \leftarrow |\msf{BC}|$}
 
-		\item For each $P_j$:
+		\item {\color{Blue} For each $P_j$:}
 
-			\quad \Leak (\msf{pos}, $P_j$)
+			\quad {\color{Blue} \Leak (\msf{pos}, $P_j$)}
 
-			\quad \Send (\Schedule, \msf{Send}, (\msf{BC}[1:\msf{pos}], $P_j$)) $\rightarrow \Wasync$
+			\quad {\color{Blue} \Send (\Schedule, \tsc{Send}, (\msf{BC}[1:\msf{pos}], $P_j$)) $\rightarrow \Wasync$}
 		
     \end{enumerate}
 
-{\bf \color{Black} Code} \tsc{Send} $(msg, P_i)$:
-\begin{enumerate}
-	\item \Send $msg \rightarrow P_i$ 
-\end{enumerate}
+{\color{Red} {\bf Code} \tsc{Send} $(msg, P_i)$: \Send $msg \rightarrow P_i$ }
 
 
 \end{bbox}
