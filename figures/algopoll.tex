@@ -3,25 +3,25 @@
 
 \begin{renumerate}
 
-  	\item $\msf{idealdelay} \minuseq 1$
+  	\item $\msf{ideal\_delay} \minuseq 1$
   	
-  	\item If $\msf{idealdelay} = 0$:
+  	\item If $\msf{ideal\_delay} = 0$:
   	 
-  		\quad \Send $(\texttt{delay}, 1 \token) \rightarrow \mathcal{W}_{sync}$
+  		\quad \Send $(\textsc{delay}, 1 \token) \rightarrow \mathcal{W}_\msf{sync}$
 
-  		\quad $\msf{idealdelay} = 1$
+  		\quad $\msf{ideal\_delay} = 1$
 
-  	\item \Send $(\texttt{poll},) \rightarrow \mathcal{W}_{sync}'$
+  	\item \Send $(\textsc{poll},) \rightarrow \mathcal{W}_\msf{sync}'$
  
-  	\item If output $m$ from party $P_i'$:
+  	\item If output $m$ from simulated party $P_i'$:
 
-			\quad Call $\msf{SimGetLeaks}$
+%			\quad Call $\msf{SimGetLeaks}$
 
-			\quad Call \msf{SimPartyOutput}(m, $P_i'$)
+			\quad Call \msf{SimPartyOutput}($m$, $P_i'$)
 		
-		Else if $m$ from $\mathcal{A}'$:
+		Else if output $m$ from simulated adversary $\mathcal{A}'$:
 
-			\quad Send $m \rightarrow \mathcal{Z}$
+			\quad \Send $m \rightarrow \mathcal{Z}$
 
 \end{renumerate}
 

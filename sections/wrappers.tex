@@ -44,7 +44,7 @@ The exact pseudo-code is shown in the final figure, Figure~\ref{fig:atomic:real}
 \todo{I absolutely hate having introduced the above {\em first} now}
 
 \subsection{Asynchronous Wrapper}
-In Figure~\ref{fig:async:wrapper}, the async wrapper, \Wasync, accepts code blocks in the form of a \msf{schedule} message, or, alternatively, when code uses the \textsc{Evetually} keyword.
+In Figure~\ref{fig:asyncwrapper:short}, the async wrapper, \Wasync, accepts code blocks in the form of a \msf{schedule} message, or, alternatively, when code uses the \textsc{Evetually} keyword.
 A \msf{schedule} message is accompanied by an identifier that the wrapper will send back to the caller when it's time to execute the codeblock.
 The identifier is sent back to the calling party when the code is ready to be executed. 
 In our running atomic broadcast example, \Wasync sends a \textsc{Broadcast} back to the caller along with the message to be broadcast.

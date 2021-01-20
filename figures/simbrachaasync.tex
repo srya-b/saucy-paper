@@ -1,76 +1,82 @@
 
-\begin{bbox}[title={Simulator $\mathcal{S}_{bracha} (\mathcal{D}, \mathcal{P}, \Delta)$}]
+\begin{bbox}[title={Simulator $\mathcal{S}_\msf{Bracha} (\mathcal{D}, \mathcal{P}, \Delta)$}]
 
-Simulate real world parties $p_1',...,p_n'$ and the simulated dealer $\mathcal{D}'$.
+Simulate real world parties $P_1',...,P_n'$ and the simulated dealer $\mathcal{D}'$.
 
-Initialize $\msf{idealqueue} := \emptyset, idealdelay := 0$, $simleaks := \emptyset$
+Init $\msf{ideal\_queue}$ := $\emptyset$, $\msf{ideal\_delay}$ := $0$, $\msf{sim\_leaks}$ := $\emptyset$
 
-$\msf{pidToIdx} = \{\}$
+$\msf{pid\_to\_idx} := \{\}$
 
 \vspace{2mm} \hrule \vspace{2mm}
 
 \underline{On every activation:} \vspace{2mm}
 
 \begin{renumerate}
-	\item $leaks \leftarrow$ \{ \Send (\texttt{get-leaks}) $\rightarrow \mathcal{W}_{sync}$\}
+	\item $\msf{leaks} \leftarrow$ \{\Send (\textsc{get-leaks}) $\rightarrow \mathcal{W}_\msf{sync}$\}
 	
-	\item {\bf For} $l \in leaks$:
-		\begin{renumerate}
-		\item {\bf Match} $l$:
+	\item {\bf For} $\msf{leak} \in \msf{leaks}$:
+	\begin{renumerate}
+		\item {\bf Match} $\msf{leak}$:
 			\begin{renumerate}
-				\item {\bf case} (input, v) from $\F_{bcast}$:
+				
+				\item {\bf Case} (\textsc{input}, $m$) from $\F_\msf{RBC}$:
 
-					\quad Simulate (input, $v$, $n(4n+1) \token$) $\rightarrow \mathcal{D}'$ 
+				\quad Simulate (\textsc{input}, $m$, $n(4n+1) \token$) $\rightarrow \mathcal{D}'$ 
 
-				\item {\bf case} (schedule, $rnd$, $idx$) from $\F_{bcast}$:
+				\item {\bf Case} (\textsc{schedule}, $P_i$, \msf{rnd}, \msf{idx}) from $\F_\msf{RBC}$:
 
-					\quad Let $l$ be the $i^{th}$ schedule leak received.
+					\quad $\msf{pid\_to\_idx}[P_i] = \msf{(rnd, idx)}$
 
-					\quad $\msf{pidToIdx}[i] = (rnd, idx)$
+					\quad $\msf{ideal\_delay} \pluseq 1$
 
-					\quad $\msf{idealdelay} \pluseq 1$
+				\item {\bf Case} \msf{msg} from $\F$:
+					
+					\quad Simulate $\F'$ leaking \msf{msg}
 			\end{renumerate}
 		\end{renumerate}
 	%\item \Send $leaks \rightarrow \mathcal{Z}$
 	\end{renumerate}
 
 
-\OnInput \inmsg{\texttt{get-leaks}} from $\mathcal{Z}$:
+\OnInput \inmsg{\textsc{get-leaks}} from $\mathcal{Z}$:
 	\begin{renumerate}
-	\item \Send $simleaks \rightarrow \mathcal{Z}$
+	% \item \Send $simleaks \rightarrow \mathcal{Z}$
+	\item $\msf{leaks} \leftarrow$ \{Simulate (\textsc{get-leaks}) $\rightarrow \mathcal{W}'_\msf{sync}$\}
+	
+	\item \Send \msf{leaks} $\rightarrow \mathcal{Z}$
 	\end{renumerate}
 
-\OnInput \inmsg{poll} from $\mathcal{W}_{sync}$:
+\OnInput \inmsg{\textsc{poll}} from $\mathcal{W}_\msf{sync}$:
 	\begin{renumerate}
-	\item execute \msf{Poll}
+	\item Execute \msf{Poll}
 	\end{renumerate}
 
-\OnInput \inmsg{delay}{$d \token$} from $\mathcal{Z}$:
+\OnInput \inmsg{\textsc{delay}}{$d \token$} from $\mathcal{Z}$:
 	\begin{renumerate}
-	\item Simulate $(delay, d \token) \rightarrow \mathcal{W}_{sync}'$
+	\item Simulate $(\textsc{delay}, d \token) \rightarrow \mathcal{W}_\msf{sync}'$
 
-	\item \Send $(\texttt{delay}, d \token) \rightarrow \mathcal{W}_{sync}$
+%	\item \Send $(\textsc{delay}, d \token) \rightarrow \mathcal{W}_{sync}$
 
-	\item $idealdelay \pluseq d$
+%	\item $idealdelay \pluseq d$
 
-	\item Send $\texttt{OK} \rightarrow \mathcal{Z}$
+	\item \Send $\textsc{OK} \rightarrow \mathcal{Z}$
 	\end{renumerate}
 
-\OnInput \inmsg{exec}{$rnd$}{$idx$} from $\mathcal{W}_{sync}$:
+\OnInput \inmsg{\textsc{exec}}{\msf{rnd}}{\msf{idx}} from $\mathcal{W}_\msf{sync}$:
 	\begin{renumerate}
-	\item Simulate $(\texttt{exec}, rnd, idx) \rightarrow \mathcal{W}_{sync}'$
+	\item Simulate $(\textsc{exec}, \msf{rnd}, \msf{idx}) \rightarrow \mathcal{W}_\msf{sync}'$
 
 	%\item $msg \leftarrow$ wait for output from some simulated ITM.
 
 	\item If output $m$ from simulated party $P_i'$:
 
-		\quad Call $\msf{SimGeteaks}$
+%		\quad Call $\msf{SimGeteaks}$
 
-		\quad Call \msf{SimPartyOutput}(m, $P_i'$)
+		\quad Call \msf{SimPartyOutput}($m$, $P_i'$)
 
-	\item Else
+	\item Else if output $m$ from simulated adversary $\mathcal{A}'$:
 
-		\quad Send $m \rightarrow \mathcal{Z}$
+		\quad \Send $m \rightarrow \mathcal{Z}$
 
 %	\item Execute $\msf{SimGetLeaks}$
 %
