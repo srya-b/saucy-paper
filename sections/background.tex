@@ -2,22 +2,31 @@
 The universal composability framework~\cite{uc} proposes a new framework for proving the security of cryptographic and distributed protocol.
 Compared to previous works, the UC framework provides a stronger notion of security where protocols that are UC-secure are secure even when composed with arbitrary other protocols running concurrently. 
 
-Such a strong notion of security is achieved through simulation-based security. 
-The framework consists of an ideal world encompassing an ideal implementation of a protocol, called the \textit{ideal functionality} $\mathcal{F}$, that acts as a trusted third party that protocol parties can call.
-This also implies that the ideal functionality is usually much simpler than a real implementation of a protocol---making proving the security of this ideal protocol very easy.
-There is also a real world, which parties running an actual implementation of the \textit{challenge} protocol, $\pi$, in the face of a real PPT adversary \Adversary.
-Finally, there is an environment \Environment which gives inputs to the adversaries and parties in both the worlds and observes their outputs trying to distinguish between the two worlds. 
+Such a strong notion of security is achieved through the real-ideal world paradigm.
+The ideal world encompasses an ideal implementation of a protocol, called the \textit{ideal functionality} $\mathcal{F}$, which acts as a trusted third party that caputures all the desired security properties.
+The ideal functionality is usually a simple definition making it trivial to prove its security properties.
+The real world, on the other hand, consists of parties running an actual protocol, $\pi$, against a real adversary.
 
-A security proof in UC takes the form of creating a simulator $\mathcal{S}$ in the ideal world that guarantees computational indistinguishability for all possible environments and adversaries. 
-We desired that the executions of the ideal world and real world remain indistinguishable from the point of view of the environment, such that
+Security proofs in UC involve creating a simulator $\mathcal{S}$ in the ideal world that can simulate every potential attack on a real protocol in the real world.
+If $\mathcal{S}$ can make the two worlds indistinguishable for any real world adversary $\mathcal{A}$ for all distinguishing environments $\mathcal{Z}$, then we say the protocol $\pi$ UC-emulates the ideal functionality $\mathcal{F}$.
+Indistinguishability of the two worlds to any $\mathcal{Z}$ implies that the protocol $\pi$ must exhibit the same security properties as the ideal functionality $\mathcal{F}$ otherwise there should be sobe distinguishing environment. 
+More formally, indistinguishability is stated:
 
 $$ \text{EXEC}_{\mathcal{F},\mathcal{S},\Environment} \approx \text{EXEC}_{\pi,\mathcal{A},\Environment} $$
-
-If the two worlds are indistinguishable to any environment we say that the real world must possess the same security properties as the ideal world, whose security properties are easy to prove.
-
 
 \paragraph{GUC-Framework}
 
 
+\subsection{The Import Mechanism}
+A notion of resource-bound computation is necessary for the UC framework to reason about computationally efficient algorithms as well as the capabilities of ITIs under a particular resource constraint.
+Often we would like to reason about adversarial capabilities under such constraints and perform efficient transformations (transforming an adversary into a simulator).
 
+Previous definitions of polynomial-time computation have taken the form of bounding the computation of an ITI by some polynomial $T$:
+given an input of length $n$ the machine $\mu$ halts within $T(n)$ steps.
+However, using the length of the inputs to the machine as $n$, in this case leads to an infinite runs problems identified by Canetti~\cite{uc}.
+Machines that are locally $T(n)$-bounded are able to spawn other machines to the point that an infinite chain of such machines can be spawed where each is locally $T$-bounded, but the whole system of machines can not be bounded by any polynomial $T$.
 
+Therefore, a new notion of $n$ was needed. The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomially amount of import which can be thought of as tokens or coins.
+The environment can then activate other ITIs with some import tokens allowing them to run for $T(n')$ computationsl steps for some $T$ and some amount of import $n'$.
+In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps where $n'$ is the difference between the import it has received from incoming messages and outgoing import it's given to other machines.
+This definition therefore suffices to ensure that every machine is locally bounded by some polynomial but also guarantees that the system of ITMs is bounded by a polynomial number of import tokens. 

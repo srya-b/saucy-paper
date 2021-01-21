@@ -1,5 +1,21 @@
 \todo{I realized that I should introduce the concept of environment forcing progress before all the details here}
 
+\todo{Add leak keyword in there as well and explain why we buffer all the leaks in the wrapper instead of activating the adversary.}
+
+\todo{change dealer to be $p_d$ instead of $\mathcal{D}$}
+
+\todo{expand out pluseq and minuseq in figures}
+
+\todo{expand other protocol sessions in simulator to be (sid', pid) instead of $\mathcal{F}$}.
+
+\todo{change Send macro to be bold}
+
+\todo{simpartyoutput return OK and return leaks is not the same so it should be cleared up}
+
+\todo{input parameters msf or regular math mode?}
+
+\todo{should make clear that the simulator is always activated when a real world party would output something because it only outputs when poll, exec, or adverasry exec and simulator is active in all those cases and so can react and execute the corresponding codeblock in the ideal world.}
+
 One of the main hurdles to existing UC models is that asynchronous/synchronous communication models uncecessarily complicate the design of protocols and ideal functionalities.
 Not only does it make writing and switching between models cumbersome and error-prone, but it also mmake security proofs difficult to understand and even harder to verify.
 Our construction removes all model-specific code from protocols and ideal functionalities, defines code that each ITI must be spawned with, and uses the new import mechanism to provide communiation guarantees.
