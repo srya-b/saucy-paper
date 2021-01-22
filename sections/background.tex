@@ -21,12 +21,32 @@ $$ \text{EXEC}_{\mathcal{F},\mathcal{S},\Environment} \approx \text{EXEC}_{\pi,\
 A notion of resource-bound computation is necessary for the UC framework to reason about computationally efficient algorithms as well as the capabilities of ITIs under a particular resource constraint.
 Often we would like to reason about adversarial capabilities under such constraints and perform efficient transformations (transforming an adversary into a simulator).
 
-Previous definitions of polynomial-time computation have taken the form of bounding the computation of an ITI by some polynomial $T$:
-given an input of length $n$ the machine $\mu$ halts within $T(n)$ steps.
+Current definitions of polynomial-time computation take the form of bounding the computation of an ITI by some polynomial $T$:
+given an input of length $n$ a machine $\mu$ halts within $T(n)$ steps.
 However, using the length of the inputs to the machine as $n$, in this case leads to an infinite runs problems identified by Canetti~\cite{uc}.
-Machines that are locally $T(n)$-bounded are able to spawn other machines to the point that an infinite chain of such machines can be spawed where each is locally $T$-bounded, but the whole system of machines can not be bounded by any polynomial $T$.
+Machines that are locally $T(n)$-bounded are able to spawn other machines to the point that an infinite chain of such machines can be spawed where, although, each is locally $T$-bounded, the whole system of of ITMs is no longer PPT. 
+Therefore, a new notion of $n$ is needed. 
 
-Therefore, a new notion of $n$ was needed. The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomially amount of import which can be thought of as tokens or coins.
-The environment can then activate other ITIs with some import tokens allowing them to run for $T(n')$ computationsl steps for some $T$ and some amount of import $n'$.
+The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomial amount of import which can be thought of as tokens or coins.
+The environment can then activate other ITIs with some import tokens allowing them to run for as long as their import token balance permits. 
 In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps where $n'$ is the difference between the import it has received from incoming messages and outgoing import it's given to other machines.
-This definition therefore suffices to ensure that every machine is locally bounded by some polynomial but also guarantees that the system of ITMs is bounded by a polynomial number of import tokens. 
+Any ITI can write to any other ITI in it's communication set and send it import tokens until the balance of import is exhausted.
+Eventually, the system of ITMs must halt when it runs out of import until it receives more from the environment.
+
+\paragraph{Realizing Import in saUCy}
+The import mechanism in the UC framework describes at a high level how to reason about resource bounded computation in the import model.
+However, for our purposes it is necessary to instantiate it concretely and make explicit the conditions under which a machine halts as we care about an implementation the UC framework in our proposed Nomos language. 
+
+In order to do this we must introduce a new concept called \textit{potential}. 
+Potential is the basic unit of computation and machines must explicitly \textit{consume} their available import balance and convert it into usable potential through a bounding polynomial $T$.
+
+Concretely, every ITM $\mu$ is spawned with a set of variables:
+\begin{itemize}
+\item $\msf{in}_t$: the total amount of import received as input by $\mu$.
+\item $\msf{out}_t$: the total amount of import sent by $\mu$ to other machines.
+\item $\msf{marked}_t$: the number of import tokens that have been consumed and used to generate potential through an input polynoial $T$.
+\item $\msf{generate\_pot}(T, n)$: a function that marks $n$ available import tokens and creates $T(n)$ units of potential.
+\end{itemize}
+
+Over the lifetime of $\mu$ it will need to generate potential multiple times as it needs to perform more computation.
+Eventually, thought, we can guarantee that every machine $\mu$ will \textit{halt} when it can no longer generate more potential, i.e.  $\msf{in}_t - \msf{out}_t - \msf{marked}_t > n$.
