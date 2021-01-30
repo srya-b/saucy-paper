@@ -51,6 +51,50 @@ $R$ must then receive a bit using the $\arrow$ constructor (dual to
 $\product$).
 Finally, the session terminates as indicated by type $\one$.
 
+Protocols expressed via session types are strictly enforced by
+process definitions.
+As an illustration, consider the $\fcomm$ process that is connected
+to both $S$ and $R$.
+The process declaration is written as
+\begin{lstlisting}[basicstyle=\small\ttfamily]
+decl F_comm :
+  (S : sender), (R : receiver) |- (F : 1)
+\end{lstlisting}
+Here, $\fcomm$ is the name of the process, and $S$ and $R$ are the names
+of channels \emph{used} by $\fcomm$, while $F$ is the channel \emph{provided}
+by $\fcomm$.
+Every session-typed process provides a unique channel while acting as a client
+of a non-negative number of channels.
+The used channels with their types are written to the left of the turnstile
+($\vdash$) while the offered channel and type are written on the right.
+This is analogous to function definitions where used channels correspond to
+arguments, while offered channel corresponds to the result.
+
+The $\fcomm$ process is defined as follows:
+\begin{lstlisting}[basicstyle=\small\ttfamily, numbers=left,xleftmargin=2em]
+proc F <- F_comm S R =
+  case S (
+    commit => b = recv S ;
+              R.commit ;
+              case S (
+                open => R.open ;
+                        send R b ;
+                        wait S ; wait R ;
+                        close F ) )
+\end{lstlisting}
+The process first case analyzes on channel $S$ branching on the
+message received.
+Since there is only one choice $\mb{commit}$, we only have one
+branch in the definition.
+$\fcomm$ then receives the bit $b$ (line 3) on $S$, followed by sending the
+commit message on channel $R$ (line 4).
+Once $\fcomm$ receives the $\mb{open}$ message on $S$, it sends the
+$\mb{open}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
+Finally, the process waits for channels $S$ and $R$ to close (line 8),
+followed by ultimately closing the channel $F$ (line 9).
+
+\subsection{Formal Description of Session Types}
+
 Session types are a type discipline for communication-centric programming
 based on message passing via channels. Session-typed channels describe and
 enforce the protocol of communication among processes. The base system of

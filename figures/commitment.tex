@@ -5,8 +5,8 @@ stype receiver = &{ commit : &{ open : bit -> 1 } }
 
 decl F_comm : (S : sender), (R : receiver) |- (F : 1)
 
-def F <- F_comm S R =
-  case s (
+proc F <- F_comm S R =
+  case S (
     commit => b = recv S ;
               R.commit ;
               case S (
