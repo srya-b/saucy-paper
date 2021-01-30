@@ -7,6 +7,12 @@ fragment of SILL~\cite{PfenningFOSSACS2015} that internalizes session-based
 concurrency.
 Session types were introduced by Honda~\cite{HondaCONCUR1993}.
 
+\begin{figure*}[!ht]
+\input{figures/commitment}
+\caption{The $\mathcal{F}_{\msf{comm}}$ commitment ideal functionality in Nomos. The types for the sender and receiver channel define what inputs they can give to the functionality and what messsages are sent from the functionality back to the receiver.}
+\label{fig:nomos:commitment}
+\end{figure*}
+
 
 Linear logic~\cite{GirardTCS1987} is a substructural logic that enjoys
 \emph{exchange} as its only structural property, i.e., it does not exhibit

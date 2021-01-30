@@ -1,0 +1,38 @@
+\begin{bbox}[title={Commitment}]
+
+\Type \textit{sender} = +\{ commit: int \^{} \textit{sender\_committed} \} 
+
+\Type \textit{sender\_committed} = +\{ open: 1 \} 
+
+\Type \textit{receiver} = \&\{ commit: \textit{receiver\_committed} \} 
+
+\Type \textit{receiver\_committed} = \&\{ open: int \^{} 1 \} \\
+
+process ideal\_functionality : (\$s: \textit{sender}), (\$r: \textit{receiver}) $|-$ (\$f: 1) =
+\{
+
+    \quad case \$s (
+
+	    \qquad commit $\Rightarrow$ b = recv \$s
+			
+			\qqquad \$r.commit 
+
+			\qqquad \$f $\leftarrow$ ideal\_functionality\_after\_commit $\leftarrow$ b \$s \$r 
+
+	)
+\}
+
+process ideal\_functionality\_after\_commit : (b : int), (\$s : \textit{sender\_committed}), (\$r: \textit{receiver\_committed}) $|-$ (\$f: 1) =
+\{
+
+	\quad case \$s (
+
+	\qquad open $\Rightarrow$ \$r.open 
+	
+		\qqquad send \$r b
+
+		\qqquad wait \$s ; wait \$r ; close \$f 
+
+	)
+\}
+\end{bbox}
