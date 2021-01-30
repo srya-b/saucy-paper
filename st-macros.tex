@@ -13,6 +13,7 @@
 
 %% Notation
 \newcommand{\m}[1]{\mathsf{#1}}
+\newcommand{\mb}[1]{\mathbf{#1}}
 \newenvironment{sill}{\begin{tabbing}}{\end{tabbing}}
 
 
@@ -160,8 +161,8 @@
 \newcommand{\tassumeop}{!}
 \newcommand{\tassert}[1]{\; \tassertop\{#1\}. \;}
 \newcommand{\tassume}[1]{\; \tassumeop\{#1\}. \;}
-\newcommand{\arrow}{\supset}
-\newcommand{\product}{\wedge}
+\newcommand{\arrow}{\rightarrow}
+\newcommand{\product}{\times}
 
 %% Functional Types
 \newcommand{\tproc}[2]{\{#1 \leftarrow #2\}}
@@ -357,7 +358,8 @@
 \newcommand{\zeroc}[1]{\m{zero}(#1) ?}
 \newcommand{\halt}{\m{halt}}
 
-
+%% UC stuff
+\newcommand{\fcomm}{\mathcal{F}_{\msf{comm}}}
 
 
 %%% Local Variables:

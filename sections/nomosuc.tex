@@ -1,3 +1,56 @@
+Cryptographic protocols are, well, protocols and therefore, follow
+a predefined communication pattern.
+Our key innovation is to represent such communication protocols using
+\emph{session types}.
+
+\paragraph*{\textbf{Example Protocol}}
+As an example, consider the two-phase commitment protocol.
+The ideal functionality of this protocol consists of a \emph{sender} $S$
+and \emph{receiver} $R$ connected to a trusted third-party, which we
+name $\fcomm$.
+The protocol initiates with $S$ sending a $\mb{commit}$ message to $\fcomm$
+indicating its intent to \emph{commit} to a bit.
+Next, $S$ sends this committed bit to $\fcomm$.
+After receiving the committed bit, $\fcomm$ sends a $\mb{commit}$ message
+to $R$ indicating that a bit has been committed to, but does not reveal
+this bit to $R$.
+At a later time, $S$ sends an $\mb{open}$ message to $\fcomm$ expressing
+that $S$ wishes to reveal the secret bit to $R$.
+Receiving this message, $\fcomm$ in turn sends an $\mb{open}$ message
+to $R$ followed by this bit.
+The protocol concludes with each party (process) terminating.
+
+In the session-typed setting, we use typed channels to connect two
+parties. For instance, the channel connected $S$ to $\fcomm$
+has the session type $\m{sender}$ defined as
+\[
+  \mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product
+  \ichoice{\mb{open} : \one}}
+\]
+The type constructor $\ichoice$ denotes an \emph{internal choice}
+(here with only one choice) dictating that $S$ must send the
+$\mb{commit}$ message to $\fcomm$.
+Next, we use the type constructor $\product$ to denote that $S$
+sends a value of type $\m{bit}$ ($\m{bit} \product \ldots$).
+We then use the $\ichoiceop$ constructor again enforcing
+that $S$ sends $\mb{open}$ to $\fcomm$.
+Finally, the type $\one$ denotes termination, indicating that
+$S$ will send $\m{close}$ message to $\fcomm$.
+
+Analogously, the channel connecting $R$ and $\fcomm$ has
+type $\m{receiver}$ defined as
+\[
+  \mi{stype} \; \m{receiver} = \echoice{\mb{commit} : 
+  \echoice{\mb{open} : \m{bit} \arrow \one}}
+\]
+Type constructor $\echoice$ represents \emph{external choice}
+which is the dual to internal choice.
+It prescribes that $R$ must receive a $\mb{commit}$ message from $\fcomm$,
+followed by an $\mb{open}$ message (using another $\echoiceop$ constructor).
+$R$ must then receive a bit using the $\arrow$ constructor (dual to
+$\product$).
+Finally, the session terminates as indicated by type $\one$.
+
 Session types are a type discipline for communication-centric programming
 based on message passing via channels. Session-typed channels describe and
 enforce the protocol of communication among processes. The base system of
