@@ -588,3 +588,62 @@ analyze the cases for $P$ and $M$, applying multiple steps of
 inversion to show that in each
 case either $\config$ can take a step or is poised.
 \end{proof}
+
+
+\subsection{UC Communicators}
+The linear aspect of session types imposes an important restriction on programs.
+The only provision to spawn new processes is when a parent process creates a new
+child process, and uses an exclusive linear channel to communicate with the child.
+Thus, any two processes connected by a channel inherently maintain this parent-child
+relationship.
+Intuitively, this leads to a linear tree-like hierarchy among the processes,
+thus preventing a cycle in the process graph.
+
+Unfortunately, this restriction precludes practical programming scenarios
+where process topologies indeed have a cyclic dependency (e.g. ring networks,
+dining philosophers, etc.).
+Recognizing this limitation, Balzer et al.~\cite{Balzer17icfp} proposed
+a \emph{shared} extension of session types that allows arbitrary process topologies.
+We have found this extension exceedingly helpful in the design and implementation
+of cryptographic protocols.
+
+One illustration of such a use of shared session types is a \emph{communicator}.
+We use communicators as message buffers between two arbitrary processes: a
+\emph{sender} and a \emph{receiver}.
+The communicator is connected to both the sender and the receiver using a shared
+channel.
+Intuitively, the communicator receives \emph{push} requests from the sender followed
+by receiving a message and stores them internally.
+Analogously, the communicator receives \emph{pop} requests from the receiver,
+and responds appropriately with the message if one is stored inside the communicator.
+Formally, a communicator has the following polymorphic session type
+\begin{tabbing}
+  $\mi{stype} \; \m{comm[msg]} =$\\
+  \quad $\up \echoice{$\=$\mb{push} : \m{msg} \arrow
+  \down \m{comm[msg]},$\\
+  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \m{comm[msg]},$\\
+  \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
+\end{tabbing}
+The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
+messages in the buffer.
+The type initiates with an $\up$ denoting that $\m{comm}$ is a shared session type.
+The type prescribes that the communicator needs to be acquired by the sender (or receiver)
+for further interaction.
+Such an acquire-release discipline is automatically enforced by the shared session type.
+Once acquired, the communicator can either receive $\mb{push}$ (from sender) or
+$\mb{pop}$ requests (from receiver).
+In the former case, the communicator receives a message of type $\m{msg}$, and
+then detaches from the client using the dual $\down$ operator.
+In the latter case, the communicator checks if it internally contains a message
+for the receiver.
+If yes, the communicator replies with the $\mb{yesmsg}$ label followed by sending
+the message (the $\product$ constructor).
+Otherwise, the communicator replies with the $\mb{nomsg}$ label.
+In either case, the communicator then detaches from the client matching the $\down$
+operator.
+Internally, the communicator stores these messages in a first-in-first-out order.
+
+The communicator is also the perfect opportunity to implement an unreliable
+message buffer that can drop or reorder messages.
+All we would need to do is change the internal implementation of the communicator
+\emph{without} changing the offered session type.
