@@ -15,6 +15,11 @@ More formally, indistinguishability is stated:
 $$ \text{EXEC}_{\mathcal{F},\mathcal{S},\Environment} \approx \text{EXEC}_{\pi,\mathcal{A},\Environment} $$
 
 \paragraph{GUC-Framework}
+A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.
+The cannonical example used to insipire a more unconstrained environments is the signing of certificates. 
+In the real world, a protocol party $p_i$ controlling some private key may sign messages that an adverasry could replay in other protocols $p_i$ takes part in.
+The standard UC formulation, however, is incapable of modelling such an adversarial strategy as protocol sessions are completely distinct and can not share any state with each other---namely, an ideal functionality that stores signed certificates is bound only to the current protocol session.
+\todo{Is is worth motivting the GUC framework rather than just introducing what it is and that the environment can also interact with a shared functionality?}
 
 
 \subsection{The Import Mechanism}
@@ -33,7 +38,7 @@ In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps w
 Any ITI can write to any other ITI in it's communication set and send it import tokens until the balance of import is exhausted.
 Eventually, the system of ITMs must halt when it runs out of import until it receives more from the environment.
 
-\paragraph{Realizing Import in saUCy}
+\paragraph{Realizing Import in saUCy} \label{sec:realizeimport}
 The import mechanism in the UC framework describes at a high level how to reason about resource bounded computation in the import model.
 However, for our purposes it is necessary to instantiate it concretely and make explicit the conditions under which a machine halts as we care about an implementation the UC framework in our proposed Nomos language. 
 

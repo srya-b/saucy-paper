@@ -4,9 +4,12 @@ Initialize: $\msf{BC} \leftarrow \emptyset$
 
 \OnInput \inmsg{tx} from $P_i$:
 	\begin{enumerate}
-		\item \Leak (\msf{tx}, \Partyi)
+		%\item \Leak (\msf{tx}, \Partyi)
+		\item \Send (\Leak, (\msf{tx}, \Partyi)) $\rightarrow \Wasync$
 
 		\item \Send (\Schedule, \msf{Broadcast}, \msf{tx}) $\rightarrow \Wasync$
+
+		\item Receive Ok $\leftarrow \Wasync$, \Send Ok $\rightarrow P_i$
 
 	\end{enumerate}
    

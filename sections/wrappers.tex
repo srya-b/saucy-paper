@@ -16,32 +16,53 @@
 
 \todo{should make clear that the simulator is always activated when a real world party would output something because it only outputs when poll, exec, or adverasry exec and simulator is active in all those cases and so can react and execute the corresponding codeblock in the ideal world.}
 
-One of the main hurdles to existing UC models is that asynchronous/synchronous communication models uncecessarily complicate the design of protocols and ideal functionalities.
-Not only does it make writing and switching between models cumbersome and error-prone, but it also mmake security proofs difficult to understand and even harder to verify.
-Our construction removes all model-specific code from protocols and ideal functionalities, defines code that each ITI must be spawned with, and uses the new import mechanism to provide communiation guarantees.
+%Despite using sessions types and the Nomos language to make it easier to write complete UC protocols, it remains a challenge to use existing UC models, such as those for async/sync communication, as they greatly complicate the design of protocols and ideal functionalities.
+
+
+Tools like session types and a concrete implementation of the UC framework in Nomos make working with the framework easier, however, on-paper definitions still suffer from over-complexity.
+One of the main causes of the difficulty is in how different communication models are modelled in UC.
+Even for trivial functionalities like a simple atmomic broadcast, the most common communication construction, the feth-delivery model shown in Figure~\ref{fig:fatomic:old}, greatly complicates the ideal functionality definition.
+Having to work with these models is cubersome and errorprone, but they also make security proofs difficult to verify or build on top of.
+Therefore, in this work we propose a new construction for synchronous and asynchronous communication.
+Our construction allowes ITMs to execute whole blocks of code with adversarial delay rather than just messages, and it offloads all model-specific behavior to a separate idela functionality making ITMs code nearly model-independent.
+We additionally present generic code that all ITMs must be spawned with that wish to interact with our functionality and execute code with adversarial delay.
+Finally, we present our consturction in the GUC~\ref{guc} framework as a shared functionality and use the new import mechanism to achieve delivery guarantees.
+
+%While using tools like session types and the Nomos language improve the experience working with UC, many on-paper UC models still suffer from completxity making them difficult to understand and work with.
+%Most of the complexity often arises, even for trivial functionalities and protocols, from the requirements of the underlying communication model and the additional messages/bookeeeping they require.
+%Not only do they make writing and switching between models cumbersome and error-prone, but they also make security proofs difficult to understand and even harder to verify.
+%In this work we also propose a new construction for the synchronous and asynchronous communication models that greatly improves upon existing approaches.
+%Our construction removes all model-specific code from protocols and ideal functionalities, defines code that each ITI must be spawned with, and uses the new import mechanism to provide communiation guarantees.
 %One of the key driving forces behind this work is an implementation of UC that simplifies working withe UC through simpler communication models and a domain-specific language. (\todo{$\leftarrow$ this is a real hot pile})
 
-In this section we define our synchronous and asynchronous communication models which enable delaying execution of entire code blocks and offload all communication specific code from the protocols and functionalities to our new shared functionality. 
-We construct our models using the GUC-framework~\ref{guc}---enabling the environment to force progress in protocols \todo{$\leftarrow$ probablt nt worth bringing up the environment part here}.
+%In this section we define our synchronous and asynchronous communication models which enable delaying execution of entire code blocks and offload all communication-specific code from the protocols and functionalities to our new shared functionality. 
+%We construct our models in the GUC-framework~\ref{guc} instead of the standard UC framework so that the environment can play a special role in ensuring delivery and termination.
 
-At a high level, the goal of the wrapper is to enable ITIs to schedule code blocks for future execution.
-An ITI that wants to execute some code with adversarial delay informs the wrapper of the code and to asks it for activation when it's time to execute.
-The adversary can control when the codeblock is executed, of course, by spending import tokens to delay its exeution or force execution at any time, but the environment can also force a code block to execute.
+At a high level, the goal of out ideal functionality (which we dub the \textit{wrapper}) is to enable ITIs to schedule code blocks for future execution.
+An ITI that wants to execute some code with adversarial delay informs the wrapper of the code and asks it for activation when it's time to execute.
+The adversary can control when a codeblock is executed, of course, by calling the wrapper to delay its exeution or force execution at any time.
+The environment can also force a code block to execute.
 This ensures that an adversary can not stall protocol progress indefinitely.
-Therefore, the main idea in our construction is that, although the adverasry can control delay and add more delay, it's import token balance (always less than the environment's) can never delay indefinitely, and the environment can ensure that no code blocks are delayed indefiniely.
+Therefore, the main idea in our construction is that, although the adverasry can control delay, it can never halt protocol progress entirely by indefinitely delaying a code block, because the environment can always step in and ensure protocol progress.
+We describe in greater detail, later in this section, how the import mechanism is used to achieve this property.
 
 %Before we divulge the details of how our model is implemented, we first give an example illustrating the disadvantage of current asynchronous (w.l.o.g synchronous) models compared to ours.
-Before diving into the details of how the wrappers are implementated, and their consequences, we first give an example illustrating the simplicity of our model compared to traditional UC communication.
+Before diving into the details of how the wrapper is implementated, and its consequences on protocol design, we first give an example illustrating the simplicity of our model compared to traditional UC communication.
 Take, for exampe, a simple atomic broadcast functionality in Figures \ref{fig:atomic:old} and \ref{fig:atomic:new}. 
 The top figure is the atomic broadcast written in the traditional fetch-based asynchronous model.
 Parties submit messages to be broadcast and must continually be activated by the environment to check for check for new results and ultimately move the functionality forward.
 The adversary, meanwhile, can add delay and force more calls to \textsc{Fetch} be made.
 Our version on the other hand, Figure \ref{fig:atomic:new}, simplifies the pseudo-code by offloading model-specific behavior to the wrapper.
 It makes use of the keyword \Eventually, which is used only for clarity in pseudo-code but is useful abstraction in our implementation.
-Despite the abstraction, however, \Eventually only substitutes a single message write from the point of view of the functionality.
+Despite the abstraction, however, \Eventually only substitutes a single message write and receive from the point of view of the functionality.
 The exact pseudo-code is shown in the final figure, Figure~\ref{fig:atomic:real}.
 
-\begin{figure}[h]
+A natural question that arises is whether the same \Eventually syntactic sugar can be used to encapsulate the fetch-delay version of the functionality as well. 
+The unique nested \Eventually behavior in our version of the atomic broadcast turns out to be difficult to replicate in the fetch-deliver model.
+With the constraints of the per-party variables tracking activations, careful engineering would be required in order to achieve the same nested message delay. 
+n ther other hande such a translation to the wrapper-based construction is trivial and any such intuitive and convenient layering of delayed code execution can easily be constructed.
+
+\begin{figure}
 \begin{subfigure}{\columnwidth}
 	\input{figures/fatomic_old}
 	\caption{An atomic broadcast functionality in the fetch model for the asynchronous world.}
@@ -50,30 +71,94 @@ The exact pseudo-code is shown in the final figure, Figure~\ref{fig:atomic:real}
 \begin{subfigure}{\columnwidth}
 	\input{figures/fatomic_new}
 	\caption{The same atomic broadcast functionality written with our async wrapper construction. Notice that there is no extra pseudo code needed to operate in this model.}
+	\label{fig:atomic:new}
 \end{subfigure}
 \begin{subfigure}{\columnwidth}
 	\input{figures/fatomic_real}
+	\caption{What the \Eventually and \Leak keywords actually translate to.}
 	\label{fig:atomic:real}
 \end{subfigure}
+\caption{Three representations of the same atomic broadcast protocol. The top is in the traditional feth-based model. The second is using our simplified wrapper construction with keywords for clarity, and the bottom the actual pseudo-code for the functionality.}
+\label{fig:fatomic}
 \end{figure}
 
-\todo{I absolutely hate having introduced the above {\em first} now}
+%A more closely related attempt to propose a new, modular approach to communication models comes from Katz et al.~\cite{katzuc}.
+%In their work they propose a new formulation of synchronous communication 
+%
+%Notes to talk about fclock:
+%\begin{itemize}
+%\item \todo{haven't relaly introduced synchronous communication in this paper, is it worth addressing the last bullet point in these notes?}
+%\item out modular approach to writing protocols in sync/async versus there's is completely different for katz model
+%\item kaz real world requies a clock and bounded delay channels whereas there's one wrapper for both the real and ideal worlds
+%\item guaranteed termination: less constrained environment not having to activate parties every round, parties can simply schedule activation of themselves with the synchronous wrapper every round
+%\end{itemize}
+
+%\begin{figure}
+%\input{figures/f_clock}
+%\caption{The clock functionality by Katz et al.~\cite{katzclock}. The functionality waits for a message from all honest parties before moving to the next round.}
+%\label{fig:katzclock}
+%\end{figure}
 
 \subsection{Asynchronous Wrapper}
-In Figure~\ref{fig:asyncwrapper:short}, the async wrapper, \Wasync, accepts code blocks in the form of a \msf{schedule} message, or, alternatively, when code uses the \textsc{Evetually} keyword.
-A \msf{schedule} message is accompanied by an identifier that the wrapper will send back to the caller when it's time to execute the codeblock.
-The identifier is sent back to the calling party when the code is ready to be executed. 
-In our running atomic broadcast example, \Wasync sends a \textsc{Broadcast} back to the caller along with the message to be broadcast.
+In Figure~\ref{fig:asyncwrapper:short}, the async wrapper, \Wasync, accepts two messages from parties and functionalities: leaked messages and code blocks in the form of a \msf{schedule} message (alternatively, when code uses the \textsc{Evetually} keyword).
+The \msf{schedule} message is nothing more than information that the caller wants to the be activated with in the future by \Wasync.
+Generally, it's an identifier for what code to execute (an ideal functionalit may have several codeblocks it schedules) and some parameters to execute it with.
+In our running atomic broadcast example, there are two codeblocks to be scheduled.
+The first is a \textsc{Broadcast} codeblock which triggers an update to the functionality's internal state after input from a party and then schedules the updated state to be sent to all of the parties at some point in the future.
+Therefore, the functionality schedules codeblocks with \Wasync~using identifiers to differentiate the two different codeblocks.
 
-Once scheduled, the codeblock is added to the \msf{runqueue} until it is executed by the wrapper (we will elaborate on the conditions for execution later).
-When it's time to execute (triggered either by the adversary or the environment), \Wasync writes an \Exec message back to $\F_{\msf{atomic}}$ instructing it to execute the \textsc{Broadcast} which then schedules sending the message to the different parties. 
+We concurrently present the Nomos interprestation of \Wasync to make our later presentation of a protocol realization example in Nomos more clear.
+Illustrated below we see the Nomos message type defining \msf{schedule} messages sent to the wrapper in Nomos.
+\begin{align*}
+\mi{stype} \; \m{p2w} = \m{Schedule} \text{ of } \m{sid} \text{ \^{} } \m{pid} \text{ \^{} } \m{int} \text{ \^{} } \m{list[ARGS]} \\
+| \; \m{Leak} \text{ of } \m{list[ARGS]}  \\
+\mi{stype} \; \m{f2w} = \m{Schedule} \text{ of } \m{int} \text{ \^{} } \m{list[ARGS]} \\ 
+| \; \m{Leak} \text{ of } \m{list[ARGS]}
+\end{align*}
+The \msf{schedule} messages from prtocol parties are slightly different from those of the funtionality, because they need to include a party identifier whereas there is only \textit{one} ideal functionality in the execution.
+
+On receipt of a \texttt{Schedule(f, args)} message, the codeblock is added to the \msf{runqueue} until it is executed by the wrapper (we will elaborate on the conditions for execution later). 
+Figure~\ref{fig:wrapper:schedule} illustrates the steps taken when an ideal functionality schedules a new code block.
+It is important to note that at the end of the activation, the wrapper gives control back to the caller wit an \texttt{Ok} message.
+In fact, an important consequene of our wrapper construction is the requirment of functionalities and protocol parties to give control back to the caller when scheduling a codeblocks.
+
+For functionalities, like $\F_\msf{atomic}$ in Figure~\ref{fig:fatomic:new}, after they schedule the code blocks in their current activation, they return contorl back to the party that called them.
+Similarly, this requirement forces real world protocol parties to also output an \texttt{Ok} message when at the end of an activation by \Environment (or $\mathcal{A}$ if corrupt).
+
+The reason behind this design requirement comes down to removing any requirement for adversaries to receive \textit{enough} activation by the environment.
+In the case of simulators, when it needs to give input to a corrupt party it needs to receive activation back from that party so that it can proceed and execute codeblocks required to maintain indistinguishability with the real world.\footnote{This becomes more apparent in Section~\ref{sec:rbc} when the simulator needs to react to honest party output in the real world by triggering a corrupt dealer to give input to the ideal functionality which schedules code that sends output to the corresponding ideal world party at the same time.}
+
+When it's time to execute (triggered either by the adversary or the environment), \Wasync~writes an \Exec message back to $\F_{\msf{atomic}}$ instructing it to execute the \textsc{Broadcast} which then schedules sending the message to the different parties. 
+
+\begin{figure}[!ht]
+\input{figures/wrapper_schedule}
+\caption{Wrapper code that accepts a code idenfitifier, here \texttt{f} and some \texttt{args} to be sent back to the calling functionality. The codeblock increments the delay in the wrapper, adds the information to the current queue of codeblocks, \texttt{\$todo}, and finally adds some leak information to tell the adversary a new codeblock has been added to the wrapper. Finally, the wrapper returns control back to the caller with an \texttt{Ok} message.}
+\label{fig:wrapper:schedule}
+\end{figure}
 
 The \Exec interface that $\F_{\msf{atomic}}$ accepts is not illustrated in Figure~\ref{fig:atomic_real}, however it is an interface that all ITIs that wish to schedule codeblocks must implement.
-It is the only message that a scheduling ITI expects to receive from \Wasync and is a relatively lightweight addition. 
+The interface accepts a \texttt{Exec} message of the type specified in Figure~\ref{fig:nomos:frbcexec} with an identifier in the form of an integer rather than a ``name'' as in the pseudo-code examples of $\F_{\msf{atomic}}$.
+
+\subsection{Import}
+Before describing the details of \Wasync's construction, we first give a small primer on the import mechanism and how it is used in \Wasync.
+The import mechanism was introduced by Canetti et al.~\ref{uc} as an alternatie formulation for polynomial time in ITMs.
+The problem that import is meant to solve is an infinite machines problem where, despite being locallt polynomially bound by the size of its input, an ITM can spawn additional ITMs which, in turn, spawn more ITMs.
+Through this mechanism even though ITMs are locally polynomially bound, the system of ITMs can consists of a potentially unbounded number of ITMs. 
+This breaks the polynomial runtime guarantee of the system of ITMs. 
+Refer to the original UC work~\ref{uc} for a more in depth explanation of the motivating problem.
+
+At a high-level the import mechanism seeds the UC experiment with a polynomial amount of \textit{import}.
+The environment, the first ITM in the execution is spawned with all of the import and, in the process of spawning other ITMs, can send them some of its import balance with messages.
+A good interpretation of import is to treat them like tokens or coins that are passed around between ITMs.
+The polynomial bound for ITMs is defined as follows: an ITM $M$ is said to be $T$-bounded by a polynomial $T$ if it takes at most $T(n)$ computation steps where $n$ is the difference between the amount of import $M$ received and sent to other machines.
+
+The wrapper requires import be sent with some of the calls that other ITMs make. 
+For exampe, in Figure~\ref{fig:asyncwrapper:short}, the adversary must spend import tokens in order to add to the internal delay and execute a code block.
+The environment must alternatively spend $1 \token$ to try to \Advance the wrapper.
 
 \subsection{Executing Codeblocks}
 Codeblocks can be executed in two ways in both the synchronous and asynchronous wrappers: by the adversary and by the environment \footnote{Recall that the environment can force the wrappers to make progress by sending {\em enough} \Advance messages to it.}.
-The adversary, of course, has control over the delay before a code block execute but is limited by the available import which prevents it from halting protocol progress.
+The adversary, of course, has control over the delay before a code block executes but is limited by the available import which prevents it from halting protocol progress.
 To this effect the adversary can also execute a code block at a certain index at any point in execution through the \Exec interface.
 
 The environment can can also execute code blocks by exhausting the import available to the adversary and forcing progress to be made in \Wasync.
@@ -86,7 +171,7 @@ In our construction leaking information to the adversary is also performed throu
 The \Leak keyword just writes the leaked message to the wrapper which buffers it until the adversary requests it.
 We motivate this method of leaking for the same reason that we don't want to cede activation to the adversary during a leak operation and either wait indefinitely for the adversary or require continuous activation by the environmnt to complete all required computation.
 
-\subsection{Import}
+\subsection{Balanced Environments}
 In the previous subsection we state that the environment can force progress to be made in the wrapper by exhausting the amount of import that the adversary can use to delay.
 However, from our previous discussion regarding \textit{balanced environments} in Definition~\ref{def:balancedenvironments} we arrive at a problem: \textit{for every unit of import that \Environment sends to an ITI, it must also send to \Adversary}.
 This would suggest that the adversary will \textit{always} have enough import to prevent the environment from advancing the wrapper, and, therefore \Adversary can delay codeblocks indefinitely.
@@ -99,8 +184,11 @@ Therefore, we relax the balanced environments constraint specifically for calls 
 The reaso behind this is that we require the adversary not be able to indefinitely delay codeblock execution and it does not limit the simulatability of protocols.
 We propose that any pair of protocols that were UC-emulatable under the balanced environments definition remain UC-emulatable under our weakening.
 
-\subsection{An Atomic Broadcast Protocol with the Wrapper}
-In this section we provide a construction of a broadcast protocol 
+\input{sections/enoughimport}
+
+%\subsection{An Atomic Broadcast Protocol with the Wrapper}
+%In this section we provide a construction of a simple broadcast protocol with our wrapper and demonstrate a UC-emulation proof at a high level (the full proof is left to the appendix).
+
 
 
 %\todo{below this line is no longer up to date}
@@ -169,3 +257,4 @@ In this section we provide a construction of a broadcast protocol
 \caption{The wrapper mechanism for scheduling codeblocks and executing them.}
 \label{fig:asyncwrapper:short}
 \end{figure}
+

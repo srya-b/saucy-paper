@@ -1,0 +1,212 @@
+In this section we demonstrate what protocol and ideal functionality design looks like with our new wrapper construction for asynchronous communication.
+We omit parts of the code that are generic to all ITM code as mentioned in the previous section such as the code to react to \Exec messages from the wrapper.
+
+We also describe a generic simulator that works for all full-information protocols like reliable broadcast where all information is leaked to the adversary.
+In this scenario, a full simulation of the real world reveals nothing about the protocol being proven secure. 
+Therefore, we provide a rationale to argue that if a simulator exists for the given protocol and ideal functionality, then our generic simulator is one.
+
+\subsection{The Ideal World Functionality \Frbc}
+In this section we use a reliable broadcast as the running example for both the real and ideal worlds.
+The reliable broadcast ideal functionality, \Frbc, can be seen in pseudo-code in Figure~\ref{fig:frbc}.
+\Frbc~is quite simple.
+It waits for an input value $m$ from a designated dealer. 
+Upon receipt of $v$ from the dealer, it schedules several codeblocks to \Eventually output this value to the other participants indicating they have committed to $m$.
+
+The pseudo-code in Figure~\ref{fig:frbc} also details an amount of import tokens to be given by the dealer with the input to \Frbc.
+For the high-level description, the amount of import is dynamically determined based on the number of participants in the protocol.
+In Nomos, however, the ideal functionality must be designed for a particulat number of participants.
+Therefore, for the remainder of this section for the Nomos examples we fix $n=4$.
+
+\begin{figure}
+\input{figures/frbc}
+\caption{A reliable broadcast functionality for $n$ participants parameterized by a dealer \texttt{pid} and a set of parties. It accepts input from the dealer and a required import token balance of $n(4n + 1)$ tokens.}
+\label{fig:frbc}
+\end{figure}
+
+The Nomos equivalent of \Frbc~can be seen in Figure~\ref{fig:nomos:frbc}.
+The ideal functionality attempts to read from the communicator for new messages from the dealer (w.l.o.g the dealer is fixed to be \texttt{pid = 1}).
+Upon receiving the \texttt{Commit} message from the dealer, the functionality sends a \texttt{Schedule} message to the wrapper with an identifier for the code that sends a message to a protocol party: in Nomos, programs identify code blocks with an integer. 
+In the case of \Frbc, the the only code it executes with adversarial delay is sending a message to a protocol party, hence it also passes the arguments to the ``send'' operation to the wrapper: the receiver and the message \texttt{m}.
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\small\ttfamily, frame=single]
+type p2f = Commit of pid ^ int ;
+type f2p = Commit of pid ^ int | Ok ;
+type f2w = Schedule of int ^ list[ARGS] 
+             | Leak of list[ARGS] ;
+type w2f = Exec of int ^ list[ARGS] | Ok ;
+...
+$pf <- acquire #p_to_f ;
+$pf.RECV ;
+case $pf (
+  yes => msg = recv $pf ;
+    case msg (
+      Commit(pid, int) => 
+        if pid == 1 then
+          $fw <- acquire #f_to_w ;
+    	  for p in parties
+    	    $fw.SEND ;
+    	    send $fw Schedule(1, [p v]) ;
+    	    $wf <- acquire #w_to_f ;
+    	    case $wf (
+    	    	yes => msg = recv $wf ;
+    	  	      case msg (
+    	  	        Ok =>
+    	  	      )
+    	    )
+    	    #w_to_f <- release $wf ;
+    	  #f_to_w <- release $fw ;
+    	end
+    	$fp <- acquire #f_to_pw ;
+    	$fp.SEND ;
+    	send $fp Ok ;
+    	...
+    )
+| no =>
+)
+\end{lstlisting}
+\caption{\Frbc~definition in Nomos accepts an input from the dealer (pid=1) and \Eventually sends the input to all of the parties. The send operation is scheduled with the wrapper.}
+\label{fig:nomos:frbc}
+\end{figure}
+
+Recall from the discussion in the previous section regarding the wrapper design, that the wrapper always passes control back to the caller with an \texttt{Ok} message.
+It can be seen in the message type passed from the wrapper to the functionality, \texttt{type w2f}, in Figure~\ref{fig:nomos:frbc}.
+Therefore, the functionality must wait to receive activation back from the wrapper for each scheduled codeblock.
+Finally, we require that functionalities also pass control back to the party that called them with an \texttt{Ok} message.\footnote{Recall that the reason behind this is to ensure that simulators are able to receive enough activations to perform all required simulating.}
+
+Finally when the wrapper executes one of the scheduled code blocks, it writes an \texttt{Exec} message with the code identifier and the arguments specified by the message \texttt{type w2f} in Figure~\ref{fig:nomos:frbc}.
+In Figure~\ref{fig:nomos:frbcexec}, \Frbc~accepts \Exec message and sends the message \texttt{m} to the receiver \texttt{p}.
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\small\ttfamily, frame=single]
+type w2f = Exec of int ^ list[ARGS] | Ok ; 
+
+case msg (
+  Exec(f, args) =>
+    if f == 1 =>
+	then
+	  p = args[0] ;
+	  v = args[1] ;
+	  $fp <- acquire #f_to_pw ;
+	  $fp.SEND ;
+	  send $fp Commit(p,v) ;
+	  #f_to_pw <- release $fp ;
+	end
+)
+\end{lstlisting}
+\caption{The functionality, like any other process that schedules codeblocks with the wrapper, presents an interface to be activate by the wrapper with an \texttt{Exec} message. We elide the case statement surrounding \texttt{case msg} that attempts to read from the communicator. This code can be seen in Figure~\ref{fig:nomos:frbc}.}
+\label{fig:nomos:frbcexec}
+\end{figure}
+
+\subsection{Reliable Broadcast in the Real World}
+We realize \Frbc~in the real world by adapting an existing broadcast protocol, the Bracha broadcast protocol~\cite{bracha}, to our UC model. 
+The pseudo-code of the bracha broadcast is described in Figure~\ref{fig:protbracha} along with the import tokens sent between each of the parties.
+Notice that the dealer requires the same amount of import in the real world as \Frbc~does in the ideal world.
+Additionally, even the real world protocol must adhere to the convention established in Section~\ref{sec:wrappers} of returning control to the caller when the dealer is given input.
+In the ideal world, the functionality returns control to an honest dealer which outputs an \texttt{Ok} message back to the environment. 
+Therefore, the real world parties must do the same with an \texttt{Ok} message.
+
+\begin{figure}
+\input{figures/prot_bracha}
+\caption{Some caption}
+\label{fig:protbracha}
+\end{figure}
+
+The only interaction that the real world has with the wrapper is through the asynchronous communication channel that allows the parties to communicate.
+The asynchronous channel is quite simple. 
+In many ways it mimics the interaction of \Frbc~with the wrapper in the ideal world where it schedules message sends to different participants in the protocol.
+Figure~\ref{fig:nomos:fchan} demonstrates the $\F_{\msf{chan}}$ functionality that ensures the sender and receiver are in the set of predefined parties, but besides that schedules message sends on request.
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\small\ttfamily, frame=single]
+case msg (
+  Send(from, to, msg) =>
+    if isin from $parties && isin to $parties
+	then
+	  $fw <- acquire #fh_to_w ;
+	  $fw.SEND ;
+	  send $fw Schedule(1, [to, from, msg])
+	  ...
+	  $pw <- acquire #fh_to_pw ;
+	  $pw.SEND ;
+	  send $pw Ok ;
+      ...
+)
+\end{lstlisting}
+\caption{Nomos code for the hyrid $\F_{\msf{chan}}$ functionality that sends messages asynchronously beween any two parties in the protocol.}
+\label{fig:nomos:fchan}
+\end{figure}
+
+The Bracha protocol adapted to UC is quite straightforward and follows the pseudo-code algorithm in Figure~\ref{fig:protbracha}, closely.
+The protocol awaits input from the dealer and waits for a sufficient number of other parties to echo the same input value it received from the dealer.
+Finally, it waits for enough other parties to have confirmed the same input value in the form of \texttt{READY} messages. 
+Figure~\ref{fig:nomos:ready} shows some reference code for a party waiting to receive a threshold of \texttt{READY} messages from other parties before outputting a commit message to \Environment indiciating the protocol is over an it has committed to a value.
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\small\ttfamily, frame=single]
+case msg (
+  Send(from, to, msg) =>
+    case msg (
+      Ready(x) =>
+        if x == input
+        then
+          numready = numready + 1 ;
+          if numready == 2*(n/3) + 1
+          then
+            $pz <- acquire #p_to_z ;
+            $pz.SEND ;
+            send Commit(x) $pz ;
+            #p_to_z <- release $pz ;
+          else
+            (* recurse and wait for messages *)
+        else
+          (* recurse and wait for messages *)
+    )
+)
+\end{lstlisting}
+\caption{After receiving $\frac{\ceil{ n + \frac{n}{3}}}{2}$ \texttt{ECHO} messages for a particular \texttt{input} a party waits to receive $2 \frac{n}{3} + 1$ \texttt{READY} messages for the same input before committing to the input and outputing the value to the environment.}
+\label{fig:nomos:ready}
+\end{figure}
+
+
+\subsection{$\Pi_{\msf{bracha}}$ EUC-realizes \Frbc~in the $\F_{\msf{chan}}$-hybrid world.}
+The protocol in question, and the corresponding ideal functionality, is a full-information protocol that leaks everything to the adversary.
+In this scenario we argue that a generic simulator which runs a full simulation of the real world \textit{always} a sufficient simulator for the dummy adversary.
+
+Given that the protocol is full-information, the simulator definition dosn't reveal much about the underlying protocol or proving it's indistinguishability as the simulator doesn't need to do any complicated work.
+Therefore, it is sufficient to show that the simulator is always able to ensure ideal world parties output messages at the same time as the analogous message in the real world.
+This requires ensuring:
+\begin{enumerate}
+\item \label{req1} The simulator can always delay ideal world messages at least as long as their analagous real world messages and
+\item \label{req2} the simulator is always activated when a real world party outputs a message to \Environment (or \Adversary if it's corrupt).
+\end{enumerate}
+
+Requirement \ref{req1} is satisfied by Lemma~\ref{lem:enoughimport} which argues that any simulator in the weakened balanced environments constraint will always have enough import tokens to delay at least as much as the real world.
+
+Requirement \ref{req2} is satisfied for the following reason.
+In our design the only outputs we care about simulating are those that result from codeblocks executing.
+The wrapper is only activated through two mechanisms, either a \texttt{poll} message from \Environment or an \texttt{Exec} request from the adversary.
+The case for \texttt{Exec} is trivial as it's a message sent by the simulator.
+The case for \texttt{Poll} message relies on the Lemma~\ref{lem:enoughimport}.
+The lemma guarantees that the simulator will always be activated by \Wasync~in the ideal world when a codeblock is executed in the real world (and, hence, in the simulation).
+Given that in both of the possible scenarios that a real world party could output a message, the simulator is guaranteed to always be activated, we conclude that the siulator can always react and ensure the ideal world parties output the correct message at the correct time.
+
+%in such a full information protocol as the Bracha broadcast and \Frbc, we find that a generic simulator that runs a full simulation is sufficient in this case and, in fact, for all protocols that leak all information to the adversary.
+%Therefore, for a generic simulator we must argue only that it is able to force output in the ideal world at the same time as the real world.
+%More precisely we argue
+%\begin{lemma}
+%A generic simulator for full information protocols is \textit{always} activated when the real world outputs a value. Therefore, it is always able to ensure indistinguishable output.
+%\end{lemma}
+%
+%All outputs that parties give to the environment in our wrapper world happen with the execution of a codeblock.
+%For example, in \Frbc~output of a committed value happens with adversarial delay determining when each party commits to a value.
+%Therefore, this implies that the only mechanisms by which a party outputs anything is through the \texttt{Exec} and \texttt{Poll} interfaces of \Wasync.
+%It's obvious that when the simulator is told to execute a code block by \Environment through the \texttt{Exec} interface it is activated and can react to any real world output.
+%In the case of \texttt{Poll}, the simulator is only activated when the internal \texttt{delay} in the ideal world \Wasync is non-zero.
+%As we prove in Lemma~\ref{lem:enoughimport} the simulator always possesses enough import to delay codeblocks in the ideal world at least as long as the real world.
+%We never have the case where the environment can force a codeblock in the ideal world and it's analogous code block in the real world to execute at the same time by exhausting the import available to the simulator.
+%Therefore, whenever a code block in the real world executes due to a \texttt{poll} operation that outputs some value to the environment or adversary (for corrupt parties), the simulator is always guaranteed to be activated by the \texttt{poll} message in the ideal world allowing it to react to the output and force the same output to occurr in the ideal world.
+%By examining the only mechanisms by which code blocks execute in through the wrapper, and, therefore, the only mechanisms by which parties output some message, we demonstrate that the simulator always has sufficient activation to react to the such outputs in the real world and ensure indistinguishability in the ideal world.
+%
+%
+%If there exists a simulator, then the generic simulator is such a simulator $\leftarrow$ can just be a conjecture. Just explaining the simulator doesn't say anything about the protocol we need to say something else in the analysis about the simulator being sufficient.

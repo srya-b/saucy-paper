@@ -17,3 +17,6 @@ Such a restrictive definition in clearly unnatural. Therefore, the UC framework 
 \begin{definition} \label{def:balancedenvironments}
 An environment is \msf{balanced} if, at a certain point of execution, it provided import $n_1,...,n_k$ to $k$ ITIs overall, then the overall import of the inputs to the adversary is at least $n_1 + ... + n_k$.
 \end{definition}
+ 
+The Nomos language has a built in notion of potential (not to be confused with potential as the basic unit of computation from Section~\ref{sec:realizeimport}) which can be exchanged over channels and passed around between the different processes in the UC execution.
+The potential is part of the type of a channel as follows: 

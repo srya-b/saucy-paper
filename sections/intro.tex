@@ -2,6 +2,18 @@ The Universal Composability Framework~\cite{uc} is the popular and widely-used f
 Its novel contrbution compared to other frameworks is that it provides a very strong notion of securiy: a UC-secure protocol is proved to be secure even when composed with arbitrary other protocols running concurrently.
 This constrasts with other, property-based notions of security~\todo{need to get some citations here}.
 
+One drawback of the framework, however, is that it can often be cumbersome to understand existing proofs and even more difficult to verify and build of top of them.
+In this paper we provide a two-fold contribution to address this issue.
+First, we introduce a concrete implementation of the UC framework in the Nomos language that uses session types. 
+An implementation bridges the gap between software and on-paper security proofs, and it provides a platform for actually verifying UC models and their indistinguishability. 
+Second, we improve on the current state-of-the-art for modelling asynchronous and synchronous communication with new ideal functionalities that greatly simplify protocol and ideal functionality code through an abstraction that allows for delayed execution of entire blocks of code.
+As we demostrate later, protocols written 
+
+
+
+We further attempt to simplify protocol definitions in the UC framework by introducing a new construction for modelling asynchronous and synchronous communication.
+Our new ideal functionalities greatly simplifies the 
+
 In this work we present a programmatic approach to the UC framework that takes advantage of the modularity the framework provides. 
 Analyzing large and complex protocols is a difficult task made easier by UC's ideal functionality abstraction. 
 However, despite this additional modularity, UC proofs and models still tend to be very complex, unweildy, and difficult to understand.
