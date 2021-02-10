@@ -36,30 +36,25 @@ type f2w = Schedule of int ^ list[ARGS]
              | Leak of list[ARGS] ;
 type w2f = Exec of int ^ list[ARGS] | Ok ;
 ...
-$pf <- acquire #p_to_f ;
-$pf.RECV ;
-case $pf (
+$p_to_f.RECV ;
+case $p_to_f (
   yes => msg = recv $pf ;
     case msg (
       Commit(pid, int) => 
         if pid == 1 then
-          $fw <- acquire #f_to_w ;
     	  for p in parties
-    	    $fw.SEND ;
-    	    send $fw Schedule(1, [p v]) ;
-    	    $wf <- acquire #w_to_f ;
-    	    case $wf (
+    	    $f_to_wrapper.SEND ;
+    	    send $f_to_wrapper Schedule(1, [p v]) ;
+    	    $wrapper_to_f <- acquire #w_to_f ;
+    	    case $wrapper_to_f (
     	    	yes => msg = recv $wf ;
     	  	      case msg (
     	  	        Ok =>
     	  	      )
     	    )
-    	    #w_to_f <- release $wf ;
-    	  #f_to_w <- release $fw ;
     	end
-    	$fp <- acquire #f_to_pw ;
-    	$fp.SEND ;
-    	send $fp Ok ;
+    	$f_to_p.SEND ;
+    	send $f_to_p Ok ;
     	...
     )
 | no =>
@@ -87,10 +82,8 @@ case msg (
 	then
 	  p = args[0] ;
 	  v = args[1] ;
-	  $fp <- acquire #f_to_pw ;
-	  $fp.SEND ;
-	  send $fp Commit(p,v) ;
-	  #f_to_pw <- release $fp ;
+	  $f_to_p.SEND ;
+	  send $f_to_p Commit(p,v) ;
 	end
 )
 \end{lstlisting}
@@ -123,13 +116,11 @@ case msg (
   Send(from, to, msg) =>
     if isin from $parties && isin to $parties
 	then
-	  $fw <- acquire #fh_to_w ;
-	  $fw.SEND ;
-	  send $fw Schedule(1, [to, from, msg])
+	  $f_to_wrapper.SEND ;
+	  send $f_to_wrapper Schedule(1, [to, from, msg])
 	  ...
-	  $pw <- acquire #fh_to_pw ;
-	  $pw.SEND ;
-	  send $pw Ok ;
+	  $p_to_wrapperw.SEND ;
+	  send $p_to_wrapper Ok ;
       ...
 )
 \end{lstlisting}
@@ -153,10 +144,8 @@ case msg (
           numready = numready + 1 ;
           if numready == 2*(n/3) + 1
           then
-            $pz <- acquire #p_to_z ;
-            $pz.SEND ;
-            send Commit(x) $pz ;
-            #p_to_z <- release $pz ;
+            $p_to_z.SEND ;
+            send Commit(x) $p_to_z ;
           else
             (* recurse and wait for messages *)
         else
