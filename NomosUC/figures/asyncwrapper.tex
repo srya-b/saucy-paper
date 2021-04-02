@@ -35,19 +35,20 @@ Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{
 
 \OnInput \inmsg{\textsc{Delay}}{$d$} \color{red} $d \token$ \color{black} from \Adversary:
 	\begin{enumerate}
-		\item If $\msf{rounds} > 0:$
 
-			\quad $\msf{delay} = \msf{delay} + \msf{rounds}$
+			\item $\msf{delay} = \msf{delay} + d$
+
 	\end{enumerate}
 
-%\OnInput \inmsg{\textsc{Leak}}{\msf{msg}} from \F:
-%	\begin{enumerate}
-%		\item Append (\F, \msf{msg}) to \msf{leak\_buffer}
-%	\end{enumerate}
-%
-%\OnInput \inmsg{\textsc{Get-Leaks}} from \Adversary:
-%	\begin{enumerate}
-%		\item \msf{leaks} $\leftarrow$ pop all from \msf{leak\_buffer}
-%		\item \Send \msf{leaks} to \Adversary
-%	\end{enumerate}
+\OnInput \inmsg{\textsc{Leak}}{\msf{msg}} \color{red} $1 \token$ \color{black} from \F:
+	\begin{enumerate}
+		\item Append (\F, \msf{msg}) to \msf{leak\_buffer}
+		\item \Send $\msf{OK} \rightarrow \mathcal{F}/P_i$ 
+	\end{enumerate}
+
+\OnInput \inmsg{\textsc{Get-Leaks}} from \Adversary:
+	\begin{enumerate}
+		\item \msf{leaks} $\leftarrow$ pop all from \msf{leak\_buffer}
+		\item \Send \msf{leaks} to \Adversary
+	\end{enumerate}
 \end{bbox}

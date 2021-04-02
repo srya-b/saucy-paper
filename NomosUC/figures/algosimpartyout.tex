@@ -1,0 +1,42 @@
+
+\begin{bbox}[title={Algorithm $\msf{SimPartyOutput}(m, P_i')$}]
+
+	\begin{renumerate}
+		\item If $P_i'$ simulates a dishonest $P_i$:
+		\begin{renumerate}	
+
+			\item Send $(m, P_i) \rightarrow \mathcal{Z}$
+		\end{renumerate}
+
+		\item Else, if no dealer input to $\mathcal{F}_\msf{RBC}$:
+		\begin{renumerate}
+
+			\item \Assert $\mathcal{D}$ is dishonest
+
+			\item $\msf{OK} \leftarrow \{ \Send (\textsc{input}, m) \rightarrow \mathcal{D} \}$
+
+			\item $\msf{leaks} \leftarrow \{ \Send (\textsc{getleaks}) \rightarrow \mathcal{W}_\msf{sync}\}$
+		
+			\item {\bf For} $\msf{leak} \in \msf{leaks}$, {\bf Match} $\msf{leak}$:
+						\begin{renumerate}
+							\item {\bf Case} (\textsc{schedule}, $P_i$, \msf{rnd}, \msf{idx}) from $\F_\msf{RBC}$:
+
+								\quad $\msf{pid\_to\_idx}[P_i] = \msf{(rnd, idx)}$
+
+								\quad $\msf{ideal\_delay} \pluseq 1$
+
+							\item {\bf Case} \msf{msg} from $\F$:
+					
+								\quad Simulate $\F'$ leaking \msf{msg}
+
+						\end{renumerate}
+		\end{renumerate}
+		\item $\msf{rnd}, \msf{idx} \leftarrow \text{pop } \msf{pid\_to\_idx}[P_i]$
+
+		\item Update $\msf{pid\_to\_idx}$ indices like $\mathcal{W}_\msf{sync}$
+
+		\item $\Send (\msf{exec}, \msf{rnd}, \msf{idx}) \rightarrow \mathcal{W}_\msf{sync}$
+		
+	\end{renumerate}
+
+\end{bbox}
