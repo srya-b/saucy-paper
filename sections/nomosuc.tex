@@ -93,391 +93,335 @@ $\mb{open}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
 Finally, the process waits for channels $S$ and $R$ to close (line 8),
 followed by ultimately closing the channel $F$ (line 9).
 
-\subsection{Formal Description of Session Types}
-
-Session types are a type discipline for communication-centric programming
-based on message passing via channels. Session-typed channels describe and
-enforce the protocol of communication among processes. The base system of
-session types is derived from a Curry-Howard interpretation of intuitionistic
-linear logic~\cite{CairesCONCUR2010}. This chapter focuses on the linear
-fragment of SILL~\cite{PfenningFOSSACS2015} that internalizes session-based
-concurrency.
-Session types were introduced by Honda~\cite{HondaCONCUR1993}.
 
 \begin{figure*}[!ht]
-\input{figures/commitment}
-\caption{The $\mathcal{F}_{\msf{comm}}$ commitment ideal functionality in Nomos. The types for the sender and receiver channel define what inputs they can give to the functionality and what messsages are sent from the functionality back to the receiver.}
-\label{fig:nomos:commitment}
-\end{figure*}
+  \input{figures/commitment}
+  \caption{The $\mathcal{F}_{\msf{comm}}$
+  commitment ideal functionality in Nomos.
+  The types for the sender and receiver channel define what inputs they
+  can give to the functionality and what messsages are sent from the
+  functionality back to the receiver.}
+  \label{fig:nomos:commitment}
+  \end{figure*}
 
+\subsection{Formal Description of Nomos}
+Nomos internally relies on session types to express and enforce protocols
+of interaction between different parties.
+Session types are a type discipline for communication-centric programming
+based on message passing via channels.
+The underlying base system of session types is derived from a Curry-Howard
+interpretation~\cite{Caires10concur,Caires16mscs} of intuitionistic linear logic
+\cite{Girard87tapsoft}. The key idea is that an intuitionistic linear sequent
+$A_1, A_2, \ldots, A_n \vdash A$
+is interpreted as the interface to a process expression $P$. We label each of the
+antecedents with a channel name $x_i$ and the succedent with channel name $z$.
+The $x_i$'s are \emph{channels used by} $P$ and $z$ is the \emph{channel provided by} $P$.
+\begin{center}
+  \begin{minipage}{0cm}
+  \begin{tabbing}
+  $x_1 : A_1, x_2 : A_2, \ldots, x_n : A_n \vdash P :: (z : C)$
+  \end{tabbing}
+  \end{minipage}
+\end{center}
+The resulting judgment formally states that process $P$ provides a service of
+session type $C$ along channel $z$, while using the services of session types $A_1,
+\ldots,A_n$ provided along channels $x_1, \ldots, x_n$ respectively.
+We abbreviate the antecedent of the sequent by $\Delta$.
 
-Linear logic~\cite{GirardTCS1987} is a substructural logic that enjoys
-\emph{exchange} as its only structural property, i.e., it does not exhibit
-\emph{weakening} or \emph{contraction}. As a result, purely linear
-propositions can be viewed as resources that must be used \emph{exactly
-once} in a proof. Here, I adopt the intuitionistic version of linear logic,
-yielding the following sequent
+The standard connectives of intuitionistic linear logic give rise
+to the type constructors in session types.
+In this work, we restrict ourselves 
+In addition to the type constructors arising
+from the connectives of intuitionistic linear logic, we have type names,
+indexed by a
+sequence of arithmetic expressions $V \indv{e}$, existential and
+universal quantification over natural numbers ($\texists{n} A$,
+$\tforall{n} A$) and existential and universal constraints
+($\tassert{\phi} A$, $\tassume{\phi} A$).  We write $i$ for constant
+and $n$ for variable natural numbers.
 \[
-A_1, \ldots, A_n \vdash C
+  \begin{array}{lrcl}
+    \mbox{Types} & A, B & ::= & \ichoice{\ell : A_\ell}_{\ell \in L}
+    \mid \echoice{\ell : A_\ell}_{\ell \in L} \\
+                 & & \mid & A \tensor B \mid A \lolli B \mid \one \mid V \indv{e} \\
+                 & & \mid & \tassert{\phi} A \mid \tassume{\phi} A
+                            \mid \texists{n} A \mid \tforall{n} A \\[0.5em]
+    \mbox{Arith. Exps.} & e & ::= & i \mid e + e \mid e - e \mid i \times e \mid n \\[0.5em]
+    \mbox{Arith. Props.} &
+    \phi & ::= & e = e \mid e > e \mid \top \mid \bot
+                 \mid \phi \land \phi \\
+    & & \mid &  \phi \lor \phi \mid \lnot \phi \mid \texists{n}\phi \mid \tforall{n} \phi \\[0.5em]
+    \mbox{Procs} & P, Q & ::= & \esendl{x}{k} \semi P \mid \ecase{x}{l}{P}_{l \in L} \\
+                & & \mid & \esendch{x}{y} \semi P \mid \erecvch{x}{y} \semi P \\
+                & & \mid & \eclose{x} \mid \ewait{x} \semi P \\
+                & & \mid & \fwd{x}{y} \mid \ecut{x}{f}{y}{P} \\
+                & & \mid & \eassert{x}{\phi} \semi P \mid \eassume{x}{\phi} {\semi} P
+  \end{array}
 \]
-where $A_1, \ldots, A_n$ are linear antecedents, while $C$ is the linear
-succedent.
+Our implementation does not support type polymorphism but it is convenient in
+some of the examples.  We therefore allow definitions such as
+$\queue{A}[n] = \ldots$ and interpret them as a family of definitions,
+one for each possible type $A$.
 
-Under the Curry-Howard isomorphism for intuitionistic linear logic,
-propositions are related to session types, proofs to processes and cut
-reduction in proofs to communication. Appealing to this correspondence,
-a process term $P$ is assigned to the above judgment and each hypothesis
-as well as the conclusion is labeled with a \emph{channel}:
-\[
-x_1 : A_1, \ldots, x_n : A_n \vdash P :: (z : C)
-\]
-The resulting judgment states that process $P$ \emph{provides} a service
-of session type $A$ along channel $z$, \emph{using} the services of session
-types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$
-respectively. The assignment of a channel to the conclusion is convenient
-because, unlike functions, processes do not evaluate to a value but continue
-to communicate along their providing channel once they have been created
-until they terminate. For the judgment to be well-formed, all channel names
-have to be distinct. The antecedents are often abbreviated to $\D$.
+The typing judgment has the form of a sequent
+\begin{center}
+  \begin{minipage}{0cm}
+  \begin{tabbing}
+  $\vars \semi \cons \semi \D \vdash_\Sg P :: (x : A)$
+  \end{tabbing}
+  \end{minipage}
+\end{center}
+where $\vars$ are index variables $n$, $\cons$ are constraints over
+these variables expressed as a single proposition,
+% $\psi$\footnote{\it should we adopt maybe $\psi$ for the constraints?}
+$\D$ are the linear antecedents $x_i : A_i$, $P$ is a process
+expression, and $x : A$ is the linear succedent. We propose and maintain
+that the $x_i$'s and $x$ are all distinct, and that all free index
+variables in $\cons$, $\D$, $P$, and $A$ are contained among $\vars$.
+Finally, $\Sigma$ is a fixed signature containing type and process
+definitions (explained in Section~\ref{subsec:base}) Because it is
+fixed, we elide it from the presentation of the rules.  In addition we
+write $\vars \semi \cons \proves \phi$ for semantic entailment
+(proving $\phi$ assuming $\cons$) in the
+constraint domain where $\vars$ contains all arithmetic variables in
+$\cons$ and $\phi$.
+Table~\ref{tab:language} overviews the session types their associated
+process terms, their continuation (both in types and terms) and operational description.
+% Figure~\ref{fig:basic-typing} describes selected
+% typing rules (ignore the premises and annotation on the turnstile
+% marked in blue, introduced in Section~\ref{subsec:ergo}) leaving the complete
+% set of rules to Appendix~\ref{app:formal}.
 
-The balance between providing and using a session is established by the
-two fundamental rules of the sequent calculus that are independent of all
-logical connectives: \emph{cut} and \emph{identity}. Cut states that if
-$P$ provides service $A$ along channel $x$, then $Q$ can use the service
-along the same channel at the same type. Identity states that a client of
-service $A$ can directly provide $A$.
+We formalize the operational semantics as a system of \emph{multiset rewriting
+rules}~\cite{Cervesato09SEM}. We introduce semantic objects $\proc{c}{P}$
+and $\msg{c}{M}$ which mean that process $P$ or message $M$ provide
+along channel $c$.
+A process configuration is a multiset of such objects, where any two
+channels provided are distinct
+(formally described in Section~\ref{subsec:soundness}).
+
+\subsection{Basic Session Types}\label{subsec:base}
+In this subsection, we review the syntax and semantics for the basic
+session type operators ($\with$, $\oplus$, $\tensor$, $\lolli$ and $\one$).
+A summary of the corresponding process terms and intuitive explanation
+for semantics is provided in Table~\ref{tab:language}.
+
+\paragraph{\textbf{External Choice}}
+The \emph{external choice} type constructor
+$\echoice{\ell : A_{\ell}}_{\ell \in L}$ is an $n$-ary labeled
+generalization of the additive conjunction $A \with B$. Operationally,
+it requires the provider of
+$x : \echoice{\ell : A_{\ell}}_{\ell \in L}$ to branch based on the
+label $k \in L$ it receives from the client and continue to provide
+type $A_{k}$. The corresponding process term is written as
+$\ecase{x}{\ell}{P}_{\ell \in L}$.  Dually, the client must send one
+of the labels $k \in L$ using the process term
+$(\esendl{x}{k} \semi Q)$ where $Q$ is the continuation.
 \begin{mathpar}
-\infer[\m{cut}]
-{\D_1, \D_2 \vdash \ecutna{x}{P_x}{Q_x} :: (z : C)}
-{\D_1 \vdash P_x :: (x : A) \qquad \D_2, x : A \vdash Q_x :: (z : C)}
+\infer[{\with}R]
+{\vars \semi \cons \semi \D \vdash \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
+(x : \echoice{\ell : A_\ell}_{\ell \in L})}
+{(\forall \ell \in L)
+ & \vars \semi \cons \semi \D \vdash P_\ell :: (x : A_\ell)}
 \and
-\infer[\m{id}]
-{y : A \vdash \fwd{x}{y} :: (x : A)}
-{}
+\infer[{\with}L]
+{\vars \semi \cons \semi \D, (x : \echoice{\ell : A_\ell}_{\ell \in L}) \vdash
+(\esendl{x}{k} \semi Q) :: (z : C)}
+{(k \in L) & \vars \semi \cons \semi \D, (x : A_k) \vdash Q :: (z : C)}
 \end{mathpar}
-Operationally, the process $\ecutna{x}{P_x}{Q_x}$ creates a globally fresh
-channel $c$, spawns a new process $[c/x]P_x$ providing along $c$, and
-continues as $[c/x]Q_x$. Conversely, the process $\fwd{c}{d}$
-\emph{forwards} any message $M$ that arrives along $d$ to $c$ and
-vice-versa. Because channels are used linearly, the forwarding process
-can then terminate, making sure to apply proper renaming.
+Communication is asynchronous, so that the client
+$\esendl{c}{k} \semi Q$ sends a message $k$ along $c$ and continues as $Q$
+without waiting for it to be received. As a technical device to ensure that
+consecutive messages on a channel arrive in order, the sender also creates a
+fresh continuation channel $c'$ so that the message $k$ is actually represented
+as $(\esendl{c}{k} \semi \fwd{c}{c'})$ (read: send $k$ along $c$ and continue along
+$c'$). When the message $k$ is received along $c$, we select branch $k$ and
+also substitute the continuation channel $c'$ for $c$.
+Rules ${\with}S$ and ${\with}C$ below describe the operational behavior of the
+provider and client respectively $\fresh{c'}$.
 
-The operational semantics are formalized as a system of \emph{multiset
-rewriting rules}~\cite{Cervesato2009SSOS}. I introduce semantic objects
-$\proc{c}{P}$ and $\msg{c}{M}$ describing process $P$ (or message $M$)
-providing service along channel $c$. Remarkably, in this formulation,
-a message is just a particular form of process, thereby not requiring any
-special rules for typing; it can be typed just as processes. The semantics
-rules for $\m{cut}$ and $\m{id}$ are presented below.
-\[
-\begin{array}{lll}
-(\m{cut}C) & \proc{d}{\ecutna{x}{P_x}{Q_x}} \step \proc{c}{[c/x]P_x},
-\proc{d}{[c/x]Q_x} & \fresh{c} \\[1ex]
-(\m{id}^+C) & \msg{d}{M}, \proc{c}{\fwd{c}{d}} \step
-\msg{c}{[c/d]M} \\
-(\m{id}^-C) & \proc{c}{\fwd{c}{d}}, \msg{e}{M(c)} \step
-\msg{e}{[d/c]M(c)}
-\end{array}
-\]
-Here, I adopt the convention to use $x$, $y$ and $z$ for channel
-\emph{variables} and $c$, $d$ and $e$ for \emph{channels}. Channels are
-created at runtime and substituted for channel variables in process terms.
-In the last rule, $M(c)$ indicates that $c$ must occur in $M$, implying
-it is the sole client of $c$.
+\begin{tabbing}
+$({\with}S) : \m{proc}(d, c.k \semi Q) \;\mapsto\; \m{msg}(c', c.k \semi c' \leftarrow c),
+\m{proc}(d, Q[c'/c])$ \\
+$({\with}C):$ \= $\m{proc}(c, \m{case}\;c\;(\ell \Rightarrow Q_\ell)_{\ell \in L}),$\\
+\> $\m{msg}(c', c.k \semi c' \leftarrow c)
+\;\mapsto\; \m{proc}(c', Q_k[c'/c])$
+\end{tabbing}
 
-The Curry-Howard correspondence gives each linear logic connective an
-interpretation as a session type. This session type prescribes the kind of
-message that must be sent or received along a channel of this type.
-Table~\ref{tab:basic-types} summarizes the description of the type
-along with the provider action. I follow a detailed description of each
-session type operator.
-\begin{table}[t]
-\centering
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{l|l|l}
-\textbf{Type} & \textbf{Provider Action} & \textbf{Session Continuation} \\\hline
-$\ichoice{\ell : A_\ell}_{\ell \in L}$ & send label $k \in L$ & $A_k$ \\
-$\echoice{\ell : A_\ell}_{\ell \in L}$ & receive and branch on label $k \in L$ & $A_k$ \\
-$\one$ & send token $\m{close}$ & \emph{none} \\
-$A \tensor B$ & send channel $c : A$ & $B$ \\
-$A \lolli B$ & receive channel $c : A$ & $B$
-\end{tabular}
-\caption{Basic Session Types.  Every provider action has a matching
-client action.}
-\label{tab:basic-types}
-\end{table}
-
-\subsection*{Internal Choice}
-A type $A$ is said to describe a \emph{session}, which is a particular
-sequence of interactions. As a first type construct, consider \emph{internal
-choice} $\ichoice{\ell : A_\ell}_{\ell \in L}$, an $n$-ary labeled
-generalization of the linear logic connective $A \oplus B$. A process
-that provides $x : \ichoice{\ell : A_\ell}_{\ell \in L}$ can send any label
-$k \in L$ along $x$ and then continue by providing $x : A_k$. The
-corresponding process is written as $(\esendl{x}{k} \semi P)$, where
-$P$ is the continuation that provides $A_k$. This typing is formalized
-by the \emph{right rule} $\oplus R$ in linear sequent calculus. The
-corresponding client branches on the label received along $x$ as specified
-by the \emph{left rule} $\oplus L$.
+The \emph{internal choice} constructor
+$\ichoice{\ell : A_{\ell}}_{\ell \in L}$ is the dual of external
+choice requiring the provider to send one of the labels $k \in L$ that
+the client must branch on.
 \begin{mathpar}
-\infer[{\oplus}R]
-{\D \vdash (\esendl{x}{k} \semi P) ::
-	(x : \ichoice{\ell : A_\ell}_{\ell \in L})}
-{(k \in L) \qquad \D \vdash P :: (x : A_k)}
-\and
-\infer[{\oplus}L]
-{\D, (x : \ichoice{\ell : A_\ell}_{\ell \in L}) \vdash
-	\ecase{x}{\ell}{Q_\ell}_{\ell \in L} :: (z : C)}
-{(\forall \ell \in L) \qquad \D, (x : A_\ell) \vdash Q_\ell :: (z : C)}
+  \infer[{\oplus}R]
+    {\vars \semi \cons \semi \D \vdash (\esendl{x}{k} \semi P) :: (x : \ichoice{\ell : A_\ell}_{\ell \in L})}
+    {(k \in L) & \vars \semi \cons \semi \D \vdash P :: (x : A_k)}
+  \and
+  \infer[{\oplus}L]
+    {\vars \semi \cons \semi \D, (x : \ichoice{\ell : A_\ell}_{\ell \in L}) \vdash
+    \ecase{x}{\ell}{Q_\ell}_{\ell \in L} :: (z : C)}
+    {(\forall \ell \in L) &
+      \vars \semi \cons \semi \D, (x : A_\ell) \vdash Q_\ell :: (z : C)}
+\end{mathpar}
+This dual constructor reverses the role of the provider and client.
+The provider $(\esendl{x}{k} \semi P)$ of $x : \ichoice{\ell : A_\ell}_{\ell \in L})$
+sends the label $k$ along $x$ and continues to provide $x : A_k$.
+Correspondingly, the client branches on the label received using channel
+$x : A_\ell$ in branch $\ell$ with process term $Q_\ell$.
+The rules of operational semantics (${\oplus}S, {\oplus}C$) are exact dual
+of ${\with}S$ and ${\with}C$ and omitted for brevity.
+
+\paragraph{\textbf{Channel Passing}}
+The \emph{tensor} operator $A \tensor B$ prescribes that the provider of
+$x : A \tensor B$
+sends a channel $y$ of type $A$ and continues to provide type $B$. The
+corresponding process term is $\esendch{x}{y} \semi P$ where $P$ is
+the continuation.  Correspondingly, its client must receives a channel
+using the term $\erecvch{x}{y} \semi Q$, binding it to variable $y$
+and continuing to execute $Q$.
+\begin{mathpar}
+  \infer[{\tensor}R]
+    {\vars \semi \cons \semi \D, (y : A) \vdash (\esendch{x}{y} \semi P) :: (x : A \tensor B)}
+    {\vars \semi \cons \semi \D \vdash P :: (x : B)}
+  \and
+  \infer[{\tensor}L]
+    {\vars \semi \cons \semi \D, (x : A \tensor B) \vdash (\erecvch{x}{y} \semi Q) :: (z : C)}
+    {\vars \semi \cons \semi \D, (y : A), (x : B) \vdash Q :: (z : C)}
+\end{mathpar}
+Operationally, the provider $\esendch{c}{d} \semi P$ sends the
+channel $d$ and the continuation channel $c'$ along $c$ as a message and
+continues with executing $P$. The client receives the channel $d$ and continuation
+channel $c'$ and substitutes $d$ for $x$ and $c'$ for $c$.
+\begin{tabbing}
+$({\tensor}S) : \m{proc}(c, \m{send}\; c\; d \semi P) \;\mapsto\; $\=
+$\m{proc}(c', P[c'/c]),$\\
+\>$\m{msg}(c, \m{send}\; c\; d \semi c \leftarrow c')$ \\
+$({\tensor}C) : $ \= $\m{msg}(c, \m{send}\; c\; d \semi c \leftarrow c'),$\\
+\>$\m{proc}(e, x \leftarrow \m{recv}\; c \semi Q)
+\;\mapsto\; \m{proc}(e, Q[c', d/c, x])$
+
+\end{tabbing}
+The dual operator $A \lolli B$ allows the provider to receive a
+channel of type $A$ and continue to provide type $B$. The client
+of $A \lolli B$, on the other hand, sends the channel of type $A$
+and continues to use $B$.
+\begin{mathpar}
+  \infer[{\lolli}R]
+    {\vars \semi \cons \semi \D \vdash (\erecvch{x}{y} \semi P) :: (x : A \lolli B)}
+    {\vars \semi \cons \semi \D, (y : A) \vdash P :: (x : B)}
+  \and
+  \infer[{\lolli}L]
+    {\vars \semi \cons \semi \D, (x : A \lolli B), (y : A) \vdash (\esendch{x}{y} \semi Q) :: (z : C)}
+    {\vars \semi \cons \semi \D, (x : B) \vdash Q :: (z : C)}
 \end{mathpar}
 
-Operationally, since communication is asynchronous, the process
-$(\esendl{c}{k} \semi P)$ sends a message $k$
-along $c$ and continues as $P$ without waiting for it to be received.
-As a technical device to ensure that consecutive messages on a
-channel arrive in order, the sender also creates a fresh continuation
-channel $c'$ so that the message $k$ is actually represented as
-$(\esendl{c}{k} \semi \fwd{c}{c'})$ (read: send $k$ along $c$ and
-continue as $c'$). The provider also substitutes $c'$ for $c$ enforcing
-that the next message is sent on $c'$.
-\[
-\begin{array}{lll}
-(\oplus S) & \proc{c}{\esendl{c}{k} \semi P} \step \proc{c'}{[c'/c]P},
-\msg{c}{\esendl{c}{k} \semi \fwd{c}{c'}} & \fresh{c'}
-\end{array}
-\]
-When the message $k$ is received along $c$, the client selects branch
-$k$ and also substitutes the continuation channel $c'$ for $c$, thereby
-ensuring that it receives the next message on $c'$. This implicit
-substitution of the continuation channel ensures the ordering of the
-messages.
-\[
-\begin{array}{ll}
-(\oplus C) & \msg{c}{\esendl{c}{k} \semi \fwd{c}{c'}},
-\proc{d}{\ecase{c}{\ell}{Q_\ell}_{\ell \in L}} \step \proc{d}{[c'/c]Q_k}
-\end{array}
-\]
-
-\subsection*{External Choice}
-The dual of internal choice is \emph{external choice} $\echoice{\ell :
-A_\ell}_{\ell \in L}$, which is the $n$-ary labeled generalization of the
-linear logic connective $A \with B$. This dual operator simply reverses
-the role of the provider and client. The provider process of
-$x : \echoice{\ell : A_\ell}_{\ell \in L}$ branches on receiving a label
-$k \in L$ (described in $\with R$), while the client sends this label
-(described in $\with L$).
+\paragraph{\textbf{Termination}}
+The type $\one$, the multiplicative unit of linear logic,
+indicates \emph{termination} requiring that the provider send a
+\emph{close} message followed by terminating the communication.
+Linearity enforces that the provider not use any channels.
 \begin{mathpar}
-\infer[\with R]
-{\D \vdash \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
-	(x : \echoice{\ell : A_\ell}_{\ell \in L})}
-{(\forall \ell \in L) \qquad \D \vdash P_\ell :: (x : A_\ell)}
-\and
-\infer[\with L]
-{\D, (x : \echoice{\ell : A_\ell}_{\ell \in L}) \vdash
-\esendl{x}{k} \semi Q :: (z : C)}
-{\D, (x : A_k) \vdash Q :: (z : C)}
+  \infer[{\one}R]
+    {\vars \semi \cons \semi \cdot \vdash (\eclose{x}) :: (x : \one)}
+    {}
+  \and
+  \infer[{\one}L]
+    {\vars \semi \cons \semi \D, (x : \one) \vdash (\ewait{x} \semi Q) :: (z : C)}
+    {\vars \semi \cons \semi \D \vdash Q :: (z : C)}
 \end{mathpar}
+Operationally, the provider waits for the closing message, which
+has no continuation channel since the provider terminates.
+\begin{tabbing}
+$({\one}S) : \m{proc}(c, \m{close}\; c) \;\mapsto\; \m{msg}(c, \m{close}\; c)$ \\
+$({\one}C) : $ \= $\m{msg}(c, \m{close}\; c),
+\m{proc}(d, \m{wait}\; c \semi Q) \;\mapsto\; \m{proc}(d, Q)$
+\end{tabbing}
 
-The operational semantics rules are just the inverse of internal choice.
-The provider receives the branching label $k$ sent by the provider. Both
-processes perform appropriate substitutions to ensure the order of messages
-sent and received is preserved.
-\[
-\begin{array}{lll}
-(\with S) & \proc{d}{\esendl{c}{k} \semi Q} \step \msg{c'}{\esendl{c}{k}
-\semi \fwd{c'}{c}}, \proc{d}{[c'/c]Q} & \fresh{c'} \\
-(\with C) & \proc{c}{\ecase{c}{\ell}{Q_\ell}_{\ell \in L}},
-\msg{c'}{\esendl{c}{k} \semi \fwd{c'}{c}} \step \proc{c'}{[c'/c]Q_k}
-\end{array}
-\]
-
-\subsection*{Higher-Order Channels}
-Session types allow channels to be \emph{higher-order}, i.e., channels
-can be exchanged over channels. The session type corresponding to the
-linear logic connective $A \tensor B$ allows its provider to send a channel
-of type $A$ and then continue with providing $B$. The corresponding
-process term $(\esendch{x}{w} \semi P)$ describes sending channel $w$
-over channel $x$ and continuing with $P$. This typing is provided by
-the rule $\tensor R$. The client, on the other hand, receives this channel
-using the term $(\erecvch{x}{y} \semi Q)$and binds it to a channel
-variable $y$, as described by $\tensor L$.
+\paragraph{\textbf{Forwarding}}
+A process $\fwd{x}{y}$ identifies the channels $x$ and $y$ so that any
+further communication along either $x$ or $y$ will be along the unified
+channel. Its typing rule corresponds to the logical rule of identity.
 \begin{mathpar}
-\infer[\tensor R]
-{\D, (w : A) \vdash (\esendch{x}{w} \semi P) :: (x : A \tensor B)}
-{\D \vdash P :: (x : B)}
-\and
-\infer[\tensor L]
-{\D, (x : A \tensor B) \vdash (\erecvch{x}{y} \semi Q) :: (z : C)}
-{\D, (y : A), (x : B) \vdash Q :: (z : C)}
+  \infer[\m{id}]
+    {\vars \semi \cons \semi y : A \vdash (\fwd{x}{y}) :: (x : A)}
+    {}
 \end{mathpar}
-\[
-\begin{array}{ll}
-(\tensor S) & \proc{c}{\esendch{c}{e} \semi P} \step \proc{c'}{[c'/c]P},
-\msg{c}{\esendch{c}{e} \semi \fwd{c}{c'}} \qquad \fresh{c'} \\
-(\tensor C) & \msg{c}{\esendch{c}{e} \semi \fwd{c}{c'}},
-\proc{d}{\erecvch{c}{x} \semi Q} \step \proc{d}{[c', e/c, x]Q}
-\end{array}
-\]
+Operationally, a process $\fwd{c}{d}$ \emph{forwards} any message M
+that arrives on $d$ to $c$ and vice-versa. Since channels are used
+linearly, the forwarding process can then terminate, ensuring proper
+renaming, as exemplified in the rules below.
+\begin{tabbing}
+$(\m{id}^+C) : $ \= $\m{msg}(d, M),
+\m{proc}(c, c \leftarrow d) \;\mapsto\; \m{msg}(c, [c/d]M)$ \\
+$(\m{id}^-C) : $ \= $\m{proc}(c, c \leftarrow d),
+\m{msg}(e, M(c)) \;\mapsto\; \m{msg}(e, [d/c]M(c))$
+\end{tabbing}
+We write $M(c)$ to indicate that $c$ must occur in message $M$ ensuring that $M$ is the
+sole client of $c$.
 
-The lolli ($\lolli$) operator is dual to $\tensor$. The provider and client
-invert their roles, i.e., the provider of $x : A \lolli B$ receives a channel
-of type $A$ sent by its client.
+\paragraph{\textbf{Process Definitions}}
+Process definitions have the form
+$\D \vdash f \indv{n} = P :: (x : A)$ where $f$ is the name of the
+process and $P$ its definition. In addition, $\overline{n}$ is a
+sequence of arithmetic variables that $\D$, $P$ and $A$ can refer to.
+All definitions are collected in a fixed global signature $\Sg$.
+For a \emph{well-formed signature}, we
+require that $\overline{n} \semi \top \semi \D \vdash P :: (x : A)$
+for every definition, thereby allowing
+definitions to be mutually recursive. A new instance of a defined
+process $f$ can be spawned with the expression
+$\ecut{x}{f \indv{e}}{\overline{y}}{Q}$ where $\overline{y}$ is a
+sequence of channels matching the antecedents $\D$ and $\indv{e}$ is a
+sequence of arithmetic expression matching the variables
+$\indv{n}$. The newly spawned process will use all variables in
+$\overline{y}$ and provide $x$ to the continuation $Q$.
 \begin{mathpar}
-\infer[{\lolli} R]
-  {\D \vdash (\erecvch{x}{y} \semi P) :: (x : A \lolli B)}
-  {\D, (y : A) \vdash P :: (x : B)}
-\and
-\infer[{\lolli}L]
-{\D, (x : A \lolli B), (y : A) \vdash (\esendch{x}{w} \semi Q) :: (z : C)}
-{\D, (x : B) \vdash Q :: (z : C)}
-\end{mathpar} 
-\[
-\begin{array}{ll}
-({\lolli}S) & \proc{d}{\esendch{c}{e} \semi Q} \step
-\msg{c'}{\esendch{c}{e} \semi \fwd{c'}{c}}, \proc{d}{[c'/c]Q} \qquad
-\fresh{c'} \\
-({\lolli}C) & \proc{c}{\erecvch{c}{x}}, \msg{c'}{\esendch{c}{e} \semi
-\fwd{c'}{c}} \step \proc{c'}{[c', d/c, x]P}
-\end{array}
-\]
-
-\subsection*{Termination}
-The type $\one$, the multiplicative unit of linear logic, represents
-termination of a process, which (due to linearity) is not allowed to use
-any channels.
-\begin{mathpar}
-\infer[{\one}R]
-{\cdot \vdash \eclose{x} :: (x : \one)}
-{\mathstrut}
-\and
-\infer[{\one}L]
-{\D, (x : \one) \vdash (\ewait{x} \semi Q) :: (z : C)}
-{\D \vdash Q :: (z : C)}
+  \inferrule*[right=$\m{def}$]
+  {\overline{y':B} \vdash f \indv{n} = P_f :: (x' : A) \in \Sg \\
+  \D' = \overline{(y:B)}[\overline{e}/\overline{n}] \and
+  \vars {\semi} \cons {\semi} \D, (x : A[\overline{e}/\overline{n}]) \vdash Q :: (z : C)}
+  {\vars \semi \cons \semi \D, \D' \vdash (\ecut{x}{f \indv{e}}{\overline{y}}{Q}) :: (z : C)}
 \end{mathpar}
-Operationally, a client has to wait for the corresponding closing message,
-which has no continuation since the provider terminates.
-\[
-\begin{array}{ll}
-(\one S) & \proc{c}{\eclose{c}} \step \msg{c}{\eclose{c}} \\
-(\one C) & \msg{c}{\eclose{c}}, \proc{d}{\ewait{c} \semi Q} \step
-\proc{d}{Q}
-\end{array}
-\]
+The declaration of $f$ is looked up in the signature $\Sg$ (first premise), and $\overline{e}$
+is substituted for $\overline{n}$ while matching the types in $\D'$ and $\overline{y}$
+(second premise). Similarly, the freshly created channel $x$ has type $A$ from the signature
+with $\overline{e}$ substituted for $\overline{n}$.
+The corresponding semantics rule also performs a similar substitution
+$\fresh{a}$.
+\begin{tabbing}
+$(\m{def}C) : $ \= $\m{proc}(c, \ecut{x}{f \indv{e}}{\overline{d}}{Q}) \; \mapsto \;$ \\
+\> $\m{proc}(a, P_f[a/x, \overline{d}/\overline{y'}, \overline{e}/\overline{n}]), \;
+   \m{proc}(c, Q[a/x])$
+\end{tabbing}
+where $\overline{y' : B} \vdash f \indv{n} = P_f :: (x' : A) \in \Sg$.
 
-\subsection*{Process Definitions}
-Process definitions have the form $\D \vdash f = P :: (x : A)$ where $f$
-is the name of the process and $P$ its definition. All definitions are
-collected in a fixed global signature $\Sg$. Also, since process definitions
-are mutually recursive, it is required that for every process in the signature
-is well-typed w.r.t. $\Sg$, i.e. $\Sg \semi \D \vdash P :: (x : A)$. For
-readability of the examples, I break a definition into two declarations,
-one providing the type and the other the process definition binding the
-variables $x$ and those in $\Omega$ (generally omitting their types):
-\[
-\begin{array}{l}
-\D \vdash f :: (x : A) \\
-\procdef{f}{\D}{x} = P
-\end{array}
-\]
-A new instance of a defined process $f$ can be spawned with
-the expression
-\[
-\procdef{f}{\overline{y}}{x} \semi Q
-\]
-where $\overline{y}$ is a sequence of variables matching the
-antecedents $\D$.  The newly spawned process will use all
-variables in $\overline{y}$ and provide $x$ to the continuation $Q$.
-The operational semantics reduces the spawn to a cut.
-\[
-\begin{array}{ll}
-(\m{def} C) &
-\proc{c}{x \leftarrow f \leftarrow \overline{e} \semi Q}
-\step \proc{a}{[a/x, \overline{e}/\D]P},
-\proc{c}{[a/x]Q}
-\quad \fresh{a}
-\end{array}
-\]
-where $\D \vdash f = P :: (x : A) \in \Sg$.
-Here I write $\overline{e}/\D$ to denote substitution of the
-channels in $\overline{e}$ for the corresponding variables in
-$\D$.
+Sometimes a process invocation is a tail call,
+written without a continuation as $\procdef{f \indv{e}}{\overline{y}}{x}$. This is a
+short-hand for $\procdef{f \indv{e}}{\overline{y}}{x'} \semi \fwd{x}{x'}$ for a fresh
+variable $x'$, that is, we create a fresh channel
+and immediately identify it with x.
 
-Sometimes a process invocation is a \emph{tail call}, written without
-a continuation as $\procdef{f}{\overline{y}}{x}$. This is a
-short-hand for
-$\procdef{f}{\overline{y}}{x'} \semi \fwd{x}{x'}$ for a
-fresh variable $x'$, that is, a fresh channel is created and
-immediately identified with $x$ (although it is generally implemented
-more efficiently).
+\paragraph{\textbf{Type Definitions}}
+As our queue example already showed, session types can be defined
+recursively, departing from a strict Curry-Howard interpretation of
+linear logic, analogous to the way pure ML or Haskell depart from
+a pure interpretation of intuitionistic logic.  For this purpose we
+allow (possibly mutually recursive) type definitions $V \indv{n} = A$
+in the signature $\Sg$. Here, $\overline{n}$ denotes a sequence of
+arithmetic variables. Again, for a well-formed signature, we require $A$ to be
+\emph{contractive}~\cite{Gay2005} meaning $A$ should not itself be a
+type name. Our type definitions are \emph{equirecursive} so we can
+silently replace type names $V \indv{e}$ indexed with arithmetic
+refinements by $A [\overline{e}/\overline{n}]$ during type checking,
+and no explicit rules for recursive types are needed.
 
-\subsection*{Recursive Types}
-Session types can be naturally extended to include recursive types.
-For this purpose I allow (possibly mutually recursive) type
-definitions $X = A$ in the signature, where I require $A$ to be
-\emph{contractive}~\cite{Gay05acta}.  This means here that $A$ should
-not itself be a type name. The type definitions are
-\emph{equi-recursive} so $X$ can be silently replaced by $A$ during
-type checking, and no explicit rules for recursive types are needed.
+All types in a signature must be \emph{valid}, formally denoted with the judgment
+$\vars \semi \cons \vdash A\; \mi{valid}$, which requires that all
+free arithmetic variables of $\cons$ and $A$ are contained in $\vars$,
+and that for each arithmetic expression $e$ in $A$ we can prove
+$\vars' \semi \cons' \vdash e : \m{nat}$ for the constraints $\cons'$
+known at the occurrence of $e$ (implicitly proving that $e \geq 0$).
 
-\subsection{Examples}
-As a first example, consider a stream of bits defined recursively as
-\begin{sill}
-  $\m{bits} = {\oplus}\{\m{b0} : \m{bits}, \m{b1} : \m{bits}, \m{\$} : \one\}$
-\end{sill}
-When considering bits as representing natural numbers, the
-least significant bit is sent first.  For example, a process
-$\mi{six}$ sending the number $6 = (110)_2$ would be
-\begin{sill}
-$\cdot \vdash \mi{six} :: (x : \m{bits})$ \\
-$x \leftarrow \mi{six} = x.\m{b0} \semi x.\m{b1} \semi x.\m{b1} \semi x.\m{\$} \semi \m{close}\; x$
-\end{sill}
-Executing $\proc{c_0}{\procdefna{\mi{six}}{c_0}}$ yields
-(with some fresh channels $c_1, \ldots, c_4$)
-\[
-\begin{array}{lcl}
-\proc{c_0}{\procdefna{\mi{six}}{c_0}}
-& \mapsto^* &
-\msg{c_4}{\eclose{c_4}}, \\
- & &\msg{c_3}{\esendl{c_3}{\m{\$}} \semi \fwd{c_3}{c_4}}, \\
- & &\msg{c_2}{\esendl{c_2}{\m{b1}} \semi \fwd{c_2}{c_3}}, \\
- & &\msg{c_1}{\esendl{c_1}{\m{b1}} \semi \fwd{c_1}{c_2}}, \\
- & &\msg{c_0}{\esendl{c_0}{\m{b0}} \semi \fwd{c_0}{c_1}}, \\
-\end{array}
-\]
-As a first example of a recursive process definition, consider one
-that just copies the incoming bits on to the outgoing bits.
-\begin{sill}
-$y : \m{bits} \vdash \mi{copy} :: (x : \m{bits})$ \\
-$\procdef{\mi{copy}}{y}{x} = $ \\
-\quad $\casedef{y}$ \= $(\labdef{\m{b0}}$ \= $\esendl{x}{\m{b0}} \semi
-\procdef{\mi{copy}}{y}{x}$ 
-\hspace{1em}\=
-\% received $\m{b0}$ on $y$, send $\m{b0}$ on $x$, recurse \\
-\> $\mid \labdef{\m{b1}}$ \= $\esendl{x}{\m{b1}} \semi
-\procdef{\mi{copy}}{y}{x}$ 
-\> \% received $\m{b1}$ on $y$, send $\m{b1}$ on $x$, recurse \\
-\> $\mid \labdef{\m{\$}}$ \= $\esendl{x}{\m{\$}} \semi
-\ewait{y} \semi \eclose{x})$
-\> \% received $\m{\$}$ on $y$,
-send $\m{\$}$ on $x$, wait on $y$, close $x$
-\end{sill}
-Note the occurrence of a (recursive) \emph{tail call} to $\mi{copy}$.
-
-A last example: to increment a bit stream turn
-$\m{b0}$ to $\m{b1}$ but then forward the remaining bits unchanged
-($\fwd{x}{y}$), or turn $\m{b1}$ to $\m{b0}$ but then increment
-the remaining stream ($\procdef{\mi{plus1}}{y}{x}$) to
-capture the effect of the carry bit.
-\begin{sill}
-$y : \m{bits} \vdash \mi{plus1} :: (x : \m{bits})$ \\
-$\procdef{\mi{plus1}}{y}{x} = $ \\
-\quad $\casedef{y}$ \= $(\labdef{\m{b0}}$ \= $\esendl{x}{\m{b1}} \semi
-\fwd{x}{y}$ \\
-\> $\mid \labdef{\m{b1}} \esendl{x}{\m{b0}} \semi
-\procdef{\mi{plus1}}{y}{x}$ \\
-\> $\mid \labdef{\m{\$}} \esendl{x}{\m{\$}} \semi \ewait{y} \semi
-\eclose{x})$
-\end{sill}
 
 \subsection{Preservation and Progress}
 The main theorems that exhibit the deep connection between our type
