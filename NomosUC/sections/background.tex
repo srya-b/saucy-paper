@@ -14,12 +14,12 @@ More formally, indistinguishability is stated:
 
 $$ \text{EXEC}_{\mathcal{F},\mathcal{S},\Environment} \approx \text{EXEC}_{\pi,\mathcal{A},\Environment} $$
 
-\paragraph{GUC-Framework}
-A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.
-The cannonical example used to insipire a more unconstrained environments is the signing of certificates. 
-In the real world, a protocol party $p_i$ controlling some private key may sign messages that an adverasry could replay in other protocols $p_i$ takes part in.
-The standard UC formulation, however, is incapable of modelling such an adversarial strategy as protocol sessions are completely distinct and can not share any state with each other---namely, an ideal functionality that stores signed certificates is bound only to the current protocol session.
-\todo{Is is worth motivting the GUC framework rather than just introducing what it is and that the environment can also interact with a shared functionality?}
+%\paragraph{GUC-Framework}
+%A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.
+%The cannonical example used to insipire a more unconstrained environments is the signing of certificates. 
+%In the real world, a protocol party $p_i$ controlling some private key may sign messages that an adverasry could replay in other protocols $p_i$ takes part in.
+%The standard UC formulation, however, is incapable of modelling such an adversarial strategy as protocol sessions are completely distinct and can not share any state with each other---namely, an ideal functionality that stores signed certificates is bound only to the current protocol session.
+%\todo{Is is worth motivting the GUC framework rather than just introducing what it is and that the environment can also interact with a shared functionality?}
 
 
 \subsection{The Import Mechanism}
@@ -39,19 +39,20 @@ Any ITI can write to any other ITI in it's communication set and send it import 
 Eventually, the system of ITMs must halt when it runs out of import until it receives more from the environment.
 
 \paragraph{Realizing Import in saUCy} \label{sec:realizeimport}
-The import mechanism in the UC framework describes at a high level how to reason about resource bounded computation in the import model.
-However, for our purposes it is necessary to instantiate it concretely and make explicit the conditions under which a machine halts as we care about an implementation the UC framework in our proposed Nomos language. 
-
-In order to do this we must introduce a new concept called \textit{potential}. 
-Potential is the basic unit of computation and machines must explicitly \textit{consume} their available import balance and convert it into usable potential through a bounding polynomial $T$.
-
-Concretely, every ITM $\mu$ is spawned with a set of variables:
-\begin{itemize}
-\item $\msf{in}_t$: the total amount of import received as input by $\mu$.
-\item $\msf{out}_t$: the total amount of import sent by $\mu$ to other machines.
-\item $\msf{marked}_t$: the number of import tokens that have been consumed and used to generate potential through an input polynoial $T$.
-\item $\msf{generate\_pot}(T, n)$: a function that marks $n$ available import tokens and creates $T(n)$ units of potential.
-\end{itemize}
-
-Over the lifetime of $\mu$ it will need to generate potential multiple times as it needs to perform more computation.
-Eventually, thought, we can guarantee that every machine $\mu$ will \textit{halt} when it can no longer generate more potential, i.e.  $\msf{in}_t - \msf{out}_t - \msf{marked}_t > n$.
+\todo{Need to add potentia in Nomos here}
+%The import mechanism in the UC framework describes at a high level how to reason about resource bounded computation in the import model.
+%However, for our purposes it is necessary to instantiate it concretely and make explicit the conditions under which a machine halts as we care about an implementation the UC framework in our proposed Nomos language. 
+%
+%In order to do this we must introduce a new concept called \textit{potential}. 
+%Potential is the basic unit of computation and machines must explicitly \textit{consume} their available import balance and convert it into usable potential through a bounding polynomial $T$.
+%
+%Concretely, every ITM $\mu$ is spawned with a set of variables:
+%\begin{itemize}
+%\item $\msf{in}_t$: the total amount of import received as input by $\mu$.
+%\item $\msf{out}_t$: the total amount of import sent by $\mu$ to other machines.
+%\item $\msf{marked}_t$: the number of import tokens that have been consumed and used to generate potential through an input polynoial $T$.
+%\item $\msf{generate\_pot}(T, n)$: a function that marks $n$ available import tokens and creates $T(n)$ units of potential.
+%\end{itemize}
+%
+%Over the lifetime of $\mu$ it will need to generate potential multiple times as it needs to perform more computation.
+%Eventually, thought, we can guarantee that every machine $\mu$ will \textit{halt} when it can no longer generate more potential, i.e.  $\msf{in}_t - \msf{out}_t - \msf{marked}_t > n$.

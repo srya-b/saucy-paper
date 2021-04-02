@@ -1,0 +1,102 @@
+In this section we introduce the UC experiment in Nomos and the resulting emulation definition.
+We continue on to state the dummy lemma theorem as well as the composition theorem for Nomos UC.
+
+For the remainder of this section when we refer to a protocol we refer to a pair of machines as in Definition~\ref{def:protocol}.
+
+\begin{definition}\label{def:protocol}
+	A \textit{protocol} $\pi$ is a pair of processes ($\mathcal{P}(e)$, $\mathcal{F}$) where $\mathcal{P}$ is the protocol wrapper, $e$ is the program for a single party, and $\mathcal{F}$ is an ideal functionality.
+\end{definition}
+ 
+Protocols with no corresponding functionality, i.e. real protocols that don't require any idealized implementation.
+Protocols with no functionality can get away with any well-typed functionality, even one that only returns the write-token to the environment on every activation.
+
+
+\subsection{The UC Experiment}
+The \msf{ExecUC} function creates an execution of the UC experiment that spawns the input environments and all of the other necessary machines: the party wrapper, the functionality, and the adverasry.
+Figure~\ref{fig:execuc} illustrates the function in Nomos.
+
+\begin{figure*}
+\begin{lstlisting}[basicstyle=\small\ttfamily]
+proc execUC : (k: int), (rng: [Bit]) |- ($d : bit) = 
+{
+    $z <- env k rng PS.z2p PS.p2z PS.z2a PS.a2z PS.z2pn PS.z2pn PS.a2zn PS.z2an <- ;
+    sid = recv $z ;
+    clist = recv $z ;
+    ...
+    #pw_to_f <- communicator_init[PS.p2f] <- pw_id f_id ;
+	#f_to_pw <- communicator_init[PS.f2p] <- f_id pw_id ;
+	...
+    $z.start ;
+    $d <- $z ;
+}
+\end{lstlisting}
+\end{figure*}
+
+Instead of accepting as input the initial process definition for each of the spawned machines, Nomos UC assumes the existence of a user module \msf{PS} which defines the environment, \msf{PS.z}, the functionality, \msf{PS.F\_code}, and the adverasry \msf{PS.adv}.
+The environment is the first to be spawned and selects an \msf{sid} and a list of pids of corrupt parties, \msf{clist}.
+Once the \msf{sid} is selected, all the communicators used between the machines are create and the processes spawned.
+They are parameterized with the id's of the endpoints, the type of the messages \msf{PS.p2f}, and the potential sent over them \msf{PS.f2p}.
+Finally, \msf{execUC} activates \Environment~ with a \msf{start} message and returns a bit from \Environment~ indicating a guess as to which world this is.
+
+The only generic process spawned is the \msf{partyWrapper}.
+An environment may spawn any number of parties throughout its execution.
+Therefore, the \msf{partyWrapper} handle incoming message to protocol parties and spawns new processes for them on the fly.
+For existing parties, it intercepts incoming messages and routes them to the right party, and it intercepts outgoing messages and appends the ID of the writing party to them. 
+
+\todo{ Not sure if this is relevant, wait for better understanding from ankush/andrew. The total potential in the system is inferred by the Nomos type-system, and given to the first spawned process: \msf{execUC}.
+Therefore, well-typed programs are only those where the potential type parameters provide enough import for an execution.}
+
+\subsection{Polynomial Bound}
+The import mechanism in UC ensures that all ITMs are locally polynomially bounded by $T(n)$ where $T$ is some polynomial and $n$ is the ITM's import balance.
+In Nomos we use the potential mechanism to send an computation budget to each ITM that is activated.
+At the level of a full UC execution, it must be polynomially bounded by some $T(n)$ as well, however determining what either of $T$ or $n$ is not currently possible in Nomos.
+Instead, UC execution in Nomos is explicit and requires user input of some $n$ and some $T$.
+The \msf{execUC} function is then given $T(n)$ potential to execute with and the Nomos type system ensures only executions with enough computational budget are well-typed.
+
+\begin{lstlisting}[basicstyle=\small\ttfamily]
+proc main : (k : int), (n: int), (T: polynomial?) |- ($d: 1) = 
+{
+  rng <- sampleBits ;
+  $z <- execUC k rng ;
+  pay {T(n)} $z ;
+  $d <- $z ;
+}
+\end{lstlisting}
+
+
+\subsection{Emulation}
+The \msf{execUC} function is parameterized by security parameter $k$ and a sequence of random bits $r$. 
+Hence, for a specific $k$, \msf{execUC} is a probability distribution over random strings $r$ of length $poly(k)$, and $\msf{execUC}_{k,r}$ is a probability distribution ensemble.
+We define Nomos UC emulation from one protocol to another by the statistical distance between the two enesmbles defined in Definition~\ref{def:distance}.
+We state the emulation theoream in Theorem~\ref{theorem:emulation}.
+
+\begin{definition}\label{def:distance}
+Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\mathcal{D}_{1,k} \approx \mathcal{D}_{2,k}$, if their statistical distance is at most $negl(k), \forall k$.
+\end{definition}
+
+\begin{definition}
+For any term $e$ that is \textit{well-typed}, $\exists n \in \mathbb{N}$ and a poynomial $T$ s.t. $e$ halts in $\leq T(n) steps$.
+
+Given some potential T(n) where n in poly(k) 
+
+Poised state a configuration of processes ==> saying that it has terminated to a value. For any configuration $e$ within $T(n)$ step it will reach a poised state.
+Every exeution step it takes its potential goes down and the sum of that is always a constant. 
+In the end the potential will be non-negative <= T(n).
+
+\end{definition}
+
+\begin{definition}
+For all $k \in \mathbb{N}$ and $r \in \{0,1\}^{poly(k)}$ the term $\msf{execUC}_{k,r,n,T}(\Environment, \phi, \F, \Adversary)$ is \textit{well-typed} if $\exists n, T$ s.t. $\msf{execUC}_{k,r,n,T}$ executes in $\leq T(n)$ steps.
+\end{definition}
+
+\begin{definition}\label{def:emulation}
+Given well-typed protocols $\pi = (\mathcal{P}(\pi_1), \mathcal{F}_1)$, $\phi = (\mathcal{P}(\phi_2), \mathcal{F}_2)$, adversary $\mathcal{A}$, and simulator $\mathcal{S}$, $\pi$ and $\phi$ securely emulate each other if for all environments $\mathcal{Z}$, security parameters $k$ $\msf{execUC}_{k,r,n,T} (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S})$ and  $\msf{execUC}_{k,r,n,T} (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$ are \textit{well-typed}  and $\msf{execUC}_k (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S}) \approx \msf{execUC}_k (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$.
+\end{definition}
+
+\begin{theorem}
+If there exists a well-typed \msf{PPT} simulator $\mathcal{S}_d$ as in Definition~\ref{def:emulation} such that $\forall \mathcal{Z}, \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \phi, \F_2, \mathcal{S}_d) \approx \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \pi, \F_1, \mathcal{A}_d)$, where $\mathcal{A}_d$ is the dummy adversary, $\Rightarrow \exists \mathcal{S}$ s.t. $\msf{execUC}_{k,r}(\mathcal{Z}, \phi, \F_2, \mathcal{S}) \approx \msf{execUC}_{k,r}(\mathcal{Z}, \pi, \F_1, \mathcal{A}$ for any well-typed PPT $\mathcal{A}$.
+\end{theorem}
+
+\begin{figure}
+
+\end{figure}
