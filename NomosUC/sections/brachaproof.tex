@@ -2,7 +2,7 @@
 Let $\Pi_{\msf{bracha}}$ and $\mathcal{F}_{\msf{bracha}}$ be $\overline{\mathcal{W}}_{\msf{sync}}$-subroutine respecting protocols. 
 Then $\Pi_{\msf{bracha}}$ EUC-realizes $\mathcal{F}_{\msf{bracha}}$ in the $\mathcal{F}^{n(n-1)}_{\msf{sync}}$-hybrid world in the static corruptions ($t < \frac{n}{3}$) model for any $\overline{\mathcal{W}}_{\msf{sync}}$-externally constrained, weakly-balanced environment $\mathcal{Z}$. We have:
 
-$$\textsc{EXEC}^{\Wsync}_{\mathcal{F}_{\msf{bracha}}, \Ssyncbracha, \Environment} \approx \textsc{EXEC}^{\Wsync}_{\pi_{\msf{bracha}}, \Dadv, \Environment}$$
+$$\textsc{EXEC}^{\Wsync}_{\mathcal{F}_{\msf{bracha}}, \Ssyncbracha, \Environment} \approx \textsc{EXEC}^{\Wsync}_{\pi_{\msf{bracha}}, \DummyAdv, \Environment}$$
 \end{theorem}
 
 \textit{Proof of Theorem \ref{thm:bracha:sync}.}
@@ -47,7 +47,7 @@ When activated by \Environment with an \Exec call, it forwards the call to it's 
 Let $\Pi_{\msf{Bracha}}$ and $\mathcal{F}_{\msf{RBC}}$ be $\overline{\mathcal{W}}_{\msf{Async}}$-subroutine respecting protocols. 
 Then $\Pi_{\msf{Bracha}}$ EUC-realizes $\mathcal{F}_{\msf{RBC}}$ in the $\mathcal{F}^{n(n-1)}_{\msf{Async}}$-hybrid world in the static corruptions ($t < \frac{n}{3}$) model for any $\overline{\mathcal{W}}_{\msf{Async}}$-externally constrained, weakly-balanced environment $\mathcal{Z}$. In other words, for any such $\mathcal{Z}$, the following holds:
 
-$$\textsc{EXEC}^{\Wsync}_{\mathcal{F}_{\msf{bracha}}, \Ssyncbracha, \Environment} \approx \textsc{EXEC}^{\Wsync}_{\pi_{\msf{bracha}}, \Dadv, \Environment}$$
+$$\textsc{EXEC}^{\Wsync}_{\mathcal{F}_{\msf{bracha}}, \Ssyncbracha, \Environment} \approx \textsc{EXEC}^{\Wsync}_{\pi_{\msf{bracha}}, \DummyAdv, \Environment}$$
 \end{theorem}
 
 

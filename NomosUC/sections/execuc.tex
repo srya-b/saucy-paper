@@ -19,17 +19,24 @@ Figure~\ref{fig:execuc} illustrates the function in Nomos.
 \begin{lstlisting}[basicstyle=\small\ttfamily]
 proc execUC : (k: int), (rng: [Bit]) |- ($d : bit) = 
 {
-    $z <- env k rng PS.z2p PS.p2z PS.z2a PS.a2z PS.z2pn PS.z2pn PS.a2zn PS.z2an <- ;
+    $z <- PS.env[PS.z2p][PS.p2z][PS.z2a][PS.a2z] <- k r ;
     sid = recv $z ;
     clist = recv $z ;
     ...
-    #pw_to_f <- communicator_init[PS.p2f] <- pw_id f_id ;
-	#f_to_pw <- communicator_init[PS.f2p] <- f_id pw_id ;
+    #pw_to_f <- communicator_init[PS.p2f]{PS.p2fn} <- pw_id f_id ;
+	#f_to_pw <- communicator_init[PS.f2p]{PS.f2pn} <- f_id pw_id ;
+	...
+	send $z #pw_to_z ;
+	send $z #z_to_pw ;
+	$pw <- party_wrapper[PS.p2z][PS.z2p][PS.p2f][PS.f2p][PS.p2a][PS.a2p] <-
+	k rng clist #pw_to_f #f_to_pw #pw_to_a #a_to_pw #pw_to_z #z_to_pw ;
 	...
     $z.start ;
     $d <- $z ;
 }
 \end{lstlisting}
+\caption{The \msf{execUC} function spawns all the necessary ITMs in the UC execution: the environment, the party wrapper, the functionality, and the adversary. Each is parameterized with a security parameter $k$ and a uniformly random bit string $r \in \{0,1\}^{poly(k)}$. Eventually, the environment is initiated and it returns a bit $b$ which is its guess for which world it is in.}
+\label{lst:execuc}
 \end{figure*}
 
 Instead of accepting as input the initial process definition for each of the spawned machines, Nomos UC assumes the existence of a user module \msf{PS} which defines the environment, \msf{PS.z}, the functionality, \msf{PS.F\_code}, and the adverasry \msf{PS.adv}.
@@ -47,56 +54,103 @@ For existing parties, it intercepts incoming messages and routes them to the rig
 Therefore, well-typed programs are only those where the potential type parameters provide enough import for an execution.}
 
 \subsection{Polynomial Bound}
-The import mechanism in UC ensures that all ITMs are locally polynomially bounded by $T(n)$ where $T$ is some polynomial and $n$ is the ITM's import balance.
-In Nomos we use the potential mechanism to send an computation budget to each ITM that is activated.
-At the level of a full UC execution, it must be polynomially bounded by some $T(n)$ as well, however determining what either of $T$ or $n$ is not currently possible in Nomos.
-Instead, UC execution in Nomos is explicit and requires user input of some $n$ and some $T$.
-The \msf{execUC} function is then given $T(n)$ potential to execute with and the Nomos type system ensures only executions with enough computational budget are well-typed.
+The UC import mechanism provides a way to define polynomial time computation and resource-bounds by ensuring that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a polynomial and $n$ the total units of import the ITM ever receives.
+This is enough to reaosn about polynomial-time, however when reasoning about security we care specifically of ITMs that whose computation is bounded by some poynomial in the security parameter $k$. 
+In Nomos, we take advantage of the import built into the type system to ensure ITMs in Nomos are PPT in the security parameter. 
 
-\begin{lstlisting}[basicstyle=\small\ttfamily]
-proc main : (k : int), (n: int), (T: polynomial?) |- ($d: 1) = 
-{
-  rng <- sampleBits ;
-  $z <- execUC k rng ;
-  pay {T(n)} $z ;
-  $d <- $z ;
-}
-\end{lstlisting}
+\begin{definition}[PPT Terms]\label{def:pptterm}
+A \textit{PPT term} is a \textit{well-typed} term $e(k, r, T(n)$ that is \textit{closed} except for security parameter $k$, random bit sequence $r$, function $T$, and initial import balance $n$.
+\end{definition}
+
+\begin{theorem}[PPT in $k$]\label{thm:ppt}
+A \textit{PPT term} $e(k, r, T(n))$ with $n \in poly(k)$ and polynomial function $T$ is PPT in $k$, $\forall k \in \mathbb{N}, \forall r \in \{0,1\}^{poly(k)}$.
+\end{theorem}
+
+\begin{proof}
+The Nomos type system guarntees ITM $e$ is upper-bounded by $T(n) \in poly(k)$ units of potential. 
+Therefore, regardless of the probabilistic state transitions that ITM makes according to $r$, $e$ is guaranteed to be upper-bounded by $pol(k)$ satisfying the definition of probabilistic polynomial time in $k$.
+\end{proof}
+
+In UC we care about emulation between systems of ITMs when reasoning about protocol security. 
+Therefore, we must define the notion of PPT at the ITM sytem level as well.
+First we define the \msf{execUC} function parameterized by a security parameter $k$ and a sequence of random bits $r$.
+Additionally, it has implicit parameters: protocol $\pi$, an adversary $\Adversary$, and an environment $\Environment$ that are referenned through a user-defined module \msf{PS}.
+The system of ITMs $\msf{execUC}(\pi, \Adversary, \Environment)$ is a closed term except for security parameter $k$, random bit sequence $r$, initial import $n$, and a function $T$.
+Thus, \msf{execUC} is a \textit{PPT term} and, by Theorem~\ref{thm:ppt} it is PPT in $k$ if $n \in poly(k)$.
 
 
 \subsection{Emulation}
-The \msf{execUC} function is parameterized by security parameter $k$ and a sequence of random bits $r$. 
-Hence, for a specific $k$, \msf{execUC} is a probability distribution over random strings $r$ of length $poly(k)$, and $\msf{execUC}_{k,r}$ is a probability distribution ensemble.
-We define Nomos UC emulation from one protocol to another by the statistical distance between the two enesmbles defined in Definition~\ref{def:distance}.
-We state the emulation theoream in Theorem~\ref{theorem:emulation}.
+A proof of security in the UC framework relies upon emulation.
+In general, we say that a protocol $\pi$ exhibits some desired security properties if no environment providing inputs to protocol parties (and the adversary) can distinguish between the $\pi$ and another pprotocol $\phi$ that possesses the desired properties.
+In most cases we compare a real protocol $\pi$ with an idealized protocol $\phi$ which encapsulated by a single ideal functionality $\F$.
+The ideal functionality is a trusted third party that executes the entire protocol on behalf of all of the participants.
+Therefore, it is much simpler than a real protocol where mutually distrustful parties communicate with each other, and its security properties are easily proven.
 
-\begin{definition}\label{def:distance}
+It is clear from Figure~\ref{lst:execuc} that its output is a distribution induced by the random bit string $r$ (note that without any randonmess \msf{execUC} is entirely deterministic for any environment).
+When we reason about emulation between two protocols what we really means is the indistinguishability between the ensembles that represent the outputs of \msf{execUC}.
+We define indistinguishabiliy between ensembles in a standard way using \textit{statistical distance} in Definition~\ref{def:distance}.
+
+\begin{definition}[Indisinguishability]\label{def:distance}
 Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\mathcal{D}_{1,k} \approx \mathcal{D}_{2,k}$, if their statistical distance is at most $negl(k), \forall k$.
 \end{definition}
 
-\begin{definition}
-For any term $e$ that is \textit{well-typed}, $\exists n \in \mathbb{N}$ and a poynomial $T$ s.t. $e$ halts in $\leq T(n) steps$.
-
-Given some potential T(n) where n in poly(k) 
-
-Poised state a configuration of processes ==> saying that it has terminated to a value. For any configuration $e$ within $T(n)$ step it will reach a poised state.
-Every exeution step it takes its potential goes down and the sum of that is always a constant. 
-In the end the potential will be non-negative <= T(n).
-
+Indisintiguishability between two protocols is defined as follows:
+\begin{definition}[Emulation]\label{def:emulation}
+protocol $\pi = (\pi, \F_1)$ emulates another protocols $\phi = (\phi, \F_2)$ if for adversary \Adversary~, $\exists$ simulator $\mathcal{S} \forall \Environment, \forall k, \forall r \in \{0,1\}^{poly(k)}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary) \approx \msf{execUC}(\phi, \Environment, \Simulator)$. All of $\pi, \phi, \Environment, \Adversary, \Simulator$ are assumed to be \textit{well-typed PPT terms}.
 \end{definition}
 
-\begin{definition}
-For all $k \in \mathbb{N}$ and $r \in \{0,1\}^{poly(k)}$ the term $\msf{execUC}_{k,r,n,T}(\Environment, \phi, \F, \Adversary)$ is \textit{well-typed} if $\exists n, T$ s.t. $\msf{execUC}_{k,r,n,T}$ executes in $\leq T(n)$ steps.
-\end{definition}
+Further, we care about emulation with respect to an ideal protocol $\phi$ which is really just a an ideal functionality. 
+We say the protocol $\pi$ realized an ideal functionality $\F$ if Definition~\ref{def:emulation} holds for $\phi = (\phi_{\mathcal{D}}, \F)$, where $\phi_{\mathcal{D}}$ is the dummy protocol that forwards all inputs to $\F$.
 
-\begin{definition}\label{def:emulation}
-Given well-typed protocols $\pi = (\mathcal{P}(\pi_1), \mathcal{F}_1)$, $\phi = (\mathcal{P}(\phi_2), \mathcal{F}_2)$, adversary $\mathcal{A}$, and simulator $\mathcal{S}$, $\pi$ and $\phi$ securely emulate each other if for all environments $\mathcal{Z}$, security parameters $k$ $\msf{execUC}_{k,r,n,T} (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S})$ and  $\msf{execUC}_{k,r,n,T} (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$ are \textit{well-typed}  and $\msf{execUC}_k (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S}) \approx \msf{execUC}_k (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$.
-\end{definition}
+\paragraph{Dummy Lemma}
+In Definition~\ref{def:emulation} we characterize emulation by a simulator \Simulator, for a specific adversary \Adversary.
+However, there is a more useful definition of emulation where proving emulation w.r.t. a single adversary, namely the dummy adverasry \DummyAdv, is sufficient to guarantee emulatioon w.r.t any other adversary.
 
-\begin{theorem}
-If there exists a well-typed \msf{PPT} simulator $\mathcal{S}_d$ as in Definition~\ref{def:emulation} such that $\forall \mathcal{Z}, \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \phi, \F_2, \mathcal{S}_d) \approx \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \pi, \F_1, \mathcal{A}_d)$, where $\mathcal{A}_d$ is the dummy adversary, $\Rightarrow \exists \mathcal{S}$ s.t. $\msf{execUC}_{k,r}(\mathcal{Z}, \phi, \F_2, \mathcal{S}) \approx \msf{execUC}_{k,r}(\mathcal{Z}, \pi, \F_1, \mathcal{A}$ for any well-typed PPT $\mathcal{A}$.
+\begin{theorem}[Dummy Lemma]\label{thm:dummy}
+For protocols $\pi$ and $\phi$, $\msf{execUC}(\pi, \Environment, \DummyAdv) \approx \msf{execUC}(\phi, \Environment, \Simulator_{\mathcal{D}}) \Rightarrow \exists$ \textit{well-typed, PPT} $\Simulator_{\mathcal{D}}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary') \approx \msf{execUC}(\phi, \Environment, \Simulator')$ for any other $\Adversary'$.
 \end{theorem}
 
-\begin{figure}
+\begin{proof}
+Show construction of \Simulator' from UC paper and prove it emulates for \Adversary'.
+\todo{ just do it }
+\end{proof}
 
-\end{figure}
+%\begin{definition}
+%For any term $e$ that is \textit{well-typed}, $\exists n \in \mathbb{N}$ and a poynomial $T$ s.t. $e$ halts in $\leq T(n) steps$.
+%
+%Given some potential T(n) where n in poly(k) 
+%
+%Poised state a configuration of processes ==> saying that it has terminated to a value. For any configuration $e$ within $T(n)$ step it will reach a poised state.
+%Every exeution step it takes its potential goes down and the sum of that is always a constant. 
+%In the end the potential will be non-negative <= T(n).
+%
+%only closed and only well-typed
+%security parameter has to be present
+%
+%1. givne polynomial import 
+%
+%2. dependent on some paramter $k$ then it is still PPT then it is well-typed
+%
+%3. random strings: it's necessar to just talk about distributions associated with closed terms
+%
+%\end{definition}
+%
+%\begin{definition}
+%For all $k \in \mathbb{N}$ and $r \in \{0,1\}^{poly(k)}$ the term $\msf{execUC}_{k,r,n,T}(\Environment, \phi, \F, \Adversary)$ is \textit{well-typed} if $\exists n, T$ s.t. $\msf{execUC}_{k,r,n,T}$ executes in $\leq T(n)$ steps.
+%\end{definition}
+%
+%\begin{definition}\label{def:emulation}
+%Given well-typed protocols $\pi = (\mathcal{P}(\pi_1), \mathcal{F}_1)$, $\phi = (\mathcal{P}(\phi_2), \mathcal{F}_2)$, adversary $\mathcal{A}$, and simulator $\mathcal{S}$, $\pi$ and $\phi$ securely emulate each other if for all environments $\mathcal{Z}$, security parameters $k$ $\msf{execUC}_{k,r,n,T} (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S})$ and  $\msf{execUC}_{k,r} (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$ are \textit{well-typed}  and $\msf{execUC}_k (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S}) \approx \msf{execUC}_k (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$.
+%\end{definition}
+%
+%\begin{theorem}
+%If there exists a well-typed \msf{PPT} simulator $\mathcal{S}_d$ as in Definition~\ref{def:emulation} such that $\forall \mathcal{Z}, \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \phi, \F_2, \mathcal{S}_d) \approx \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \pi, \F_1, \mathcal{A}_d)$, where $\mathcal{A}_d$ is the dummy adversary, $\Rightarrow \exists \mathcal{S}$ s.t. $\msf{execUC}_{k,r}(\mathcal{Z}, \phi, \F_2, \mathcal{S}) \approx \msf{execUC}_{k,r}(\mathcal{Z}, \pi, \F_1, \mathcal{A}$ for any well-typed PPT $\mathcal{A}$.
+%
+%swap the quanitifers for any A there exists an S
+%all Z needs to be present for all of them.
+%
+%\end{theorem}
+%
+%\begin{figure}
+%
+%\end{figure}
