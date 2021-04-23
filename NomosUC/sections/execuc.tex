@@ -4,15 +4,13 @@ We continue on to state the dummy lemma theorem as well as the composition theor
 For the remainder of this section when we refer to a protocol we refer to a pair of machines as in Definition~\ref{def:protocol}.
 
 \begin{definition}\label{def:protocol}
-	A \textit{protocol} $\pi$ is a pair of processes ($\mathcal{P}(e)$, $\mathcal{F}$) where $\mathcal{P}$ is the protocol wrapper, $e$ is the program for a single party, and $\mathcal{F}$ is an ideal functionality.
+A \textit{protocol} $\pi$ is a pair of terms ($\mathcal{P}(e)$, $\mathcal{F}$) where $\mathcal{P}$ is a wrapper around protocol code, $e$ is the program for a single party, and $\mathcal{F}$ is an ideal functionality.
 \end{definition}
  
-Protocols with no corresponding functionality, i.e. real protocols that don't require any idealized implementation.
-Protocols with no functionality can get away with any well-typed functionality, even one that only returns the write-token to the environment on every activation.
-
+Protocols with no ideal functionality can default to an empty ideal functionalty that immediately returns the write-token to the Environment.
 
 \subsection{The UC Experiment}
-The \msf{ExecUC} function creates an execution of the UC experiment that spawns the input environments and all of the other necessary machines: the party wrapper, the functionality, and the adverasry.
+The \msf{ExecUC} function creates an execution of the UC experiment that spawns the input environments and all of the other necessary machines: a protocol wrapper, the functionality, and the adverasry.
 Figure~\ref{fig:execuc} illustrates the function in Nomos.
 
 \begin{figure*}
@@ -28,18 +26,24 @@ proc execUC : (k: int), (rng: [Bit]) |- ($d : bit) =
 	...
 	send $z #pw_to_z ;
 	send $z #z_to_pw ;
-	$pw <- party_wrapper[PS.p2z][PS.z2p][PS.p2f][PS.f2p][PS.p2a][PS.a2p] <-
+	$pw <- protocol_wrapper[PS.p2z][PS.z2p][PS.p2f][PS.f2p][PS.p2a][PS.a2p] <-
 	k rng clist #pw_to_f #f_to_pw #pw_to_a #a_to_pw #pw_to_z #z_to_pw ;
 	...
     $z.start ;
     $d <- $z ;
 }
 \end{lstlisting}
-\caption{The \msf{execUC} function spawns all the necessary ITMs in the UC execution: the environment, the party wrapper, the functionality, and the adversary. Each is parameterized with a security parameter $k$ and a uniformly random bit string $r \in \{0,1\}^{poly(k)}$. Eventually, the environment is initiated and it returns a bit $b$ which is its guess for which world it is in.}
+\caption{The \msf{execUC} function spawns all the necessary ITMs in the UC execution: the environment, the protocol wrapper, the functionality, and the adversary. Each is parameterized with a security parameter $k$ and a uniformly random bit string $r \in \{0,1\}^{poly(k)}$. Eventually, the environment is initiated and it returns a bit $b$ which is its guess for which world it is in.}
 \label{lst:execuc}
 \end{figure*}
+We elide over some sections of code in \msf{execUC} in Figure~\ref{lst:execuc}.
+Mainly we exclude spawning all of the communicators for each pair of channel between all the ITMs, and we exclude spawning the other ITMs, namely the functionality and the adverasary as they are very similar to the \msf{protocolWrapper}.
+The full code of the \msf{execUC} can is shown in appendix Figure~\ref{app:lst:execuc}.
 
 Instead of accepting as input the initial process definition for each of the spawned machines, Nomos UC assumes the existence of a user module \msf{PS} which defines the environment, \msf{PS.z}, the functionality, \msf{PS.F\_code}, and the adverasry \msf{PS.adv}.
+The reason for this is that the current implementation of Nomos does not allow it.
+Theoretically, such a construction is possible~\cite{pfenning} and this is why all of our pseudo-code describes \msf{execUC} as accepting process definitions for the various user-defined programs as parameters.
+
 The environment is the first to be spawned and selects an \msf{sid} and a list of pids of corrupt parties, \msf{clist}.
 Once the \msf{sid} is selected, all the communicators used between the machines are create and the processes spawned.
 They are parameterized with the id's of the endpoints, the type of the messages \msf{PS.p2f}, and the potential sent over them \msf{PS.f2p}.
@@ -53,17 +57,58 @@ For existing parties, it intercepts incoming messages and routes them to the rig
 \todo{ Not sure if this is relevant, wait for better understanding from ankush/andrew. The total potential in the system is inferred by the Nomos type-system, and given to the first spawned process: \msf{execUC}.
 Therefore, well-typed programs are only those where the potential type parameters provide enough import for an execution.}
 
+\paragraph{Spawning Parties On-Demand}
+One feature of the UC framework that is not readily captured in code is spawning parties on-demand.
+When the environment writes to a protocol party for the first time, a new ITM is spawned that is an instance of the protocol code.
+The code, dubbed the \msf{protocolWrapper} in the code above, handles such behvaior and encapsulates all of the protocol parties.
+
+When protocol wrapper maintains a list of the parties that exist by their \msf{pid} and routes incoming messages directed at them, to them.
+\todo{The dictionary for storing and sending is not precise yet.}
+If the party doesn't exist, the partywrapper spawns communicators for the new party and spawns an instace of the user specified code.
+It then spawns a new process translate for each of the outgoing communicators from the new party:
+
+\begin{lstlisting}
+<- translate <- p $toF $pw_to_f ;
+\end{lstlisting}
+
+The transalte process shown in Figure~\ref{lst:translate}
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\small\ttfamily]
+proc translate[a]{an} :
+  (id: pid), (#to_inner: comm[a]{an}), 
+  (#to_outer: comm[pid ^ b]{an}) |- ($t: 1) =
+{
+  $ti <- acquire #to_inner ;
+  case $ti (
+    yes => msg = recv $ti ;
+           get {an} $ti ;
+           send $to id ^ msg ;
+           pay $to {an} ;
+           $t <- translate id #to_inner #to_outter ;
+  | no => $t <- translate id #to_inner #to_outter ;
+}
+\end{lstlisting}
+\caption{The translate function appends the ID of the sending party to all outgoing messages. The protocol code itself assumes it's writing to another ITM and does not need to both with it's own ID.}
+\label{lst:translate}
+\end{figure}
+
 \subsection{Polynomial Bound}
 The UC import mechanism provides a way to define polynomial time computation and resource-bounds by ensuring that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a polynomial and $n$ the total units of import the ITM ever receives.
 This is enough to reaosn about polynomial-time, however when reasoning about security we care specifically of ITMs that whose computation is bounded by some poynomial in the security parameter $k$. 
 In Nomos, we take advantage of the import built into the type system to ensure ITMs in Nomos are PPT in the security parameter. 
 
-\begin{definition}[PPT Terms]\label{def:pptterm}
-A \textit{PPT term} is a \textit{well-typed} term $e(k, r, T(n)$ that is \textit{closed} except for security parameter $k$, random bit sequence $r$, function $T$, and initial import balance $n$.
+\begin{definition}[PPT Term]\label{def:pptterm}
+A \textit{PPT term} is a \textit{well-typed} term $e(k, r)$ that is \textit{closed} except for security parameter $k$, random bit sequence $r$.
 \end{definition}
 
+We first-define terms that are well-typed in the traditional session-types-sense in Definition~\ref{def:pptterm}, i.e. without any resource constraints~\cite{sessiontypes}.
+Such terms are closed except for the security parameter $k$ and some uniformly random bit sequence $r$. 
+For the remainder of the the discussion on polynomial we are concerned with constraining terms that are \textit{well-typed} for regular session types to be well-resource-typed as well.
+Specifically we would like to reason about terms in NomosUC being PPT in the security parameter $k$: the standard notion of resource constraits in UC security.
+
 \begin{theorem}[PPT in $k$]\label{thm:ppt}
-A \textit{PPT term} $e(k, r, T(n))$ with $n \in poly(k)$ and polynomial function $T$ is PPT in $k$, $\forall k \in \mathbb{N}, \forall r \in \{0,1\}^{poly(k)}$.
+A \textit{PPT Term} $e(k, r)$ is well-resource-typed if, given a polynomial $T$, $\exists n(k) \in poly(k)$ amount of import s.t. $\forall k, r, e(k, r) {n(k)}$ is terminates in at most $T(n)$ steps.
 \end{theorem}
 
 \begin{proof}
@@ -96,24 +141,60 @@ Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\ma
 
 Indisintiguishability between two protocols is defined as follows:
 \begin{definition}[Emulation]\label{def:emulation}
-protocol $\pi = (\pi, \F_1)$ emulates another protocols $\phi = (\phi, \F_2)$ if for adversary \Adversary~, $\exists$ simulator $\mathcal{S} \forall \Environment, \forall k, \forall r \in \{0,1\}^{poly(k)}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary) \approx \msf{execUC}(\phi, \Environment, \Simulator)$. All of $\pi, \phi, \Environment, \Adversary, \Simulator$ are assumed to be \textit{well-typed PPT terms}.
+protocol $\pi = (\pi, \F_1)$ emulates another protocols $\phi = (\phi, \F_2)$ if for adversary \Adversary~, $\exists$ simulator $\mathcal{S} \forall \Environment, \forall k, \forall r \in \{0,1\}^{poly(k)}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary) \approx \msf{execUC}(\phi, \Environment, \Simulator)$. All of $\pi, \phi, \Environment, \Adversary, \Simulator$ are assumed to be \textit{well--resource-typed PPT terms}.
 \end{definition}
 
+
 Further, we care about emulation with respect to an ideal protocol $\phi$ which is really just a an ideal functionality. 
-We say the protocol $\pi$ realized an ideal functionality $\F$ if Definition~\ref{def:emulation} holds for $\phi = (\phi_{\mathcal{D}}, \F)$, where $\phi_{\mathcal{D}}$ is the dummy protocol that forwards all inputs to $\F$.
+We say the protocol $\pi$ UC-realizes an ideal functionality $\F$ if Definition~\ref{def:emulation} holds for $\phi = (\phi_{\mathcal{D}}, \F)$, where $\phi_{\mathcal{D}}$ is the dummy protocol that forwards all inputs to $\F$.
+
+\begin{definition}[UC-Realize]
+If UC-emulation (Definition~\ref{def:emulation}) holds for an ideal-world protocol $(\phi, \F_1)$ and real-world protocol $(\pi, \F_2)$ we say that the protocol $(\pi, \F_2)$ \textit{UC-realizes} $\F_1$
+$$ (\pi, \F_2) \approx \F_1 $$
+in the $\F_2$-hybrid world.
+\end{definition}
 
 \paragraph{Dummy Lemma}
 In Definition~\ref{def:emulation} we characterize emulation by a simulator \Simulator, for a specific adversary \Adversary.
 However, there is a more useful definition of emulation where proving emulation w.r.t. a single adversary, namely the dummy adverasry \DummyAdv, is sufficient to guarantee emulatioon w.r.t any other adversary.
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
-For protocols $\pi$ and $\phi$, $\msf{execUC}(\pi, \Environment, \DummyAdv) \approx \msf{execUC}(\phi, \Environment, \Simulator_{\mathcal{D}}) \Rightarrow \exists$ \textit{well-typed, PPT} $\Simulator_{\mathcal{D}}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary') \approx \msf{execUC}(\phi, \Environment, \Simulator')$ for any other $\Adversary'$.
+For protocols $\pi$ and $\phi$, $\msf{execUC}(\pi, \Environment, \DummyAdv) \approx \msf{execUC}(\phi, \Environment, \Simulator_{\mathcal{D}}) \forall \Environment \Rightarrow \exists$ \textit{well-resource-typed, PPT} $\Simulator_{\mathcal{D}}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary') \approx \msf{execUC}(\phi, \Environment, \Simulator')$ for any other \textit{well-resource-typed} $\Adversary'$.
 \end{theorem}
 
+Theorem~\ref{thm:dummy} can be broken up into smaller parts to prove individually.
+
+\begin{lemma}[PPT \Simulator]\label{lem:dummyppt}
+For every well-resource-typed real-world \Adversary and a well-resource-typed dummy simulator $\Simulator_{\mathcal{D}}$ the constructed \Simulator~ is well-resource-typed $\forall \Environment$ that are well-typed for adverasry \Adversary (i.e. in the real-world).
+\end{lemma}
+
 \begin{proof}
-Show construction of \Simulator' from UC paper and prove it emulates for \Adversary'.
-\todo{ just do it }
+The constructed \Simulator~ internally simulates the real-world adversary \Adversary~ and the dummy simulator \Dummysim~ with some constant over-head in activation. 
+The internal simulation is given virtual import through the \msf{simpay} and \msf{simulate} calls which ensures that the simulated process uses the potential available to \Simulator.
+Therefore, if \Adversary~ and \Simulator~ are well-resource-typed (i.e. they are PPT in $k$ in the sense of Theorem~\ref{thm:ppt}) then a polynomial
+$$ T(n) = T_{\Adversary}(n) + T_{\Dummysim}(n) + O(n) $$
+where $T$ is the maximum of the two polynomials bounding \Adversary~ and \Dummysim and $n$ is the total import received by \Simulator. 
+Therfore, we conclude that \Simulator~ satisfies our definition of PPT in $k$ and is, therefore, well-resource-typed.
 \end{proof}
+
+\begin{proof}
+We give a full construction of the simulator \Simulator~ in the Appendix.
+The simulator proceeds identically to the simulator in the original UC proof. It performs a constant amount of work as overhead of routing messages between the internall simulated \Adversary~ and the dummy simulator $\Simulator_{\mathcal{D}}$. 
+Therefore, the bounding polynomial for \Simulator~ can be determined to be:
+$$ T(n) = T_{\Adversary}(n) + T_{\Simulator_{\mathcal{D}}} + O(n)$$ 
+whhere $n$ is the total import received by \Simulator.
+\end{proof}
+
+	
+
+%%
+%Notes
+%%
+
+% It should be okay that we have one global T because processes can't depend on the type T,n basically. 
+% We can just have T as part of the type and then we should be good to go.
+% Composition theorem  
+
 
 %\begin{definition}
 %For any term $e$ that is \textit{well-typed}, $\exists n \in \mathbb{N}$ and a poynomial $T$ s.t. $e$ halts in $\leq T(n) steps$.
