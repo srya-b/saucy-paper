@@ -133,7 +133,8 @@ thereby not requiring any special rules for typing; it can be typed just as proc
 Formally, the typing judgment for processes in NomosUC is written as
 $\Tokens \semi \Psi \semi \D \entailpot{q} P :: (x : A)$.
 Here, $\Psi$ denotes the functional data structures and $\D$ collects the
-session-typed channels along with an optional write token $\wt$.
+session-typed channels along with an optional write token $\wt$
+(to resolve non-determinism in the semantics).
 The process is denoted by $P$ that offers channel $x$ of type $A$.
 In addition, the annotation $q$ denotes a natural number denoting the
 total potential stored in process $P$.
@@ -384,71 +385,137 @@ This enables us to simulate the cost model that counts the total number of
 execution steps.
 However, since ticks are not tied directly to the type system, the programmer
 can modify the cost model to only count the resource they are interested in
-(e.g., messages exchanged, processes spawned, etc.).
+(e.g., message exchange, process spawns, etc.).
 
+% \begin{mathpar}
+%   \D_1 \equiv_Z \D_2 \\
+%   \D \overset{(import, potential, cost)}{\vDash} P :: \D' \\
+%   A \equiv B \\
+%   \infer[]
+%   {\vars \vdash \D_1, (x : A) \equiv \D_2, (x : B)}
+%   {\vars \vdash \D_1 \equiv \D_2 \and \vars \vdash A \equiv B}
+% \end{mathpar}
+
+\paragraph*{\textbf{Shared Channels}}
+Until now, we have only described the linear fragment of session types
+in Nomos.
+Unfortunately, this fragment imposes a strong restriction on programs.
+The only provision to spawn new processes is when a parent process creates a new
+child process, and uses an exclusive linear channel to communicate with the child.
+Thus, any two processes connected by a channel inherently maintain this parent-child
+relationship.
+Intuitively, this leads to a linear tree-like hierarchy among the processes,
+thus preventing a cycle in the process graph.
+
+Unfortunately, this restriction precludes practical programming scenarios
+where process topologies indeed have a cyclic dependency (e.g. ring networks,
+dining philosophers, etc.).
+Recognizing this limitation, Balzer et al.~\cite{Balzer17icfp} proposed
+a \emph{shared} extension of session types that allows arbitrary process topologies.
+The types are extended as follows:
+\begin{center}
+\begin{minipage}{0cm}
+\begin{tabbing}
+$A_L ::= \down A_S \mid \ldots \text{(all linear types $A$ so far)}\ldots$\\
+$A_S ::= \up A_L$
+\end{tabbing}
+\end{minipage}
+\end{center}
+We have found this extension exceedingly helpful in the design and implementation
+of cryptographic protocols.
+
+Shared session types impose an \emph{acquire-release} discipline on processes; 
+a client must acquire the channel offered by a shared process to interact with it
+and must release this channel after the interaction.
+The corresponding typing rules are
 \begin{mathpar}
-  \D_1 \equiv_Z \D_2 \\
-  \D \overset{(import, potential, cost)}{\vDash} P :: \D' \\
-  A \equiv B \\
-  \infer[]
-  {\vars \vdash \D_1, (x : A) \equiv \D_2, (x : B)}
-  {\vars \vdash \D_1 \equiv \D_2 \and \vars \vdash A \equiv B}
+  \footnotesize
+  \infer[\up L]
+  {\B{\Tokens} \semi \Psi \semi \wt, \D, (x : \up A_L)
+  \entailpot{q} \eacquire{y}{x} \semi Q :: (z : C)}
+  {\B{\Tokens} \semi \Psi \semi \D, (y : A_L)
+  \entailpot{q} Q :: (z : C)}
+  %
+  \and
+  %
+  \infer[\up R]
+  {\B{\Tokens} \semi \Psi \semi \D \entailpot{q}
+  \eaccept{y}{x} \semi P :: (x : \up A_L)}
+  {\B{\Tokens} \semi \Psi \semi \wt, \D \entailpot{q} P :: (y : A_L)}
 \end{mathpar}
+The $\up L$ rule describes a client acquiring a shared channel $x$
+and obtaining a private linear channel $y$ along which it can communicate
+with the corresponding acquired process.
+Correspondingly, the $\up R$ rule describes the shared process
+accepting the acquire request and creating the fresh linear channel $y$.
+The release-detach rules corresponding to the $\down$ type constructor
+are exact dual of acquire-accept.
 
-\paragraph*{Process Definitions}
-Process definitions have the form $\D \vdash f = P :: (x : A)$ where $f$
-is the name of the process and $P$ its definition. All definitions are
-collected in a fixed global signature $\Sg$. Also, since process definitions
-are mutually recursive, it is required that for every process in the signature
-is well-typed w.r.t. $\Sg$, i.e. $\Sg \semi \D \vdash P :: (x : A)$. For
-readability of the examples, I break a definition into two declarations,
-one providing the type and the other the process definition binding the
-variables $x$ and those in $\Omega$ (generally omitting their types):
-\[
-\begin{array}{l}
-\D \vdash f :: (x : A) \\
-\procdef{f}{\D}{x} = P
-\end{array}
-\]
+An important caveat here is that shared channels can introduce non-determinism
+in the semantics.
+The only source of non-determinism is that a shared process can latch on to
+any of the acquiring clients.
+To address this problem, we require that the acquiring client \emph{possess
+the write token}.
+Since write tokens are treated as a linear quantity, only one of the client can
+possess it enabling only that process to acquire the shared channel.
+Remarkably, this write token can resolve both read and write non-determinism
+due to linearity of the channels.
+
+\paragraph*{\textbf{Import Tokens}}
+NomosUC differs from the UC framework in one important aspect: UC employs
+import tokens to bound the runtime of ITMs.
+On the other hand, NomosUC simplifies matters by relying on the notion of
+abstract potential and requiring that every execution step costs $1$ unit
+of potential.
+As a consequence, however, we need to connect import tokens to potential.
+To this end, we introduce a novel token context $\Tokens$ in the process typing
+judgment.
+This context stores the number and type of each token and is written as
+$\Tokens ::= K \hookrightarrow n, \; \Tokens \mid \cdot$ denoting that the
+process stores $n$ tokens of type $K$.
+We also introduce a novel construct $\m{generatePotential} \; f \; (m : K)$
+which consumes $m$ units of import tokens of type $K$ to generate $f(m)$
+units of potential. The corresponding typing rule is
+\begin{mathpar}
+  \inferrule*[right=$\m{pot}$]
+  {\Tokens, K \hookrightarrow n \semi \Psi \semi \wt, \D \entailpot{q+f(m)} P :: (x : A)}
+  {\Tokens, K \hookrightarrow (n+m) \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
+    \hspace{5em}\m{generatePotential} \; f \; (m : K) \semi P :: (x : A)}
+\end{mathpar}
+The process initiates with potential $q$ and ends up with $q+f(m)$ potential
+by deducting $m$ import units of type $K$ from $\Tokens$.
+We also introduce a novel construct to create a new import token type
+$\m{convertToken} \; f \; K' \; (m : K)$.
+\begin{mathpar}
+  \inferrule*[right=$\m{tok}$]
+  {\Tokens, K \hookrightarrow n, K' \hookrightarrow f(m) \semi
+  \Psi \semi\wt, \D \entailpot{q} P :: (x : A)}
+  {\Tokens, K \hookrightarrow (n+m) \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
+    \hspace{5em}\m{convertToken} \; f \; K' \; (m : K) \semi P :: (x : A)}
+\end{mathpar}
+The above construct deducts $m$ import of type $K$ and produces $f(m)$ import
+of type $K'$ as exemplified by the token context.
+
+\paragraph*{\textbf{Process Definitions}}
+Process definitions have the form
+$\Psi \semi \D \entailpot{q} f\{\Tokens\} = P :: (x : A)$ where $f$
+is the name of the process and $P$ its definition.
+We parameterize the process $f$ with the number and type of
+tokens it would need.
+All definitions are collected in a fixed global signature $\Sg$.
+Also, since process definitions are mutually recursive, it is required that
+for every process in the signature is well-typed w.r.t. $\Sg$.
 A new instance of a defined process $f$ can be spawned with
-the expression
-\[
-\procdef{f}{\overline{y}}{x} \semi Q
-\]
+the expression $\procdef{f\{\Tokens\}}{\overline{y}}{x} \semi Q$
 where $\overline{y}$ is a sequence of variables matching the
-antecedents $\D$.  The newly spawned process will use all
-variables in $\overline{y}$ and provide $x$ to the continuation $Q$.
-The operational semantics reduces the spawn to a cut.
-\[
-\begin{array}{ll}
-(\m{def} C) &
-\proc{c}{x \leftarrow f \leftarrow \overline{e} \semi Q}
-\step \proc{a}{[a/x, \overline{e}/\D]P},
-\proc{c}{[a/x]Q}
-\quad \fresh{a}
-\end{array}
-\]
-where $\D \vdash f = P :: (x : A) \in \Sg$.
-Here I write $\overline{e}/\D$ to denote substitution of the
-channels in $\overline{e}$ for the corresponding variables in
-$\D$.
-
+antecedents $\Psi$ and $\D$.
 Sometimes a process invocation is a \emph{tail call}, written without
-a continuation as $\procdef{f}{\overline{y}}{x}$. This is a
-short-hand for
-$\procdef{f}{\overline{y}}{x'} \semi \fwd{x}{x'}$ for a
+a continuation as $\procdef{f\{\Tokens\}}{\overline{y}}{x}$.
+This is a short-hand for
+$\procdef{f\{\Tokens\}}{\overline{y}}{x'} \semi \fwd{x}{x'}$ for a
 fresh variable $x'$, that is, a fresh channel is created and
-immediately identified with $x$ (although it is generally implemented
-more efficiently).
-
-\subsection*{Recursive Types}
-Session types can be naturally extended to include recursive types.
-For this purpose I allow (possibly mutually recursive) type
-definitions $X = A$ in the signature, where I require $A$ to be
-\emph{contractive}~\cite{Gay05acta}.  This means here that $A$ should
-not itself be a type name. The type definitions are
-\emph{equi-recursive} so $X$ can be silently replaced by $A$ during
-type checking, and no explicit rules for recursive types are needed.
+immediately identified with $x$.
 
 \subsection{Preservation and Progress}
 The main theorems that exhibit the deep connection between our type
@@ -562,23 +629,7 @@ case either $\config$ can take a step or is poised.
 
 
 \subsection{UC Communicators}
-The linear aspect of session types imposes an important restriction on programs.
-The only provision to spawn new processes is when a parent process creates a new
-child process, and uses an exclusive linear channel to communicate with the child.
-Thus, any two processes connected by a channel inherently maintain this parent-child
-relationship.
-Intuitively, this leads to a linear tree-like hierarchy among the processes,
-thus preventing a cycle in the process graph.
-
-Unfortunately, this restriction precludes practical programming scenarios
-where process topologies indeed have a cyclic dependency (e.g. ring networks,
-dining philosophers, etc.).
-Recognizing this limitation, Balzer et al.~\cite{Balzer17icfp} proposed
-a \emph{shared} extension of session types that allows arbitrary process topologies.
-We have found this extension exceedingly helpful in the design and implementation
-of cryptographic protocols.
-
-One illustration of such a use of shared session types is a \emph{communicator}.
+One illustration of a use of shared session types is a \emph{communicator}.
 We use communicators as message buffers between two arbitrary processes: a
 \emph{sender} and a \emph{receiver}.
 The communicator is connected to both the sender and the receiver using a shared
