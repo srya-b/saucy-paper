@@ -185,7 +185,7 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 	{. \models \msf{execUC}[\alpha] :: \Delta [\alpha] \\ \\
 	\Delta_1 \vdash \pi :: \Delta_1' \semi \Delta_2 \vdash \phi :: \Delta_{2}' \semi \Delta_3 \vdash \Simulator :: \Delta_3' \semi \Delta_4 \vdash \Adversary :: \Delta_4' \\
 	\Delta[\mathrm{T}_{\phi}] \equiv_{\Environment} \Delta1\ \semi  \Delta[\mathrm{T}_{\pi}] \equiv_\Environment \Delta_2 \semi \Delta_1 \equiv_{\Environment} \Delta_2 \semi \forall \Adversary, \Delta_3 \equiv_\Environment \Delta_4 \\
-	\msf{execUC} \pi\ \Environment\ \F_1\ \Adversary \sim\ \msf{execUC} \phi\ \Environment\ \F_2\ \Simulator }
+	\forall \Environment, \msf{execUC} \pi\ \Environment\ \F_1\ \Adversary \sim\ \msf{execUC} \phi\ \Environment\ \F_2\ \Simulator }
 	{(\pi, \F_1) \sim (\phi, \F_2)}
 \end{mathpar}
 \todo{I change my mind the above does not imply anything about well-matched only that they $\Delta_1$ and $\Delta_2$ are equivalent w.r.t. \Environment, but they need not be well-typed with \Environment.}
@@ -198,6 +198,11 @@ Particularly, we care about emulation with respect to an ideal protocol $\phi$ w
 We say the protocol $\pi$ UC-realizes an ideal functionality $\F_2$ if Definition~\ref{def:emulation} holds for $(\pi, \F_1)$ and  $\phi = (\idealP, \F_2)$
 
 \begin{definition}[UC-Realize]
+\begin{mathpar}
+\inferrule*[right=uc-realize]
+{(\pi, \F_1) \sim (\idealP, F_2)}
+{\pi \sim \F_2}
+\end{mathpar}
 A well-typed protocol $(\pi, \F_1)$ UC-realizes $\F_2$ if $(\pi, \F_1) \sim (\phi, \F_2)$ in Definition~\ref{def:emulation}.
 
 %If UC-emulation (Definition~\ref{def:emulation}) holds for an ideal-world protocol $(\phi, \F_1)$ and real-world protocol $(\pi, \F_2)$ we say that the protocol $(\pi, \F_2)$ \textit{UC-realizes} $\F_1$
@@ -211,8 +216,8 @@ In Definition~\ref{def:emulation} we characterize emulation by a simulator \Simu
 However, there is a more useful definition of emulation where proving emulation w.r.t. a single adversary, namely the dummy adverasry \DummyAdv, is sufficient to guarantee emulatioon w.r.t any other adversary.1
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
-If $\exists \Dummysim$ s.t. $(\pi, \F_2) \sim (\idealP, \F_1)$ for only adversary the dummy adversary
-then $(\pi, \F_2) \sim (\idealP, \F_1)$ for all \Adversary as in Definition~\ref{def:emulation}.
+If $\exists \Dummysim$ s.t. $\Adv \equiv \idealP \models (\pi, \F_2) \sim (\idealP, \F_1)$,
+then $(\pi, \F_2) \sim (\idealP, \F_1)$ for all \Adversary as in Definition~\ref{def:emulation}
 
 %For protocols $\pi$ and $\phi$, $\msf{execUC}(\pi, \Environment, \DummyAdv) \sim \msf{execUC}(\phi, \Environment, \Simulator_{\mathcal{D}}) \forall \Environment \Rightarrow \exists$ \textit{well-resource-typed, PPT} $\Simulator_{\mathcal{D}}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary') \sim \msf{execUC}(\phi, \Environment, \Simulator')$ for any other \textit{well-resource-typed} $\Adversary'$.
 \end{theorem}
@@ -230,7 +235,9 @@ Secondly, it runs a simulatio of \Dummysim which accepts input from \Adversary a
 Theorem~\ref{thm:dummy} can be broken up into smaller parts to prove individually.
 
 \begin{proof}
-By our construction it is clear that \Simulator' is well-matched with $\phi$ and \Environment for all message types.
+By our construction, \Simulator' runs \Adversary internally, therefore \Adversary well-matched with \Environment $\Rightarrow$ \Simulator' well-matched with \Environment.
+Similarly, $(\pi, \F_1) \sim (\idealP, \F_2) \Rightarrow \Dummysim$ well-matched with $(\idealP, \F_2) \Rightarrow \Simulator'$ well-matched with $(\idealP, \F_2)$.
+
 Our definition of \textit{well-matched} form our emulation definition also requires that \Simulator' be well-matched with all such \Environment even in the import type parameters. 
 We provie this by providing a simple polynomial bound for \Simulator that satisfies the definition of \textit{well-resource-typed}.
 As \Simulator' only accepts import from \Environment it suffices that a satisfying poynomial bound be: 
