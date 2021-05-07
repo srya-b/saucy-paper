@@ -11,6 +11,8 @@
 \usepackage{textcomp}
 \usepackage{mathtools}
 \usepackage[shortlabels]{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
 
 %% PL packages
 \usepackage{stmaryrd} 
@@ -18,11 +20,11 @@
 \usepackage{mathpartir}
 \usepackage{color}
 \usepackage{xstring}
+\usepackage{xspace}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
-
 \usetikzlibrary{matrix, arrows.meta, calc, positioning}
 \tikzset{myarrow/.style={-Latex, rounded corners},}
 
@@ -44,6 +46,13 @@
     attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
     #1,% For possible options
 }
+
+\makeatletter
+\newcommand\BeraMonottFamily{%
+	\def\fvm@scale{0.85}%
+	\fontfamily{fvm}\selectfont
+}
+\makeatother
 
 \title{Nomos-UC: a programming framework for cryptography based on resource-aware session types\\
 \thanks{Identify applicable funding agency here. If none, delete this.}
@@ -100,6 +109,9 @@ component, formatting, style, styling, insert
 
 \section{ExecUC}
 \input{sections/execuc}
+
+\section{Commitment}
+\input{sections/commitment}
 
 \section{Multisession Operator}
 \input{sections/multisession}

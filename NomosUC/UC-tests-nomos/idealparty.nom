@@ -1,0 +1,2 @@
+type z2p[a] = /\ +{ P2F: a -o \/ z2p[a],
+					p2w: 

@@ -1,0 +1,10 @@
+what valuation model --> common value, interdependent, private value (drawn i.i.d)
+
+private --> second price sealed bid auction generally works inthe sense that it has limited exposure the auctioneer collusion
+
+assume common value auction --> seller := auctioneer --> you won't ahve the cae where there can be off-chain communication happening where i can't accept private bids i
+
+two bidders --> one leg in on chain another lef in another chain --> either both are included or none
+
+
+using state channels --> when you submit bids, you aren't submitting an indication but also a conditional payment --> if you include this i will pay you x amount --> when they reveal the bids they reveal conditional payments --> if you as the miner are teling me 
