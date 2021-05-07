@@ -1,0 +1,60 @@
+\begin{figure*}
+\begin{lstlisting}[basicstyle=\BeraMonottFamily]
+(* Z2P interface *)
+type Ip2f = P2FCommit of Bit | P2FOpen ;
+type If2p = F2PCommit | F2POpen of Bit ;
+
+(* Ideal World *)
+type Ip2f = SCommit of Bit | SOpen ;
+type If2p = RCommit | ROpen of Bit ;
+
+type Ia2f = 0 ;
+type If2a = 0 ;
+
+type Ia2p = Ip2f ;	(* crupt input is same as z2p *)
+type Ip2a = If2p ;
+
+(* Real World *)
+type Rp2f = SHash of Int | Send of pid ^ pid ^ Int ;
+type Rf2p = Pre of Int | RHash of Int | MSG of pid ^ pid ^ Int ;
+
+type Ra2f = A2Hash of Int ;
+type Rf2a = Hash2A of Int ;
+
+type Ra2p = Rp2f ;
+type Rp2a = Rf2p ;
+
+(* the import here is given as those for the dummy adversary in the real world *)
+p2zn <- 0 ; z2pn <- 1 ;
+a2zn <- 0 ; z2an <- 1 ; 
+
+Rf2pn <- 0 ; Rp2fn <- 1 ;
+Rp2an <- 0 ; Ra2pn <- 1 ;
+Rf2an <- 0 ; Ra2fn <- 1 ;
+
+If2pn <- 0 ; Ip2fn <- 0 ;
+Ip2an <- 0 ; Ia2pn <- 0 ;
+I
+
+(* channels *)
+#z_to_p <- comm[pid ^ Ip2f]
+#p_to_z <- comm[pid ^ If2p]
+#z_to_a <- comm[ z2d[Ra2p][Ra2f] ] ;
+#z_to_z <- comm[ d2z[Rp2a][Rf2a] ] ;
+
+
+(* Real World exec PI *)
+execUC[Ip2f][If2p][Rp2f][Rf2p][Rp2a][Ra2p][Rf2a][Ra2f][a2z][z2a]
+	  {p2zn}{z2pn}{f2pn}{p2fn}{p2an}{a2pn}{f2an}{a2fn}{a2zn}{z2an}
+
+(* Ideal world exec PHI *)
+execUC[If2p][Ip2f][Ip2f][If2p][Ip2a][Ia2p][If2a][Ia2f][a2z][z2a]
+	  {p2zn}{z2pn}
+
+
+
+
+
+
+\end{lstlisting}
+\end{figure*}
