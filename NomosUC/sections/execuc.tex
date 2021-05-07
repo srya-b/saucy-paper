@@ -225,7 +225,7 @@ Finally, we prove the validity of the construction in order to prove
 
 The constructed \Simulator' internally simulates \Adversary and routes messages from \Environment to \Adversary.
 Thus \Simulator' is well-matched with \Environment everywere \Adversary is.
-Secondly, it runs a simulatio of \Dummysim which accepts input from \Adversary and backdoor input from \phi and \F_2.
+Secondly, it runs a simulatio of \Dummysim which accepts input from \Adversary and backdoor input from $\phi$ and $\F_2$.
 
 Theorem~\ref{thm:dummy} can be broken up into smaller parts to prove individually.
 
@@ -238,7 +238,7 @@ As \Simulator' only accepts import from \Environment it suffices that a satisfyi
 T(n) = T_{\Adversary,\Dummysim}(n) + T_{\Adversary,\Dummysim}(n) + O(n)
 \]
 where $T_{\Adversary,\Dummysim}(n)$ is the greater of the two bounding polynomials for \Dummysim and \Adversary evaluated at $n$, and $n$ is the total amount of import received by \Simulator'.
-\Simulator' performs constant overhead in routing messages between \Adverasry and \Dummysim, therefore we can concude that with $T(n)$ defined above, \Simulator' is \textit{well-resource-typed} and satisfies Definition~\ref{def:emulation} for all pre-conditions but indistinguishability.
+\Simulator' performs constant overhead in routing messages between \Adversary and \Dummysim, therefore we can concude that with $T(n)$ defined above, \Simulator' is \textit{well-resource-typed} and satisfies Definition~\ref{def:emulation} for all pre-conditions but indistinguishability.
 
 \todo{Can we rely on he validity proof from the UC paper or do we need to state it here with a typed environment?}
 \end{proof}
