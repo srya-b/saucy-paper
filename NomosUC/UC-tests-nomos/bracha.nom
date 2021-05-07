@@ -1,0 +1,294 @@
+PS.p2f = /\ +{commit : (pid, int) -> &{ok : 1}}
+PS.f2p = /\ +{commit : (pid, int) -> PS.FtoPW)
+
+type PS.p2f = Commit of pid ^ int ;
+type PS.f2p = Commit of pid ^ int | Ok ;
+
+
+type comm[msg]{n} = /\ <{n}| & { SENDER: msg -> |{n}> \/ comm[msg]{n},
+								 RECV: +{yes: msg * |{n}> \/ comm[msg]{n},
+									   	 no: |{0}> \/ comm[msg]{n} }}
+
+
+proc PS.F_code : 
+	(#f_to_pw : comm[PS.f2p]), (#pw_to_f : comm[PS.p2f]),
+	(#f_to_a : comm[PS.f2a]),   (#a_to_f : comm[PS.a2f]),
+	(#f_to_w : comm[f2w]),      (#w_to_f : comm[w2f])       |- ($z : FtoE) =
+{
+	k = recv $z ;
+	rng = recv $z ;
+	sid = recv $z ;
+	clist = recv $z ;
+	ssid = sid[0] ;
+  	$parties = sid[1] ;
+	
+	$z <- PS.F_code_rec1 k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f #f_to_w #w_to_f $parties $parties.length
+}
+
+
+(* wait for input from the dealer *)
+proc PS.F_code_rec1 :
+	(k : int), (rng : int), (sid : string ^ list[pid]), (clist : list[pid]), 
+	(#f_to_pw : comm[PS.f2p]), (#pw_to_f : comm[PS.p2f]),
+	(#f_to_a : comm[PS.f2a]), (#a_to_f : comm[PS.a2f]),
+	(#f_to_w: f2w), (#w_to_f : w2f), ($parties: list[pid]), 
+	(n: int), (imp_in: int), (imp_out: int)  |- ($z : 1) =
+{
+	$pf <- acquire #pw_to_f ;
+	case $pf (
+		yes => get {n * (4*n + 1)} $pf ;
+			   msg = recv $pf ;
+			   #pw_to_f <- release $pf ;
+			   new_imp_in <- receive_import imp_in n;
+ 			   case msg (
+			     Commit(pid, int) => if pid == 1
+									 then
+									   $fw <- acquire #f_to_w ;
+					                   for p in parties
+					                   	 $fw.SEND ;
+										 send $fw Schedule(1 [p v]) ;
+										 pay $fw {1};
+										 $wf <- acquire #w_to_f ;
+										 case $wf (
+										   (* TODO TODO: receive import back from wrapper? *)
+										   yes => msg = recv $wf ;
+										   case msg (
+									  	     Ok =>	
+										   )
+										 )
+										 #w_to_f <- release $wf ;
+                                       #f_to_w <- release $fw ;
+					                 end
+								     $fp <- acquire #f_to_pw ;
+									 $fp.SEND ;
+									 send $fp Ok ;
+									 #f_to_pw <- release $fp ;
+					                 $z <- PS.F_code_rec2 k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f #f_to_w #w_to_f $parties n new_imp_in imp_out-1
+	)
+}
+
+
+proc PS.F_code_rec2 :
+	(k: int), (rng: int), (sid: string ^ list[pid]), (clist: list[pid]),
+	(#f_to_pw: PS.FtoPW), (#pw_to_f: PS.PWtoF), (#f_to_a: PS.FtoA), (#a_to_f: PS.AtoF),
+	(#f_to_w: PS.FtoW), (#w_to_f: PS.WtoF), ($parties: list[pid])  |- ($z: 1) =
+{
+	$wf <- acquire #w_to_f ;
+	case $wf (
+	  yes => msg = recv $wf ;
+			 #w_to_f <- release $wf ;
+			 case msg (
+			   Exec(f, args) =>
+                 if f == 1
+				 then
+				   p = args[0] ;
+				   v = args[1] ;
+			       $fp <- acquire #f_to_pw ;
+				   $fp.SEND ;
+				   send $fp Commit(p, v) ;
+				   #f_to_pw <- release $fp ;
+				   $z <- PS.F_code_rec2 k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f #f_to_w #w_to_f $parties
+				 else
+				   $z <- PS.F_code_rec2 k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f #f_to_w #w_to_f $parties
+}
+
+
+type PS.FHtoE = k -> rng -> sid -> crupt list -> PS.FtoZ 
+type PS.PWtoFH = Send of from ^ to ^ msg ;
+type PS.FHtoPW = Send of pid ^ pid ^ msg | Ok ;
+
+proc PS.F_hybrid :
+	(k : int), (sid : string ^ list[pid]), (clist: list[pid]),
+	(#pw_to_fh : comm[PS.PWtoFH]), (#fh_to_pw : comm[PS.FHtoPW]),
+	(#a_to_fh : comm[PS.AtoFH]), (#fh_to_a : comm[PS.FHtoA]),
+	(#w_to_fh : comm[PS.WtoFH]), (#fh_to_w : comm[PS.FHtoW])  |-  ($z : PS.FHtoE) =
+{
+	k = recv $z ;
+	rng = recv $z ;
+	sid = recv $z ;
+	$parties = sid[1]
+	clist = recv $z ;
+	$z <- PS.F_hybrid_rec1 k sid clist #pw_to_f #f_to_pw #a_to_fh #fh_to_a #w_to_fh #fh_to_w $parties
+	
+}
+
+(* proc PS.F_hybrid : (#pw_to_fh : comm[PS.PWtoFH]), (#fh_to_w : comm[FtoW]), (#w_to_fg : comm[wtof] |- ($z : PS.FtoZ) = *)
+proc PS.F_hybrid_rec1 :
+	(k : int), (sid : string ^ list[pid]), (clist: list[pid]),
+	(#pw_to_fh : PS.PWtoFH), (#fh_to_pw : PS.FHtoPW),
+	(#a_to_fh : PS.AtoFH), (#fh_to_a : PS.FHtoA),
+	(#w_to_fh : PS.WtoFH), (#fh_to_w : PS.FHtoW),
+	($parties : list[pid])  |-  ($z : PS.FHtoZ) =
+{
+	$pw <- acquire #pw_to_f ;
+	case $pw (
+	  yes => msg = recv $pw ;
+	  	 	 #pw_to_f <- release $pw ;
+			 case msg (
+			   Send (from, to, msg) =>
+			     if isin from $parties && isin to $parties
+				 then
+				   $fw <- acquire #fh_to_w ;
+				   $fw.SEND ;
+				   send $fw Schedule(1, [to, from, msg]) ;
+				   #fh_to_w <- release $fw ;
+				   $w <- acquire #w_to_f ;
+				   case yes => msg = recv $w ;
+				     		   case msg (
+							     Ok =>
+							   )
+				   #w_to_f <- release $w ;
+				   $pw <- acquire #fw_to_pw ;
+				   $pw.SEND ;
+				   send $pw Ok ;
+				   #w_to_f <- release $w ;
+				   $z <- PS.F_Hybrid_rec2 #pw_to_fh #fh_to_pw #a_to_fh #fh_to_a #w_to_fh #fh_to_w $parties			  else
+				   $z <- PS.F_Hybrid_rec2 #pw_to_fh #fh_to_pw #a_to_fh #fh_to_a #w_to_fh #fh_to_w $parties
+}
+
+
+type comm[a] = /\ &{ SEND: a -o \/ comm,
+					 RECV : +{ no: \/ comm,
+					 		   yes: a * \/ comm}};
+
+proc PS.F_hybrid_rec2 :
+	(k : int), (sid : string ^ list[pid]), (clist: list[pid]),
+	(#pw_to_fh : comm[PS.PWtoFH]), (#fh_to_pw : comm[PS.FHtoPW]),
+	(#a_to_fh : comm[PS.AtoFH]), (#fh_to_a : comm[PS.FHtoA]),
+	(#w_to_fh : comm[PS.WtoFH]), (#fh_to_w : comm[PS.FHtoW]),
+	($parties : list[pid])  |-  ($z : PS.FHtoZ) =
+{
+	$wf <- acquire #w_to_fh ;
+	case $wf (
+	  yes => msg = recv $wf ;
+			 case msg (
+		   	   Exec(f, args) =>
+			     if f == 1
+				 then
+				   to = args[0]
+				   from = args[1]
+				   msg = args[2]
+				   $fpw <- acquire #fh_to_pw ;
+				   $fpw.SEND ;
+				   send $fpw Send(from, to, mg) ;
+				   #fh_to_pw <- release $fpw ;				  
+				   $z <- PS.F_Hybrid_rec ...
+			 ) 
+	  no => PS.F_Hybrid_rec ... 
+	)
+}
+
+
+proc party_code: (sid: string ^ list[pid]), (id : pid),
+				 (#toZ: comm[PtoZ]), (#fromZ: comm[ZtoP]),
+				 (#toA: comm[PtoA]), (#fromA: comm[AtoP]),
+				 (#toF: comm[PtoF]), (#fromF: comm[FtoP])  |- ($toPW: b) =
+{
+	$pz <- acquire #fromZ ;
+	case $pz (
+	  yes => msg = recv $pz ;
+	         #fromZ <- release $pz ;
+			 case msg (
+			 
+		input => b = recv $lz ;
+				 if id == 1
+				 then
+	               $parties = sid[1] ;
+				   for p in $parties
+				     $pf <- acquire #toF ;
+					 $pf.send ;
+				     send $pf p id ('VAL', v) ;
+					 ok = recv $pf ;
+			 		 #toF <- release $pf ;
+					 $pz.ok ;
+					 #fromZ <- release $pz ;
+					 $toPW <- party_code_rec_val ...
+				 else
+				   $toPW <- party_code_rec_val ...
+}
+
+type comm[a] = /\ +{SEND: a -o 
+
+proc party_code_rec_val :
+
+{
+	$fp <- acquire #fromF ;
+	case $fp (
+		receive => from = recv $fp ;
+				   msg = recv $fp ;
+				   type, x = msg ;
+				   #fromF <- release $fp ;
+				   if type == VAL && from == 1
+				   then
+				     for p in parties
+					   if p != id
+					   then
+					     $pf <- acquire #toF ;
+						 $pf.send ;
+						 send $pf p id (ECHO, v)
+						 case $pf (
+						   ok => 
+					     )
+						 #toF <- release $pf ;
+						 (* needs to know the number of echo messages and input *)
+						 $toPW <- party_code_rec_echo <- 1 x ...
+					   else
+				   else    
+				     $toPW <- party_code_rec_val <- ...
+}
+
+proc party_code_rec_echo:
+	(numechos: int), (input: int),... |- ($toPW: b) =
+{
+	$fp <- acquire #fromF ;
+	case $fp (
+		receive => from = recv $fp ;
+				   msg = recv $fp ;
+				   type, x = msg ;
+				   #fromF <- release $fp ;
+				   if type == ECHO 
+				   then
+					 numechos = numechos + 1 ;
+				     n = sid[1].length ;
+				     if numechos == ceil( n + (n/3))/2
+					 then
+				       for p in parties
+						 if p != id
+						 then
+						   $pf <- acquire #toF ;
+						   pf.send ;
+						   send $pf p id (READY, input)
+						   case $pf (
+						     ok =>
+  						   )
+						   #toF <- release $pf ;
+					   	   $toPW <- party_code_rec_ready <- 1 x ...
+					 else
+					   $toPW <- party_code_rec_echo numechos x ...
+				   else
+				     $toPW <- party_code_rec_echo numechos x ...
+	)
+}
+
+proc party_code_rec_ready:
+	(numready: int), (input: int) ... |- ($toPW: b) =
+{
+	$fp <- acquire #fromF ;
+	case $fp (
+	  receive => from = recv $fp ;
+				 msg = recv $fp ;
+				 type, x = msg ;
+				 #fromF <- release $fp ;
+				 if type == READY && x == input
+				 then
+				   n = sid[1].length ;
+				   numready = numready + 1 ;
+				   if numready == 2*(n/3) + 1
+				   then
+				     $pz <- acquire #toZ ;
+					 send $pz id x
+				   else
+				     $toPW <- party_code_rec_ready numready x ..
+				 else
+	)
+}

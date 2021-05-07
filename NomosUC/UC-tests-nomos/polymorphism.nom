@@ -1,0 +1,40 @@
+type comm[a] = /\ &{SEND: a -o \/ comm,
+				    RECV: +{ no: \/ comm,
+							 yes: a * \/ comm }}
+
+proc asset pnil[a]: .  |- ($l: list[a]) =
+{
+	$l.nil ;
+	close $l
+}
+
+proc asset pcons:
+	($m: a), ($tl: list[a])  |- ($l: list[a]) =
+{
+	$l.cons ;
+	send $l $m ;
+	$l <- $tl
+}
+
+proc transaction pappend: 
+	($m: a), ($tl: list[a])  |- ($l: list[a]) =
+{
+	case $tl (
+	  cons => $x <- recv $tl ;
+			  $l.cons ;
+			  send $l $x ;
+			  $l <- pappend <- $m $tl
+	| nil => wait $tl ;
+			 $l.cons ;
+			 send $l $m ;
+			 $l.nil ;
+			 close $l 
+}
+
+proc contract communicator_init[a]:
+	(sid: string ^ list[ARGS]), (rid: int) |- (#dc: comm[a]) =
+{
+	$l <- pnil[a] <- ;
+	#dc <- communicator[a] <- sid rid, $l 
+}
+
