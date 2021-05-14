@@ -1,8 +1,23 @@
 The Universal Composability (UC)~\cite{uc} framework is the most widely used simulation-based framework for proving the security of cryptographic protocols. 
 The UC notion of security relies on proving emulation, by means of a simulator, between a protocol and an ideal specification.
-It also provides a convenient notion of composability and concurrency.
-Protocols proven secure in UC are gauranteed to be secure when composed with arbitrary other protocols running concurrently. 
-This strong notion of security makes 
+It also provides a convenient notion of composability and concurrency: protocols proven secure in UC are gauranteed to be secure when composed with arbitrary other protocols running concurrently. 
+A major drawback of the framework is that on-paper proofs of UC security are often very long and too unweildy to attempt to validate or build on top of.
+Computer-aided verification and modelling tools for cryptographic protocols have long since attempted to bridge this gap with varying degrees of success.
+Most, however, fall short of a good solution in several key ways.
+
+In this work we attempt to improve on the state of the art by applying \textit{resource-aware session types} to realize the UC framework that we call Nomos UC.
+Nomos UC builds off the existing Nomos language~\cite{dasnomos} which enables expressing protocols, their messages, and their steps with session typed channels.
+For example, session types can express the entirety of the messages and order of steps in a TCP handhshake with a single typed.
+This system of typing channels between processes seems a natural fit for the UC framework and allows us to delegate more work to the Nomos type system in validating UC models.
+This comes in handy especially when considering arbitrary composition where the Nomos type system can reject malformed adversaries, protocols, and even environments in a UC execution.
+
+Furthermore, Nomo US shines paticularly well when reasoning about polynomial runtime for machines in a UC execution.
+Unlike prior work where polynomial time is defined for a limited set of protocols and is difficult or even impossible to reason aboutm NomosUC uses the Nomos potential mechansim to implement the \textit{import} notion of polynomial time as defined by Canetto.
+Our construction can reason about local polynomial time for open terms based only on the channel types and assert polynomial-bound in the security parameter by checking valid polynomial and import bounds, and it even guarnatees termination.
+
+
+
+\hrule 
 
 
 In this work we present a programming language design based on the Universal (UC) Composability framework from cryptography.

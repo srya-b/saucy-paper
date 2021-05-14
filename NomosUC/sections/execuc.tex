@@ -180,8 +180,9 @@ Indisintiguishability between two protocols is defined as follows:
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=valid-F]
-{\msf{p2f}, \m2f{f2p}, \msf{f2a}, \msf{a2f} \in \Delta_2}
-{\Delta_2 \models (\pi(clist, sid, k, r) : T_\phi) :: \Delta_2' }
+{\msf{p2f}, \m2f{f2p}, \msf{f2a}, \msf{a2f} \in \Delta_2 \\
+\Delta_2 \models (\phi(clist, sid, k, r) : T_\phi) :: \Delta_2'}
+{\msf{validF}\ \phi \rightarrow \Delta_1'}
 \end{mathpar}
 \end{definition}
 
@@ -189,28 +190,31 @@ Indisintiguishability between two protocols is defined as follows:
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=valid-P]
-{\msf{p2f}, \m2f{f2p}, \msf{p2a}, \msf{a2p}, \msf{z2p}, \msf{p2z} \in \Delta_1}
-{\Delta_1 \models (\phi(sid, pid, k, r) : T_\pi) :: \Delta_1' }
+{\msf{p2f}, \m2f{f2p}, \msf{p2a}, \msf{a2p}, \msf{z2p}, \msf{p2z} \in \Delta_1 \\
+\Delta_1 \models (\pi(sid, pid, k, r) : T_\pi) :: \Delta_1' }
+{\msf{validP}\ \pi \rightarrow \Delta_1'}
 \end{mathpar}
 \end{definition}
 
-\begin{definition}
+\begin{definition}[Well-Matched]
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=p2f match] 
-{\msf{validP}\ \pi \rightarrow \D_1 \semi \msf{validF}\ \F \rightarrow \Delta_2}
-{\Delta_1:, (ftop: \msf{comm}[f2p]), (ptof: \msf{comm}[p2f]) \equiv \\
- \Delta_2, (ftop: \msf{comm}[pid \textasciicircum f2p]), (ptof: \msf{comm}[pid \textasciicircum p2f])}
+{\msf{validP}\ \pi \rightarrow \D_1 \semi \msf{validF}\ \F \rightarrow \Delta_2 \\
+\Delta_1:, (\msf{ftop}: \msf{c}[\msf{f2p}]), (\msf{ptof}: \msf{c}[\msf{p2f}]) \equiv \\
+\Delta_2, (\msf{ftop}: \msf{c}[\msf{pid \textasciicircum f2p}]), (\msf{ptof}: \msf{c}[\msf{pid \textasciicircum p2f}])}
+{\langle \pi \leftrightarrow \F \rangle}
 \end{mathpar}
 \end{definition}
 
 \begin{definition}
 \begin{mathpar}
 \footnotesize
-\inferrule*[right=p2a match] 
-{\msf{validP}\ \pi \rightarrow \Delta_1 \semi \Adversary \rightarrow \Delta_2}
-{\Delta_1:, (atop: \msf{comm}[a2p]), (ptoa: \msf{comm}[p2a]) \equiv \\ 
-\Delta_2, (atop: \msf{comm} [pid \textasciicircum a2p]), (ptoa: \msf{comm} [pid \textasciicircum p2a])}
+\inferrule*[right=well match] 
+{\msf{validP}\ \pi \rightarrow \Delta_1 \semi \Adversary \rightarrow \Delta_2 \\
+cDelta_1:, (\msf{atop}: \msf{c}[\msf{a2p}]), (\msf{ptoa}: \msf{c}[\msf{p2a}]) \equiv \\ 
+\Delta_2, (\msf{atop}: \msf{c} [\msf{pid \textasciicircum a2p}]), (\msf{ptoa}: \msf{c} [\msf{pid \textasciicircum p2a}])}
+{\langle \pi \leftrightarrow \Adversary \rangle}
 \end{mathpar}
 \end{definition}
 
@@ -218,9 +222,10 @@ Indisintiguishability between two protocols is defined as follows:
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=f2a match] 
-{\msf{validF}\ \F \rightarrow \Delta_1 \semi \Adversary \rightarrow \Delta_2}
-{\Delta_1:, (atof: \msf{comm}[a2f]), (ftoa: \msf{comm}[f2a]) \equiv \\
- \Delta_2, (atof: \msf{comm}[a2f]), (ftoa: \msf{comm}[f2a])}
+{\msf{validF}\ \F \rightarrow \Delta_1 \semi \Adversary \rightarrow \Delta_2 \\
+\Delta_1:, (\msf{atof}: \msf{c}[\msf{a2f}]\{a2fn\}), (\msf{ftoa}: \msf{c}[\msf{f2a}]\{0\}) \equiv \\
+ \Delta_2, (\msf{atof}: \msf{c}[\msf{a2f}]\{a2fn\}), (\msf{ftoa}: \msf{c}[\msf{f2a}]\{0\})}
+{\langle \F \leftrightarrow \Adversary \rangle}
 \end{mathpar}
 \end{definition}
 
@@ -229,28 +234,31 @@ Indisintiguishability between two protocols is defined as follows:
 \footnotesize
 \inferrule*[right=p2z match] 
 {\msf{validP}\ \pi \rightarrow \Delta_1 \semi \Environment \rightarrow \Delta_2}
-{\Delta_1:, (ztop: \msf{comm}[z2p]), (ptoz: \msf{comm}[p2z]) \equiv \\
- \Delta_2, (ztop: \msf{comm}[pid \textasciicircum z2p]), (ptoz: \msf{comm}[pid \textasciicircum p2z])}
+{\Delta_1:, (\msf{ztop}: \msf{c}[\msf{z2p}]), (\msf{ptoz}: \msf{c}[\msf{p2z}]) \equiv \\
+ \Delta_2, (\msf{ztop}: \msf{c}[\msf{pid \textasciicircum z2p]}), (\msf{ptoz}: \msf{c}[\msf{pid \textasciicircum p2z}])}
 \end{mathpar}
 \end{definition}
 
 
 \begin{definition}[Emulation]\label{def:emulation}
-Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed then if $\forall \Adversary$ well-matched with $(\pi, \F_1)$, $\exists \Simulator$ s.t. $\forall \Environment$ well-matched with \Adversary and $(\pi, \F_1)$: \Simulator is well-matched with $(\phi, \F_2)$, \Environment is well-matched with $(\phi, \Simulator)$, and $\msf{execUC}(\pi, \F_1, \Environment, \Adversary) \sim \msf{execUC}(\phi, \F_2, \Environment, \Simulator)$:
+Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed then if $\forall \Adversary$ well-matched with $(\pi, \F_1)$, $\exists \Simulator$ s.t. $\forall \Environment$ well-matched with \Adversary and $(\pi, \F_1)$: \Simulator is well-matched with $(\phi, \F_2)$, \Environment is well-matched with $(\phi, \Simulator)$, and $\msf{execUC}(\pi, \F_1, \Environment, \Adversary) \approx \msf{execUC}(\phi, \F_2, \Environment, \Simulator)$:
 
 \begin{mathpar}
 \footnotesize
 	\inferrule*[right=emulate]
 	{. \models \msf{execUC}[\alpha] :: \Delta [\alpha] \\ \\
-	\Delta_1 \vdash (\pi : T_\pi) :: \Delta_1' \semi 
-	\Delta_2 \vdash (\phi : T_\phi) :: \Delta_2' \\ 
-	(\pi, \F_1) \text{ well-matched }, (\phi, \F_2) \text{ well-matched } \\ 
+	%\Delta_1 \vdash (\pi : T_\pi) :: \Delta_1' \semi 
+	\msf{validP}\ \pi \rightarrow \Delta_1' \semi
+	%\Delta_2 \vdash (\phi : T_\phi) :: \Delta_2' \\ 
+	\msf{validP} \phi \rightarrow \Delta_2' \semi
+	%(\pi, \F_1) \text{ well-matched }, (\phi, \F_2) \text{ well-matched } \\ 
+	\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_2 \rangle \\
 	\Delta[\mathrm{T}_{\pi}] \equiv_{\Environment} \Delta_1\ 
 	\semi \Delta[\mathrm{T}_{\phi}] \equiv_\Environment \Delta_2 \\
-	\forall \Adversary, (\exists \Delta_4, \Delta_4', \Delta_4 \vdash \Adversary :: \Delta_4', (\Adversary, \pi), (\Adversary, \F_1) \text{ well-matched }\\
-	\Rightarrow \exists \Delta_3,\Delta_3', \Delta_3 \vdash \Simulator_\Adversary :: \Delta_3',(\Simulator_\Adversary, \phi), (\Simulator_\Adversary, \F_2) \text{ well-matched} \wedge \\
-	\forall \Environment ((\Environment, (\Adversary, \pi)) \text{ well-matched } \Rightarrow \Environment, (\Simulator_\Adversary, \phi) \text{ well-matched } \wedge \\	
-	\msf{execUC} \pi\ \Environment\ \F_1\ \Adversary \sim\ \msf{execUC} \phi\ \Environment\ \F_2\ \Simulator_\Adversary)) }
+	\forall \Adversary, (\exists (\Delta_4, \Delta_4') | \Delta_4 \vdash \Adversary :: \Delta_4',\ \langle \Adversary \leftrightarrow \pi \rangle, \langle \Adversary \leftrightarrow \F_1 \rangle \\  %(\Adversary, \pi), (\Adversary, \F_1) \text{ well-matched }\\
+	\Rightarrow \exists (\Delta_3,\Delta_3') | \Delta_3 \vdash \Simulator_\Adversary :: \Delta_3', \langle \Simulator_\Adversary \leftrightarrow \phi \rangle, \langle \Simulator_\Adversary \leftrightarrow \F_2 \rangle \\ %(\Simulator_\Adversary, \phi), (\Simulator_\Adversary, \F_2) \text{ well-matched} \wedge \\
+	\forall \Environment (\langle \Environment \leftrightarrow \Adversary \rangle, \langle \Environment \leftrightarrow \pi \rangle \Rightarrow \langle \Environment \leftrightarrow \Simulator_\Adversary \rangle, \langle \Environment \leftrightarrow \phi \rangle \\ %\Environment, (\Simulator_\Adversary, \phi) \text{ well-matched } \wedge \\	
+	\msf{execUC} \pi\ \Environment\ \F_1\ \Adversary \approx\ \msf{execUC} \phi\ \Environment\ \F_2\ \Simulator_\Adversary)) }
 	{\lambda \Adversary . \Simulator_\Adversary \vdash (\pi, \F_1) \sim (\phi, \F_2)}
 \end{mathpar}
 
@@ -265,6 +273,14 @@ We say the protocol $\pi$ UC-realizes an ideal functionality $\F_2$ if Definitio
 A protocol $\pi$ UC-realized an ideal functionality $\F_1$ if $(\pi, \F_2) \sim (\idealP, \F_1)$ for some $\F_2$.
 \end{definition}
 
+\paragraph{Simulation Proofs}
+Simulation proofs in Nomos UC rely heavily on the type system to ensur that the constructed simlation is well-matched with the protocols in the ideal world and that it is locally polynomially-bound.
+Showing that a simulator is well-matched with $\phi$ and environments \Environment that are well-matched with \Adversary requires ensuring that \Simulator is well-typed under the type parameters \msf{z2a}, \msf{p2a}, \msf{f2a} and their analogues for the opposite direction of communication. 
+Well-typed, though, only captures the fact that the import sent with messages to \Simulator has \textit{enough} import to perform all of its computation on activation. 
+To show  polynomial in PPT it suffices to provide a bounding polynomial $T$ such that the import \Simulator receives, $n$, is sufficient to bound its run-time by $T(n)$. 
+
+Finally, indistinguishability of the distributions of \msf{execUC} requires standard UC reasoning about the message sent by \Simulator, when they are sent and their affect on the output received by \Environment.
+
 \paragraph{Dummy Lemma}
 
 In Definition~\ref{def:emulation} we characterize emulation by a simulator \Simulator, for a specific adversary \Adversary.
@@ -273,6 +289,8 @@ However, there is a more useful definition of emulation where proving emulation 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
 If $\exists \Dummysim$ s.t. $ \DummyAdv, \Dummysim \vdash (\pi, \F_2) \sim (\phi, \F_1)$ then $\forall \Adversary \exists \Simulator_\Adversary$ s.t. $\lambda \Adversary . \Simulator_\Adversary\vdash  (\pi, \F_2) \sim (\phi, \F_1)$ 
 
+
+
 %For protocols $\pi$ and $\phi$, $\msf{execUC}(\pi, \Environment, \DummyAdv) \sim \msf{execUC}(\phi, \Environment, \Simulator_{\mathcal{D}}) \forall \Environment \Rightarrow \exists$ \textit{well-resource-typed, PPT} $\Simulator_{\mathcal{D}}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary') \sim \msf{execUC}(\phi, \Environment, \Simulator')$ for any other \textit{well-resource-typed} $\Adversary'$.
 \end{theorem}
 
@@ -280,6 +298,7 @@ If $\exists \Dummysim$ s.t. $ \DummyAdv, \Dummysim \vdash (\pi, \F_2) \sim (\phi
 We provide the construction of $\Simulator_\Adversary$.
 It internally runs the real-world adversary \Adversary and the dummy simulator \Dummysim. 
 
+$\Simulator_\Adversary$ 
 It is trivial to notice that $(\Adversary, \pi), (\Adversary, \F_2)$ well-matched $\Rightarrow$ $(\Simulator_\Adversary, \phi), (\Simulator_\Adversary, \pi)$ well-matched, and that $\forall \Environment, (\Environment, \Adversary), (\Environment, \pi)$ well-matched $\Rightarrow$ $(\Environment, \Simulator_\Adversary), (\Environment, \phi)$ well-matched.
 We provide a polynomial bound to bound the execution of $\Simulator_\Adversary$:
 \[
@@ -345,7 +364,7 @@ proc compose[$z2p$][$p2z$][$f2p$][$p2f$][$\pi 2f$][$f2\pi$] :
 
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
-\inferrule*[right=compose]
+\inferrule*[right=testcompose]
 {\Delta_1 \vdash \pi :: \Delta_1' \semi \Delta_2 \vdash \phi :: \Delta2' \semi \Delta_3 \vdash \rho :: \Delta_3' \\
  (\pi, \F_2) \sim (\phi, \F_2) \semi \rho \sim \F_2}
 {\rho }
