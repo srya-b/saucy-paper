@@ -1,26 +1,67 @@
-There are many works that attempt to formalize the UC framework with an implementation for protocol analysis and proof generation.
+There is a large volume of work that introduce tools for modelling UC protocols and reasoning about UC security with some mechanizing UC proof-generation.
+Most prior work, however, is not able to capture the polynomial-time notion that underpins UC security.
 
-One of the most relevant works to our own is EasyUC~\cite{easyuc}. 
-EasyUC uses the existing EasyCrypy~\cite{easycrypt} toolset to model UC protocols and mechanize proof generation. 
-It departs from EasyCrypt's limtations to game-based security definitions (lacking simulation-based composition).
-However, it still lacks a notion of polynomial time. The authors, themselves, mentions that it can't detect deviant behavior like the adversary and functionality passing messages between each other indefinitely. 
-Our use of the import mechainsm and session types let us reason about polynomial time in the sytem of ITMs encompassed by \msf{execUC} but also locally for \textit{open} terms. 
-Furthermore, import in NomosUC lets us have guarantees of termination as well by the polyomial import constraints added to UC by Canetti et al.
+The EasyUC~\cite{easyuc} work introduces a toolset built on top of the existing EasyCrypt~\cite{easycrypt} to model UC protocols and generate proofs of security.
+It moves past the limitations of EasyCrypt which is limited to game-based security definitions rather than the simulation-based definitions of UC.
+Building on top of EasyCrypt constraints EasyUC to a stack-based computation model which requires a unique communication model and unique addressing scheme for machines.
+A large limitation, that the authors admit, is that it can not detect deviant behavior like the adversary and functionality exchanging messages indefinitely.
+NomosUC on the other hand can ensure that all machines are locally polynomially bound in the security parmaeter and ensures that well-typed programs always terminate in polynomial time.
 
-Liao et al. introduce executable UC through a new process calculus called ILC~\ref{ilc}.
-This work adds some notion of polynomial time although it proves to be too restrictive. 
-It results from the fact that poly-time can only be reasoned about for \textit{closed} terms like a full UC execution.
-In order to reason about polynomial time for a particular protocol $\pi$ we must reason over all possible other terms that connect to $\pi$ and require that it is polynomial in all such cases.
-A simple ping-response server can not be proven to by poly-time in this definition for a deviant other ITM that connects to $\pi$. 
-In Nomos, however, as mentioned above, open terms are limited to polytime regardless of the connected other terms because of the import mechanism and the NomosUC type system that guarantees termination. 
+Liao at al.~\cite{ilc} introduce a new process calculus, that extendes $\pi$-calculus, called ILC.
+Unlike EasyUC, ILC does not attempt to mechanize proof generation and provides some notion poynomial time.
+The definition, however, is restrictive and does not allow reasoning about PPT for individual protocols or functionalities.
+Open terms require enumerating all possible ways they can be closed making it difficult even simple ping-pong servers to be proved polynomial in this definition.
 
-Other works that rely in symbolic modelling of cryptography, for example, SymbolicUC~\cite{symbolicuc}, are subsumed by the above ILC work and similarly lack any polynomial time notion. 
-\todo{Say something about $\pi$-calculus with probabilistic polynomial time extensions}.
+There is large body of similar work that introduces process calculi, some extensions of $\pi$-calculus, like ILC.
+Mateus et al.~\cite{mateus} for example introduces process calulus for simpler, sequential composition but is constraints to a schedular-based construction where probabilistic state transitions follow unifor distribution at every step.
+SymbolicUC~\cite{symbolicuc} \todo{finish oter symbolic logic and state their weaknesses and that ther are subsumed by ILC}.
 
+Morrisett et al.~\cite{ipdl} propose IPDL which aims to imprtove on EasyUC by providing a better notion of emulation, more akint to the UC framework.
+IPDL symbolically tracks the run time of programs but can only do so for straight-line programs or those with statically upper-bounded loops, i.e. programs without dynamic loops or recursion. 
+Further, the protocols in IPDL can not dynamically choose which channels to write on because channels have static dependencies for when to ``fire''. 
+A protocol in IPDL could not, for example, wait for one of two channels and return a value read on the first one to return. 
+Nomos, on the other hand, can handle more expressive programs and still guarantee polynomial time and termination by checking satisfying polynomials $T$ and import $n$ for any program.
 
-To the best of our knowledge, this is the first work to deal with the new import notion of polynomial time introduced to the UC framework in 2018.
-A few other works refer to the import mechanism, but it is restricted to simply defining the import a protocol is given.
-	
+The added expressiveness of Nomos also allows full composition in the manner of UC.
+IPDL and the ILC calculus only allow composition of a fixed numeber of functionalities and protocols. 
+IPDL for example must statically define the upper bound on the number of instances of a functionality, and could not, say, adequately handle the number of instances determined by probabilisit input on a channel.
+ILC suffers from a similar drawback.
+
+%One of the most relevant works to our own is EasyUC~\cite{easyuc}. 
+%EasyUC uses the existing EasyCrypy~\cite{easycrypt} toolset to model UC protocols and mechanize proof generation. 
+%It departs from EasyCrypt's limtations to game-based security definitions (lacking simulation-based composition).
+%However, it still lacks a notion of polynomial time. The authors, themselves, mentions that it can't detect deviant behavior like the adversary and functionality passing messages between each other indefinitely. 
+%Our use of the import mechainsm and session types let us reason about polynomial time in the sytem of ITMs encompassed by \msf{execUC} but also locally for \textit{open} terms. 
+%Furthermore, import in NomosUC lets us have guarantees of termination as well by the polyomial import constraints added to UC by Canetti et al.
+%
+%Liao et al. introduce executable UC through a new process calculus called ILC~\ref{ilc}.
+%This work adds some notion of polynomial time although it proves to be too restrictive. 
+%It results from the fact that poly-time can only be reasoned about for \textit{closed} terms like a full UC execution.
+%In order to reason about polynomial time for a particular protocol $\pi$ we must reason over all possible other terms that connect to $\pi$ and require that it is polynomial in all such cases.
+%A simple ping-response server can not be proven to by poly-time in this definition for a deviant other ITM that connects to $\pi$. 
+%In Nomos, however, as mentioned above, open terms are limited to polytime regardless of the connected other terms because of the import mechanism and the NomosUC type system that guarantees termination. 
+%
+%Other works that rely in symbolic modelling of cryptography, for example, SymbolicUC~\cite{symbolicuc}, are subsumed by the above ILC work and similarly lack any polynomial time notion. 
+%\todo{Say something about $\pi$-calculus with probabilistic polynomial time extensions}.
+%
+%To the best of our knowledge, this is the first work to deal with the new import notion of polynomial time introduced to the UC framework in 2018.
+%A few other works refer to the import mechanism, but it is restricted to simply defining the import a protocol is given.
+
+\begin{figure*}
+\begin{center}
+\begin{tabularx}{\textwidth}{|p{0.2\textwidth}|p{0.2\textwidth}|p{0.2\textwidth}|p{0.2\textwidth}|}
+\hline \\
+        & Polynomial-time termination                                  & simulator type mismatch                             & emulation fully proven \\ 
+\hline \\
+NomosUC & Guaranteed termination, local polynomial time for open terms & PPT Simulator under import constraints of adversary &  \\
+\hline \\
+IPDL    & Statically typed loops and straightline programs only        & 													 & proof generation and full emulation \\
+\hline \\
+EasyUC  & No polynomial time guarantee or guaranteed termination       & 													 & machine checked \\ 
+\end{tabularx}
+\end{center}
+\end{figure*}
+
 %easyUC:
 %* can not dynamially create new instances of parties/functionalities must statically determine the number of functionalities/parties spawned
 %* 
