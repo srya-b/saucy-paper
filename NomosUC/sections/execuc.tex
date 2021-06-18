@@ -180,9 +180,9 @@ Indisintiguishability between two protocols is defined as follows:
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=valid-F]
-{\msf{p2f}, \m2f{f2p}, \msf{f2a}, \msf{a2f} \in \Delta_2 \\
-\Delta_2 \models (\phi(clist, sid, k, r) : T_\phi) :: \Delta_2'}
-{\msf{validF}\ \phi \rightarrow \Delta_1'}
+{\msf{p2f}, \msf{f2p}, \msf{f2a}, \msf{a2f} \in \Delta_2 \\
+\Delta_2 \models (\F(clist, sid, k, r) : T_\F) :: \Delta_2'}
+{\msf{validF}\ \F \rightarrow \Delta_1'}
 \end{mathpar}
 \end{definition}
 
@@ -190,7 +190,7 @@ Indisintiguishability between two protocols is defined as follows:
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=valid-P]
-{\msf{p2f}, \m2f{f2p}, \msf{p2a}, \msf{a2p}, \msf{z2p}, \msf{p2z} \in \Delta_1 \\
+{\msf{p2f}, \msf{f2p}, \msf{p2a}, \msf{a2p}, \msf{z2p}, \msf{p2z} \in \Delta_1 \\
 \Delta_1 \models (\pi(sid, pid, k, r) : T_\pi) :: \Delta_1' }
 {\msf{validP}\ \pi \rightarrow \Delta_1'}
 \end{mathpar}
@@ -246,23 +246,29 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 \begin{mathpar}
 \footnotesize
 	\inferrule*[right=emulate]
-	{. \models \msf{execUC}[\alpha] :: \Delta [\alpha] \\ \\
-	%\Delta_1 \vdash (\pi : T_\pi) :: \Delta_1' \semi 
-	\msf{validP}\ \pi \rightarrow \Delta_1' \semi
-	%\Delta_2 \vdash (\phi : T_\phi) :: \Delta_2' \\ 
-	\msf{validP} \phi \rightarrow \Delta_2' \semi
-	%(\pi, \F_1) \text{ well-matched }, (\phi, \F_2) \text{ well-matched } \\ 
-	\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_2 \rangle \\
-	\Delta[\mathrm{T}_{\pi}] \equiv_{\Environment} \Delta_1\ 
-	\semi \Delta[\mathrm{T}_{\phi}] \equiv_\Environment \Delta_2 \\
-	\forall \Adversary, (\exists (\Delta_4, \Delta_4') | \Delta_4 \vdash \Adversary :: \Delta_4',\ \langle \Adversary \leftrightarrow \pi \rangle, \langle \Adversary \leftrightarrow \F_1 \rangle \\  %(\Adversary, \pi), (\Adversary, \F_1) \text{ well-matched }\\
-	\Rightarrow \exists (\Delta_3,\Delta_3') | \Delta_3 \vdash \Simulator_\Adversary :: \Delta_3', \langle \Simulator_\Adversary \leftrightarrow \phi \rangle, \langle \Simulator_\Adversary \leftrightarrow \F_2 \rangle \\ %(\Simulator_\Adversary, \phi), (\Simulator_\Adversary, \F_2) \text{ well-matched} \wedge \\
-	\forall \Environment (\langle \Environment \leftrightarrow \Adversary \rangle, \langle \Environment \leftrightarrow \pi \rangle \Rightarrow \langle \Environment \leftrightarrow \Simulator_\Adversary \rangle, \langle \Environment \leftrightarrow \phi \rangle \\ %\Environment, (\Simulator_\Adversary, \phi) \text{ well-matched } \wedge \\	
-	\msf{execUC} \pi\ \Environment\ \F_1\ \Adversary \approx\ \msf{execUC} \phi\ \Environment\ \F_2\ \Simulator_\Adversary)) }
-	{\lambda \Adversary . \Simulator_\Adversary \vdash (\pi, \F_1) \sim (\phi, \F_2)}
+	{
+		. \models \msf{execUC}[\alpha] :: \Delta [\alpha] \\ \\
+		% Protocols that are well-matched with their functionalities
+		\msf{validP}\ \pi \rightarrow \Delta_1' \semi
+		\msf{validP} \phi \rightarrow \Delta_2' \semi
+		\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_1 \rangle \\
+		% Type of execUC[DELTA_pi] and execUC[DELTA_phi]
+		\Delta[\mathrm{T}_{\pi}] \equiv_{\Environment} \Delta_1\ 
+		\semi \Delta[\mathrm{T}_{\phi}] \equiv_\Environment \Delta_2 \\
+		% For all A if exists well-typed A that is well-matched with real world
+		\forall \Adversary, (\exists (\Delta_4, \Delta_4') | \Delta_4 \vdash \Adversary :: \Delta_4',\ \langle \Adversary \leftrightarrow \pi \rangle, \langle \Adversary \leftrightarrow \F_1 \rangle \\
+		% implies simulator that is well-matched for ideal world
+		\Rightarrow \exists (\Delta_3,\Delta_3') | \Delta_3 \vdash \Simulator_\Adversary :: \Delta_3', \langle \Simulator_\Adversary \leftrightarrow \phi \rangle, \langle \Simulator_\Adversary \leftrightarrow \F_2 \rangle \\
+		% for all Z they that's well-matched for the real world => Z is well-matched with S and ideal world
+		\forall \Environment (\langle \Environment \leftrightarrow \Adversary \rangle, \langle \Environment \leftrightarrow \pi \rangle \Rightarrow \langle \Environment \leftrightarrow \Simulator_\Adversary \rangle, \langle \Environment \leftrightarrow \phi \rangle \\
+		% and emulation has to hold
+		\msf{execUC} \pi\ \Environment\ \F_1\ \Adversary \approx\ \msf{execUC} \phi\ \Environment\ \F_2\ \Simulator_\Adversary))
+	}
+	{
+		% EMULATION DEFINITION
+		\lambda \Adversary . \Simulator_\Adversary \vdash (\pi, \F_1) \sim (\phi, \F_2)
+	}
 \end{mathpar}
-
-%protocol $\pi = (\pi, \F_1)$ emulates another protocols $\phi = (\phi, \F_2)$ if for adversary \Adversary~, $\exists$ simulator $\mathcal{S} \forall \Environment, \forall k, \forall r \in \{0,1\}^{poly(k)}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary) \sim \msf{execUC}(\phi, \Environment, \Simulator)$. All of $\pi, \phi, \Environment, \Adversary, \Simulator$ are assumed to be \textit{well--resource-typed PPT terms}.
 \end{definition}
 
 
@@ -364,20 +370,30 @@ proc compose[$z2p$][$p2z$][$f2p$][$p2f$][$\pi 2f$][$f2\pi$] :
 
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
-\inferrule*[right=testcompose]
-{\Delta_1 \vdash \pi :: \Delta_1' \semi \Delta_2 \vdash \phi :: \Delta2' \semi \Delta_3 \vdash \rho :: \Delta_3' \\
- (\pi, \F_2) \sim (\phi, \F_2) \semi \rho \sim \F_2}
-{\rho }
+
+\inferrule*[right=compose]
+{
+	(\pi, \F_1) \sim (\idealP, \F_2) \semi (\rho, \F_1) \sim (\idealP, \F_3) \\
+	\Rightarrow \exists \lambda \Adversary.\Simulator \vdash (\rho^{\F_2 \rightarrow \pi}, \F_1) \sim (\idealP, \F_3)
+}
+{
+	(\rho \circ \pi, \F_1) \sim (\idealP, \F_3)
+}
+
+%\inferrule*[right=testcompose]
+%{\Delta_1 \vdash \pi :: \Delta_1' \semi \Delta_2 \vdash \phi :: \Delta2' \semi \Delta_3 \vdash \rho :: \Delta_3' \\
+% (\pi, \F_2) \sim (\phi, \F_2) \semi \rho \sim \F_2}
+%{\rho }
 \end{mathpar}
 
-If \textit{well-typed} $(\pi, \F_2$) realizes $\F_1$ and ($\rho$, $\F_1$) realizes some $\F_3$, then $(\rho \circ \pi, \F_2)$ is \textit{well-typed} and realizes $\F_3$ when $\circ$ is defined as in Figure~\ref{lst:compose}.
+If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realizes some $\F_3$, then $(\rho \circ \pi, \F_2)$ is \textit{well-typed} and realizes $\F_3$ when $\circ$ is defined as in Figure~\ref{lst:compose}.
 \end{theorem}
 
 \begin{proof}
 The proof proceeds in a similar way to the proof of the Dummy Lemma in Theorem~\ref{thm:dummy}. 
 The constructed simulator \Simulator~ internally runs the real-world adversary \Adversary~ and the simulator for $(\pi, \F_2)$, $\Simulator_\pi$. 
 All interaction between \Environment~ and $\rho$ happens through the internal \Adversary~, and all communication with the substituted protocol happen through $\Simulator_\pi$. 
-We provide by contradiction (move the relevant ITMs except $\pi$ and $\Simulator_\pi$ into the environment) that a distinguishing environment, \Environment, for $(\rho \circ \pi, \F_2) \sim \F_3$ implies a distinguishing environment, $\Environment_\pi$, for $(\pi, \F_2) \sim \F_1)$. 
+We provide by contradiction (move the relevant ITMs except $\pi$ and $\Simulator_\pi$ into the environment) that a distinguishing environment, \Environment, for $(\rho \circ \pi, \F_1) \sim \F_3$ implies a distinguishing environment, $\Environment_\pi$, for $(\pi, \F_2) \sim \F_1)$. 
 
 Similar to the dummy lemma proof, a bouning polynomial for the new simulator \Simulator is easy to obtain because it simulates two well-resource-typed adversaries internally (\Adversary and $\Simulator_\pi$) with some constant communiation overhead for routing messeages between them and other ITMs. 
 \end{proof}

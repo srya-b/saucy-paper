@@ -494,13 +494,15 @@ The process initiates with potential $q$ and ends up with $q+f(m)$ potential
 by deducting $m$ import units of type $K$ from $\Tokens$.
 We also introduce a novel construct to create a new import token type
 $\m{convertToken} \; f \; K' \; (m : K)$.
+\begin{figure*}
 \begin{mathpar}
   \inferrule*[right=$\m{tok}$]
-  {\Tokens, K \hookrightarrow n, K' \hookrightarrow f(m) \semi
+  {\Tokens, K \hookrightarrow n, K' \hookrightarrow m' + m \semi
   \Psi \semi\wt, \D \entailpot{q} P :: (x : A)}
-  {\Tokens, K \hookrightarrow (n+m) \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
-    \hspace{5em}\m{convertToken} \; f \; K' \; (m : K) \semi P :: (x : A)}
+  {\Tokens, K \hookrightarrow n \semi K' \hookrightarrow m' \semi m + m' < f(K) \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
+    \hspace{5em}\m{convertToken} \; f \; K \; (m: K') \semi P :: (x : A)}
 \end{mathpar}
+\end{figure*}
 The above construct deducts $m$ import of type $K$ and produces $f(m)$ import
 of type $K'$ as exemplified by the token context.
 
