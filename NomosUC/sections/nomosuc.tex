@@ -354,13 +354,13 @@ units of potential. The corresponding typing rule is
 The process initiates with potential $q$ and ends up with $q+f(m)$ potential
 by deducting $m$ import units of type $K$ from $\Tokens$.
 We also introduce a novel construct to create a new import token type
-$\m{convertToken} \; f \; K' \; (m : K)$.
+$\m{withdrawToken} \; f \; K' \; (m : K)$.
 \begin{mathpar}
   \inferrule*[right=$\m{tok}$]
-  {\Tokens, K \hookrightarrow n, K' \hookrightarrow f(m) \semi
+  {f(m) \leq n \\\\ \Tokens, K \hookrightarrow n, K' \hookrightarrow f(m) \semi
   \Psi \semi\wt, \D \entailpot{q} P :: (x : A)}
-  {\Tokens, K \hookrightarrow (n+m) \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
-    \hspace{5em}\m{convertToken} \; f \; K' \; (m : K) \semi P :: (x : A)}
+  {\Tokens, K \hookrightarrow n \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
+    \hspace{5em}\m{withdrawToken} \; f \; K' \; (m : K) \semi P :: (x : A)}
 \end{mathpar}
 The above construct deducts $m$ import of type $K$ and produces $f(m)$ import
 of type $K'$ as exemplified by the token context.
