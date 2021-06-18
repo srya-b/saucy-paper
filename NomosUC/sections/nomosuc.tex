@@ -505,6 +505,45 @@ possess it enabling only that process to acquire the shared channel.
 Remarkably, this write token can resolve both read and write non-determinism
 due to linearity of the channels.
 
+<<<<<<< HEAD
+=======
+\paragraph*{\textbf{Import Tokens}}
+NomosUC differs from the UC framework in one important aspect: UC employs
+import tokens to bound the runtime of ITMs.
+On the other hand, NomosUC simplifies matters by relying on the notion of
+abstract potential and requiring that every execution step costs $1$ unit
+of potential.
+As a consequence, however, we need to connect import tokens to potential.
+To this end, we introduce a novel token context $\Tokens$ in the process typing
+judgment.
+This context stores the number and type of each token and is written as
+$\Tokens ::= K \hookrightarrow n, \; \Tokens \mid \cdot$ denoting that the
+process stores $n$ tokens of type $K$.
+We also introduce a novel construct $\m{generatePotential} \; f \; (m : K)$
+which consumes $m$ units of import tokens of type $K$ to generate $f(m)$
+units of potential. The corresponding typing rule is
+\begin{mathpar}
+  \inferrule*[right=$\m{pot}$]
+  {\Tokens, K \hookrightarrow n \semi \Psi \semi \wt, \D \entailpot{q+f(m)} P :: (x : A)}
+  {\Tokens, K \hookrightarrow (n+m) \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
+    \hspace{5em}\m{generatePotential} \; f \; (m : K) \semi P :: (x : A)}
+\end{mathpar}
+The process initiates with potential $q$ and ends up with $q+f(m)$ potential
+by deducting $m$ import units of type $K$ from $\Tokens$.
+We also introduce a novel construct to create a new import token type
+$\m{convertToken} \; f \; K' \; (m : K)$.
+\begin{figure*}
+\begin{mathpar}
+  \inferrule*[right=$\m{tok}$]
+  {\Tokens, K \hookrightarrow n, K' \hookrightarrow m' + m \semi
+  \Psi \semi\wt, \D \entailpot{q} P :: (x : A)}
+  {\Tokens, K \hookrightarrow n \semi K' \hookrightarrow m' \semi m + m' < f(K) \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
+    \hspace{5em}\m{convertToken} \; f \; K \; (m: K') \semi P :: (x : A)}
+\end{mathpar}
+\end{figure*}
+The above construct deducts $m$ import of type $K$ and produces $f(m)$ import
+of type $K'$ as exemplified by the token context.
+>>>>>>> 6a7c0530eca9a18a28d5a233ab15bee48745ba1a
 
 \paragraph*{\textbf{Process Definitions}}
 Process definitions have the form
