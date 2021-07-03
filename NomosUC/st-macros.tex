@@ -188,8 +188,8 @@
 \newcommand{\pexp}{\vdash}
 \newcommand{\paypot}{\triangleright}
 \newcommand{\getpot}{\triangleleft}
-\newcommand{\tgetpot}[2]{\getpot^{#2} #1}
-\newcommand{\tpaypot}[2]{\paypot^{#2} #1}
+\newcommand{\tgetpot}[2]{\getpot^{\{#2\}} #1}
+\newcommand{\tpaypot}[2]{\paypot^{\{#2\}} #1}
 \newcommand{\bigeval}[3]{#1 \Downarrow #2 \mid #3}
 \newcommand{\share}{\curlyveedownarrow}
 \newcommand{\zpot}{\overline{0}}
@@ -349,6 +349,10 @@
 \newcommand{\Vars}{\mathcal{V}}
 \newcommand{\Cons}{\mathcal{C}}
 \newcommand{\Tokens}{\mathcal{T}}
+\newcommand{\VTokens}{\mathcal{V}}
+\newcommand{\TokSig}{\mathcal{S}}
+\newcommand{\exchange}[3]{#1 \overset{#2}{\longrightarrow} #3}
+\newcommand{\GlobalF}{\mathfrak{f}}
 
 %% Two Counter Machines
 \newcommand{\ins}{\iota}
