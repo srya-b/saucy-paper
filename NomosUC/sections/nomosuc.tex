@@ -357,10 +357,10 @@ We also introduce a novel construct to create a new import token type
 $\m{withdrawToken} \; f \; K' \; (m : K)$.
 \begin{mathpar}
   \inferrule*[right=$\m{tok}$]
-  {f(m) \leq n \\\\ \Tokens, K \hookrightarrow n, K' \hookrightarrow f(m) \semi
+  {m \leq f(n) \\\\ \Tokens, K \hookrightarrow n, K' \hookrightarrow m \semi
   \Psi \semi\wt, \D \entailpot{q} P :: (x : A)}
   {\Tokens, K \hookrightarrow n \semi \Psi \semi \wt, \D \entailpot{q} \hspace{8em} \\
-    \hspace{5em}\m{withdrawToken} \; f \; K' \; (m : K) \semi P :: (x : A)}
+    \hspace{5em}\m{withdrawToken} \; f \; K \; K' \; m \semi P :: (x : A)}
 \end{mathpar}
 The above construct deducts $m$ import of type $K$ and produces $f(m)$ import
 of type $K'$ as exemplified by the token context.

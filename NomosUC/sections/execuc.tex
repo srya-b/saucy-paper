@@ -108,6 +108,52 @@ Over all possible environments, security parameters $k$, and random bit sequence
 %\label{lst:translate}
 %\end{figure}
 
+\subsection{The Protocol Wrapper}
+The \msf{execUC} definition introduces a new cosntruct called the \textit{protocol wrapper}. 
+In the UC experiment, the environment can create protocol parties on the fly and none exist until the first message is written to them.
+Thefeore the wrapper is intended to create new parties on demand.
+
+The necessity of a protocol wrapper leads to an interesting problem in how channels and session typed can be used.
+All communciation between protocol parties and \Environment, \F, and \Adversary is managed by the protocol wrapper, and the need to multiplex and de-multiplex communication betwee parties and other machines made session types between them impossible.
+It isn't possible to use multiple session-typed channels through a single communicator, parties can have different roles within a protocol so not even the same code is being executed (hence different session types governing the protocol) for each party.
+Therefore, we define a new approach to creating protocol-specific party wrappers, but with a generic construction that can be used for any protocol.
+We use the two-party commitment protocol as an example to demonstrate how the construction works and show that it is generic enough to allow code generation of a wrapper for any protocol.
+
+Recall the session type governing the committer and receiver in the commitment protocol:
+\begin{gather}
+	\mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
+	\mi{stype} \; \m{scommitted} = \ichoice{\mb{open} : 1} \\
+	\mi{stype} \; \m{receiver} = \echoice{\mb{commit} : \m{rcommitted}} \\
+	\mi{stype} \; \m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \one}
+\end{gather}
+The wrapper for this protocol maintains lists initialized for each of the above session types that tracks what stage the players are in.
+\begin{gather}
+	\m{L1}[\m{sender}] \\
+	\m{L2}[\m{scommitted}] \\
+	\m{L3}[\m{receiver}] \\
+	\m{L4}[\m{rcommitted}] 
+\end{gather}
+The messages received by the wrapper are of a functional type because they are being received through a communicator.
+The message types can be represented as
+\[
+	\mi{stype} \; \m{z2p}[a] = \m{Z2P} \; \mi{of} \; \msf{pid} \; \hat{ } \; a
+\]
+One receiving a message for \msf{pid}, if the party doesn't exist the protocolwrapper creates one and maintains a list of all local channels of each party indexed by their \msf{pid}: \msf{z2p}, \msf{f2p}, \msf{a2p}, and their inverses.
+The protool is defined with a mapping from functional types to session types which the wrapper uses to create a session typed message to the intende party.
+For example the functional type might be initialized:
+\begin{gather}
+\mi{type} \; \m{z2pmsg} = \m{Commit} \; \mi{of} \; \m{bit} \; | \; \m{Open}
+\end{gather}
+The protocol wrapper matches $\m{Commit}$ with the session type $\m{sender}$ and targets a party \msf{pid} in the list \msf{L1}.
+
+The \textit{runtime} checks that the wrapper performs fail to forward messages to parties that aren't in the target list: \msf{pid} is not found in the target list.
+The \textit{type-checker} ensures that the 
+
+After a message is received, the wrapper moves the protocol party to the next stage in the protocol: \msf{L1} to \msf{L2} or \msf{L3} to \msf{L3}.
+Finally, it does the inverse when receiving session typed messages from the parties and forwards them along on its outgoing channels.
+The wrapper need not do any other checks or book keeping as the type system will fail to type check when message are given to the parties out of order. 
+
+
 \subsection{Polynomial Bound}
 The UC import mechanism provides a way to define polynomial time computation and resource-bounds by ensuring that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a polynomial and $n$ the total units of import the ITM ever receives.
 This is enough to reason about polynomial-time, however when reasoning about security we care specifically of ITMs whose computation is bounded by some poynomial in the security parameter $k$. 
@@ -288,20 +334,34 @@ To show  polynomial in PPT it suffices to provide a bounding polynomial $T$ such
 Finally, indistinguishability of the distributions of \msf{execUC} requires standard UC reasoning about the message sent by \Simulator, when they are sent and their affect on the output received by \Environment.
 
 \paragraph{Dummy Lemma}
+A machine $M'$ with token type $K'$ runs the following subroutine when delivering message $msg$ to internally simulated machine $M_i$ with token type $K_i$ on channel $\msf{c}[t]\{n\}$
+\begin{mathpar}
+\msf{withdrawToken}\ f\ K'\ K_i\ n \\
+\msf{msg}(c \leftarrow c', n : K_i)
+\end{mathpar}
+This procedure, called a \msf{simulatedWrite} is executed on every write to an internally simulated machine. 
 
+
+We define simulated writes above because the construction of the simulator, and in fact many adversary constructions in UC, relies on interally simulating other adversaries.
 In Definition~\ref{def:emulation} we characterize emulation by a simulator \Simulator, for a specific adversary \Adversary.
-However, there is a more useful definition of emulation where proving emulation w.r.t. a single adversary, namely the dummy adverasry \DummyAdv, is sufficient to guarantee emulatioon w.r.t any other adversary.1
+However, the more useful definition of emulation where proving emulation w.r.t. a single adversary, namely the dummy adverasry \DummyAdv, is sufficient to guarantee emulatioon w.r.t any other adversary.
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
-If $\exists \Dummysim$ s.t. $ \DummyAdv, \Dummysim \vdash (\pi, \F_2) \sim (\phi, \F_1)$ then $\forall \Adversary \exists \Simulator_\Adversary$ s.t. $\lambda \Adversary . \Simulator_\Adversary\vdash  (\pi, \F_2) \sim (\phi, \F_1)$ 
-
-
-
+If $\exists \Dummysim^{K}$ s.t. $ \DummyAdv^K, \Dummysim^K \vdash (\pi, \F_2) \sim (\phi, \F_1)$ then $\forall \Adversary \exists \Simulator_\Adversary^K$ s.t. $\Simulator_{\Adversary} \vdash  (\pi, \F_2) \sim (\phi, \F_1)$ 
 %For protocols $\pi$ and $\phi$, $\msf{execUC}(\pi, \Environment, \DummyAdv) \sim \msf{execUC}(\phi, \Environment, \Simulator_{\mathcal{D}}) \forall \Environment \Rightarrow \exists$ \textit{well-resource-typed, PPT} $\Simulator_{\mathcal{D}}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary') \sim \msf{execUC}(\phi, \Environment, \Simulator')$ for any other \textit{well-resource-typed} $\Adversary'$.
 \end{theorem}
 
 \begin{proof}
-We provide the construction of $\Simulator_\Adversary$.
+The constructes simulator $\Simulator_\Adversary^K$ internally simulates \Dummysim and \Adversary. 
+We use the internal simulation pattern described above to simulat messages to \Dummysim and \Adversary through virtual tokens.
+The construction is identical to the original dummy lemma in the UC framework, however, it remains to be shown that this construction maintains the polynomial time constraint.
+
+Let $P_\Adversary$ and $P_{\Dummysim}$ be the bounding polynomials for \Adversary and \Dummysim.
+We set the maximum of the two bounding polynomials to be the polynomial through which new tokens of type $K_\Adversary$ and $K_{\Dummysim}$. 
+
+We provide the construction of $\Simulator_\Adversary^K$.
+The constructed simulator internally runs the real world adversary \Adversary with a virtual token type $K_1$ and the \Dummysim with a virtual token type $K_2$.
+
 It internally runs the real-world adversary \Adversary and the dummy simulator \Dummysim. 
 
 $\Simulator_\Adversary$ 
