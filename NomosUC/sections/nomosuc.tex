@@ -429,6 +429,15 @@ are the exact inverse.
 Similar to prior rules, the sender transfers the write token $\wt$
 along with the potential to the receiver.
 
+The need for virtual tokens in UC arises because machines often simulate
+other machines as part of their construction. The program notation for \msf{withdrawToken}
+does not require an inverse to exchange tokens \textit{back} from type $K'$ to $K$.
+The reason is that virtual tokens only exist to allow re-use of existing processes 
+and satisfy their types. Type $K$ tokens are not deducted when new ones of type $K'$ 
+are created is because, in reality, siulating a process by calling it or simply running
+its code natively should be equivalent in cost. Therefore, there is also no need to 
+include an inverse of \msf{withdrawToken} which exchanges from $K'$ to $K$.
+
 \paragraph*{\textbf{Potential}}
 The main purpose of import tokens is to bound the number of execution steps of ITMs.
 We achieve that purpose in NomosUC by introducing the notion of \emph{potential}.
