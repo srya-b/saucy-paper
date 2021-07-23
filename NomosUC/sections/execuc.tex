@@ -335,7 +335,7 @@ To show  polynomial in PPT it suffices to provide a bounding polynomial $T$ such
 
 Finally, indistinguishability of the distributions of \msf{execUC} requires standard UC reasoning about the message sent by \Simulator, when they are sent and their affect on the output received by \Environment.
 
-\paragraph{Dummy Lemma}
+\subsection{Dummy Lemma}
 The dummy lemma makes use of the \msf{runInSandbox} and \msf{withdrawTokens} program definisions defined in Section~\ref{sec:nomosuc}.
 These to programs enable process re-use to simplify complicated protocols, such as a simulator, which can refer to existing processes as black boxes.
 Virtual tokens are required to satisfy the message and import types of the processes being simulated and exists only to enable this behavior.
@@ -433,7 +433,7 @@ The constant factor accounts for the a constant overhead for routing messages be
 %\todo{Can we rely on he validity proof from the UC paper or do we need to state it here with a typed environment?}
 \end{proof}
 
-\subsection{Composition}
+\subsection{Single Composition}
 In this section we present a simplified composition theorem and another theorem, which we call the \textit{squash theorem}.
 These two theorems combine to prove the full generalized composition theorem as it appears in the UC framework~\cite{uc}.
 
@@ -461,20 +461,14 @@ $\tb{proc}$ compose[z2r][r2z][f2r][r2f][p2f][f2p] :
 
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
-
 \inferrule*[right=single-compose]
 {
 	(\pi, \F_1) \sim (\idealP, \F_2) \semi (\rho, \F_2) \sim (\idealP, \F_3) \\
-	\Rightarrow \exists \lambda \Adversary.\Simulator \vdash (\rho^{\F_2 \rightarrow \pi}, \F_1) \sim (\idealP, \F_3)
+	\Rightarrow \exists \Simulator(\Adversary) \vdash (\rho^{\F_2 \rightarrow \pi}, \F_1) \sim (\idealP, \F_3)
 }
 {
 	(\rho \circ \pi, \F_1) \sim (\idealP, \F_3)
 }
-
-%\inferrule*[right=testcompose]
-%{\Delta_1 \vdash \pi :: \Delta_1' \semi \Delta_2 \vdash \phi :: \Delta2' \semi \Delta_3 \vdash \rho :: \Delta_3' \\
-% (\pi, \F_2) \sim (\phi, \F_2) \semi \rho \sim \F_2}
-%{\rho }
 \end{mathpar}
 
 If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realizes some $\F_3$, then $(\rho \circ \pi, \F_2)$ is \textit{well-typed} and realizes $\F_3$ when $\circ$ is defined as in Figure~\ref{lst:compose}.
@@ -482,26 +476,32 @@ If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realiz
 
 \begin{proof}
 The proof proceeds in a similar way to the proof of the Dummy Lemma in Theorem~\ref{thm:dummy}. 
-The constructed simulator \Simulator~ internally runs the real-world adversary \Adversary~ and the simulator for $(\pi, \F_2)$, $\Simulator_\pi$. 
-All interaction between \Environment~ and $\rho$ happens through the internal \Adversary~, and all communication with the substituted protocol happen through $\Simulator_\pi$. 
-We provide by contradiction (move the relevant ITMs except $\pi$ and $\Simulator_\pi$ into the environment) that a distinguishing environment, \Environment, for $(\rho \circ \pi, \F_1) \sim \F_3$ implies a distinguishing environment, $\Environment_\pi$, for $(\pi, \F_2) \sim \F_1)$. 
+The Composition opreator $\circ$ combines parties of $\rho$ with parties of $\pi$ within the party wrapper (defined previously). 
+Parties running protocl $\rho$ send messages to parties of $\pi$ which then communicate with the functionality $\F_1$.
+UC emulation states that the functionality $(\idealP, \F_2)$ replaced by a realizing protocol $(\pi, \F_1)$ is indistinguishable even from parties of $\rho$.
+
+We define a simulator \Simulator that internally runs simulates the real-world \Adversary and the simulator $\Simulator_\pi$ for $(\pi, \F_2)$.
+The simulation in \Simulator proceeds like the code listings for the Dummy Lemma.
+Messages from \Environment are forwarded to the internal \Adversary. 
+Outputs from \Adversary to protocol parties are forwarded to them, and all other outputs are forward to $\Simulator_\pi$ as \Environment.
 
 Similar to the dummy lemma proof, a bouning polynomial for the new simulator \Simulator is easy to obtain because it simulates two well-resource-typed adversaries internally (\Adversary and $\Simulator_\pi$) with some constant communiation overhead for routing messeages between them and other ITMs. 
 \end{proof}
 
 \subsection{Multisession}
-The multi-session extension of a protocol of functionality, specified by the $!$ operator (i.e. $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
-This ITM runs multiple instances of the protocol/functionality internally and multiplexes input/output to/from them by use of a sub-identifier called the subsession-identifier, or \msf{SSID}.
-Therefore, messages to a specific instance within the multi-session extension include the \msf{SSID} of the intended copy. 
+The multi-session extension of a protocol of functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
+The ITM simulates multiple instances of the protocol/functionality intnerally and multoplexes input/output to/from them in same was as the party wrapper.
+The only differense is that it does not use the list structure to manage the session types of the functionality.
+It accepts messages of the form $(\msf{ssid}, \msf{msg})$ and forwards them on the appropriate channel of the functionality with \msf{sid} = \msf{ssid}.
+Each new instance of the functionality is given a unique import type $K'$ and is given virtual tokens by the wrapper code of the operator.
 
-The type definition of the $!\F$ is given in Figure~\ref{lst:bangf}. 
-It accepts as type parameters the types of messages exchanges between protocol parties and the functionality (\msf{p2f} and \msf{f2p}) and between the adversary and \F (\msf{a2f} and \msf{f2a}). 
-The type of communicators between parties and $!\F$ need to reflect the change in interface. 
-All messages from \msf{p2f} must be typed with the \msf{pid} of the sending party and the \msf{ssid} of the instance of \F. 
-The same goes for \F. 
-For a generic multisession operator, the import type specify the import send to any instance of the functionality.
-As $!\F$ maintains an ever growing list of instaces of $\F$ it requires some import be given to it by the protocol parties. 
-Definitions of an instance of $\msf{execUC}(\Environment, \pi, !\F, \Adversary)$ that specfies the import parameter \msf{p2fn} as 0 will not suffice for emulation as it will not hold for all environments. 
+%It accepts as type parameters the types of messages exchanges between protocol parties and the functionality (\msf{p2f} and \msf{f2p}) and between the adversary and \F (\msf{a2f} and \msf{f2a}). 
+%The type of communicators between parties and $!\F$ need to reflect the change in interface. 
+%All messages from \msf{p2f} must be typed with the \msf{pid} of the sending party and the \msf{ssid} of the instance of \F. 
+%The same goes for \F. 
+%For a generic multisession operator, the import type specify the import send to any instance of the functionality.
+%As $!\F$ maintains an ever growing list of instaces of $\F$ it requires some import be given to it by the protocol parties. 
+%Definitions of an instance of $\msf{execUC}(\Environment, \pi, !\F, \Adversary)$ that specfies the import parameter \msf{p2fn} as 0 will not suffice for emulation as it will not hold for all environments. 
 
 \begin{figure*}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
