@@ -119,6 +119,7 @@ It isn't possible to use multiple session-typed channels through a single commun
 Therefore, we define a new approach to creating protocol-specific party wrappers, but with a generic construction that can be used for any protocol.
 We use the two-party commitment protocol as an example to demonstrate how the construction works and show that it is generic enough to allow code generation of a wrapper for any protocol.
 
+
 Recall the session type governing the committer and receiver in the commitment protocol:
 \begin{gather}
 	\mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
@@ -126,32 +127,33 @@ Recall the session type governing the committer and receiver in the commitment p
 	\mi{stype} \; \m{receiver} = \echoice{\mb{commit} : \m{rcommitted}} \\
 	\mi{stype} \; \m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \one}
 \end{gather}
-The wrapper for this protocol maintains lists initialized for each of the above session types that tracks what stage the players are in.
+
+A protocol has multiple roles--for commitment it's a committer and a receiver.
+The wrapper maintains a list for all of the session possible session types which hold the channels of tht type. 
+For commitment the lists for the \msf{z2p} channels are the following:
 \begin{gather}
-	\m{L1}[\m{sender}] \\
-	\m{L2}[\m{scommitted}] \\
-	\m{L3}[\m{receiver}] \\
-	\m{L4}[\m{rcommitted}] 
+	\m{R1L1}[\m{sender}] \\
+	\m{R1L2}[\m{scommitted}] \\
+	\m{R2L1}[\m{receiver}] \\
+	\m{R2L2}[\m{rcommitted}] 
 \end{gather}
-The messages received by the wrapper are of a functional type because they are being received through a communicator.
-The message types can be represented as
-\[
-	\mi{stype} \; \m{z2p}[a] = \m{Z2P} \; \mi{of} \; \msf{pid} \; \hat{ } \; a
-\]
-One receiving a message for \msf{pid}, if the party doesn't exist the protocolwrapper creates one and maintains a list of all local channels of each party indexed by their \msf{pid}: \msf{z2p}, \msf{f2p}, \msf{a2p}, and their inverses.
-The protool is defined with a mapping from functional types to session types which the wrapper uses to create a session typed message to the intende party.
-For example the functional type might be initialized:
+
+The channels between the protocol wrapper and the rest of the machines are still limited to functional types through a communicator. The communicator is spawned with type \msf{z2p[z2pmsg]}.
 \begin{gather}
 \mi{type} \; \m{z2pmsg} = \m{Commit} \; \mi{of} \; \m{bit} \; | \; \m{Open}
 \end{gather}
-The protocol wrapper matches $\m{Commit}$ with the session type $\m{sender}$ and targets a party \msf{pid} in the list \msf{L1}.
+\[
+	\mi{stype} \; \m{z2p}[a] = \m{Z2P} \; \mi{of} \; \msf{pid} \; \hat{ } \; a
+\]
 
-The \textit{runtime} checks that the wrapper performs fail to forward messages to parties that aren't in the target list: \msf{pid} is not found in the target list.
-The \textit{type-checker} ensures that the 
+When receiving a message for \msf{pid}, if the party doesn't exist the protocolwrapper creates all the party's channel parameterized by the correct session types (the party's role and session types are determined by functional type of the incoming message).
+The channels are stored in the appropriate lists corresponding to their type.
+The session type of the message is determined by the functional type, and the session-typed message is sent along that channel.
+If a message is sent out of order, \textit{the program fails to type check} due to the type mismatch between the channel at the message.
+After delivering the message, the channel is moved to the next list corresponding to its new type.
 
-After a message is received, the wrapper moves the protocol party to the next stage in the protocol: \msf{L1} to \msf{L2} or \msf{L3} to \msf{L3}.
-Finally, it does the inverse when receiving session typed messages from the parties and forwards them along on its outgoing channels.
-The wrapper need not do any other checks or book keeping as the type system will fail to type check when message are given to the parties out of order. 
+For outgoing messages, a new process per party channel waits to read and does the inverse conversion: from session type to funtional type and attaches the party's \msf{pid} to it.
+\todo{Does the wrapper have to use the simulation of parties? I don't think so it can just generate enough potential $T(0)$ to do constant work of routing}.
 
 
 \subsection{Polynomial Bound}
@@ -334,44 +336,73 @@ To show  polynomial in PPT it suffices to provide a bounding polynomial $T$ such
 Finally, indistinguishability of the distributions of \msf{execUC} requires standard UC reasoning about the message sent by \Simulator, when they are sent and their affect on the output received by \Environment.
 
 \paragraph{Dummy Lemma}
-A machine $M'$ with token type $K'$ runs the following subroutine when delivering message $msg$ to internally simulated machine $M_i$ with token type $K_i$ on channel $\msf{c}[t]\{n\}$
-\begin{mathpar}
-\msf{withdrawToken}\ f\ K'\ K_i\ n \\
-\msf{msg}(c \leftarrow c', n : K_i)
-\end{mathpar}
-This procedure, called a \msf{simulatedWrite} is executed on every write to an internally simulated machine. 
+The dummy lemma makes use of the \msf{runInSandbox} and \msf{withdrawTokens} program definisions defined in Section~\ref{sec:nomosuc}.
+These to programs enable process re-use to simplify complicated protocols, such as a simulator, which can refer to existing processes as black boxes.
+Virtual tokens are required to satisfy the message and import types of the processes being simulated and exists only to enable this behavior.
+The actual import usage required by a machine simulating another is no more than if all code was run natively within one process.
 
-
-We define simulated writes above because the construction of the simulator, and in fact many adversary constructions in UC, relies on interally simulating other adversaries.
-In Definition~\ref{def:emulation} we characterize emulation by a simulator \Simulator, for a specific adversary \Adversary.
-However, the more useful definition of emulation where proving emulation w.r.t. a single adversary, namely the dummy adverasry \DummyAdv, is sufficient to guarantee emulatioon w.r.t any other adversary.
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
-If $\exists \Dummysim^{K}$ s.t. $ \DummyAdv^K, \Dummysim^K \vdash (\pi, \F_2) \sim (\phi, \F_1)$ then $\forall \Adversary \exists \Simulator_\Adversary^K$ s.t. $\Simulator_{\Adversary} \vdash  (\pi, \F_2) \sim (\phi, \F_1)$ 
+If $\exists \Dummysim^{K}$ s.t. $ \DummyAdv^K, \Dummysim^K \vdash (\pi, \F_2) \sim (\phi, \F_1)$ then $\forall \Adversary \ \exists \Simulator_\Adversary^K$ s.t. $\Simulator_{\Adversary} \vdash  (\pi, \F_2) \sim (\phi, \F_1)$ 
 %For protocols $\pi$ and $\phi$, $\msf{execUC}(\pi, \Environment, \DummyAdv) \sim \msf{execUC}(\phi, \Environment, \Simulator_{\mathcal{D}}) \forall \Environment \Rightarrow \exists$ \textit{well-resource-typed, PPT} $\Simulator_{\mathcal{D}}$ s.t. $\msf{execUC}(\pi, \Environment, \Adversary') \sim \msf{execUC}(\phi, \Environment, \Simulator')$ for any other \textit{well-resource-typed} $\Adversary'$.
 \end{theorem}
 
 \begin{proof}
-The constructes simulator $\Simulator_\Adversary^K$ internally simulates \Dummysim and \Adversary. 
+The constructed simulator $\Simulator_\Adversary^K$ internally simulates \Dummysim and \Adversary with respected virtual token types $K_1$ and $K_1$. 
 We use the internal simulation pattern described above to simulat messages to \Dummysim and \Adversary through virtual tokens.
-The construction is identical to the original dummy lemma in the UC framework, however, it remains to be shown that this construction maintains the polynomial time constraint.
+Recall that the virtual tokens consturction is a tool to make witing complex protocols easier.
+In fact it has no impact on the amount of import that the simulating machine has.
+The only difference in running all code natively is the potential usage is higher in managing the simulated processes and messages between them.
 
-Let $P_\Adversary$ and $P_{\Dummysim}$ be the bounding polynomials for \Adversary and \Dummysim.
-We set the maximum of the two bounding polynomials to be the polynomial through which new tokens of type $K_\Adversary$ and $K_{\Dummysim}$. 
+On input from \Environment on channel \msf{z2p}, \Simulator:
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
+msg = $\nrecv$ $\$$z2a ;
+$\nget$ K $\$$z2a {z2an} ;
+$\tm{withdrawTokens}$ f K K1 z2an ;
+$\nsend$ $\$$a_z2a msg ;
+$\nsimpay$ K1 {z2an} $\$$a_z2a ; 
+\end{lstlisting}
 
-We provide the construction of $\Simulator_\Adversary^K$.
-The constructed simulator internally runs the real world adversary \Adversary with a virtual token type $K_1$ and the \Dummysim with a virtual token type $K_2$.
+Similarly, on output from \Adversary to a protocol party on channel \msf{a2p}
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
+pid = $\tb{recv}$ $\$$a_a2p ;
+msg = $\tb{recv}$ $\$$a_a2p ;
+$\tb{get}$ K1 $\$$aa2p {a2pn} ;
+$\tm{withdrawTokens}$ f K K2 z2an ;
+$\tb{send}$ $\$$sd_z2a A2P(pid, msg) ;
+$\tm{simpay}$ K2 $\$$sd_z2a {z2an} ;
+\end{lstlisting}
 
-It internally runs the real-world adversary \Adversary and the dummy simulator \Dummysim. 
+The construction provided is identical to the original dumy lemma in the UC framework~\cite{uc}, however, we must show that the constructed simulator $\Simulator_\Adversary$ is well-resource-typed for all well-resource-typed \Adversary.
+By virtue of the simulation of the processes, and the assumption that the simulated \Adversary and \Dummysim are already well-resource-typed, it suffices to define a polynomial bound $T$ for $\Simulator_\Adversary$.
 
-$\Simulator_\Adversary$ 
-It is trivial to notice that $(\Adversary, \pi), (\Adversary, \F_2)$ well-matched $\Rightarrow$ $(\Simulator_\Adversary, \phi), (\Simulator_\Adversary, \pi)$ well-matched, and that $\forall \Environment, (\Environment, \Adversary), (\Environment, \pi)$ well-matched $\Rightarrow$ $(\Environment, \Simulator_\Adversary), (\Environment, \phi)$ well-matched.
 We provide a polynomial bound to bound the execution of $\Simulator_\Adversary$:
 \[
 T(n) = T_{\Adversary,\Dummysim}(n) + T_{\Adversary,\Dummysim}(n) + O(n)
 \]
 where $T_{\Adversary,\Dummysim}(n)$ is the greater of the two bounding polynomials for \Dummysim and \Adversary evaluated at $n$, and $n$ is the import that \Environment sends to \Adversary. 
 The constant factor accounts for the a constant overhead for routing messages between \Dummysim and \Adversary.
+
+
+%The construction is identical to the original dummy lemma in the UC framework, however, it remains to be shown that this construction maintains the polynomial time constraint.
+%Proving this claim involves reasoning that such a machine remains polynomial time, even with new virtual tokens, assuming the simulated machines \Adversary and \Dummysim are well-resource-typed.
+%
+%As mentioned in Section~\ref{sec:nomosuc}, the virtual tokens definition is purely a tool to enable reuse of process in a way that satisfies their types. 
+%It allows message passing to other process, namely from the construced simulator \Simulator to the internal \Adversary.
+%Effectively, the definition of virtual tokens ensures that the import token usage of simulating a machine $M$ versus simply running the code of the machine natively are no different in their import usage. 
+%	With constant overhead, the potential used by the constructed simulator as a function of its import tokens can be bounded by 
+%
+%
+%Let $P_\Adversary$ and $P_{\Dummysim}$ be the bounding polynomials for \Adversary and \Dummysim.
+%We set the maximum of the two bounding polynomials to be the polynomial through which new tokens of type $K_\Adversary$ and $K_{\Dummysim}$. 
+%
+%We provide the construction of $\Simulator_\Adversary^K$.
+%The constructed simulator internally runs the real world adversary \Adversary with a virtual token type $K_1$ and the \Dummysim with a virtual token type $K_2$.
+%
+%It internally runs the real-world adversary \Adversary and the dummy simulator \Dummysim. 
+%
+%$\Simulator_\Adversary$ 
+%It is trivial to notice that $(\Adversary, \pi), (\Adversary, \F_2)$ well-matched $\Rightarrow$ $(\Simulator_\Adversary, \phi), (\Simulator_\Adversary, \pi)$ well-matched, and that $\forall \Environment, (\Environment, \Adversary), (\Environment, \pi)$ well-matched $\Rightarrow$ $(\Environment, \Simulator_\Adversary), (\Environment, \phi)$ well-matched.
 
 
 
@@ -403,24 +434,24 @@ The constant factor accounts for the a constant overhead for routing messages be
 \end{proof}
 
 \subsection{Composition}
-In this section we work our way from a a simple composition theorem to a universal composition theorem in Nomos UC.
+In this section we present a simplified composition theorem and another theorem, which we call the \textit{squash theorem}.
+These two theorems combine to prove the full generalized composition theorem as it appears in the UC framework~\cite{uc}.
+
 The composition operator defines a way for some protocol $\rho$ that uses a functionality $\F$ to swap $\F$ for a procol $(\pi, \F')$, which realizes $\F$, such that $(\rho, \F) \sim (\phi, \F'') \Rightarrow (\rho \circ \pi, \F') \sim (\phi, \F'')$.
 The $\circ$ composition operator is defined in Nomos in Figure~\ref{lst:compose}.
 
 \begin{figure*}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
-proc compose[$z2p$][$p2z$][$f2p$][$p2f$][$\pi 2f$][$f2\pi$] :
-  (pid: Int), 
-  (#z_to_p: comm[$z2p$]), (#p_to_z: comm[$p2z$]),
-  (#f_to_p: comm[$f2\pi$]), (#p_to_f: comm[$\pi2f$])  $\lvd$ ($\$$p: 1) =
+$\tb{proc}$ compose[z2r][r2z][f2r][r2f][p2f][f2p] : 
+	(pid: Int),
+	($\$$z_to_p: z2p), ($\$$p_to_z: r2z), ($\$$f_to_p: f2r), ($\$$p_to_f: r2f) |- ($\$$D : 1) =
 {
-  #rho_to_pi $\lla$ communicator_init[$p2f$]{$p2fn$} $\lla$  ___ pid ;
-  #pi_to_rho $\lla$ communicator_init[$f2p$]{$f2pn$} $\lla$ pid ___ ;
-  
-     $\lla$ pi   $\lla$ pid                 #pi_to_rho #rho_to_pi #p_to_f #f_to_p ;
-  $\$$p $\lla$ rho $\lla$ pid #z_to_p #z_to_p #rho_to_pi #pi_to_rho ;
-}
+	$\$$rho_to_pi <- $\tm{createchan}$[p2f];
+	$\$$pi_to_rho <- $\tm{createchan}$[f2p];
 
+	 <- pi  <-                 $\$$rho_to_pi $\$$pi_to_rho $\$$p_to_f $\$$f_to_p ;
+	 <- phi <- $\$$z_to_p $\$$p_to_z $\$$rho_to_pi $\$$pi_to_rho ; 
+}
 \end{lstlisting}
 \caption{Composition operator in Nomos that connects a protocol $\rho$ to a protocol $\pi$ that uses some functionality $\F$.}
 \label{lst:compose} 
@@ -431,9 +462,9 @@ proc compose[$z2p$][$p2z$][$f2p$][$p2f$][$\pi 2f$][$f2\pi$] :
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
 
-\inferrule*[right=compose]
+\inferrule*[right=single-compose]
 {
-	(\pi, \F_1) \sim (\idealP, \F_2) \semi (\rho, \F_1) \sim (\idealP, \F_3) \\
+	(\pi, \F_1) \sim (\idealP, \F_2) \semi (\rho, \F_2) \sim (\idealP, \F_3) \\
 	\Rightarrow \exists \lambda \Adversary.\Simulator \vdash (\rho^{\F_2 \rightarrow \pi}, \F_1) \sim (\idealP, \F_3)
 }
 {
