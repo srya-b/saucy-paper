@@ -327,19 +327,27 @@ We say the protocol $\pi$ UC-realizes an ideal functionality $\F_2$ if Definitio
 A protocol $\pi$ UC-realized an ideal functionality $\F_1$ if $(\pi, \F_2) \sim (\idealP, \F_1)$ for some $\F_2$.
 \end{definition}
 
-\paragraph{Simulation Proofs}
-Simulation proofs in Nomos UC rely heavily on the type system to ensur that the constructed simlation is well-matched with the protocols in the ideal world and that it is locally polynomially-bound.
-Showing that a simulator is well-matched with $\phi$ and environments \Environment that are well-matched with \Adversary requires ensuring that \Simulator is well-typed under the type parameters \msf{z2a}, \msf{p2a}, \msf{f2a} and their analogues for the opposite direction of communication. 
-Well-typed, though, only captures the fact that the import sent with messages to \Simulator has \textit{enough} import to perform all of its computation on activation. 
-To show  polynomial in PPT it suffices to provide a bounding polynomial $T$ such that the import \Simulator receives, $n$, is sufficient to bound its run-time by $T(n)$. 
+This definition does not explicitly mention the import requirements of the types of the channels in the context in each of the two protocols. 
+We elide this point in the definition because the type system already provides this guarantee given the UC execution model.
+The same environment \Environment is run for both protocols (and both worlds), and, therefore, the UC execution type checks when \Environment is well-matched for both worlds (i.e. gives the same messages and the same import along all channels).
 
-Finally, indistinguishability of the distributions of \msf{execUC} requires standard UC reasoning about the message sent by \Simulator, when they are sent and their affect on the output received by \Environment.
+%\paragraph{Simulation Proofs}
+%Simulation proofs in Nomos UC rely heavily on the type system to ensur that the constructed simlation is well-matched with the protocols in the ideal world and that it is locally polynomially-bound.
+%Showing that a simulator is well-matched with $\phi$ and environments \Environment that are well-matched with \Adversary requires ensuring that \Simulator is well-typed under the type parameters \msf{z2a}, \msf{p2a}, \msf{f2a} and their analogues for the opposite direction of communication. 
+%Well-typed, though, only captures the fact that the import sent with messages to \Simulator has \textit{enough} import to perform all of its computation on activation. 
+%To show  polynomial in PPT it suffices to provide a bounding polynomial $T$ such that the import \Simulator receives, $n$, is sufficient to bound its run-time by $T(n)$. 
+%
+%Finally, indistinguishability of the distributions of \msf{execUC} requires standard UC reasoning about the message sent by \Simulator, when they are sent and their affect on the output received by \Environment.
 
 \subsection{Dummy Lemma}
 The dummy lemma makes use of the \msf{runInSandbox} and \msf{withdrawTokens} program definisions defined in Section~\ref{sec:nomosuc}.
 These to programs enable process re-use to simplify complicated protocols, such as a simulator, which can refer to existing processes as black boxes.
 Virtual tokens are required to satisfy the message and import types of the processes being simulated and exists only to enable this behavior.
 The actual import usage required by a machine simulating another is no more than if all code was run natively within one process.
+
+The Lemma states that if dummy simulator satisfies emulation with respect to the dummy adversary, then for any \Adversary a simulator can be constructed with the dummy simulator. 
+The constructed simulator runs \Adversary and \Dummysim internally. It sends messages from \Environment to \Adversary and outputs of \Adversary to \Dummysim.
+At a high level the proof asserts that the constructed simulator is the same as \Environment running \Adversary internally and sending its output to \Dummysim -- an environment for which dummy emulation is already guaranteed.
 
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
@@ -351,7 +359,7 @@ If $\exists \Dummysim^{K}$ s.t. $ \DummyAdv^K, \Dummysim^K \vdash (\pi, \F_2) \s
 The constructed simulator $\Simulator_\Adversary^K$ internally simulates \Dummysim and \Adversary with respected virtual token types $K_1$ and $K_1$. 
 We use the internal simulation pattern described above to simulat messages to \Dummysim and \Adversary through virtual tokens.
 Recall that the virtual tokens consturction is a tool to make witing complex protocols easier.
-In fact it has no impact on the amount of import that the simulating machine has.
+In fact it has no impact on the amount of import that the simulating machine requires or receives.
 The only difference in running all code natively is the potential usage is higher in managing the simulated processes and messages between them.
 
 On input from \Environment on channel \msf{z2p}, \Simulator:
@@ -373,10 +381,14 @@ $\tb{send}$ $\$$sd_z2a A2P(pid, msg) ;
 $\tm{simpay}$ K2 $\$$sd_z2a {z2an} ;
 \end{lstlisting}
 
-The construction provided is identical to the original dumy lemma in the UC framework~\cite{uc}, however, we must show that the constructed simulator $\Simulator_\Adversary$ is well-resource-typed for all well-resource-typed \Adversary.
-By virtue of the simulation of the processes, and the assumption that the simulated \Adversary and \Dummysim are already well-resource-typed, it suffices to define a polynomial bound $T$ for $\Simulator_\Adversary$.
+$\Simulator_\Adversary$ forwards input from \Environment and forwards it to the internal \Adversary. 
+\Adversary output to either the protocol parties or the 
 
-We provide a polynomial bound to bound the execution of $\Simulator_\Adversary$:
+The construction provided is identical to the original dumy lemma in the UC framework~\cite{uc}, however, we must show that the constructed simulator $\Simulator_\Adversary$ is well-resource-typed for all well-resource-typed \Adversary.
+By the assumption that \Adversary and \Dummysim are well-resource-typed, $\Simulator_\Adversary^K$ is well-resource-typed because it performs consatnt work routing messages internally. 
+It suffices to find a suitable polynomial bound.
+
+We provide a polynomial bound to bound the execution of $\Simulator_\Adversary^K$:
 \[
 T(n) = T_{\Adversary,\Dummysim}(n) + T_{\Adversary,\Dummysim}(n) + O(n)
 \]
@@ -440,6 +452,9 @@ These two theorems combine to prove the full generalized composition theorem as 
 The composition operator defines a way for some protocol $\rho$ that uses a functionality $\F$ to swap $\F$ for a procol $(\pi, \F')$, which realizes $\F$, such that $(\rho, \F) \sim (\phi, \F'') \Rightarrow (\rho \circ \pi, \F') \sim (\phi, \F'')$.
 The $\circ$ composition operator is defined in Nomos in Figure~\ref{lst:compose}.
 
+Recall that the Nomos language currently does not support passing processes as arguments to other processes even though the theory allows it. 
+In the $\circ$ code the protocols $\pi$ and $\phi$ exist globally.
+
 \begin{figure*}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
 $\tb{proc}$ compose[z2r][r2z][f2r][r2f][p2f][f2p] : 
@@ -475,12 +490,22 @@ If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realiz
 \end{theorem}
 
 \begin{proof}
+By Theorem~\ref{thm:dummy}, it suffices to prove emulation with respect to the dummy adversary:
+\[
+	\msf{execUC}\ \rho^{\phi \rightarrow \pi} 
+\]	
+
+
 The proof proceeds in a similar way to the proof of the Dummy Lemma in Theorem~\ref{thm:dummy}. 
 The Composition opreator $\circ$ combines parties of $\rho$ with parties of $\pi$ within the party wrapper (defined previously). 
 Parties running protocl $\rho$ send messages to parties of $\pi$ which then communicate with the functionality $\F_1$.
 UC emulation states that the functionality $(\idealP, \F_2)$ replaced by a realizing protocol $(\pi, \F_1)$ is indistinguishable even from parties of $\rho$.
 
-We define a simulator \Simulator that internally runs simulates the real-world \Adversary and the simulator $\Simulator_\pi$ for $(\pi, \F_2)$.
+The proof is in the form of a simulator that internally runs simulates the real-world \Adversary and the simulator $\Simulator_\pi$ for $(\pi, \F_2)$.
+The simualator uses the same simulation construction as used by the Dummy Lemma simulator. 
+The inputs from \Environment are passed to the \Adversary, and outputs by the adversary for $\F_3$ are sent to $\Simulator_pi$.
+Outputs from \Adversary to the protocol parties is sent to the 
+
 The simulation in \Simulator proceeds like the code listings for the Dummy Lemma.
 Messages from \Environment are forwarded to the internal \Adversary. 
 Outputs from \Adversary to protocol parties are forwarded to them, and all other outputs are forward to $\Simulator_\pi$ as \Environment.
@@ -490,10 +515,12 @@ Similar to the dummy lemma proof, a bouning polynomial for the new simulator \Si
 
 \subsection{Multisession}
 The multi-session extension of a protocol of functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
-The ITM simulates multiple instances of the protocol/functionality intnerally and multoplexes input/output to/from them in same was as the party wrapper.
-The only differense is that it does not use the list structure to manage the session types of the functionality.
-It accepts messages of the form $(\msf{ssid}, \msf{msg})$ and forwards them on the appropriate channel of the functionality with \msf{sid} = \msf{ssid}.
-Each new instance of the functionality is given a unique import type $K'$ and is given virtual tokens by the wrapper code of the operator.
+The ITM simulates multiple instances of the protocol/functionality intnerally and multiplexes input/output to/from them in same way as the party wrapper for protocol parties.
+The functionalities are multilexes by an additional parameter called the \msf{ssid}.
+It accepts messages of the form $(\msf{ssid}, \msf{msg})$ and forwards it to the functionality instances with $\msf{sid} = \msf{ssid}$.
+Unlike the party operator, the multisession operator does not use lists to manage the session types of the functionality.
+Like a single functionality, it deals only with functional message types.
+Only the protocol parties uses session types.
 
 %It accepts as type parameters the types of messages exchanges between protocol parties and the functionality (\msf{p2f} and \msf{f2p}) and between the adversary and \F (\msf{a2f} and \msf{f2a}). 
 %The type of communicators between parties and $!\F$ need to reflect the change in interface. 
@@ -522,6 +549,7 @@ If a functionality $\F$ is well-resource-typed, then it's multisession extension
 \end{theorem}
 
 \begin{proof}
+
 Let $P_{\F}$ be a bounding polynomial for $\F$ such that $\F$ is well-resource-typed. 
 In the worse-case, the multisession operator must spawn a new instance of $\F$ an every activation. 
 Let $N_{\F}$ be the total number of instances of $\F$ created by the operator.
@@ -538,10 +566,14 @@ If a functionality \F is well-resource-typed, then $!\F$ and $!!\F$ are well-res
 
 \begin{proof}
 First we describe the \msf{squash} protocol in figure \ref{fig:squash}.
-At a high-level:
+Note that $!!\F$ is nested $!$ operators. The top level process maintains multiple sessions of $!\F$ wach with their own \msf{sid}, \msf{ssid}. 
+Functionalities in each $!\F[\msf{ssid}]$ have their own \msf{sid}. 
 
-In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$. A 2D array is the best analogy for this construction.
-What the \msf{squash} protocol does is it converts $(\msf{ssid}_1, (\msf{ssid}_2, m)) \rightarrow (\msf{ssid}_3, m)$ creating a bijection between instances of $\F$ in $!!\F$ and instances of $\F$ in $!\F$: \textit{squashing} the double $!!$ into a single $!$.
+At a high-level:
+In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$. 
+A two dimensional array is the best analogy for this construction.
+The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$ 
+It follow logically that the two worlds are indistinguishable from the part of the environment.
 
 \textit{Well-resource-typed}:
 When reasoning about well-resource-typed, we want that every well-typed environment for $(\msf{squash}, !F)$ should be well-typed for $(\idealP, !!F)$.
