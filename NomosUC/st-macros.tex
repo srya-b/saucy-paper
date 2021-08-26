@@ -41,9 +41,7 @@
 %% Contexts and Typing Judgment
 \newcommand{\W}{\Omega}
 \newcommand{\Sg}{\Sigma}
-\newcommand{\xvdash}[1]{%
-  \vdash^{\mkern-8mu\scriptstyle\rule[-.9ex]{0pt}{0pt}#1}%
-}
+\newcommand{\xvdash}[2]{\sststile{#2}{#1}}
 \newcommand{\xVdash}[1]{%
   \Vdash^{\mkern-8mu\scriptstyle\rule[-.9ex]{0pt}{0pt}#1}%
 }
@@ -182,7 +180,7 @@
 \newcommand{\mshd}{M^{\textsf{share}}}
 \newcommand{\ms}{M_s}
 \newcommand{\mr}{M_r}
-\newcommand{\entailpot}[1]{\xvdash{#1}}
+\newcommand{\entailpot}[2]{\xvdash{#1}{#2}}
 \newcommand{\exppot}[1]{\xVdash{#1}}
 \newcommand{\texp}{\Vdash}
 \newcommand{\pexp}{\vdash}
@@ -353,6 +351,7 @@
 \newcommand{\TokSig}{\mathcal{S}}
 \newcommand{\exchange}[3]{#1 \overset{#2}{\longrightarrow} #3}
 \newcommand{\GlobalF}{\mathfrak{f}}
+\newcommand{\depth}{\mathfrak{d}}
 
 %% Two Counter Machines
 \newcommand{\ins}{\iota}
