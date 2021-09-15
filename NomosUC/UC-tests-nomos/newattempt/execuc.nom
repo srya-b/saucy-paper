@@ -211,7 +211,7 @@ proc dummy_adversary_rec3[z2a][a2z][a2p][p2a][a2f][f2a] :
   )
 }
 
-proc execUC : 
+proc execUC[K][KA1][KF1] : 
 	(k : int), (rng : [Bit]) |- ($d : bit) =
 {
 		
@@ -245,7 +245,7 @@ proc execUC :
   #z_to_a <- communicator_init[PS.z2a]{PS.z2an} <- z_id a_id ;
   #a_to_z <- communicator_init[PS.a2z]{PS.a2zn} <- a_id a_id ;
  
-  $pw <- party_wrapper[PS.p2z][PS.z2p][PS.p2f][PS.f2p][PS.p2a][PS.a2p] <- 
+  $pw <- party_wrapper[K][PS.p2z][PS.z2p][PS.p2f][PS.f2p][PS.p2a][PS.a2p] <- 
 												  k rng clist  #pw_to_f #f_to_pw #pw_to_a #a_to_pw #pw_to_z #z_to_pw ;
   send $pw k ;
   send $pw rng ;
@@ -253,14 +253,14 @@ proc execUC :
   send $pw clist ;
   
   (* initialize ideal functionality *)
-  $f_ideal <- PS.Fcode <- #pw_to_f #f_to_pw #f_to_a #a_to_f ;
+  $f_ideal <- PS.Fcode[K][KF1] <- #pw_to_f #f_to_pw #f_to_a #a_to_f ;
   send $f_ideal k ;
   send $f_ideal rng ;
   send $f_ideal sid ;
   send $f_ideal clist ;
 
   (* initialize ADV *)
-  $adv <- adversary <- #pw_to_a #a_to_pw #z_to_a #a_to_z #f_to_a #a_to_f ;
+  $adv <- adversary[K][KA1] <- #pw_to_a #a_to_pw #z_to_a #a_to_z #f_to_a #a_to_f ;
   send $adv k ;
   send $adv rng ;
   send $adv sid ;

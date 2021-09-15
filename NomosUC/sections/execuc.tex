@@ -514,13 +514,14 @@ Similar to the dummy lemma proof, a bouning polynomial for the new simulator \Si
 \end{proof}
 
 \subsection{Multisession}
-The multi-session extension of a protocol of functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
+The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
 The ITM simulates multiple instances of the protocol/functionality intnerally and multiplexes input/output to/from them in same way as the party wrapper for protocol parties.
-The functionalities are multilexes by an additional parameter called the \msf{ssid}.
-It accepts messages of the form $(\msf{ssid}, \msf{msg})$ and forwards it to the functionality instances with $\msf{sid} = \msf{ssid}$.
-Unlike the party operator, the multisession operator does not use lists to manage the session types of the functionality.
-Like a single functionality, it deals only with functional message types.
-Only the protocol parties uses session types.
+The operator accepts messages of the form $(\msf{ssid}, msg)$ where \msf{ssid} is a sub-session identifier.
+If an instance of the functionality with $\msf{sid} := \msf{ssid}$ then $!\F$ creates one and forwards the message to it.
+Additionally, $!\F$ listens for outgoing messages from each of the instances and forwards them to the outside execution.
+The operator differs from the party wrapper in one crucial way: it only works with functional messages types and does not wrap around any session types.
+Like the single functionality, functionalities in this operator also only deal with functional message types.
+The execution, instead, relies on the session types of the protocol parties to enforce message/protocol ordering.
 
 %It accepts as type parameters the types of messages exchanges between protocol parties and the functionality (\msf{p2f} and \msf{f2p}) and between the adversary and \F (\msf{a2f} and \msf{f2a}). 
 %The type of communicators between parties and $!\F$ need to reflect the change in interface. 

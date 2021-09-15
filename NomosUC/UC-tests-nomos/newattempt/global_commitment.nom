@@ -1,0 +1,381 @@
+type Ip2f = P2FCommit of Bit | P2FOpen ;
+type If2p = F2PCommit | F2POpen of Bit ;
+
+let z2pn = 1;
+let p2zn = 0;
+
+let Ip2fn = 0;
+let If2pn = 0;
+
+(*type z2p = Commit of Bit ;
+type p2z = Open of Bit ; 			these should just be Ip2f and Ip2p *)
+
+type Ia2f = 1 ;
+type If2a = 1 ;
+
+let Ip2fn = 0;	(* F_com requires no import because constant work *)
+let If2pn = 0;	(* F_com can't give import it doesn't have *)
+let Ia2fn = 0;	(* A has no interface to F_com *)
+let Ia2pn = 0;	(* Ps require no import given ==> so a gives no import *)
+
+proc F_com[K]:
+	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
+	(#p_to_f: comm[pid ^ Ip2f]{Ip2fn}), (#f_to_p: comm[pid ^ If2p]{If2pn}),
+	(#a_to_f: comm[Ia2f]{Ia2fn}), (#f_to_a: comm[If2a]{If2an})  |- ($ch: 1) =
+{
+	$p2f <- acquire #p_to_f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes =>	pid = recv $p2f ;
+						msg = recv $p2f ;
+					  get $pwf {Ip2fn} ;
+						#p_to_f <- release $p2f ;
+						case msg (
+							P2FCommit(b) =>	if pid == 1
+														then
+															$f2p <- acquire #f_to_p ;
+															$f2p.SEND ;
+															send F2PCommit $f2p ;
+															pay {If2pn} $f2p ;
+															#f_to_p <- release $f2p ;
+															$ch <- F_com_open[...] s k rng clist #p_to_f #f_to_p b ;
+														end
+						)
+	 | no =>  $ch <- F_com_open[K] s k rng clist #p_to_f #f_to_p ;
+}
+
+proc F_com_open[K]:
+	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
+	(#p_to_f: comm[pid ^ Ip2f]{Ip2fn}), (#f_to_p: comm[pid ^ If2p]{If2pn}),
+	(#a_to_f: comm[Ia2f]{Ia2fn}), (#f_to_a: comm[If2a]{0}),
+	(b: Bit)   |- ($ch: 1) =
+{
+	$p2f <- acquire #p_to_f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes =>	pid = recv $p2f ;
+						msg = recv $p2f ;
+						get $p2f {0} ;
+						#p_to_f <- release $p2f ;
+						case msg (
+							P2FOpen =>	if pid == 1
+												then
+													$f2p <- acquier #f_to_p ;
+													$f2p.SEND ;
+													send F2POpen(b) $f2p ;
+													pay {0} $f2p ;
+													#f_to_p <- release $f2p ;
+													$ch <- F_com_done[..] <- s k rng clist #p_to_f #f_to_p b ;
+												end
+						)
+	)
+}
+
+
+(* REAL WORLD *)
+
+(* TODO: How i tell the machine to stop?!?!!?!? *)
+
+type Rp2f = SHash of Int | Send of pid ^ pid ^ Int ;
+type Rf2p = Pre of Int | RHash of Int | MSG of pid ^ pid ^ Int ;
+
+type Ra2f = A2Hash of Int ;
+type Rf2a = Hash2A of Int ;
+
+let Rf2pn = 0;
+let Rp2fn = 1;	(* ever increasing set of hash pairs in Fro *)
+let Ra2fn = 1;	(* needs to call F_ro *)
+
+proc F_RO_init:
+	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
+	(#f_to_p: comm[pid ^ Rf2p]{Rf2pn}), (#p_to_f: comm[pid ^ Rp2f]{Rp2fn}),
+	(#f_to_a: comm[Rf2a]{0}), (#a_to_f: comm[Ra2f]{Ra2fn})  |- ($ch: 1) =
+{
+	(* todo init lp and lh *)
+	$lp <- nil[Int] ;
+	$lh <- nil[Int] ;
+	SID(committer, receiver) => $ch <- F_RO s k rng clist #f_to_p #p_to_f #f_to_a #a_to_f lp lh ;
+}
+
+proc F_RO:
+	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
+	(#f_to_p: comm[pid ^ Rf2p]{Rf2pn}), (#p_to_f: comm[pid ^ Rp2f]{Rp2fn}),
+	(#f_to_a: comm[Rf2a]{0}), (#a_to_f: comm[Ra2f]{Ra2fn}),
+	(lp: list[Int]), (lh: list[Int])  |- ($ch: 1) =
+{
+	$p2f <- acquire $p_to_f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes =>	pid = recv $p2f ;
+						msg = recv $p2f ;
+						get $p2f {Rp2fn} ;
+						#p_to_f <- release $p2f ;
+						case msg (
+							SHash(i) =>	if i in $lp
+													then
+														let h <- geth i $lh ;
+														$f2p <- acquire #f_to_p ;
+														$f2p.SEND ;
+														send pid ^ RHash(h) $f2p ;
+														pay {Rf2pn} $f2p ;
+														$f_to_p <- release $f2p ;
+														$ch <- F_RO_2 <- s k rng clist #f_to_p #p_to_f #f_to_a #a_to_f lp lh ;
+													else
+														let h = sample k rng ;
+														$lpnew <- lcons i $lp ;
+														$lhnew <- lcons h $lh ;
+														$f2p <- acquire #f_to_p ;
+														$f2p.SEND ;
+														send pid ^ RHash(h) ;
+														pay {Rf2pn} $f2p ;
+														$ch <- F_RO_2 <- s k rng clist #f_to_p #p_to_f #f_to_a #a_to_f lpnew lhnew ;
+													end 
+						 | Send(s, r, i) =>	$f2p <- acquire #f_to_p ;
+													      $f2p.SEND ;
+																send r ^ s ^ MSG(i) ; 
+																pay {Rf2pn} $f2p ;
+													      #f_to_p <- release $f2p ;
+													      $ch <- F_RO_2 <- s k rng clist #f_to_p #p_to_f #f_to_a #a_to_f lp lh 
+						)	
+	)
+}
+
+proc F_RO:
+	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
+	(#f_to_p: comm[pid ^ Rf2p]{Rf2pn}), (#p_to_f: comm[pid ^ Rp2f]{Rp2fn}),
+	(#f_to_a: comm[Rf2a]{0}), (#a_to_f: comm[Ra2f]{Ra2fn}),
+	(lp: list[Int]), (lh: list[Int])  |- ($ch: 1) =
+{
+	$a2f <- acquire #a_to_f ;
+	$a2f.RECV ;
+	case $a2f (
+		yes =>	msg = recv $a2f ;
+						get $a2f {Ra2fn} ;
+						case msg (
+							A2HASH(i) =>	if i in $lp
+														then
+															let h <- geth i $lh ;
+															$f2a <- acquire #f_to_a ;
+															$f2a.SEND ;
+															send Hash2A(h) $f2a ;
+															pay {0} $f2a ;
+															$f_to_a <- release $f2a ;
+															$ch <- F_RO <- s k rng clist #f_to_p #p_to_f #f_to_a #a_to_f lp lh ;
+														else
+															let h = sample k rng ;
+															$lpnew <- lcons i $lp ;
+															$lhnew <- lcons i $lh ;
+															$f2a <- acquire #f_to_a ;
+															$f2a.SEND ;
+															send Hash2A(h) $f2a ;
+															pay {0} $f2a ;
+															$ch <- F_RO <- s k rng clist #f_to_p #p_to_f #f_to_a #a_to_f com rec lpnew lhnew ;
+						)	
+	)
+}
+
+let a2zn = 0;
+let z2an = 1;	(* calls to F_ro *)
+
+proc Pcode[...]{...} :
+	(s: sid), (p: Int), (k: Int), (rng: [Bit]),
+(*	(#p_to_z: comm[p2z]{p2zn}), (#z_to_p: comm[z2p]{z2pn}), *)
+	(#p_to_z: comm[If2p]{p2zn}), (#z_to_p: comm[Ip2f]{z2pn}),
+	(#p_to_f: comm[Rp2f]{Rp2fz}), (#f_to_p: comm[Rf2p]{Rf2pn}),
+	(*(#p_to_a: comm[Rp2a]{0}), 	(#a_to_p: comm[Ra2p]{Ra2pn}) |- ($ch: 1) =*)
+	(#p_to_a: comm[Rp2f]{0}), 	(#a_to_p: comm[Rp2f]{Rp2fn}) |- ($ch: 1) =
+{
+	if pid == 1
+	then
+		$ch <- Pcode_committer[...]{...} <- s p k rng #p_to_z #z_to_p #p_to_f #f_to_p ;
+	else if pid == 2
+		$ch <- Pcode_committer[...]{...} <- s p k rng #p_to_z #z_to_p #p_to_f #f_to_p ;
+	else
+		throw Exception??
+	end
+}
+
+proc Pcode_committer[...]{...} :
+	(s: sid), (p: Int), (k: Int), (rng: [Bit]),
+(*	(#p_to_z: comm[p2z]{p2zn}), (#z_to_p: comm[z2p]{z2pn}), *)
+	(#p_to_z: comm[If2p]{p2zn}), (#z_to_p: comm[Ip2f]{z2pn}),
+	($p_to_f: comm[Rp2f]{Rp2fz}), (#f_to_p: comm[Rf2p]{Rf2pn}),
+	(#p_to_a: comm[Rp2a]{0}), 	(#a_to_p: comm[Ra2p]{Ra2pn}) |- ($ch: 1) =
+{
+	$z2p <- acquire #z_to_p ;
+	$z2p.RECV ;
+	case $z2p (
+		yes =>	msg = recv $z2p ;
+						get $z2p {z2pn} ;
+						#z_to_p <- release $z2p ;
+						case msg (
+							Commit(b) =>	$p2f <- acquire #p_to_f ;
+														$p2f.SEND ;
+														send SHash(b) ;
+														pay {p2fn} $p2f ;
+														$f2p <- acquire #f_to_p ;
+														$f2p.RECV ;
+														case $f2p (
+															yes =>	msg = recv $f2p ;
+																			get $f2p {f2pn} ;
+																			#f_to_p <- release $f2p ;
+																			case msg (
+																				RHash(h) =>	$p2f.SEND ;
+																										send Send(h) $p2f ;
+																										pay {p2fn} $p2f ;
+																										#p_to_f <- release $p2f ;
+																										$ch <- Pcode_committer_2 <- s p k rng #p_to_z #z_to_p #p_to_f #f_to_p b h ;
+																			)
+														)
+																				
+						)		
+	 | no => $ch <- Pcode_committer[...]{...} <- s p k rng #p_to_z #z_to_p #p_to_f #f_to_p ;
+	)
+}
+
+type z2p = Commit of Bit ;
+type p2z = Open of Bit ;
+
+type Rp2f = SHash of Int | Send of Int ;
+type Rf2p = RHash of Int | MSG of Int ;
+
+proc Pcode_committer_2[...]{...} :
+	(s: sid), (p: Int), (k: Int), (rng: [Bit]),
+(*	(#p_to_z: comm[p2z]{p2zn}), (#z_to_p: comm[z2p]{z2pn}), *)
+	(#p_to_z: comm[If2p]{p2zn}), (#z_to_p: comm[Ip2f]{z2pn}),
+	(#p_to_f: comm[Rp2f]{Rp2fz}), (#f_to_p: comm[Rf2p]{Rf2pn}),
+	(#p_to_a: comm[Rp2a]{0}), 	(#a_to_p: comm[Ra2p]{Ra2pn}) |- ($ch: 1) =
+	(b: Bit), (h: Int)  |- ($ch: 1) =
+{
+	$z2p <- acquire #z_to_p ;
+	$z2p.RECV ;
+	case $z2p (
+		yes =>	msg = recv $z2p ;
+						get $z2p {z2pn} ;
+						#z_to_p <- release $z2p ;
+						case msg (
+							Open(b) =>	$p2f <- acquire #p_to_f ;
+													$p2f.SEND ;
+													send Send(b) $p2f ;
+													pay {p2fn} $p2f ;
+													#p_to_f <- release $p2f ; 
+													(* Machine should stop here *)
+					 	)
+ 	 | no =>	$ch <- Pcode_committer_2[...]{...} <- s p k rng #p_to_z #z_to_p #p_to_f #f_to_p b h ;
+	)
+}
+
+proc PCode_recevier[...]{...}:
+	(s: sid), (p: Int), (k: Int), (rng: [Bit]),
+(*	(#p_to_z: comm[p2z]{p2zn}), (#z_to_p: comm[z2p]{z2pn}), *)
+	(#p_to_z: comm[If2p]{p2zn}), (#z_to_p: comm[Ip2f]{z2pn}),
+	(#p_to_f: comm[Rp2f]{Rp2fn}), (#f_to_p: comm[Rf2p]{Rf2pn}),
+	(#p_to_a: comm[Rp2a]{0}), 	(#a_to_p: comm[Ra2p]{Ra2pn}) |- ($ch: 1) =
+{
+	$f2p <- acquire #f_to_p ;
+	$f2p.RECV ;
+	case $f2p (
+		yes =>	msg = recv $f2p ;
+						get $f2p {f2pn} ;
+						#f_to_p <- release $f2p ;
+						case msg (
+							MSG(h) => $p2z <- acquire #p_to_z ;
+												$p2z.SEND ;
+												send F2PCommit $p2z ;
+												pay {p2zn} $p2z ;
+												#p_to_z <- release $p2z ;	
+												$ch <- PCode_receiver_2 <- s p k rng #p_to_z #z_to_p #p_to_f #f_to_p h ;
+						)
+	 | no => $ch <- PCode_receiver <- s p k rng #p_to_z #z_to_p #p_to_f #g_to_p ;
+	)
+}
+
+proc PCode_receiver_2[...]{...} :
+	(s: sid), (p: Int), (k: Int), (rng: [Bit]),
+(*	(#p_to_z: comm[p2z]{p2zn}), (#z_to_p: comm[z2p]{z2pn}), *)
+	(#p_to_z: comm[If2p]{p2zn}), (#z_to_p: comm[Ip2f]{z2pn}),
+	(#p_to_f: comm[Rp2f]{Rp2fz}), (#f_to_p: comm[Rf2p]{Rf2pn}), (h: Int),
+	(#p_to_a: comm[Rp2a]{0}), 	(#a_to_p: comm[Ra2p]{Ra2pn}) |- ($ch: 1) =
+{
+	$f2p <- acquire #f_to_p ;
+	$f2p.RECV ;
+	case $f2p (
+		yes =>	msg = recv $f2p ;
+						get $f2p {f2pn} ;
+						#f_to_p <- release $f2p ;
+						case msg (
+							MSG(p) => $p2f <- acquire #p_to_f ;
+												$p2f.SEND ;
+												send SHash(p) $p2f ;
+												pay {p2fn} $p2f ;
+												#p_to_f <- release $p2f ;
+												$f2p <- acquier #f_to_p ;
+												$f2p.SEND ;
+												case $f2p (
+													yes =>	msg = recv $f2p ;
+																	get $f2p {f2pn} ;
+																	case msg (
+																		RHash(hnew) =>	if hnew == h
+																										then	
+																											$p2z <- acquire #p_to_z ;
+																											$p2z.SEND ;
+																											send 
+																											(* TODO output yes or no for accept *) 
+						)
+}
+
+
+proc Sim_com:
+	(s: sid), (k: Int), (rng: [Bit]), ($clist: list[Int]),
+	(#a_to_z: comm[z2d[Rp2a][Rf2a]]{a2zn}), (#z_to_a: comm[d2z[Ra2p][Ra2f]]{z2an}),
+	(#a_to_f: comm[Ra2f]{Ra2fn}), (#f_to_a: comm[Rf2a]{Rf2an}),
+	(#a_to_p: comm[Ra2p]{Ra2pn}), (#p_to_a: comm[Rp2a]{0})	|- ($ch: 1) =
+{
+	$lh <- nil[Int] ;
+	$lp <- nil[Int] ;
+	case s (
+		SID(committer, receiver) => $ch <- Sim_com_easy <- ... $lh $lp committer receiver ;
+	)
+}
+
+proc Sim_com_1:
+	(s: sid), (k: Int), (rng: [Bit]),
+	(#a_to_z: comm[z2d[Rp2a][Rf2a]]{a2zn}), (#z_to_a: comm[d2z[Ra2p][Ra2f]]{z2an}),
+	(#a_to_f: comm[Ra2f]{Ra2fn}), (#f_to_a: comm[Rf2a]{Rf2an}),
+	(#a_to_p: comm[Ra2p]{Ra2pn}), (#p_to_a: comm[Rp2a]{0}),
+	($lh: list[Int]), ($lp: list[Int]), (com: Int), (rec: Int)  |- ($ch: 1) =
+{
+	$z2a <- acquire #z2a ;
+	$z2a.RECV ;
+	case $z2a (
+		yes =>	msg = $recv ;
+						get $z2a {z2an} ;
+						#z_to_a <- release $z2a ;
+						case msg (
+							A2F(m) => 
+								case m (
+									A2Hash(i) =>	if i in $lp
+																then
+																	let h <- geth i $lh ;
+																	$a2z <- acquire #a_to_z ;
+																	send Hash2A(h) $a2z ;
+																	pay {a2zn} $a2z ;
+																	#a_to_z <- release $a2z ;
+																	$ch <- Sim_com_2 <- ... $lp $lh com rec ;
+																else
+																	let h = sample k rng ;
+																	$lpnew <- lcons i $lp ;
+																	$lhnew <- lcons h $lp ;
+																	$a2z <- acquire #a_to_z ;
+																	send Hash2A(h) $a2z ;
+																	pay {a2zn} $a2z ;
+																	#a_to_z <- release $a2z ;
+																	$ch <- Sim_com_2 <- ... $lpnew $lhnew com rec ;
+								)
+					  | A2P(m) =>
+								case m (
+									
+								)
+						)
+}
+	

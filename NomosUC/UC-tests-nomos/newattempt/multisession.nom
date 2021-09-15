@@ -1,3 +1,43 @@
+type comm[a]{n} = /\ <{n} &{ SEND : a -> |{n}> \/ comm[a]{n},
+                     RECV : +{ no : |{0}>  \/ comm[a]{n},
+                               yes : a * |{n}> \/ comm[a]{n} }}
+
+proc contract communicator_init[a]{n} : (sid : int), (rid : int) |- (#dc : comm[a]) =
+{
+  $l <- pnil[a] <- ;
+  #dc <- communicator_init[a]{n} <- sid rid $l
+}
+
+proc contract communicator[K][a]{n} : (sid : int), (rid : int), ($l : list[a]) |- (#dc : comm[a]{n}) =
+{
+  $ldc <- accept #dc ;
+  case $ldc (
+    SEND => msg <- recv $ldc ;
+			      get $ldc {*} ;
+				    genpot {*} T ;
+            print ("%d-%d comm acquired by %d: message received\n", sid, rid, sid);
+            #dc <- detach $ldc ;
+            $lnew <- pappend[a] <- $msg $l ;
+            #dc <- communicator[a]{n} <- sid rid $lnew
+  | RECV => case $l (
+              cons => $m <- recv $l ;
+                      $ldc.yes ;
+                      print ("%d-%d comm acquired by %d: message delivered\n", sid, rid, rid);
+                      send $ldc $m ;
+					  					pay $ldx {n};
+                      #dc <- detach $ldc ;
+                      #dc <- communicator[a]{n} <- sid rid $l
+            | nil => wait $l ;
+                     $ldc.no ;
+                     print ("%d-%d comm acquired by %d: no message\n", sid, rid, rid);
+                     $lnew <- pnil[a] <- ;
+                     #dc <- detach $ldc ;
+                     #dc <- communicator[a]{n} <- sid rid $lnew
+            )
+  )
+}
+
+
 type p2f = Commit of pid ^ int | Open of pid ^ ?? ;
 type SenderMSG[smsg] = ssid ^ smsg ;
 type ReceiverMSG[rmsg] = ssid ^ rmsg ;
