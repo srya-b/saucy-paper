@@ -1,6 +1,17 @@
 In this section we use our emulation definition to model a simple commitment protocol in the random oracle mode.
 We present a complete emulation from the canonical $\F_{\msf{com}}$ definition with a simulator for the dummy adversary.
 
+Recall the functionality \Fcom presented earlier in this paper, and that functionalities in NomosUC are wrapped by other code which converts between functional and session typed messages. 
+It accepts messages from parties on two channels: one from the sender and one from the receiver.
+The channels don't directly connect to the two parties (recall the functionality wrapper and the protocol wrapper exists between the two).
+The types for sender and receiver messages to \Fcom are the following:
+\begin{gather}
+\mi{stype} \; \m{sender} = \echoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
+\mi{stype} \; \m{scommitted} = \echoice{\mb{open} : 1} \\
+\mi{stype} \; \m{receiver} = \ichoice{\mb{committed} : \m{rcommitted}} \\
+\mu{stype} \; \m{rcommitted} = \ichoice{\mb{open} : \m{bit} \arrow \one}
+\end{gather}
+
 The ideal functionality \Fcom is the same one introduced in Figure~\ref{fig:fcom} in Section~\ref{sec:nomosuc}. 
 In FIgure~\ref{lst:fcom} we present the Nomos definition of the same functionality and provide the channel types in FIgure~\ref{fig:fcomtypes}.
 We elide some of the clutter of acquiring and releasing shared channels in the form of: \texttt{\$p2f $\leftarrow$ acquire \#p\_to\_f} for clarity. 
@@ -9,6 +20,7 @@ Wherever a linear channel like \texttt{\$p2f} is used it is in fact an acquired 
 The key difference to note between \Fcom and its Nomos version is that the functionality is split up into two processes rather than compressed into one.
 This design decision is required because of how Nomos cycles between processes in a round-robin fashion and the communicator design.
 Therefore, processes must recurse when there is no message to be read and move to the next processes after the first expected message is received--in this case the \msf{P2FCommit(b)} message.
+
 
 \begin{figure}
 \centering

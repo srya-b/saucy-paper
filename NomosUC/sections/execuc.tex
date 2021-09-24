@@ -1,121 +1,89 @@
 In this section we introduce the UC experiment in Nomos and the resulting emulation definition.
-We continue on to state the dummy lemma theorem as well as the composition theorem for Nomos UC.
+We continue on to state the dummy lemma theorem as well as a composition theorem for Nomos UC.
+An important part of our definition is using code-generation techniques~\cite{somecodegeneration} to constructs some processes in the UC experiment as well ass useful operators to achieve full composition in the sense of Canetti et al.~\cite{uc}.
+
 
 We first introduce some convenient notation.
 For the remainder of this section, when we refer to a protocol, we actually refer to a pair of ITMs as in Definition~\ref{def:protocol}.
 \begin{definition}\label{def:protocol}
 A \textit{protocol} is a pair of terms ($\pi$, $\mathcal{F}$) where $\pi$ is the local protocol code run by honest parties and \F is an ideal functionality parties can communcated with.
 \end{definition}
-In actual execution $\pi$ is encapsulated by a process called the partywrapper which handles dynamic creation of protocol party instances. 
-It routes messages to internally running parties and spawns a new \msf{pid} when first activated with a message for it.
-%The party wrapper is nothing more than a machine that encapsultaes all of the protocol parties and handles spawning new parties when activated with a previously unseed \msf{pid}.
-%It internally runs copies of the challenge protocol and routes messages between them and the outside world.
-%Additionally, it ensures that the protocol party's point of view is consistent with UC, i.e. parties are not aware of the party wrapper and do not include any ``id'' information with their messages.
-Finally, protocols don't always have an associated functionality so those without one simply rely on an empty functionality which immediately releases the write token back to the environmnet when it receives it.
+In Definition~\ref{def:protocol}, \F is called a \textit{hybrid functionality}. 
+The composability guarantees of UC allow protocols to rely on ideal functionalities as subroutines, and a composition theorem exists that allows replacing functionalities with protocols which realize them.
+Importantly, a protocol may not use any hybrid functionalities, in which case \F is the dummy functionality which does nothing on activation. 
+
 
 \subsection{The UC Experiment}
-The UC experiment is an execution of a challenge protocol (protocol parties and an ideal functionality) in the presence of an adversary and an environment that gives input to both of them.
-We define UC execution through an \msf{execUC}.
+The UC experiment is an execution of a \textit{challenge protocol}, consisting of protocol parties and an ideal functionality, reacting to input by an adversary \Adversary and an environment providing inputs, \Environment. 
+The experiment is created by an \msf{execUC} function which spawns the environment, a special construction called the \textit{protocol wrapper}, the adversary, and any functionalities (wrapped by the \textit{functionality wrapper}, a simplified version of the \textit{protocolwrapper}).
 
-The \msf{ExecUC} function creates an execution of the UC experiment that spawns the environment and all of the other necessary machines: a protocol wrapper, the functionality, and the adverasry.
-Figure~\ref{fig:execuc} illustrates the function in Nomos.
+One constraint imposed by our virtual tokens definition is that all token types must be statically initialized in order to be used. 
+What this means for \msf{execUC} and, in fact, the protocol wrapper is that we must rely on code generation to create unique process definitions for each protocol we wish to express.
+For example, an ITM that internally simulates another ITM which in turn simulates a third ITM requires at least two virtual token types for its \textit{simulation depth} of two. 
+A generic \msf{execUC} function could not express arbitrary simulation depth and therefore must be dynamically generated depending on the protocol and adversary at hand. 
+
+In Figure~\ref{fig:execuc}, we illustrate \msf{execUC} for our running commitment example throughout the paper. 
 
 \begin{figure*}
-\begin{lstlisting}[basicstyle=\small\ttfamily]
-type sid[a] = SID of String ^ a ;
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
+$\tb{type}$ sid[a] = SID of String ^ a ;
 
-proc execUC[p2z][z2p][p2f][f2p][p2a][a2p][f2a][a2f][a2z][z2a]
+$\tb{proc}$ execUC[$\tm{K1}$, $\tm{K2}$]
+           [p2z][z2p][p2f][f2p][p2a][a2p][f2a][a2f][a2z][z2a]
            {p2zn}{z2pn}{p2fn}{f2pn}{p2an}{a2pn}{f2an}{a2fn}{a2zn}{z2an} : 
-    (k: int), (rng: [Bit]) |- ($d : bit) = 
+    (k: int), (rng: [Bit]) |- ($\$$d : bit) = 
 {
-    $z <- PS.env[z2p][p2z][z2a][a2z] <- k r ;
-    sid = recv $z ;
-    clist = recv $z ;
+    $\$$z <- PS.env[$\tm{K1}$][z2p][p2z][z2a][a2z] <- k r ;
+    sid = $\tb{recv}$ $\$$z ;
+    clist = $\tb{recv}$ $\$$z ;
     ...
-    #pw_to_f <- communicator_init[p2f]{p2fn} <- ;
-	#f_to_pw <- communicator_init[f2p]{f2pn} <- ;
-	...
-	send $z #pw_to_z ;
-	send $z #z_to_pw ;
-	$pw <- protocol_wrapper[p2z][z2p][p2f][f2p][p2a][a2p]
-                           {p2zn}{z2pn}{p2fn}{f2pn}{p2an}{z2pn} 
+    #pw_to_f <- communicator_init[$\tm{K1}$][p2f]{p2fn} <- ;
+    #f_to_pw <- communicator_init[$\tm{K1}$][f2p]{f2pn} <- ;
+    ...
+    send $\$$z #pw_to_z ;
+    send $\$$z #z_to_pw ;
+    $\$$pw <- protocol_wrapper[$\tm{K1}$][p2z][z2p][p2f][f2p][p2a][a2p]{p2zn}{z2pn}{p2fn}{f2pn}{p2an}{z2pn} 
              <- sid k rng clist #pw_to_f #f_to_pw #pw_to_a #a_to_pw #pw_to_z #z_to_pw ;
-	...
-	...
-    $z.start ;
-    $d <- $z ;
+    $\$$fw <- functionality_wrapper[$\tm{K1}$][p2f][f2p][f2a][a2f] {p2fn}{f2pn}{f2an}{a2fn}
+             <- sid k rng clist #pw_to_f #f_to_pw #f_to_a #a_to_f ;
+    ...
+    ...
+    $\$$z.$\tm{start}$ ;
+    $\$$d <- $\$$z ;
+
 }
 \end{lstlisting}
-\caption{The \msf{execUC} function spawns all the necessary ITMs in the UC execution: the environment, the protocol wrapper, the functionality, and the adversary. Each is parameterized with a security parameter $k$ and a uniformly random bit string $\msf{rng} \in \{0,1\}^{poly(k)}$. At the end, the environment is initiated and it returns a bit $b$ which is its guess for which world it is in. The full code can be found in the Appendix.}
+\caption{The \msf{execUC} function used for the two-party commitment example used througout this paper. Recall, the \msf{execUC} is customized insofar as it takes in some number of virtual token types (here, $K_1$) to support macines that simulate other machines. In the commitment exampe, there is no sch simulation happening at the protocol or functionality level, therefore only rhe real token type $K_1$ is used here. The funtion spawns all the necessary ITMs in the UC execution: the environment, the protocol wrapper, the functionalty (wrapped), and the adversary. Each is parameterized with the security parameter $k$ and a random bit sequence $\msf{rng} \in \{0,1\}^{poly(k)}$.
+At the end, the environment is initiated and it returns a bit $b$ which is its guess for which world it is in. The full code can be found in the Appendix.}
 \label{lst:execuc}
 \end{figure*}
-A obvious omission from Figure~\ref{lst:execuc} is the code for the protocol, functionality, adversary, and environment code as inputs to the function.
-The reason for this omission is that including process definitions as typed parameters is not simple in Nomos at the moment.
-Therefore, we adopt a module-based representation where all the user-defined code exists in a module \msf{PS}.
-The module must define the environnet, \msf{PS.env}, the functionality \msf{PS.func}, adversary \msf{PS.adv}, and protocol \msf{PS.prot}.
-The message type parameters (\msf{p2f}, \msf{f2p}, ...) and import type paraemters (\msf{p2fn}, \msf{f2pn},...), however can be input as type parameters to the function.
 
-The environment is spawned first and selects the \msf{sid} for the execution and determines the corrupted parties, \msf{clist}.
+A blatant omission from the \msf{execUC} process definition is the protocol, functionality, adversary, and environments as input parameters.
+The reason for this omission is that passing process definitions as parameter is not supported yet in the Nomos impementation.
+Therefore, we rely on importing modules which define the relevant processes and define them in scope for \msf{execUC}.
+
+A module representing the protocol must define a process called \msf{PS.prot} and \msf{PS.func} for the protocol and the hybrid functionality. 
+In the ideal world, \msf{PS.prot} is the dummy protocol and \msf{PS.func} is the functionality being realized.
+Similarly, an environment \msf{PS.env} and adversary \msf{PS.adv} must be defined as well.
+The message types exchanged between the processes are provided directly to \msf{execUC} as type parameters of the form \msf{p2f}, \msf{f2p}, and so on. 
+
+The environment is spawned first and selects the session id, or \msf{sid}, for the execution and determines the corrupted parties, \msf{clist}.
 The rest of the ITMs are then spawned with this \msf{sid} and are given the list of corrupt parties.
-Recall in the UC framework, corrupt parties accept input and give output to the adversary instead of the environment.
-The party wrapper runs dummy parties in their place that forward messages between \Adversary and \F.
+Recall in the UC framework, corrupt parties accept input and give output to the adversary instead of the environment, the protocol wrapper runs dummy parties in their place that forward messages between \Adversary and \F.
 
-Finally, the environment executes its own code when activated by \msf{\$z.start} and returns a bit that indicates its guess as to which world it is operatin in.
+Finally, the environment executes its own code when activated by \msf{\$z.start} and returns a bit that indicates its guess as to which world it is operatin in: real or ideal.
 Over all possible environments, security parameters $k$, and random bit sequences $r$, the output of \msf{execUC} represents an ensemble of distributions. 
 
 
-%The only generic process spawned is the \msf{partyWrapper}.
-%An environment may spawn any number of parties throughout its execution.
-%Therefore, the \msf{partyWrapper} handle incoming message to protocol parties and spawns new processes for them on the fly.
-%For existing parties, it intercepts incoming messages and routes them to the right party, and it intercepts outgoing messages and appends the ID of the writing party to them. 
-%
-%\todo{ Not sure if this is relevant, wait for better understanding from ankush/andrew. The total potential in the system is inferred by the Nomos type-system, and given to the first spawned process: \msf{execUC}.
-%Therefore, well-typed programs are only those where the potential type parameters provide enough import for an execution.}
-
-%\paragraph{Spawning Parties On-Demand}
-%One feature of the UC framework that is not readily captured in code is spawning parties on-demand.
-%When the environment writes to a protocol party for the first time, a new ITM is spawned that is an instance of the protocol code.
-%The code, dubbed the \msf{protocolWrapper} in the code above, handles such behvaior and encapsulates all of the protocol parties.
-%
-%When protocol wrapper maintains a list of the parties that exist by their \msf{pid} and routes incoming messages directed at them, to them.
-%\todo{The dictionary for storing and sending is not precise yet.}
-%If the party doesn't exist, the partywrapper spawns communicators for the new party and spawns an instace of the user specified code.
-%It then spawns a new process translate for each of the outgoing communicators from the new party:
-%
-%\begin{lstlisting}
-%<- translate <- p $toF $pw_to_f ;
-%\end{lstlisting}
-%
-%The transalte process shown in Figure~\ref{lst:translate}
-%
-%\begin{figure}
-%\begin{lstlisting}[basicstyle=\small\ttfamily]
-%proc translate[a]{an} :
-%  (id: pid), (#to_inner: comm[a]{an}), 
-%  (#to_outer: comm[pid ^ b]{an}) |- ($t: 1) =
-%{
-%  $ti <- acquire #to_inner ;
-%  case $ti (
-%    yes => msg = recv $ti ;
-%           get {an} $ti ;
-%           send $to id ^ msg ;
-%           pay $to {an} ;
-%           $t <- translate id #to_inner #to_outter ;
-%  | no => $t <- translate id #to_inner #to_outter ;
-%}
-%\end{lstlisting}
-%\caption{The translate function appends the ID of the sending party to all outgoing messages. The protocol code itself assumes it's writing to another ITM and does not need to both with it's own ID.}
-%\label{lst:translate}
-%\end{figure}
 
 \subsection{The Protocol Wrapper}
-The \msf{execUC} definition introduces a new cosntruct called the \textit{protocol wrapper}. 
+The \msf{execUC} definition introduces a new construct called the \textit{protocol wrapper}. 
 In the UC experiment, the environment can create protocol parties on the fly and none exist until the first message is written to them.
 Thefeore the wrapper is intended to create new parties on demand.
 
 The necessity of a protocol wrapper leads to an interesting problem in how channels and session typed can be used.
-All communciation between protocol parties and \Environment, \F, and \Adversary is managed by the protocol wrapper, and the need to multiplex and de-multiplex communication betwee parties and other machines made session types between them impossible.
-It isn't possible to use multiple session-typed channels through a single communicator, parties can have different roles within a protocol so not even the same code is being executed (hence different session types governing the protocol) for each party.
+All communciation between protocol parties and \Environment, \F, and \Adversary is managed by the protocol wrapper, and the need to multiplex and de-multiplex communication between parties and other machines makes session types between them impossible.
+It isn't possible to use multiple session-typed channels through a single communicator either, because parties can have different roles within a protocol so not even the same code is being executed (hence different session types governing the protocol) for each party.
 Therefore, we define a new approach to creating protocol-specific party wrappers, but with a generic construction that can be used for any protocol.
 We use the two-party commitment protocol as an example to demonstrate how the construction works and show that it is generic enough to allow code generation of a wrapper for any protocol.
 
@@ -128,8 +96,8 @@ Recall the session type governing the committer and receiver in the commitment p
 	\mi{stype} \; \m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \one}
 \end{gather}
 
-A protocol has multiple roles--for commitment it's a committer and a receiver.
-The wrapper maintains a list for all of the session possible session types which hold the channels of tht type. 
+A protocol has multiple roles--for commitment they are committer and receiver.
+The wrapper maintains a list for each possible session type which hold the channels of that type. 
 For commitment the lists for the \msf{z2p} channels are the following:
 \begin{gather}
 	\m{R1L1}[\m{sender}] \\
@@ -138,7 +106,7 @@ For commitment the lists for the \msf{z2p} channels are the following:
 	\m{R2L2}[\m{rcommitted}] 
 \end{gather}
 
-The channels between the protocol wrapper and the rest of the machines are still limited to functional types through a communicator. The communicator is spawned with type \msf{z2p[z2pmsg]}.
+The channels between the protocol wrapper and the rest of the machines are still limited to functional types through a communicator. The communicator is spawned with type \msf{z2p[z2pmsg]} and the real token type $K$.
 \begin{gather}
 \mi{type} \; \m{z2pmsg} = \m{Commit} \; \mi{of} \; \m{bit} \; | \; \m{Open}
 \end{gather}
@@ -146,7 +114,7 @@ The channels between the protocol wrapper and the rest of the machines are still
 	\mi{stype} \; \m{z2p}[a] = \m{Z2P} \; \mi{of} \; \msf{pid} \; \hat{ } \; a
 \]
 
-When receiving a message for \msf{pid}, if the party doesn't exist the protocolwrapper creates all the party's channel parameterized by the correct session types (the party's role and session types are determined by functional type of the incoming message).
+When the protocol wrapper receives a message for some \msf{pid}, if the party doesn't exist the protocolwrapper creates all the party's channel parameterized by the correct session types (the party's role and session types are determined by functional type of the incoming message).
 The channels are stored in the appropriate lists corresponding to their type.
 The session type of the message is determined by the functional type, and the session-typed message is sent along that channel.
 If a message is sent out of order, \textit{the program fails to type check} due to the type mismatch between the channel at the message.
@@ -155,6 +123,12 @@ After delivering the message, the channel is moved to the next list correspondin
 For outgoing messages, a new process per party channel waits to read and does the inverse conversion: from session type to funtional type and attaches the party's \msf{pid} to it.
 \todo{Does the wrapper have to use the simulation of parties? I don't think so it can just generate enough potential $T(0)$ to do constant work of routing}.
 
+\paragraph{Functionality Wrapper}
+For the same reasons as the protocol wrapper we also create a functionality wrapper around the ideal functionaltiy (in the real or the ideal world).
+The key difference between the functionality wrapper and the protocol wrapper is that there is only one instance of the functionality running.
+It still creates internal channels for the functionality, which are session-typed, converts incoming functional messages (from $\mathcal{P}$, the \Environment, or the \Adversary) to a session typed message and forwards it along the appropriate channel. It does the same for outgoing messages. 
+There is no need to maintain lists like the protocol wrapper as there is only one functionality.
+From this point on whenever we refer to a functionality in a UC experiment, it is wrapped by the \textit{functionality wrapper}.
 
 \subsection{Polynomial Bound}
 The UC import mechanism provides a way to define polynomial time computation and resource-bounds by ensuring that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a polynomial and $n$ the total units of import the ITM ever receives.
@@ -177,9 +151,10 @@ This new definition becomes important when we discuss UC emulation below as we w
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=Well-matched]
-{\Delta1 \vdash C_1 :: \Delta1' \semi \Delta2 \vdash C_2 :: \Delta2' \\ \\
- S \equiv \Delta_1 \bigcap \Delta \neq \emptyset}
-{\Delta_1 \equiv_{S} \Delta_2}
+{\Tokens_1, K \semi \Delta_1 \vdash C_1 :: \Delta_1' \semi 
+\Tokens_2, K' \semi \Delta_2 \vdash C_2 :: \Delta_2' \\ \\
+ S \equiv \Delta_1 \bigcap \Delta_2 \neq \emptyset}
+{\Delta_1 \equiv_{S} \Delta_2 \semi K \equiv K'} 
 \end{mathpar}
 \todo{whats the way to express this point that they are equivalent only over the pairs $(x, \tau)$ which they share?}
 \end{definition}
@@ -198,14 +173,6 @@ The Nomos type system guarantees that a satisfying assignment of $n$ and $T$ wil
 Therefore, given an initial amount of import $n(k) \in poly(k)$, the existence of some $T$ ensures that any process, regardless of its randomized execution according to the bit sequence $r$, $e$ is guarantees to be upper-bounded by $poly(k)$ satisfying the definition of probabilistic polynomial time in $k$.
 \end{proof}
 
-%In UC we care about emulation between systems of ITMs when reasoning about protocol security. 
-%Therefore, we must define the notion of PPT at the ITM sytem level as well.
-%First we define the \msf{execUC} function parameterized by a security parameter $k$ and a sequence of random bits $r$.
-%Additionally, it has implicit parameters: protocol $\pi$, an adversary $\Adversary$, and an environment $\Environment$ that are referenced through a user-defined module \msf{PS}.
-%The system of ITMs $\msf{execUC}(\pi, \Adversary, \Environment)$ is a closed term except for security parameter $k$, random bit sequence $r$, initial import $n$, and a function $T$.
-%Thus, \msf{execUC} is a \textit{PPT term} and, by Theorem~\ref{thm:ppt} it is PPT in $k$ if $n \in poly(k)$.
-
-
 \subsection{Emulation}
 A proof of security in the UC framework relies upon emulation.
 
@@ -222,46 +189,51 @@ We define indistinguishabiliy between ensembles in a standard way using \textit{
 Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\mathcal{D}_{1,k} \sim \mathcal{D}_{2,k}$, if their statistical distance is at most $negl(k), \forall k$.
 \end{definition}
 
-Indisintiguishability between two protocols is defined as follows:
+Before we introduce the emulation definition, we first define what valid protocols, valid functionalities, and what it means for protocols, functionalities, adversaries, and environments to be well-matched with each other.
+We shorten the communicator type \msf{comm} to \msf{c} in the following definitions.
 
+\todo{Ankush: The context of a valid functionality must contain channels typed with the type parameters given by \msf{execUC}. An the machine, parameterized with security parameter $k$ and random bit sequence $r$ are bounded by some polynomial $T_\F$. $\leftarrow$ the last part is meant to capture the well-resource-typed (from the well-matched definition), but maybe we can just say $\F$ is well-resource-typed given $k$,$r$}
 \begin{definition}[Valid Functionality]\label{def:validfunc}
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=valid-F]
-{\msf{p2f}, \msf{f2p}, \msf{f2a}, \msf{a2f} \in \Delta_2 \\
-\Delta_2 \models (\F(clist, sid, k, r) : T_\F) :: \Delta_2'}
+{\exists c_1:c[\msf{p2f}], c_2:c[\msf{f2p}], c_3: c[\msf{f2a}], c_4:c[\msf{a2f}] \in \Delta_1 \\
+\Delta_1 \models (\F(k, r) : T_\F) :: \Delta_1'}
 {\msf{validF}\ \F \rightarrow \Delta_1'}
 \end{mathpar}
 \end{definition}
 
+\todo{The intent is the same as above here execpt for protocol having channels with the right types. Again here I could just say $\pi$ is well-resource-typed instead of the $\pi(k,r)$ that is there now.}
 \begin{definition}[Valid Protocol]\label{def:validprot}
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=valid-P]
-{\msf{p2f}, \msf{f2p}, \msf{p2a}, \msf{a2p}, \msf{z2p}, \msf{p2z} \in \Delta_1 \\
-\Delta_1 \models (\pi(sid, pid, k, r) : T_\pi) :: \Delta_1' }
+{\exists c_1: \msf{p2f}, c_2: \msf{f2p}, c_3: \msf{p2a}, c_4: \msf{a2p}, c_5: \msf{z2p}, c_6: \msf{p2z} \in \Delta_1 \\
+\Delta_1 \models (\pi(k, r) : T_\pi) :: \Delta_1' }
 {\msf{validP}\ \pi \rightarrow \Delta_1'}
 \end{mathpar}
 \end{definition}
 
+\todo{Ankush: this defines what it means for a protocol and functionality to be well-matched. Namely, they shared channels typed according to parameters given by execUc (p2f, f2p, ...) and have the same type and import parameters on their communicators}
 \begin{definition}[Well-Matched]
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=p2f match] 
 {\msf{validP}\ \pi \rightarrow \D_1 \semi \msf{validF}\ \F \rightarrow \Delta_2 \\
-\Delta_1:, (\msf{ftop}: \msf{c}[\msf{f2p}]), (\msf{ptof}: \msf{c}[\msf{p2f}]) \equiv \\
-\Delta_2, (\msf{ftop}: \msf{c}[\msf{pid \textasciicircum f2p}]), (\msf{ptof}: \msf{c}[\msf{pid \textasciicircum p2f}])}
+\Delta_1:, (\msf{c}[K][\msf{f2p}]), (\msf{c}[K][\msf{p2f}]) \equiv \\
+\Delta_2, (\msf{c}[K][\msf{pid \textasciicircum f2p}]), (\msf{c}[K][\msf{pid \textasciicircum p2f}])}
 {\langle \pi \leftrightarrow \F \rangle}
 \end{mathpar}
 \end{definition}
 
+\todo{Ankush: same for this one and the rest, as above}
 \begin{definition}
 \begin{mathpar}
 \footnotesize
-\inferrule*[right=well match] 
+\inferrule*[right=p2a match] 
 {\msf{validP}\ \pi \rightarrow \Delta_1 \semi \Adversary \rightarrow \Delta_2 \\
-cDelta_1:, (\msf{atop}: \msf{c}[\msf{a2p}]), (\msf{ptoa}: \msf{c}[\msf{p2a}]) \equiv \\ 
-\Delta_2, (\msf{atop}: \msf{c} [\msf{pid \textasciicircum a2p}]), (\msf{ptoa}: \msf{c} [\msf{pid \textasciicircum p2a}])}
+\Delta_1:, (\msf{c}[K][\msf{a2p}]), (\msf{c}[K][\msf{p2a}]) \equiv \\ 
+\Delta_2, (\msf{c}[K][\msf{pid \textasciicircum a2p}]), (\msf{c}[K][\msf{pid \textasciicircum p2a}])}
 {\langle \pi \leftrightarrow \Adversary \rangle}
 \end{mathpar}
 \end{definition}
@@ -271,8 +243,8 @@ cDelta_1:, (\msf{atop}: \msf{c}[\msf{a2p}]), (\msf{ptoa}: \msf{c}[\msf{p2a}]) \e
 \footnotesize
 \inferrule*[right=f2a match] 
 {\msf{validF}\ \F \rightarrow \Delta_1 \semi \Adversary \rightarrow \Delta_2 \\
-\Delta_1:, (\msf{atof}: \msf{c}[\msf{a2f}]\{a2fn\}), (\msf{ftoa}: \msf{c}[\msf{f2a}]\{0\}) \equiv \\
- \Delta_2, (\msf{atof}: \msf{c}[\msf{a2f}]\{a2fn\}), (\msf{ftoa}: \msf{c}[\msf{f2a}]\{0\})}
+\Delta_1:, (\msf{c}[K][\msf{a2f}]\{a2fn\}), ( \msf{c}[[K]\msf{f2a}]\{0\}) \equiv \\
+ \Delta_2, (\msf{c}[K][\msf{a2f}]\{a2fn\}), ( \msf{c}[K][\msf{f2a}]\{0\})}
 {\langle \F \leftrightarrow \Adversary \rangle}
 \end{mathpar}
 \end{definition}
@@ -282,11 +254,12 @@ cDelta_1:, (\msf{atop}: \msf{c}[\msf{a2p}]), (\msf{ptoa}: \msf{c}[\msf{p2a}]) \e
 \footnotesize
 \inferrule*[right=p2z match] 
 {\msf{validP}\ \pi \rightarrow \Delta_1 \semi \Environment \rightarrow \Delta_2}
-{\Delta_1:, (\msf{ztop}: \msf{c}[\msf{z2p}]), (\msf{ptoz}: \msf{c}[\msf{p2z}]) \equiv \\
- \Delta_2, (\msf{ztop}: \msf{c}[\msf{pid \textasciicircum z2p]}), (\msf{ptoz}: \msf{c}[\msf{pid \textasciicircum p2z}])}
+{\Delta_1:, (\msf{c}[K][\msf{z2p}]), (\msf{c}[K][\msf{p2z}]) \equiv \\
+ \Delta_2, (\msf{c}[K][\msf{pid \textasciicircum z2p]}), (\msf{c}[K][\msf{pid \textasciicircum p2z}])}
 \end{mathpar}
 \end{definition}
 
+Indisintiguishability between two protocols is defined as follows (we shorten the communicator type \msf{comm} to \msf{c}):
 
 \begin{definition}[Emulation]\label{def:emulation}
 Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed then if $\forall \Adversary$ well-matched with $(\pi, \F_1)$, $\exists \Simulator$ s.t. $\forall \Environment$ well-matched with \Adversary and $(\pi, \F_1)$: \Simulator is well-matched with $(\phi, \F_2)$, \Environment is well-matched with $(\phi, \Simulator)$, and $\msf{execUC}(\pi, \F_1, \Environment, \Adversary) \approx \msf{execUC}(\phi, \F_2, \Environment, \Simulator)$:
@@ -295,14 +268,14 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 \footnotesize
 	\inferrule*[right=emulate]
 	{
-		. \models \msf{execUC}[\alpha] :: \Delta [\alpha] \\ \\
+		. \models \msf{execUC}[\Tokentypes][\alpha] :: \Delta[\Tokentypes][\alpha] \\ \\
 		% Protocols that are well-matched with their functionalities
 		\msf{validP}\ \pi \rightarrow \Delta_1' \semi
 		\msf{validP} \phi \rightarrow \Delta_2' \semi
 		\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_1 \rangle \\
 		% Type of execUC[DELTA_pi] and execUC[DELTA_phi]
-		\Delta[\mathrm{T}_{\pi}] \equiv_{\Environment} \Delta_1\ 
-		\semi \Delta[\mathrm{T}_{\phi}] \equiv_\Environment \Delta_2 \\
+		\Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \equiv_{\Environment} \Delta_1\ 
+		\semi \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \equiv_\Environment \Delta_2 \\
 		% For all A if exists well-typed A that is well-matched with real world
 		\forall \Adversary, (\exists (\Delta_4, \Delta_4') | \Delta_4 \vdash \Adversary :: \Delta_4',\ \langle \Adversary \leftrightarrow \pi \rangle, \langle \Adversary \leftrightarrow \F_1 \rangle \\
 		% implies simulator that is well-matched for ideal world
@@ -310,7 +283,7 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 		% for all Z they that's well-matched for the real world => Z is well-matched with S and ideal world
 		\forall \Environment (\langle \Environment \leftrightarrow \Adversary \rangle, \langle \Environment \leftrightarrow \pi \rangle \Rightarrow \langle \Environment \leftrightarrow \Simulator_\Adversary \rangle, \langle \Environment \leftrightarrow \phi \rangle \\
 		% and emulation has to hold
-		\msf{execUC} \pi\ \Environment\ \F_1\ \Adversary \approx\ \msf{execUC} \phi\ \Environment\ \F_2\ \Simulator_\Adversary))
+		\msf{execUC} \ \pi\ \Environment\ \F_1\ \Adversary \approx\ \msf{execUC} \ \phi\ \Environment\ \F_2\ \Simulator_\Adversary))
 	}
 	{
 		% EMULATION DEFINITION
@@ -356,19 +329,19 @@ If $\exists \Dummysim^{K}$ s.t. $ \DummyAdv^K, \Dummysim^K \vdash (\pi, \F_2) \s
 \end{theorem}
 
 \begin{proof}
-The constructed simulator $\Simulator_\Adversary^K$ internally simulates \Dummysim and \Adversary with respected virtual token types $K_1$ and $K_1$. 
+The constructed simulator $\Simulator_\Adversary^K$ internally simulates \Dummysim and \Adversary with respected virtual token type $K_1$. 
 We use the internal simulation pattern described above to simulat messages to \Dummysim and \Adversary through virtual tokens.
 Recall that the virtual tokens consturction is a tool to make witing complex protocols easier.
 In fact it has no impact on the amount of import that the simulating machine requires or receives.
 The only difference in running all code natively is the potential usage is higher in managing the simulated processes and messages between them.
 
 On input from \Environment on channel \msf{z2p}, \Simulator:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape, label={lst:sim}]
 msg = $\nrecv$ $\$$z2a ;
-$\nget$ K $\$$z2a {z2an} ;
+$\nget$ $\$$z2a {z2an : K} ;
 $\tm{withdrawTokens}$ f K K1 z2an ;
 $\nsend$ $\$$a_z2a msg ;
-$\nsimpay$ K1 {z2an} $\$$a_z2a ; 
+$\npay$ {z2an : K1} $\$$a_z2a ; 
 \end{lstlisting}
 
 Similarly, on output from \Adversary to a protocol party on channel \msf{a2p}
@@ -376,9 +349,8 @@ Similarly, on output from \Adversary to a protocol party on channel \msf{a2p}
 pid = $\tb{recv}$ $\$$a_a2p ;
 msg = $\tb{recv}$ $\$$a_a2p ;
 $\tb{get}$ K1 $\$$aa2p {a2pn} ;
-$\tm{withdrawTokens}$ f K K2 z2an ;
 $\tb{send}$ $\$$sd_z2a A2P(pid, msg) ;
-$\tm{simpay}$ K2 $\$$sd_z2a {z2an} ;
+$\npay$ $\$$sd_z2a {z2an : K1} ;
 \end{lstlisting}
 
 $\Simulator_\Adversary$ forwards input from \Environment and forwards it to the internal \Adversary. 
@@ -386,63 +358,15 @@ $\Simulator_\Adversary$ forwards input from \Environment and forwards it to the 
 
 The construction provided is identical to the original dumy lemma in the UC framework~\cite{uc}, however, we must show that the constructed simulator $\Simulator_\Adversary$ is well-resource-typed for all well-resource-typed \Adversary.
 By the assumption that \Adversary and \Dummysim are well-resource-typed, $\Simulator_\Adversary^K$ is well-resource-typed because it performs consatnt work routing messages internally. 
-It suffices to find a suitable polynomial bound.
-
-We provide a polynomial bound to bound the execution of $\Simulator_\Adversary^K$:
+A simple and satisfactory runtime polynomial bound for $\Simulator_\Adversary^K$ can be given as:
 \[
 T(n) = T_{\Adversary,\Dummysim}(n) + T_{\Adversary,\Dummysim}(n) + O(n)
 \]
 where $T_{\Adversary,\Dummysim}(n)$ is the greater of the two bounding polynomials for \Dummysim and \Adversary evaluated at $n$, and $n$ is the import that \Environment sends to \Adversary. 
 The constant factor accounts for the a constant overhead for routing messages between \Dummysim and \Adversary.
 
+The same \textit{well-resource typed} reasoning extends to the token context where amount of virtual tokens created are polyomial in number and generate potential that is bounded by the above bounding polynomial for $\Simulator_\Adversary$.
 
-%The construction is identical to the original dummy lemma in the UC framework, however, it remains to be shown that this construction maintains the polynomial time constraint.
-%Proving this claim involves reasoning that such a machine remains polynomial time, even with new virtual tokens, assuming the simulated machines \Adversary and \Dummysim are well-resource-typed.
-%
-%As mentioned in Section~\ref{sec:nomosuc}, the virtual tokens definition is purely a tool to enable reuse of process in a way that satisfies their types. 
-%It allows message passing to other process, namely from the construced simulator \Simulator to the internal \Adversary.
-%Effectively, the definition of virtual tokens ensures that the import token usage of simulating a machine $M$ versus simply running the code of the machine natively are no different in their import usage. 
-%	With constant overhead, the potential used by the constructed simulator as a function of its import tokens can be bounded by 
-%
-%
-%Let $P_\Adversary$ and $P_{\Dummysim}$ be the bounding polynomials for \Adversary and \Dummysim.
-%We set the maximum of the two bounding polynomials to be the polynomial through which new tokens of type $K_\Adversary$ and $K_{\Dummysim}$. 
-%
-%We provide the construction of $\Simulator_\Adversary^K$.
-%The constructed simulator internally runs the real world adversary \Adversary with a virtual token type $K_1$ and the \Dummysim with a virtual token type $K_2$.
-%
-%It internally runs the real-world adversary \Adversary and the dummy simulator \Dummysim. 
-%
-%$\Simulator_\Adversary$ 
-%It is trivial to notice that $(\Adversary, \pi), (\Adversary, \F_2)$ well-matched $\Rightarrow$ $(\Simulator_\Adversary, \phi), (\Simulator_\Adversary, \pi)$ well-matched, and that $\forall \Environment, (\Environment, \Adversary), (\Environment, \pi)$ well-matched $\Rightarrow$ $(\Environment, \Simulator_\Adversary), (\Environment, \phi)$ well-matched.
-
-
-
-%We provide a construction of a simulator \Simulator' for any adversary \Adversary that is well-matched to $\pi$ s.t. \Simulator' is well-matched for all \Environment where \Adversary is well-matched with \Environment.
-%Finally, we prove the validity of the construction in order to prove 
-%\[
-%\forall Z \msf{execUC} (\phi, \F_1, \Environment, \Simulator') \sim \msf{execUC}(\pi, \F_2, \Environment, \Adversary)
-%\]
-%
-%The constructed \Simulator' internally simulates \Adversary and routes messages from \Environment to \Adversary.
-%Thus \Simulator' is well-matched with \Environment everywere \Adversary is.
-%Secondly, it runs a simulatio of \Dummysim which accepts input from \Adversary and backdoor input from $\phi$ and $\F_2$.
-%
-%Theorem~\ref{thm:dummy} can be broken up into smaller parts to prove individually.
-%
-%By our construction, \Simulator' runs \Adversary internally, therefore \Adversary well-matched with \Environment $\Rightarrow$ \Simulator' well-matched with \Environment.
-%Similarly, $(\pi, \F_1) \sim (\idealP, \F_2) \Rightarrow \Dummysim$ well-matched with $(\idealP, \F_2) \Rightarrow \Simulator'$ well-matched with $(\idealP, \F_2)$.
-%
-%Our definition of \textit{well-matched} form our emulation definition also requires that \Simulator' be well-matched with all such \Environment even in the import type parameters. 
-%We provie this by providing a simple polynomial bound for \Simulator that satisfies the definition of \textit{well-resource-typed}.
-%As \Simulator' only accepts import from \Environment it suffices that a satisfying poynomial bound be: 
-%\[
-%T(n) = T_{\Adversary,\Dummysim}(n) + T_{\Adversary,\Dummysim}(n) + O(n)
-%\]
-%where $T_{\Adversary,\Dummysim}(n)$ is the greater of the two bounding polynomials for \Dummysim and \Adversary evaluated at $n$, and $n$ is the total amount of import received by \Simulator'.
-%\Simulator' performs constant overhead in routing messages between \Adversary and \Dummysim, therefore we can concude that with $T(n)$ defined above, \Simulator' is \textit{well-resource-typed} and satisfies Definition~\ref{def:emulation} for all pre-conditions but indistinguishability.
-%
-%\todo{Can we rely on he validity proof from the UC paper or do we need to state it here with a typed environment?}
 \end{proof}
 
 \subsection{Single Composition}
@@ -457,12 +381,12 @@ In the $\circ$ code the protocols $\pi$ and $\phi$ exist globally.
 
 \begin{figure*}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
-$\tb{proc}$ compose[z2r][r2z][f2r][r2f][p2f][f2p] : 
-	(pid: Int),
-	($\$$z_to_p: z2p), ($\$$p_to_z: r2z), ($\$$f_to_p: f2r), ($\$$p_to_f: r2f) |- ($\$$D : 1) =
+$\tb{proc}$ compose[K][z2r][r2z][f2r][r2f][p2f][f2p] : 
+    (pid: Int), ($\$$z_to_p: c[K][z2p]), ($\$$p_to_z: c[K][r2z]), 
+    ($\$$f_to_p: c[K][f2r]), ($\$$p_to_f: c[K][r2f])  |- ($\$$D : 1) =
 {
-	$\$$rho_to_pi <- $\tm{createchan}$[p2f];
-	$\$$pi_to_rho <- $\tm{createchan}$[f2p];
+	$\$$rho_to_pi <- $\tm{createchan}$[K][p2f];
+	$\$$pi_to_rho <- $\tm{createchan}$[K][f2p];
 
 	 <- pi  <-                 $\$$rho_to_pi $\$$pi_to_rho $\$$p_to_f $\$$f_to_p ;
 	 <- phi <- $\$$z_to_p $\$$p_to_z $\$$rho_to_pi $\$$pi_to_rho ; 
@@ -490,165 +414,110 @@ If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realiz
 \end{theorem}
 
 \begin{proof}
-By Theorem~\ref{thm:dummy}, it suffices to prove emulation with respect to the dummy adversary:
+The pre-condition ensures the existence of a \textit{well-resource-typed} simulator $\Simulator_\pi$ for $(\pi, \F_1) \sim (\idealP, \F_2)$. 
+We construct a simulator $S$ which composes $\Simulator_\rho \circ \Simulator_\pi$ for:
 \[
-	\msf{execUC}\ \rho^{\phi \rightarrow \pi} 
+	\msf{execUC}\ (\rho \circ \pi)\ \F_1\ \Environment\ \Adversary \approx \msf{execUC}\ \idealP\ \F_3\ \Environment\ \Simulator
 \]	
 
+The constructed simulator is trivial as it only relies on \Sim{\pi}.
+We don't need to perform simulation on any inputs by \Environment to the main parties of $\rho$ (it's the same protocol in both worlds).
+The constructed simulator \Simulator simulates \Sim{\pi} internall and passes messages intended for the parties of $\pi$, or for $\F_2$, to \Sim{\pi} and simulates its computation.
+Similariy, \Simulator sends any message from $\F_3$ to \Sim{\pi} for simulation.  
+Input to any party of the main protocol $\rho$ from \Environment, or outout from them to \Simulator, are forwarded without any modification or simulation.
 
-The proof proceeds in a similar way to the proof of the Dummy Lemma in Theorem~\ref{thm:dummy}. 
-The Composition opreator $\circ$ combines parties of $\rho$ with parties of $\pi$ within the party wrapper (defined previously). 
-Parties running protocl $\rho$ send messages to parties of $\pi$ which then communicate with the functionality $\F_1$.
-UC emulation states that the functionality $(\idealP, \F_2)$ replaced by a realizing protocol $(\pi, \F_1)$ is indistinguishable even from parties of $\rho$.
+The argument follows directly by a series of inferences:
+\begin{align}
+& \msf{execUC} \: \Environment \, (\rho \circ \pi) \, \F_1 \, \DummyAdv \\
+\equiv \; & \msf{execUC} \: (\Environment \circ \rho) \, \pi \, \F_1 \, \DummyAdv \\
+\approx \; & \msf{execUC} \: (\Environment \circ \rho) \, \idealP \, \F_2 \, \Sim{\pi} \\
+\equiv \; & \msf{execUC} \: \Environment \, \rho \, \F_2 \, \Sim{\pi} 
+%\approx \; & \msf{execUC} \: (\Environment \circ \Sim{\pi}) \, \idealP \, \F_3 \, \Sim{\rho} \\
+%\equiv \; & \msf{execUC} \: \Environment \, \idealP \, \F_3 \, (\Sim{\pi} \circ \Sim{\rho}) 
+\end{align}
 
-The proof is in the form of a simulator that internally runs simulates the real-world \Adversary and the simulator $\Simulator_\pi$ for $(\pi, \F_2)$.
-The simualator uses the same simulation construction as used by the Dummy Lemma simulator. 
-The inputs from \Environment are passed to the \Adversary, and outputs by the adversary for $\F_3$ are sent to $\Simulator_pi$.
-Outputs from \Adversary to the protocol parties is sent to the 
+In line (13) above, $\rho$ is moved into the execution environment with an unchanged simulator as no additional simulation is required: the simulator allows unfettered communication between parties of $\rho$ and \Environment.
+The constructed simulator performs constant overhead in routing messages to the simulated \Sim{\pi} and forwrading messages to/from parties of $\rho$/\Environment. 
 
-The simulation in \Simulator proceeds like the code listings for the Dummy Lemma.
-Messages from \Environment are forwarded to the internal \Adversary. 
-Outputs from \Adversary to protocol parties are forwarded to them, and all other outputs are forward to $\Simulator_\pi$ as \Environment.
-
-Similar to the dummy lemma proof, a bouning polynomial for the new simulator \Simulator is easy to obtain because it simulates two well-resource-typed adversaries internally (\Adversary and $\Simulator_\pi$) with some constant communiation overhead for routing messeages between them and other ITMs. 
+Given that \Sim{\pi} is \textit{well-resource-typed}, with bounding polynomial $T_{\Sim{\pi}}$, it suffices to show that an additional linear term is sufficient to create a bounding polynomial for \Simulator.
 \end{proof}
 
 \subsection{Multisession}
 The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
 The ITM simulates multiple instances of the protocol/functionality intnerally and multiplexes input/output to/from them in same way as the party wrapper for protocol parties.
-The operator accepts messages of the form $(\msf{ssid}, msg)$ where \msf{ssid} is a sub-session identifier.
+The channel from the protocol wrapper to the multisession operator can be typed as:
+\begin{gather}
+\mi{stype} \; \m{{P2MS}[a]\{n\}} = \echoice{\mb{push}: pid \textasciicircum ssid \textasciicircum a \arrow |\{n\}> \m{P2MS[a]\{n\}}}
+\end{gather}
+The operator accepts messages of the form $(\msf{ssid}, msg)$ from a particular \msf{pid}, where \msf{ssid} is a sub-session identifier.
 If an instance of the functionality with $\msf{sid} := \msf{ssid}$ then $!\F$ creates one and forwards the message to it.
 Additionally, $!\F$ listens for outgoing messages from each of the instances and forwards them to the outside execution.
-The operator differs from the party wrapper in one crucial way: it only works with functional messages types and does not wrap around any session types.
-Like the single functionality, functionalities in this operator also only deal with functional message types.
-The execution, instead, relies on the session types of the protocol parties to enforce message/protocol ordering.
+The operator differs from the party wrapper in one crucial way: it only works with functional messages types and does not wrap around any session types like any other standalone functionality in Nomos UC.
 
-%It accepts as type parameters the types of messages exchanges between protocol parties and the functionality (\msf{p2f} and \msf{f2p}) and between the adversary and \F (\msf{a2f} and \msf{f2a}). 
-%The type of communicators between parties and $!\F$ need to reflect the change in interface. 
-%All messages from \msf{p2f} must be typed with the \msf{pid} of the sending party and the \msf{ssid} of the instance of \F. 
-%The same goes for \F. 
-%For a generic multisession operator, the import type specify the import send to any instance of the functionality.
-%As $!\F$ maintains an ever growing list of instaces of $\F$ it requires some import be given to it by the protocol parties. 
-%Definitions of an instance of $\msf{execUC}(\Environment, \pi, !\F, \Adversary)$ that specfies the import parameter \msf{p2fn} as 0 will not suffice for emulation as it will not hold for all environments. 
+The multisession behaves like the protocol wrapper in that we rely on code generation to create the operator for a particular functionality. 
+The reason behind this is that the operator simulates many instances of a functionality and must use virtual tokens to communicate with them. 
+For the commitment example we've used throughout this paper, the multisession needs only one virtual token type alongside the real token type.
+The commitment functionality doesn't internally simulate any other machines and therefore does not need any virtual token type itself. 
+The process definition for $!\F_\msf{com}$ is shown in Figure \ref{lst:bangf} accepting two token types: the real token type $K$ and the virtual token type $K_1$ for instances of $\F_\msf{com}$.
+
+The communicators between \bangf and the other ITMs all use the real token type.
+Only the internal channels that it creates use virtual token types.
+The communication pattern between the operator and the simulated functionalities works in the same was as Listing \ref{lst:sim}.
 
 \begin{figure*}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
 type sid[a] = SID of String ^ a ;
 
-proc bangF_1[$p2f$][$f2p$][$a2f$][$f2a$]{$p2fn$}{$f2pn$}{$a2fn$} : 
-	(#pw_to_f: comm[pid ^ sid ^ $p2f$]{p2fn}), (#f_to_pw: comm[pid ^ sid ^ $f2p$]{f2pn}),
-	(#a_to_f: comm[sid ^ $a2f$]{a2pn}), (#f_to_a: comm[sid ^ $f2a$]{0}),
-	($\$$lf: list[comm[])  |- ($\$$ms: 1) =
+proc bangF_1[K, K1][$p2f$][$f2p$][$a2f$][$f2a$]{$p2fn$}{$f2pn$}{$a2fn$} : 
+    ($\$$pw_to_f: P2MS[K][p2f]), ($\$$f_to_pw: MS2P[K][f2p]), ($\$$f_to_a: MS2A[K][f2a]), ($\$$a_to_f: A2MS[K][a2f]),
+	($\$\l1: list[sender] ), ($\$$l2: list[scommitted]), ($\$$l3: list[receiver]), ($\$$l4: list[rcommitted]) |- ($\$$ms: 1)
 \end{lstlisting}
 \caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters.}
 \label{lst:bangf}
 \end{figure*}
-
 
 \begin{theorem}[PPT !]\label{thm:bangppt}
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
 \end{theorem}
 
 \begin{proof}
-
-Let $P_{\F}$ be a bounding polynomial for $\F$ such that $\F$ is well-resource-typed. 
+A \textit{well-resource-typed} \F guarantees a polynomial $T_{\F}$ bounding its execution.
 In the worse-case, the multisession operator must spawn a new instance of $\F$ an every activation. 
-Let $N_{\F}$ be the total number of instances of $\F$ created by the operator.
-Note that $N_{\F}$ is polynomial in the security parameter $k$ for all well-typed environments.
-Therefore, a bounding polynomial for $!\F$ can be given as:
+Let $N_{\F}$ denote the total number of instances (and, hence, number of activations) of $\F$ created by the operator.
+Note that $N_{\F}$ is polynomial in the security parameter $k$ for all well-typed environments, protocols, and adversary.
+Therefore, there always exists a bounding polynomial to bound a polynomial number of simulated instances of \F.
+The polynomial can be given as:
 $$ P_{!\F}(n) = N_{\F} P_{\F}(n) + \mathcal{O}(N_{\F}) $$
 where the $\mathcal{O}(N_{\F})$ is due to the overhead of maintaining and accessing the set of all instances.
-Obviously, such a polynomial satisfies the definition of PPT in $k$ and is a sufficient bounding polynomial to ensure $!\F$ is well-resource-typed everywhere $\F$ is well-resource-typed.
+
+Similarly, \F being \textit{well-resource-typed} ensures a valid token context for all processes it may simulate. 
+Therefore, it is clear that there exists a global connecting poltnomial $f$ that ensures a valid token context for $!\F$.
 \end{proof}
 
 \begin{theorem}[Squash Theorem]
-If a functionality \F is well-resource-typed, then $!\F$ and $!!\F$ are well-resource-typed (by Theorem~\ref{thm:bangppt}) and $(\idealP, !!\F) \sim (\msf{squash}, !\F)$.
+%If a functionality \F is well-resource-typed, then $!\F$ and $!!\F$ are well-resource-typed (by Theorem~\ref{thm:bangppt}) and $(\idealP, !!\F) \sim (\msf{squash}, !\F)$.
+\textit{Well-resource-typed} \F $\Rightarrow$ $(\idealP, !!\F) \sim (\msf{squash}, !\F)$
 \end{theorem}
 
 \begin{proof}
 First we describe the \msf{squash} protocol in figure \ref{fig:squash}.
-Note that $!!\F$ is nested $!$ operators. The top level process maintains multiple sessions of $!\F$ wach with their own \msf{sid}, \msf{ssid}. 
+Note that $!!\F$ is nested $!$ operators. The top level process maintains multiple sessions of $!\F$ each with their own \msf{ssid}.
 Functionalities in each $!\F[\msf{ssid}]$ have their own \msf{sid}. 
 
-At a high-level:
-In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$. 
-A two dimensional array is the best analogy for this construction.
-The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$ 
-It follow logically that the two worlds are indistinguishable from the part of the environment.
+In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $!!\F[\msf{ssid}_1][\msf{ssid}_2]$).
+The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$ into a single \msf{ssid}: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$.
+If follows intuitively that the view for the environment remains the same. 
 
-\textit{Well-resource-typed}:
-When reasoning about well-resource-typed, we want that every well-typed environment for $(\msf{squash}, !F)$ should be well-typed for $(\idealP, !!F)$.
-\todo{need to specify the terminology here and get ankush's input about what to say about being well-typed for certain ITMs (F , A, etc.), partial well-typed }
-Multiplexing performed in $\msf{squash}$ is a constant-time overhead per activation and $!\F$ overhead of accessing a set of instances of $\F$ is grows lineraly with new instances.
-As described above, a multisession operator defined like this requires some import to be provided by the calling protocol parties.
-The ideal world of $(\idealP, !!\F)$ moves the multiplexing performed by \msf{squash} into the functionality. 
-Therefore given the same import as the real world, it is clear that all well-typed environments for $(\msf{squash}, !\F)$ are also well-typed for $(\idealP, !!\F)$.
+We construct a simulator such that:
+\[
+\msf{execUC} \, \Environment \, \idealP \, !!\F \, \Sim{\msf{squash}} \approx \msf{execUC} \, \Environment \, \msf{squash} \, !\F \DummyAdv 
+\]
+The simulator is very simple. 
+Inputs to/from parties/\Environment for a corrupt party is forwarded unmodified.
+Input intended for $!\F$ of the form $(\msf{ssid}_1 \cdot \msf{ssid}_2, msg)$ sends $(\msf{ssid}_1, (\msf{ssid}_2, msg))$ to $!!\F$. 
+Output from $!!\F$ is modified inversely and sent to \Environment.
 
-As the underlying functionality in in both worlds is $\F$, the \msf{squash} simulator for the dummy adversary need only route messages between the functionality and the environment and perform multiplexing on behalf of corrupted parties.
-Therefore, it is clear that $(\idealP, !!\F) \sim (\msf{squash}, !\F)$.
+The simulator is clearly \textit{well-typed} 
 
-\todo{ Below is what I wrote first and i don't like it but it's there for all to see }
-It is clear from our construction, that \msf{squash} is well-resource-typed as it performs a constant amount of work per activation.
-Therefore, for well-typed environments, \msf{squash} is always PPT in $k$.
-Similarly, by Theorem~\ref{thm:bangppt}, if $!\F$ is well-resource-typed then so is $!\F$.
-
-The dummy simulator we construct $\Simulator_{\msf{squash}}$ is also well-resource-typed for any environment that is well-typed in the real world with the dummy adversary. 
-This is clear from the constant amount of computation performed by it per activation.
-
-For any well-typed environment with $(\msf{squash}, !\F)$, $(\idealP, !!\F)$ is also well-resource typed.
-both $!!\F$ and $!\F$ spawn the same number of instances of \F internally with 
-
-
-It is clear from our construction that \msf{squash} is well-resource-typed as performs a constant amount of work per activation (\todo{Need to say more like "well-resource-typed for well-resource-typed environments/functionalities/adversaries"?})
-By the previous theorem, both $!\F$ and $!!\F$ are well-resource-typed because $\F$ is well-resource-typed.
 \end{proof}
 
-%%
-%Notes
-%%
-
-% It should be okay that we have one global T because processes can't depend on the type T,n basically. 
-% We can just have T as part of the type and then we should be good to go.
-% Composition theorem  
-w
-
-
-%\begin{definition}
-%For any term $e$ that is \textit{well-typed}, $\exists n \in \mathbb{N}$ and a poynomial $T$ s.t. $e$ halts in $\leq T(n) steps$.
-%
-%Given some potential T(n) where n in poly(k) 
-%
-%Poised state a configuration of processes ==> saying that it has terminated to a value. For any configuration $e$ within $T(n)$ step it will reach a poised state.
-%Every exeution step it takes its potential goes down and the sum of that is always a constant. 
-%In the end the potential will be non-negative <= T(n).
-%
-%only closed and only well-typed
-%security parameter has to be present
-%
-%1. givne polynomial import 
-%
-%2. dependent on some paramter $k$ then it is still PPT then it is well-typed
-%
-%3. random strings: it's necessar to just talk about distributions associated with closed terms
-%
-%\end{definition}
-%
-%\begin{definition}
-%For all $k \in \mathbb{N}$ and $r \in \{0,1\}^{poly(k)}$ the term $\msf{execUC}_{k,r,n,T}(\Environment, \phi, \F, \Adversary)$ is \textit{well-typed} if $\exists n, T$ s.t. $\msf{execUC}_{k,r,n,T}$ executes in $\leq T(n)$ steps.
-%\end{definition}
-%
-%\begin{definition}\label{def:emulation}
-%Given well-typed protocols $\pi = (\mathcal{P}(\pi_1), \mathcal{F}_1)$, $\phi = (\mathcal{P}(\phi_2), \mathcal{F}_2)$, adversary $\mathcal{A}$, and simulator $\mathcal{S}$, $\pi$ and $\phi$ securely emulate each other if for all environments $\mathcal{Z}$, security parameters $k$ $\msf{execUC}_{k,r,n,T} (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S})$ and  $\msf{execUC}_{k,r} (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$ are \textit{well-typed}  and $\msf{execUC}_k (\mathcal{Z}, \phi_2, \mathcal{F}_2, \mathcal{S}) \sim \msf{execUC}_k (\mathcal{Z}, \pi_1, \mathcal{F}_1, \mathcal{A})$.
-%\end{definition}
-%
-%\begin{theorem}
-%If there exists a well-typed \msf{PPT} simulator $\mathcal{S}_d$ as in Definition~\ref{def:emulation} such that $\forall \mathcal{Z}, \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \phi, \F_2, \mathcal{S}_d) \sim \msf{execUC}_{k,r,n,T}(\mathcal{Z}, \pi, \F_1, \mathcal{A}_d)$, where $\mathcal{A}_d$ is the dummy adversary, $\Rightarrow \exists \mathcal{S}$ s.t. $\msf{execUC}_{k,r}(\mathcal{Z}, \phi, \F_2, \mathcal{S}) \sim \msf{execUC}_{k,r}(\mathcal{Z}, \pi, \F_1, \mathcal{A}$ for any well-typed PPT $\mathcal{A}$.
-%
-%swap the quanitifers for any A there exists an S
-%all Z needs to be present for all of them.
-%
-%\end{theorem}
-%
-%\begin{figure}
-%
-%\end{figure}
