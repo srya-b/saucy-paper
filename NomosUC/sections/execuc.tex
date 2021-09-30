@@ -184,8 +184,7 @@ We shorten the communicator type \msf{comm} to \msf{c} in the following definiti
 
 \todo{Ankush: The context of a valid functionality must contain channels typed with the type parameters given by \msf{execUC}. An the machine, parameterized with security parameter $k$ and random bit sequence $r$ are bounded by some polynomial $T_\F$. $\leftarrow$ the last part is meant to capture the well-resource-typed (from the well-matched definition), but maybe we can just say $\F$ is well-resource-typed given $k$,$r$}
 \begin{definition}[Valid Functionality]\label{def:validfunc}
-\begin{mathpar}
-\footnotesize
+\begin{mathpar}to one of footnotesize
 \inferrule*[right=valid-F]
 {\exists c_1:c[\msf{p2f}], c_2:c[\msf{f2p}], c_3: c[\msf{f2a}], c_4:c[\msf{a2f}] \in \Delta_1 \\
 \Delta_1 \models (\F(k, r) : T_\F) :: \Delta_1'}
@@ -298,7 +297,7 @@ The instruction allows for re-use of existing machines and make simulator constr
 
 The Lemma states that if dummy simulator satisfies emulation with respect to the dummy adversary, then for any \Adversary a simulator can be constructed with the dummy simulator. 
 The constructed simulator simply runs \Adversary and \Dummysim internally, and it sends messages from \Environment to \Adversary and outputs of \Adversary to \Dummysim.
-At a high leve, the proof relies on the emulation definition where dummy emulation covers environments run \Adversary internally. Here, we are only moving \Adversary into the execution
+At a high leve, the proof relies on the emulation definition where dummy emulation covers environments that run \Adversary internally. Here, we are only moving \Adversary into the execution
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
 If $\exists \Dummysim$ s.t. $ \DummyAdv, \Dummysim \vdash (\pi, \F_2) \sim (\phi, \F_1)$ then $\forall \Adversary \ \exists \Simulator_\Adversary$ s.t. $\Simulator_{\Adversary} \vdash  (\pi, \F_2) \sim (\phi, \F_1)$ 
@@ -330,19 +329,15 @@ $\npay$ $\$$sd_z2a {z2an : K1} ;
 \end{lstlisting}
 
 $\Simulator_\Adversary$ forwards input from \Environment and forwards it to the internal \Adversary. 
-\Adversary output to either the protocol parties or the 
-
-The construction provided is identical to the original dumy lemma in the UC framework~\cite{uc}, however, we must show that the constructed simulator $\Simulator_\Adversary$ is well-resource-typed for all well-resource-typed \Adversary.
-By the assumption that \Adversary and \Dummysim are well-resource-typed, $\Simulator_\Adversary^K$ is well-resource-typed because it performs consatnt work routing messages internally. 
-A simple and satisfactory runtime polynomial bound for $\Simulator_\Adversary^K$ can be given as:
+\Adversary output to either the protocol parties or the ideal functionality. 
+\Simulator forwards this output to \Dummysim acting as input from the environment (here we fallback to the notion that \Adversary can be run internally by \Environment) and forward any outputs it creates to the intended machines.
+The proof oblication here is to ensure that the constructed simulator $\Simulator_\Adversary$ is well-resource-typed for all well-resource-typed and well-matched, with \Environment, \Adversary.
+The $\Simulator_\Adversary$ performs constant overhead on the simulattion of \Adversary and \Dummysim. Therefore, a sufficient bounding polynomial on the runtime of $\Simulator_\Adversary$ can be given as:
 \[
 T(n) = T_{\Adversary,\Dummysim}(n) + T_{\Adversary,\Dummysim}(n) + O(n)
 \]
 where $T_{\Adversary,\Dummysim}(n)$ is the greater of the two bounding polynomials for \Dummysim and \Adversary evaluated at $n$, and $n$ is the import that \Environment sends to \Adversary. 
-The constant factor accounts for the a constant overhead for routing messages between \Dummysim and \Adversary.
-
 The same \textit{well-resource typed} reasoning extends to the token context where amount of virtual tokens created are polyomial in number and generate potential that is bounded by the above bounding polynomial for $\Simulator_\Adversary$.
-
 \end{proof}
 
 \subsection{Single Composition}
@@ -368,21 +363,20 @@ $\tb{proc}$ compose[K][z2r][r2z][f2r][r2f][p2f][f2p] :
 	 <- phi <- $\$$z_to_p $\$$p_to_z $\$$rho_to_pi $\$$pi_to_rho ; 
 }
 \end{lstlisting}
-\caption{Composition operator in Nomos that connects a protocol $\rho$ to a protocol $\pi$ that uses some functionality $\F$.}
+\caption{Composition operator in Nomos that connects a protocol $\rho$ to a protocol $\pi$ that uses some functionality $\F$. The operators creates new channels to connect the realizing $\pi$ and it's hybrid \F. Output from $\rho$ intended for the replace functionality are actually send to parties of $\rho$, and channels outgoing from the parties to the functionality are given to $\pi$.}
 \label{lst:compose} 
 \end{figure*}
 
 \todo{Include a graphical illustration of wtf is going on, and going on inside the party wrapper as}
 
-\begin{theorem}[Composition]\label{thm:composition}
+\begin{theorem}[Composition]\label{thm:singlecomp}
 \begin{mathpar}
 \inferrule*[right=single-compose]
 {
-	(\pi, \F_1) \sim (\idealP, \F_2) \semi (\rho, \F_2) \sim (\idealP, \F_3) \\
-	\Rightarrow \exists \Simulator(\Adversary) \vdash (\rho^{\F_2 \rightarrow \pi}, \F_1) \sim (\idealP, \F_3)
+	\F_1 \xrightarrow{\pi} \F_2 \semi \F_2 \xrightarrow{\rho} \F_3 \\
 }
 {
-	(\rho \circ \pi, \F_1) \sim (\idealP, \F_3)
+	\F_1 \xrightarrow{\rho \circ \pi} \F_3
 }
 \end{mathpar}
 
@@ -391,18 +385,20 @@ If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realiz
 
 \begin{proof}
 The pre-condition ensures the existence of a \textit{well-resource-typed} simulator $\Simulator_\pi$ for $(\pi, \F_1) \sim (\idealP, \F_2)$. 
-We construct a simulator $S$ which composes $\Simulator_\rho \circ \Simulator_\pi$ for:
+We construct a simulator $S$ which relies only on $\Simulator_\pi$ for:
 \[
 	\msf{execUC}\ (\rho \circ \pi)\ \F_1\ \Environment\ \Adversary \approx \msf{execUC}\ \idealP\ \F_3\ \Environment\ \Simulator
 \]	
-
-The constructed simulator is trivial as it only relies on \Sim{\pi}.
 We don't need to perform simulation on any inputs by \Environment to the main parties of $\rho$ (it's the same protocol in both worlds).
-The constructed simulator \Simulator simulates \Sim{\pi} internall and passes messages intended for the parties of $\pi$, or for $\F_2$, to \Sim{\pi} and simulates its computation.
+The constructed simulator \Simulator simulates \Sim{\pi} internally and passes messages intended for the parties of $\pi$, or for $\F_2$, to \Sim{\pi} and simulates its computation.
 Similariy, \Simulator sends any message from $\F_3$ to \Sim{\pi} for simulation.  
 Input to any party of the main protocol $\rho$ from \Environment, or outout from them to \Simulator, are forwarded without any modification or simulation.
+The constructed simulator performs constant overhead in routing messages to the simulated \Sim{\pi} and forwrading messages to/from parties of $\rho$/\Environment. 
+Given that \Sim{\pi} is \textit{well-resource-typed}, with bounding polynomial $T_{\Sim{\pi}}$, it suffices to show that an additional linear term is sufficient to create a bounding polynomial for \Simulator.
 
-The argument follows directly by a series of inferences:
+\end{proof}
+
+We give a simpler, high-level idea of the proof here which can be understood visually:
 \begin{align}
 & \msf{execUC} \: \Environment \, (\rho \circ \pi) \, \F_1 \, \DummyAdv \\
 \equiv \; & \msf{execUC} \: (\Environment \circ \rho) \, \pi \, \F_1 \, \DummyAdv \\
@@ -411,12 +407,8 @@ The argument follows directly by a series of inferences:
 %\approx \; & \msf{execUC} \: (\Environment \circ \Sim{\pi}) \, \idealP \, \F_3 \, \Sim{\rho} \\
 %\equiv \; & \msf{execUC} \: \Environment \, \idealP \, \F_3 \, (\Sim{\pi} \circ \Sim{\rho}) 
 \end{align}
-
+The $\equiv$ operator is a result of moving around ITMs (some from within other ITMs into the main UC execution) and $\sim$ refers to indistinguishability.
 In line (13) above, $\rho$ is moved into the execution environment with an unchanged simulator as no additional simulation is required: the simulator allows unfettered communication between parties of $\rho$ and \Environment.
-The constructed simulator performs constant overhead in routing messages to the simulated \Sim{\pi} and forwrading messages to/from parties of $\rho$/\Environment. 
-
-Given that \Sim{\pi} is \textit{well-resource-typed}, with bounding polynomial $T_{\Sim{\pi}}$, it suffices to show that an additional linear term is sufficient to create a bounding polynomial for \Simulator.
-\end{proof}
 
 \subsection{Multisession}
 The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
@@ -470,9 +462,18 @@ Similarly, \F being \textit{well-resource-typed} ensures a valid token context f
 Therefore, it is clear that there exists a global connecting poltnomial $f$ that ensures a valid token context for $!\F$.
 \end{proof}
 
-\begin{theorem}[Squash Theorem]
+\begin{theorem}[Squash Theorem]\label{thm:squash}
 %If a functionality \F is well-resource-typed, then $!\F$ and $!!\F$ are well-resource-typed (by Theorem~\ref{thm:bangppt}) and $(\idealP, !!\F) \sim (\msf{squash}, !\F)$.
-\textit{Well-resource-typed} \F $\Rightarrow$ $(\idealP, !!\F) \sim (\msf{squash}, !\F)$
+%\textit{Well-resource-typed} \F $\Rightarrow$ $!\F \xrightarrow{\msf{squash}} !!\F$%  $(\idealP, !!\F) \sim (\msf{squash}, !\F)$
+\begin{mathpar}
+\inferrule*[right=squash]
+{
+\textit{well-resource-typed} \; \F
+}
+{
+!\F \xrightarrow{\msf{squash}} !!\F
+}
+\end{mathpar}
 \end{theorem}
 
 \begin{proof}
@@ -497,3 +498,28 @@ The simulator is clearly \textit{well-typed}
 
 \end{proof}
 
+\subsection{UC Composition}
+Composition in the UC setting is not limited to replacement of a single instance of a protocol.
+Instead, it permits replacement of any number of instances of a protocol $\phi$, each with their own session id, with instances of a realizing protocol $\pi$.
+This generalized form of composition follows directly from Theorems \ref{thm:singlecomp} and \ref{thm:squash}.
+
+\begin{theorem}[Composition]\label{thm:composition}
+\begin{mathpar}
+\inferrule*[right=compose]
+{
+	%(\pi, !\F_1) \sim (\idealP, F_2) \semi (\rho, !\F_2) \sim (\idealP, \F_3) \\ 
+	!\F_1 \xrightarrow{\pi} \F_2 \semi !\F_2 \xrightarrow{\rho} \F_3 \\
+	%\Rightarrow \exists \Simulator(\Adversary) \vdash (\rho^{!\F_2 \rightarrow (!\pi \, \circ \, \msf{squash})}, !\F_1) \sim (\idealP, \F_3)
+}
+{
+	!\F_1 \xrightarrow{\rho \, \circ !\pi \circ \, \msf{squash}} \F_3
+	%(\rho \, \circ \, !\pi \circ \msf{squash}, !\F_1) \sim (\idealP, \F_3)
+}
+\end{mathpar}
+\end{theorem}
+
+\begin{proof}
+The proof of full composition follows directly from the single composition Theorem~\ref{thm:singlecomp} and the Squash Theorem~\ref{thm:squash}.
+By Theorem~\ref{thm:singlecomp} we can infer $!!\F_1 \xrightarrow{\rho \, \circ \, !\pi} \F_3$.
+Theorem~\ref{thm:squash} allows us to ``squash'' $!!\F_1$ and construct a simulator for $!\F_1 \xrightarrow{\rho \, \circ \, !\pi \, \circ \, \msf{squash}} \F_3$
+\end{proof}

@@ -1,0 +1,32 @@
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
+$\tb{type}$ sid[a] = SID of String ^ a ;
+$\tb{type}$ P2Fmsg[a] = P2F of pid ^ a ;
+$\tb{type}$ Z2Pmsg[a] = P2Z of pid ^ a ;
+$\tb{type}$ A2Fmsg[a] = A2F of a ;
+
+$\tb{proc}$ execUC[$\tm{K1}$, $\tm{K2}$][p2z][z2p][p2f][f2p][p2a][a2p][f2a][a2f][a2z][z2a]
+           {p2zn}{z2pn}{p2fn}{f2pn}{p2an}{a2pn}{f2an}{a2fn}{a2zn}{z2an} : 
+    (k: int), (rng: [Bit]) |- ($\$$d : bit) = 
+{
+    $\tg{(* Spawn communicators for all connections *)}$
+    #pw_to_f <- communicator_init[$\tm{K1}$][P2Fmsg[p2f]]{p2fn} <- ;
+    #f_to_pw <- communicator_init[$\tm{K1}$][F2Pmsg[f2p]]{f2pn} <- ;
+    ...
+    $\tg{(* Spawn environment and get sid and corruption list from it *)}$
+    $\$$z <- PS.env[$\tm{K1}$][z2p][p2z][z2a][a2z] <- k r #z_to_pw #pw_to_z #z_to_a #a_to_z ;
+    sid = $\tb{recv}$ $\$$z ;
+    clist = $\tb{recv}$ $\$$z ;
+    ...
+    $\tg{(* spawn the rest of the processes with the sid and clist *)}$
+    $\$$pw <- protocol_wrapper[$\tm{K1}$][p2z][z2p][p2f][f2p][p2a][a2p]{p2zn}{z2pn}{p2fn}{f2pn}{p2an}{z2pn} 
+             <- sid k rng clist #pw_to_f #f_to_pw #pw_to_a #a_to_pw #pw_to_z #z_to_pw ;
+    $\$$fw <- functionality_wrapper[$\tm{K1}$][p2f][f2p][f2a][a2f] {p2fn}{f2pn}{f2an}{a2fn}
+             <- sid k rng clist #pw_to_f #f_to_pw #f_to_a #a_to_f ;
+    $\$$ad <- PS.adv[$\tm{K1}$][z2a][a2z][p2a][a2p][f2a][a2f]{z2an}{a2zn}{a2pn}{f2an}
+             <- sid k rng clist #z_to_a #a_to_z #p_to_a #a_to_p #f_to_a #a_to_f ;
+    $\tg{(* star the environment and wait for a bit to be returned *)}$
+    $\$$z.$\tm{start}$ ;
+    $\$$d <- $\$$z ;
+
+}
+\end{lstlisting}

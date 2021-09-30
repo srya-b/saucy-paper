@@ -18,6 +18,7 @@ let If2pn = 0;	(* F_com can't give import it doesn't have *)
 let Ia2fn = 0;	(* A has no interface to F_com *)
 let Ia2pn = 0;	(* Ps require no import given ==> so a gives no import *)
 
+
 proc F_com:
 	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
 	(#p_to_f: comm[pid ^ Ip2f]{Ip2fn}), (#f_to_p: comm[pid ^ If2p]{If2pn}),
@@ -375,4 +376,86 @@ proc Sim_com_1:
 								)
 						)
 }
+
+
+
+
+
+
+
+
+
+
+
+stype sender = +{commit : bit ^ s_committed}
+stype s_committed = +{open : s_opened}
+stype s_opened = 1
+stype receiver = &{commit : r_committed}
+stype r_committed = &{open : bit -> r_opened}
+stype r_opened = 1
+
+
+type p2fcommit = Commit of Bit | Open ;
+type f2pcommit = Committed | Open of Bit ;
+
+type p2fmsg[a] = P2F of pid ^ a;
+type f2pmsg[a] = F2P od pid ^ a;
+
+fwrapper: (#ptof: comm[p2fmsg[p2fcommit]]), (#ftp: comm[f2pmsg[f2pcommit]])
+(* fwrapper maintains list for each session type for each role *)
+(* the lists contains the channels for parties at that session type in that role *)
+(* gets message --> gets pid --> gets incoming channel to F for that pid --> sends session typed message to it *)
+
+fcom: ($p2f: sender), ($f2p: receover) 
+
+===============================================================
+
+type p2fmsg[a] = P2F of pid ^ a;
+type f2pmsg[a] = F2P od pid ^ a;
+
+(* p to multisession *)
+type p2ms[a] = MSG of ssid ^ a; 
+type ms2p[a] = MSG of ssid ^ a;
+
+type p2fcommit = Commit of Bit | Open ;
+type f2pcommit = Committed | Open of Bit ;
+
+
+stype p_to_ms[a] = &{ input: ssid ^ a -> p_to_ms[a]}
+stype ms_to_p[a] = +{ output: ssid ^ a -> ms_to_p[a]}
+
+fwrapper: (#ptof: comm[p2fmsg[p2ms[p2fcommit]]]), (#ftop: comm[ f2pmsf[ ms2p[ f2pcommit] ] ] )
+
+(* converting from p2ms[a] --> p_to_ma[a] *)
+$p2f <- acquire #ptof
+$p2f.RECV 
+case $p2f (
+	yes =>	pid = recv $p2f 
+					ssid = recv $p2f 
+					msg = recv $p2f 
 	
+					case msg (
+						MSG => (* convert *)
+
+(* mutlisession opertaor*)
+
+
+(* ms --> f_com *)
+stype sender_receiver = +{ commit: bit ^ scommitted_receiver } 
+stype scommitted_receiver = &{ commit: scommitted_rcommitted }
+stype scommitted_rcommitted = +{ open: sopened_rcommitted }
+stype sopen_rcommitted = &{ open : bit -> sopen_ropen }
+stype sopen_ropen = 1 ;
+
+
+stype sender = +{commit : bit ^ s_committed}
+stype s_committed = +{open : s_opened}
+stype s_opened = 1
+stype receiver = &{commit : r_committed}
+stype r_committed = &{open : bit -> r_opened}
+stype r_opened = 1
+
+
+
+
+
