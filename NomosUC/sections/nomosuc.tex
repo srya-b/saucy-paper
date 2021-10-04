@@ -743,30 +743,36 @@ Analogously, the communicator receives \emph{pop} requests from the receiver,
 and responds appropriately with the message if one is stored inside the communicator.
 Formally, a communicator has the following polymorphic session type
 \begin{tabbing}
-  $\mi{stype} \; \m{comm[msg]} =$\\
-  \quad $\up \echoice{$\=$\mb{push} : \m{msg} \arrow
+  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
+  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{push} : \m{msg} \arrow
   \down \m{comm[msg]},$\\
-  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \m{comm[msg]},$\\
+  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
   \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
 \end{tabbing}
 The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
-messages in the buffer.
+messages in the buffer, and import type parameter, i.e. the amount of import tokens sent with
+the message. 
 The type initiates with an $\up$ denoting that $\m{comm}$ is a shared session type.
 The type prescribes that the communicator needs to be acquired by the sender (or receiver)
 for further interaction.
 Such an acquire-release discipline is automatically enforced by the shared session type.
 Once acquired, the communicator can either receive $\mb{push}$ (from sender) or
 $\mb{pop}$ requests (from receiver).
-In the former case, the communicator receives a message of type $\m{msg}$, and
+In the former case, the communicator receives a message of type $\m{msg}$ and $n+1:K$ import tokens, and
 then detaches from the client using the dual $\down$ operator.
 In the latter case, the communicator checks if it internally contains a message
 for the receiver.
 If yes, the communicator replies with the $\mb{yesmsg}$ label followed by sending
-the message (the $\product$ constructor).
+the message (the $\product$ constructor) and $n:K$ import tokens.
 Otherwise, the communicator replies with the $\mb{nomsg}$ label.
 In either case, the communicator then detaches from the client matching the $\down$
 operator.
 Internally, the communicator stores these messages in a first-in-first-out order.
+
+It is important to note that our communicators need at least 1 token of import 
+to use themselves to handle a potentially polynomial number of activations. 
+Therefore, it requires $n+1$ units of import from the sender and sends the intended
+$n$ tokens to the receiver when requested.
 
 The communicator is also the perfect opportunity to implement an unreliable
 message buffer that can drop or reorder messages.
