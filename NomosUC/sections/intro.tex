@@ -1,59 +1,58 @@
-The Universal Composability (UC)~\cite{uc} framework is the most widely used simulation-based framework for proving the security of cryptographic protocols. 
-The UC notion of security relies on proving emulation, by means of a simulator, between a protocol and an ideal specification.
-It also provides a convenient notion of composability and concurrency: protocols proven secure in UC are gauranteed to be secure when composed with arbitrary other protocols running concurrently. 
-A major drawback of the framework is that on-paper proofs of UC security are often very long and too unweildy to attempt to validate or build on top of.
-Computer-aided verification and modelling tools for cryptographic protocols have long since attempted to bridge this gap with varying degrees of success.
-Most, however, fall short of a good solution in several key ways.
+We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular layered constructions.
+In cryptography, the leading framework for managing such compositions is is Universal Composability (UC)~\cite{uc}.
+The central idea is the Ideal Functionality: the security specification of a protocol is given by a concrete instance of a program that, if run by a trusted central party, would exhibit all the desired behaviors of the protocol.
+This leads to a modular framework, where protocols proven secure in UC are gauranteed to be secure when composed with arbitrary other protocols running concurrently.
+Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others. However, these have several shortcomings, which we address through the following questions:
 
-In this work we attempt to improve on the state of the art by applying \textit{resource-aware session types} to realize the UC framework that we call Nomos UC.
-Nomos UC builds off the existing Nomos language~\cite{dasnomos} which enables expressing protocols, their messages, and their steps with session typed channels.
-For example, session types can express the entirety of the messages and order of steps in a TCP handhshake with a single typed.
-This system of typing channels between processes seems a natural fit for the UC framework and allows us to delegate more work to the Nomos type system in validating UC models.
-This comes in handy especially when considering arbitrary composition where the Nomos type system can reject malformed adversaries, protocols, and even environments in a UC execution.
+\begin{itemize}
+\item RQ1: Session types are known to be useful for describing secure protocols, but what role do session types provide in a UC specification, where parties interact with the ideal functionality rather than with each other? The communication patterns between the real world and ideal world are different, yet UC security is about establishing a correspondence between them, so it is tempting to use session types to help.
 
-Furthermore, Nomo US shines paticularly well when reasoning about polynomial runtime for machines in a UC execution.
-Unlike prior work where polynomial time is defined for a limited set of protocols and is difficult or even impossible to reason aboutm NomosUC uses the Nomos potential mechansim to implement the \textit{import} notion of polynomial time as defined by Canetto.
-Our construction can reason about local polynomial time for open terms based only on the channel types and assert polynomial-bound in the security parameter by checking valid polynomial and import bounds, and it even guarnatees termination.
+\item RQ2: Runtime analysis plays a central role in UC, since we are only concerned with polynomial time computationally-bounded attackers. However the order of quantifiers is subtle, since the simulator, environment, and adversary, all are ``polynomial time'' when in the context of each other. Existing formalizations of UC have not addressed this.
+Can resource aware session types provide a means to add this into our language semantics framework?
+\end{itemize}
 
+We answer these questions by designing a new language, NomosUC. It builds most closely on Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc}, a process calculus for UC. ILC captures the underlying semantics of UC, interactive turing machines, different than pi calculus and meant for computational analysis. We adopt the linear read channels and write token from ILC in tact.
+Both the resource aware and session-typed features of Nomos play a critical role in our formulation of UC.
+Specifically, the Session types are applicable to both the ideal world and the real world protocol implementation.
+In the ideal world, they provide benefits such as \anote{add example from Commitment running example} and in the real world, they \anote{example from commitment protocol}.
+%We show how to use the The resource-aware component plays a central role in defining “polynomial runtime,” a subtle notion in UC that existing formulations like ILC, EasyUC, and IPDL leave entirely unaddressed
+The potential mechansim from Nomos turns out to be a good fit for implementing the \textit{import} notion of polynomial runtime as defined for UC.
 
-
-\hrule 
-
-
-In this work we present a programming language design based on the Universal (UC) Composability framework from cryptography.
-
-We build on existing work, ILC, which also aims to be a programming language for UC, but start from a more powerful language, called Nomos, which incorpoates session types and work aware resource types and has been previously used for  smart contracts and distributed applications.
-Both of the features of Nomos turn out to have 
-
-Second, Nomos features a notion of Work-aware types. This is useful for capturing the notion of “locally polynomial runtime.” This allows us to model UC more faithfully than any prior work to date
-
-As a starting point, we build a language that merges types rules from ILC into Nomos. The main design idea of ILC is that it is uses static typing rules to encode the requirements of the Interacting Turing Machines (ITMs) model, a model that is uniquely associated with UC. The ILC rules roughly ensure that simulations of the language can be carried out by probabilistic Turing machines, which is necessary for reduction to computationally hard problems, required for cryptographic security proofs. The rules from ILC are compatible with session types, so it turns out to be straightforward to merge these into nomos. The result provides benefits associated with session types, namely that it avoids potential errors from internally-inconsistent programs.
-
-   Beyond just session types, the Work-aware component of Nomos allows us to tackle a fundamental challenge in defining a programming language for UC that ILC (and all other related work) left unfulfilled, which is to express the notion of polynomially runtime.
-   
    The challenge of “polynomial runtime” in UC is that individual processes must be judged as polynomial, but when eveluated in context with other concurrently running process it is difficult to assign blame.
        The current best way to define polynomial runtime, found in the 2019 and later version of UC, is based a concept of ``import tokens.''
-   We identify how to relate the “Potential” concept from Nomos, to the import tokens from UC. 
-	The result is a deep connection between session type semantics and the formal foundation of UC.
-	The Preservation theorem we prove associated with our type system and operational semantics proves the following: 
-well-typed terms in Nomos UC are “locally polynomial time”, in the sense required of UC, meaning they do not take more steps that some polynomial function T(N) of the net number of import tokens it has received.
+       This turns out to be a good fit for the ``Potential'' from Nomos and Resource-Aware ML.
+Our construction can reason about local polynomial time for open terms based only on the channel types and assert polynomial-bound in the security parameter by checking valid polynomial and import bounds, and it even guarnatees termination.
+The result is a deep connection between session type semantics and the formal foundation of UC.
+    The Preservation theorem we prove associated with our type system and operational semantics proves the following: 
+  well-typed terms in Nomos UC are “locally polynomial time”, in the sense required of UC, meaning they do not take more steps that some polynomial function $T(N)$ of the net number of import tokens it has received.
+  \anote{Explain better connection between Preservation theorem and what is needed in UC proofs}
 
-In addition, our language has other benefits.
-The Progress theorem is useful because it gives some evidence that ideal functionalities and protocols encoded in Nomos UC cannot get stuck. Together helps confirm that the process halts in polynomial time.
-TODO: Give an example of a bad machine ruled out by progress guarantee.
+%In this work we attempt to improve on the state of the art by applying \textit{resource-aware session types} to realize the UC framework that we call Nomos UC.
 
-\ignore{
-Carries forward the same metatheory guarantees as ILC. Namely: if a process terminates, then it depends only on the random coins (unlike Pi calculus, including Session-type pi calculus). Thus simulating the execution of a Nomos UC experiment can be carried out by a probabilistic polynomial time Turing machine (PPT). This is essential in UC for reduction to computationally hard problems.
-}
 
-\ignore{
-The Universal Composability Framework~\cite{uc} is the popular and widely-used framework for modelling the security of cryptographic and distributed protocols.
-Its novel contribution compared to other frameworks is that it provides a very strong notion of security: a UC-secure protocol is proved to be secure even when composed with arbitrary other protocols running concurrently.
-This constrasts with other, property-based notions of security~\todo{need to get some citations here}.
+
+%\hrule 
+% Second, Nomos features a notion of Work-aware types. This is useful for capturing the notion of “locally polynomial runtime.” This allows us to model UC more faithfully than any prior work to date
+%As a starting point, we build a language that merges types rules from ILC into Nomos. The main design idea of ILC is that it is uses static typing rules to encode the requirements of the Interacting Turing Machines (ITMs) model, a model that is uniquely associated with UC. The ILC rules roughly ensure that simulations of the language can be carried out by probabilistic Turing machines, which is necessary for reduction to computationally hard problems, required for cryptographic security proofs. The rules from ILC are compatible with session types, so it turns out to be straightforward to merge these into nomos. The result provides benefits associated with session types, namely that it avoids potential errors from internally-inconsistent programs.
+%   Beyond just session types, the Work-aware component of Nomos allows us to tackle a fundamental challenge in defining a programming language for UC that ILC (and all other related work) left unfulfilled, which is to express the notion of polynomially runtime.
+   
+
+%In addition, our language has other benefits.
+% The Progress theorem is useful because it gives some evidence that ideal functionalities and protocols encoded in Nomos UC cannot get stuck. Together helps confirm that the process halts in polynomial time.
+% TODO: Give an example of a bad machine ruled out by progress guarantee.
+
+%% \ignore{
+%% Carries forward the same metatheory guarantees as ILC. Namely: if a process terminates, then it depends only on the random coins (unlike Pi calculus, including Session-type pi calculus). Thus simulating the execution of a Nomos UC experiment can be carried out by a probabilistic polynomial time Turing machine (PPT). This is essential in UC for reduction to computationally hard problems.
+%% }
+
+%% \ignore{
+%% The Universal Composability Framework~\cite{uc} is the popular and widely-used framework for modelling the security of cryptographic and distributed protocols.
+%% Its novel contribution compared to other frameworks is that it provides a very strong notion of security: a UC-secure protocol is proved to be secure even when composed with arbitrary other protocols running concurrently.
+%% This constrasts with other, property-based notions of security~\todo{need to get some citations here}.
 
 %Analyzing large and complex protocols is a difficult task made easier by UC's ideal functionality abstraction. 
 %However, despite this additional modularity, UC proofs and models still tend to be very complex, unwieldy, and difficult to understand.
 %These issues are exacerbated when new communication models are added on top of UC~\cite{katz, etc}.
 %Therefore, we propose a two-fold solution: a new construction for modelling different communication models that removes all model-specific code from protocols and functionalities, and an implementation of the UC framework in the Nomos language. 
-}
+%}
 
