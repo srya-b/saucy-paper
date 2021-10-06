@@ -28,12 +28,16 @@
 \newcommand{\Delay}{\tsc{Delay}}
 \newcommand{\Advance}{\tsc{Advance}}
 \newcommand{\Exec}{\tsc{Exec}}
-\newcommand{\Adversary}{\ensuremath{\mathcal{A}}\xspace}
+%\newcommand{\Adversary}{\ensuremath{\mathcal{A}}\xspace}
+\newcommand{\A}{\ensuremath{\mathcal{A}}\xspace}
 \newcommand{\DummyAdv}{\ensuremath{\mathcal{A}_\mathcal{D}}\xspace}
-\newcommand{\Simulator}{\ensuremath{\mathcal{S}}\xspace}
-\newcommand{\Sim}[1]{\ensuremath{\Simulator_{#1}}}
-\newcommand{\Dummysim}{\ensuremath{\Simulator_{\mathcal{D}}}\xspace}
-\newcommand{\Environment}{\ensuremath{\mathcal{Z}}\xspace}
+\newcommand{\DA}{\ensuremath{\A_\mathcal{D}}\xspace}
+\newcommand{\Sim}{\ensuremath{\mathcal{S}}\xspace}
+\newcommand{\SIM}[1]{\ensuremath{\mathcal{S}_{#1}}\xspace}
+%\newcommand{\Sim}[1][]{\ifthenelse{\equal{#1}{}}{\ensuremath{\Simulator}}{\ensuremath{\Simulator_{#1}}}}
+\newcommand{\DS}{\SIM{D}\xspace}
+%\newcommand{\Environment}{\ensuremath{\mathcal{Z}}\xspace}
+\newcommand{\Z}{\ensuremath{\mathcal{Z}}\xspace}
 \newcommand{\Partyi}{\ensuremath{P_i}}
 \newcommand{\Partyj}{\ensuremath{P_j}}
 \newcommand{\dealer}{\ensuremath{\mathcal{D}}}
@@ -47,14 +51,17 @@
 \newcommand{\Allinputs}{{\bf \color{Cerulean} All other input~}}
 \newcommand{\OnAdvInput}{{\bf \color{BrickRed} On input}~}
 \newcommand{\heading}[1]{\textbf{#1}}
-\newcommand{\Type}{\textbf{type}~}
+\newcommand{\Type}{\ensuremath{\tb{type}}}
 \newcommand{\bangf}{\ensuremath{!\F}}
 \newcommand{\execuc}{\ensuremath{\msf{execUC}}}
 \newcommand{\UC}[4]{\ensuremath{\execuc #1  #2  #3  #4}}
 \newcommand{\idealP}{\ensuremath{\mathbb{I}_d}\xspace}
+%\newcommand{\prot}[1][]{\ifthenelse{\equal{\ensuremath{#1}}{}}{\ensuremath{\Pi}}{\ensuremath{\Pi_{X #1}}}}
+\newcommand{\prot}[1]{\ensuremath{\pi_{\msf{#1}}}}
 \newcommand{\lla}{\leftarrow}
 \newcommand{\lvd}{\vdash}
 \newcommand{\tb}[1]{\text{\color{blue}{#1}}}
+\newcommand{\tgr}[1]{\text{\color{ForestGreen}{#1}}}
 \newcommand{\tm}[1]{\text{\color{magenta}{#1}}}
 \newcommand{\tg}[1]{\text{\color{gray}{#1}}}
 \newcommand{\inline}[1]{\lstinline[basicstyle=\small\BeraMonottFamily, mathescape]!#1!}

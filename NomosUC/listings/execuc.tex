@@ -4,7 +4,7 @@ $\tb{type}$ P2Fmsg[a] = P2F of pid ^ a ;
 $\tb{type}$ Z2Pmsg[a] = P2Z of pid ^ a ;
 $\tb{type}$ A2Fmsg[a] = A2F of a ;
 
-$\tb{proc}$ execUC[$\tm{K1}$, $\tm{K2}$][p2z][z2p][p2f][f2p][p2a][a2p][f2a][a2f][a2z][z2a]
+$\tb{proc}$ execUC[$\tm{K1}$, $\tm{K2}$][p2z][z2p][p2f][f2p][p2a][a2p][f2a][a2f][f2a2z][z2a2f][p2a2z][z2a2p]
            {p2zn}{z2pn}{p2fn}{f2pn}{p2an}{a2pn}{f2an}{a2fn}{a2zn}{z2an} : 
     (k: int), (rng: [Bit]) |- ($\$$d : bit) = 
 {
