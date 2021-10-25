@@ -19,6 +19,9 @@ let Ia2fn = 0;	(* A has no interface to F_com *)
 let Ia2pn = 0;	(* Ps require no import given ==> so a gives no import *)
 
 
+(*
+	F_COM: ideal commitment functionality 
+*)
 proc F_com:
 	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
 	(#p_to_f: comm[pid ^ Ip2f]{Ip2fn}), (#f_to_p: comm[pid ^ If2p]{If2pn}),
@@ -72,17 +75,23 @@ proc F_com_open:
 	)
 }
 
-(* TODO: How i tell the machine to stop?!?!!?!? *)
+
+(* Real World *)
 
 type Rp2f = SHash of Int | Send of pid ^ pid ^ Int ;
 type Rf2p = Pre of Int | RHash of Int | MSG of pid ^ pid ^ Int ;
-
 type Ra2f = A2Hash of Int ;
 type Rf2a = Hash2A of Int ;
+
+stype 
 
 let Rf2pn = 0;
 let Rp2fn = 1;	(* ever increasing set of hash pairs in Fro *)
 let Ra2fn = 1;	(* needs to call F_ro *)
+
+
+
+
 
 proc F_RO_init:
 	(s: sid), (k: Int), (rng: [Bit]), (clist: list[Int]),
@@ -457,5 +466,55 @@ stype r_opened = 1
 
 
 
+
+(* one channel per party each is typed as follos *)
+stype hashorsend[a] = &{ hash: int -> sendhash[a],
+												 sendmsg: pid ^ a -> msg[a]}
+stype sendhash[a] = +{ shash: int -> hashorsend[a] }
+stype msg[a] = +{ sendmsg: a -> hashorsend[a] }
+
+
+(* rsender code *)
+$p2f.sendmsg 
+send $p2f rpid 
+send $p2f m 
+
+(* Fro *)
+case $p2f_pid1 (
+	hash =>	int = recv $p2f 
+								h <- (* sample random ness and store in table *)
+								$p2f_pid1.shash
+								send $p2f_pid1 h 
+	sendmsg => 	pid = recv $p2f_pid1 
+							msg = recv $p2f_pid1
+							$_f2p <- getchan pid 
+							$_f2p.???		(* No way to send the message because the channel is waiting for exernal choice *)
+
+(* <><><><><><><><><><><><><>< *)
+(* Alternate for dynamic parties, one channel *)
+stype hashorsend[a] = &{ hash: pid ^ int -> sendhash[a],
+												 sendmsg: spid ^ rpid ^ msg -> msg[a]}
+stype sendhash[a] = +{ shash: int -> hashorsend[a] }
+stype msg[a] = +{ sendmsg: pid ^ a -> hashorsend[a] }
+
+(* rsender code *)
+$p2f.sendmsg 
+send $p2f rpid 
+send $p2f m 
+
+(* Fro *)
+case $p2f (
+	hash =>	spid = recv $p2f 
+					p = recv $p2f 
+					h <- (* compute hash and store in table *)
+					$p2f.shash 
+					send $p2f spid
+					send $p2f h
+	sendmsg =>	spid = recv $p2f 
+							rpid = recv $p2f 
+							msg = recv $p2f
+							$p2f.sendmsg 
+							send $p2f rpid
+							send $p2f msg 
 
 

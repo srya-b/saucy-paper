@@ -5,54 +5,46 @@
 % Does not provide a complete term, only a specification
 % Might make sense to talk about extending session types with dependencies for commitment
 
-Cryptographic protocols are, well, protocols and therefore, follow
+Cryptographic and distributed protocols are, well, protocols and therefore, follow
 a predefined communication pattern.
-Our key innovation is to represent such communication protocols using
-\emph{session types}.
+Our key innovation is representing protocols and ideal functioalities in the UC framework using \emph{session types}.
 
-\paragraph*{\textbf{Example Protocol}}
+We describe Nomos UC and session types through an example ideal funtionality: a cryptographic commitment.
+The commitment functionality \Fcom encapsulates the security properties of a two-phase, two-party commitment, which, given its simplicity is an ideal learning example.
+
+\subsection{Ideal Commitment} \label{subsec:idealcommitment}
 As an example, consider the two-phase commitment protocol.
 The ideal functionality of this protocol consists of a \emph{sender} $S$
 and \emph{receiver} $R$ connected to a trusted third-party, which we
-name $\fcomm$.
-The protocol initiates with $S$ sending a $\mb{commit}$ message to $\fcomm$
-indicating its intent to \emph{commit} to a bit.
-Next, $S$ sends this committed bit to $\fcomm$.
-After receiving the committed bit, $\fcomm$ sends a $\mb{commit}$ message
-to $R$ indicating that a bit has been committed to, but does not reveal
-this bit to $R$.
-At a later time, $S$ sends an $\mb{open}$ message to $\fcomm$ expressing
-that $S$ wishes to reveal the secret bit to $R$.
-Receiving this message, $\fcomm$ in turn sends an $\mb{open}$ message
-to $R$ followed by this bit.
-The protocol concludes with each party (process) terminating.
+name $\Fcom$.
 
+The session types for the committer and receiver encapsulate this protocol:
 In the session-typed setting, we use typed channels to connect two
-parties. For instance, the channel connecting $S$ to $\fcomm$
+parties. For instance, the channel connecting $S$ to $\Fcom$
 has the session type $\m{sender}$ defined as
-\[
-  \mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product
-  \ichoice{\mb{open} : \one}}
-\]
+\begin{mathpar}
+  \mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
+  \mi{stype} \; \m{scommitted} = \ichoice{\mb{open} : \m{sopen}} \\
+  \mi{stype} \; \m{sopen} = 1
+\end{mathpar}
 The type constructor $\ichoice$ denotes an \emph{internal choice}
 (here with only one choice) dictating that $S$ must send the
-$\mb{commit}$ message to $\fcomm$.
+$\mb{commit}$ message to $\Fcom$.
 Next, we use the type constructor $\product$ to denote that $S$
 sends a value of type $\m{bit}$ ($\m{bit} \product \ldots$).
 We then use the $\ichoiceop$ constructor again enforcing
-that $S$ sends $\mb{open}$ to $\fcomm$.
-Finally, the type $\one$ denotes termination, indicating that
-$S$ will send $\m{close}$ message to $\fcomm$.
+that $S$ sends $\mb{open}$ to $\Fcom$.
 
-Analogously, the channel connecting $R$ and $\fcomm$ has
+Analogously, the channel connecting $R$ and $\Fcom$ has
 type $\m{receiver}$ defined as
-\[
-  \mi{stype} \; \m{receiver} = \echoice{\mb{commit} : 
-  \echoice{\mb{open} : \m{bit} \arrow \one}}
-\]
+\begin{mathpar}
+	\mi{stype} \; \m{receiver} = \echoice{\mb{commit}: \m{rcommitted}} \\
+	\mi{stype} \; \m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \m{ropen}} \\
+	\mi{stype} \; \m{ropen} = 1
+\end{mathpar}
 Type constructor $\echoice$ represents \emph{external choice}
 which is the dual to internal choice.
-It prescribes that $R$ must receive a $\mb{commit}$ message from $\fcomm$,
+It prescribes that $R$ must receive a $\mb{commit}$ message from $\Fcom$,
 followed by an $\mb{open}$ message (using another $\echoiceop$ constructor).
 $R$ must then receive a bit using the $\arrow$ constructor (dual to
 $\product$).
@@ -60,51 +52,68 @@ Finally, the session terminates as indicated by type $\one$.
 
 Protocols expressed via session types are strictly enforced by
 process definitions.
-As an illustration, consider the $\fcomm$ process that is connected
+As an illustration, consider the $\Fcom$ process that is connected
 to both $S$ and $R$.
-The process declaration is written as
-\begin{lstlisting}[basicstyle=\small\ttfamily]
-decl F_comm :
-  (S : sender), (R : receiver) |- (F : 1)
+The process is written as
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+$\nproc$ $\tm{Fcom}$: 
+  (k: $\tgr{int}$), (rng: [Bit]), (sid: SID), 
+  ($\$$S: sender), ($\$$R: receiver)
+    |- ($\$$fc: 1) =
+{
+  $\ncase$ $\$$S (
+    commit => 
+      b = $\nrecv$ $\$$S ;
+      $\$$R.commit ;
+      case $\$$S (
+        open => 
+          $\$$R.open ;
+          $\nsend$ $\$$R b ;
+}
 \end{lstlisting}
-Here, $\fcomm$ is the name of the process, and $S$ and $R$ are the names
-of channels \emph{used} by $\fcomm$, while $F$ is the channel \emph{provided}
-by $\fcomm$.
+
+Here, $\Fcom$ is the name of the process, and $S$ and $R$ are the names
+of channels \emph{used} by $\Fcom$, while $F$ is the channel \emph{provided}
+by $\Fcom$.
 Every session-typed process provides a unique channel while acting as a client
 of a non-negative number of channels.
 The used channels with their types are written to the left of the turnstile
 ($\vdash$) while the offered channel and type are written on the right.
 This is analogous to function definitions where used channels correspond to
 arguments, while offered channel corresponds to the result.
-
-The $\fcomm$ process is defined as follows:
-\begin{lstlisting}[basicstyle=\small\ttfamily, numbers=left,xleftmargin=2em]
-proc F <- F_comm S R =
-  case S (
-    commit => b = recv S ;
-              R.commit ;
-              case S (
-                open => R.open ;
-                        send R b ;
-                        wait S ; wait R ;
-                        close F ) )
-\end{lstlisting}
 The process first case analyzes on channel $S$ branching on the
 message received.
 Since there is only one choice $\mb{commit}$, we only have one
 branch in the definition.
-$\fcomm$ then receives the bit $b$ (line 3) on $S$, followed by sending the
+$\Fcom$ then receives the bit $b$ (line 3) on $S$, followed by sending the
 commit message on channel $R$ (line 4).
-Once $\fcomm$ receives the $\mb{open}$ message on $S$, it sends the
+Once $\Fcom$ receives the $\mb{open}$ message on $S$, it sends the
 $\mb{open}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
-Finally, the process waits for channels $S$ and $R$ to close (line 8),
-followed by ultimately closing the channel $F$ (line 9).
+\todo{Is closing strictly necessary in NomosUC}
 
-\begin{figure*}[!ht]
-\input{figures/commitment}
-\caption{The $\mathcal{F}_{\msf{comm}}$ commitment ideal functionality in Nomos. The types for the sender and receiver channel define what inputs they can give to the functionality and what messsages are sent from the functionality back to the receiver.}
-\label{fig:nomos:commitment}
-\end{figure*}
+A session type uniquely defines the protocol for only one role in an ideal functionality.
+The sender and receiver do different things, therefore, must have their own channels 
+to \Fcom rather than communicating over a common channel.  
+
+%The protocol initiates with $S$ sending a $\mb{commit}$ message to $\Fcom$
+%indicating its intent to \emph{commit} to a bit.
+%Next, $S$ sends this committed bit to $\Fcom$.
+%After receiving the committed bit, $\Fcom$ sends a $\mb{commit}$ message
+%to $R$ indicating that a bit has been committed to, but does not reveal
+%this bit to $R$.
+%At a later time, $S$ sends an $\mb{open}$ message to $\Fcom$ expressing
+%that $S$ wishes to reveal the secret bit to $R$.
+%Receiving this message, $\Fcom$ in turn sends an $\mb{open}$ message
+%to $R$ followed by this bit.
+%The protocol concludes with each party (process) terminating.
+%Finally, the type $\one$ denotes termination, indicating that
+%$S$ will send $\m{close}$ message to $\Fcom$.
+
+%\begin{figure*}[!ht]
+%\input{figures/commitment}
+%\caption{The $\mathcal{F}_{\msf{comm}}$ commitment ideal functionality in Nomos. The types for the sender and receiver channel define what inputs they can give to the functionality and what messsages are sent from the functionality back to the receiver.}
+%\label{fig:nomos:commitment}
+%\end{figure*}
 
 \subsection{Formal Description of the NomosUC Language}
 
@@ -732,11 +741,12 @@ case either $\config$ can take a step or is poised.
 
 
 \subsection{UC Communicators}
-One illustration of a use of shared session types is a \emph{communicator}.
+One illustration of the use of shared session types is a \emph{communicator}.
 We use communicators as message buffers between two arbitrary processes: a
 \emph{sender} and a \emph{receiver}.
 The communicator is connected to both the sender and the receiver using a shared
 channel.
+
 Intuitively, the communicator receives \emph{push} requests from the sender followed
 by receiving a message and stores them internally.
 Analogously, the communicator receives \emph{pop} requests from the receiver,
@@ -749,6 +759,7 @@ Formally, a communicator has the following polymorphic session type
   \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
   \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
 \end{tabbing}
+
 The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
 messages in the buffer, and import type parameter, i.e. the amount of import tokens sent with
 the message. 

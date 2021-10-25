@@ -51,6 +51,9 @@
     #1,% For possible options
 }
 
+\mathchardef\hyp="2D
+\mathchardef\car="5E
+
 \makeatletter
 \newcommand\BeraMonottFamily{%
 	\def\fvm@scale{0.85}%
@@ -65,8 +68,8 @@
 \input{macros}
 \input{st-macros}
 
-\author{\IEEEauthorblockN{Surya Bakshi}
-\IEEEauthorblockA{\textit{University of Illinois at Urbana-Champaign}}
+\author{\IEEEauthorblockN{Given Name Surname}
+\IEEEauthorblockA{\textit{University of Science}}
 \and
 \IEEEauthorblockN{Given Name Surname}
 \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
@@ -111,10 +114,10 @@ component, formatting, style, styling, insert
 %\section{Import}
 %\input{sections/import}
 
-\section{ExecUC}
+\section{ExecUC} \label{sec:execuc}
 \input{sections/execuc}
 
-\section{Commitment}
+\section{Commitment} \label{sec:commitment}
 \input{sections/commitment}
 
 %\section{Multisession Operator}

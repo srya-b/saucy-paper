@@ -1,5 +1,5 @@
-In this section we describe how the UC experiment is defined in Nomos and the UC notion of composition in Nomos. 
-We also express a crucial result in the UC framework: the dummy lemma.
+In this section we describe how the UC experiment and composition theorem are defined in NomosUC.
+We also express a critically important result in the UC framework: the dummy lemma.
 An important part of our definition is using code-generation techniques~\cite{somecodegeneration} to constructs some processes in the UC experiment as well ass useful operators to achieve full composition in the sense of Canetti et al.~\cite{uc}.
 
 We first introduce some convenient notation.
@@ -15,23 +15,25 @@ The dummy functionality accepts all messages, does nothing, and continues to wai
 \subsection{The UC Experiment}
 The UC experiment is an execution of a main protocol, called the \textit{challenge protocol}, consisting of protocol parties and an ideal functionality, reacting to input by an adversary \A or the \Z.
 The expeirment is created by an \inline{execUC} functio which spawns all the relevant processes: the environment, a \inline{protocol wrapper}, the adversary, the \inline{functionality wrapper}.
-The protocol wrapper and functionality wrapper perform different tasks but encapsulate the real protocol parties and the functionality, respectively. 
-The protocol wrapper manages creating new protocol parties on demand, and it, and the functionality wrapper, conver incoming messages from functional types to session types. 
-We motivate and explain the wrappers in detail later in this section. 
+The protocol and functionality wrappers encapsulate the protocol parties and the ideal functionality, respectively. 
+We motivate their use and explain how they work later in this section, but point out that they are necessary to make use of sesion types while capturing the full UC framework.
 
-The UC experiment is parameterized by a set of token types, messages types, and import token types that are defined by the user and passed into the spawned processes. 
-\inline{execUC} is not statically defined in Nomos. Instead, it is generated according to a protocol spcecification provided by the user.
-The reason behind this change is that our use of \textit{virtual tokens} requires us to define all virtual token types statically in order to use them.
-For the commitment example we've used throughout this work, the \inline{execUC} process definition looks like this:
+The statically-typed nature of NomosUC requires generic process like \inline{execUC} to be parametric in the message and import token types of the protocol and functionality being executed.
+Though statically-typed the \inline{execUC} function is one that is generated uniquely based on the protocol being execute, and the reason for doing some comes down to our virtual tokens construction.
+For any protocol where some process, say the ideal world adversary (the simulator), internally simulates an existing UC protocol, virtual tokens must be used.
+The number of virtual tokens used, and therefore statically defined, varies based on the specific processes being used.
+Therefore, \inline{execUC} needs to spawn processes with a variable number of import token types. 
+We rely on code-generation to take a protocol specification and create \inline{execUC} that accepts the appropriate type parameters. 
+For the commitment example we've used throughout this work, the ideal world \inline{execUC} process definition looks like this:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
 $\tb{proc}$ $\tm{execUC}$[K][z2p][p2z]...{z2pn}{p2zn}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
 \end{lstlisting}
-For commitment none of the protocol-specific code requires virtual tokens, therefore the user only provides \inline{[K]}. 
+In the ideal world, none of the processes, including the simulator which we will present later, require any virtual tokens. Hence there is only one virtual token type: \inline{K}.
+The input parameters to the function are all generic and are required as part of a UC execution: the security parameter $k$ selected by the user and the source of random bits $r$.
 The security parameter $k$ is also selected by the user and the source of randomness $r$ is given to all the ITMs by \inline{execUC}.
 The type of the channel that \inline{execUC} offers, \inline{$\$$d}, is \inline{Bit} because it returns the environment's output: a bit representing its guess as to which word it thinks it's in.
 
-%% EXEC UC FIGURE 
 %\begin{figure*}
 %\input{listings/execuc}
 %\caption{The \msf{execUC} function used for the two-party commitment example used througout this paper. Recall, the \msf{execUC} is customized insofar as it takes in some number of virtual token types (here, $K_1$) to enable machines that simulate other machines. In the commitment example, there is no such simulation happening at the protocol or functionality level, therefore only the real token type $K_1$ is used here. The funtion spawns all the necessary ITMs in the UC execution: the environment, the protocol wrapper, the functionalty (wrapped), and the adversary. Each is parameterized with the security parameter $k$ and a random bit sequence $\msf{rng} \in \{0,1\}^{poly(k)}$.
@@ -39,11 +41,10 @@ The type of the channel that \inline{execUC} offers, \inline{$\$$d}, is \inline{
 %\label{lst:execuc}
 %\end{figure*}
 
-We separate NomosUC into these two modules: generic code and protocl specific code. 
-Therefore, \inline{execUC} definition doesn't include process definitions as parameters and refers to them through a modue \inline{PS}.
-
-The module \inline{PS} is required to implement process \inline{PS.env} for \Z, \inline{PS.func} for the functionality, \inline{PS.prot} for the protocol, and \inline{PS.adv} for the adversary.
-The environment \inline{PS.env} must have the following process definition:
+We separate NomosUC into these two modules: generic code and protocol specific code. 
+Therefore, the  \inline{execUC} definition doesn't include process definitions as parameters and refers to them through a modue \inline{PS}.
+The module \inline{PS} is must implement the processes \inline{PS.env} for \Z, \inline{PS.func} for the functionality, \inline{PS.prot} for the protocol, and \inline{PS.adv} for the adversary.
+The environment \inline{PS.env} must have the following process definition generic to all environments:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
 $\tb{type}$ EtoZ[a] = +{init: a ^ list[pid] -> exec} 
 $\tb{type}$ exec = &{start : output_bit} ;
@@ -53,18 +54,20 @@ $\tb{proc}$ PS.env[K][z2p][p2z]...{z2p}{p2zn} :
   (#ztop: comm[z2p]), (#ptoz: comm[p2z])...
     |- ($\$$z : EtoZ)
 \end{lstlisting}
-
 The type parameters specify the token type \inline{K}, and the types of the channels \Z has to others (only between \Z and protocol wrapper is shown). Similarly, there are type parameters specifying the import parameters as well (\inline{\{z2pn\}}).
-The rest of the processes---the adversary, protocol wrapper, and functionality--are declared in the same way except the type parameters they expect: the protocol wrapper would of course accept type parameters for communication between it and \F, \A, and \Z.
+The \inline{\{z2pn\}}, for example, specifies the amount of import that must be sent by \Z with every message to a protocol party.
+The rest of the processes---the adversary, protocol wrapper, and functionality--are declared in the same way except the type parameters they expect are different: the protocol wrapper would of course accept type parameters for communication between it and \F, \A, and \Z.
+Finally the type of the offered channel \inline{$\$$z} is the same for all environments and communicates the \inline{sid} and set of corrupt parties chosen by \Z to \inline{execUC}.
+The \inline{sid} and corrupt list are parameters to the rest of the processes that \inline{execUC} spawns. 
 
-The type parameters for all the ITMs are not the same as the type parameters passed into \inline{execUC}, though. 
+The type parameters given to \inline{execUC} are not directly given to the corresponding processes. All message types are wrapped in generic parametric types that represent communication between two entitis in the UC execution. 
 Messages between the main entities of the execution, for example \Z and \A, all have the same parameteric types such as:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
 $\Type$ p2zmsg[a] = P2Z of pid ^ a ;
 $\Type$ p2fmsg[a] = P2F of pid ^ a ;
 $\Type$ f2pmsg[a] = F2P of pid ^ a ;
 \end{lstlisting}
-For example, the channel from \Z to the protocol wrapper will typed as: \inline{comm[z2pmsg[z2p]]} where \inline{z2p} is a type parameter to \inline{execUC}.
+The channel from \Z to the protocol wrapper will typed as: \inline{comm[z2pmsg[z2p]]\{z2pn\}} where \inline{z2p} is a type parameter to \inline{execUC}.
 
 %The protocol \inline{PS.prot} is not spawned by \inline{execUC}. Instead the process spawns the protocol wrapper (described below) which spawns parties with that run the code \inline{PS.prot}.
 %When in the ideal world, the protocol is given as the ideal protocol: one where the protocol wrapper converts the message from type \inline{z2pmsg[a]} to type \inline{p2fmsg[a]} but forwards the contents unaltered.
@@ -81,49 +84,55 @@ Recall from the discussion on communicators in Section~\ref{sec:nomosus} that th
            {z2pn+1} ;
 ...
 \end{lstlisting}
-Next, the environment \msf{PS.env} is spawned, and its session type requires it to send the session id, or \msf{sid}, and the list of corrupt parties to \inline{execUC}.
-The rest of the ITMs are then spawned with \msf{sid} and the corrupt list.
+This is strictly a design decision where user-defined protocols only specify import token requirements for the protocol not taking communicators into account. 
+The processes that they write, though, must conform to this standard and send an import token in addition to the amount they need.
+An alternate design would be that all import type parameters take the additional import token into account and communicators send one less than they receive.
+The drawback of the latter approach is that that when communicating with a process directly rather than through communicators (say, when simulating), you're sending one extra token for no reason.
 
-Finally, the environment executes its own code when activated by \msf{\$z.start} and returns a bit through \inline{$\$$z.output_bit} which is its guess whether it's in the real or ideal world.
-%Over all possible environments, security parameters $k$, and random bit sequences $r$, the output of \msf{execUC} represents an ensemble of distributions for the output bit. 
+Next, the environment \msf{PS.env} is spawned, \inline{execUC} receives the \inline{sid} and corrupt list from \Z, and, finally, the remainder of the processes are spawned with these inputs. 
+Finally, the environment executes its own code when activated by \msf{\$z.start}, given the initial amoutn of import \inline{n}, and returns a bit through \inline{$\$$z.output_bit} which is its guess whether it's in the real or ideal world:
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+$\$$z.start
+$\tb{pay}$ $\$$z {n}
+$\$$d <- $\$$z
+\end{lstlisting}
 
 \subsection{The Protocol Wrapper}
 The \msf{execUC} definition introduces a new construct called the \textit{protocol wrapper}. 
-When \inline{execUC} spawns the ``protocol'' it actually spawns the protocol wrapper.
-In the UC experiment, the environment can create protocol parties on the fly and none exist until the first message is written to them.
-Thefeore the wrapper is intended to create new parties on demand.
+It is instantiated with the protocol that honest parties run, and spawns new ones on-demand.
 
-The dynamic nature of parties in UC, leads to an interesting design choice for the protocol wrapper.
-All communciation between protocol parties and \Z, \F, and \A is managed by the protocol wrapper, and the need to multiplex and de-multiplex communication between parties and other machines makes session types between them tedious and difficult to use.
-The session for a protocol in a way specifies a state machine for it, and if a single session type is created for to encapsulate all parties in the wrapper, the session type would need to enumerate all combinations of states the parties could be in.
-Even for simple, protocols this cartesian product of session types becomes unweildy and cumbersome to deal with 
-Furthermore, a statically defined session type does not capture the need to allow a dynamic number of parties in any execution.
-Therefore, we define a new approach to creating protocol-specific party wrappers, but with a generic construction that can be used for any protocol.
+We introduce the protocol wrapper when working with session types for the following reason.
+First, in the UC execution we need \Z to be able to spawn any number of protocol parties. 
+If instead there was a single channel through which all parties communicated with the functionality, the session type would the product of all possible sessions for each party.
+Although possible, dealing with such session types is cumbersome, and they so not allow the type to change to add new parties.
+Therefore, we optto have a protocol wrapper that sandboxes all protocol parties, communicates with them through their session type, but converts messages to/from them into functionally typed messages when communicating with \F, \A, and \Z.
+The user defines both the functional and session types for the protocol and the protocol wrapper handles converting between them.
+%The dynamic nature of parties in UC, leads to an interesting design choice for the protocol wrapper.
+%All communciation between protocol parties and \Z, \F, and \A is managed by the protocol wrapper, and the need to multiplex and de-multiplex communication between parties and other machines makes session types between them tedious and difficult to use.
+%Even for simple types, a type that is a product of all possible states of all parties becomes unweildy and cumbersone to deal with.
+%Furthermore, the need for a dynamic set of parties means statically typed session types, even the product of types for all parties, only support a fixed number of parties.
+%Therefore, we define the protocol wrapper which runs all spawned protocol parties internall in a sandbox. 
+%It communicates with the functionalty, environment, and adversary through functional message typed but internall uses session types when interacting with the parties. 
 We use the two-party commitment protocol as an example to demonstrate how the construction works and show that it is generic enough to allow code generation of a wrapper for any protocol.
 
-Recall the session type governing the committer and receiver in the commitment protocol:
-\begin{gather}
-	\mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
-	\mi{stype} \; \m{scommitted} = \ichoice{\mb{open} : 1} \\
-	\mi{stype} \; \m{receiver} = \echoice{\mb{commit} : \m{rcommitted}} \\
-	\mi{stype} \; \m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \one}
-\end{gather}
-
-The commitment protocol has multiple roles, the committer and receiver, with different session types. 
-The wrapper instantiates its internal channels to the parties with the appropriate session types and maintains lists that hold the channels for each possible session types.
-A protocol whos channel is one of the lists conveys the ``state'' of the protocol at the moment.
-For commitment the lists for the \msf{z2p} channels are the following (\inline{R1L1} translates to ``role 1 list 1 (state 1)'':
+Recall the session types for the sender and receiver, with \Fcom, introduced in Section \ref{subsec:idealcommitment}.
+%\begin{gather}
+%	\mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
+%	\mi{stype} \; \m{scommitted} = \ichoice{\mb{open} : 1} \\
+%	\mi{stype} \; \m{receiver} = \echoice{\mb{commit} : \m{rcommitted}} \\
+%	\mi{stype} \; \m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \one}
+%\end{gather}
+At the beginning there are no parties. When the \A or \Z write to a party with some pid $p$ the protocol wrapper creates $p$ if it does not exist.
+It creates and stores the session-typed channels or all of the parties in channels corresponding to their type and moves channels between them as the type evolves.
+For example for parties' channel with \Z the protocol wrapper generates the following lists:
 \begin{gather}
 	\m{R1L1}[\m{sender}] \\
 	\m{R1L2}[\m{scommitted}] \\
 	\m{R2L1}[\m{receiver}] \\
 	\m{R2L2}[\m{rcommitted}] 
 \end{gather}
-At the start of the commitment UC execution, the \msf{z2p} channel for the committer in \inline{R1L1} indicated that it has yet to begin the commitment protocol.
-Similarly if the receiver's channel was in \inline{R2L2} it is has received the commitment but not the opening.
-The protocol wrappers external facing channels to \A, \F, and \Z are still functionallity typed. 
-The \inline{ptof} channel in the ideal world would be typed \inline{#ptof: comm[p2fmsg[comp2f]]} for \Fcom.
-Where the functional types for \Fcom are as follows:
+At the beginning of the protocol, the committer's \msf{z2p} channel would be in \inline{R1L1} and the receiver's is in \inline{R2L1}.
+The channel's connection the protocol wrapper to the rest are still functionally typed. It's channel \inline{p2f} will still be typed \inline{#ptof: comm[p2fmsg[comp2f]]} where \inline{comp2f} is:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily]
 type comp2f = Commit of Bit | Open ;
 type comf2p = Committed | Open of Bit ;
@@ -131,54 +140,49 @@ type comf2p = Committed | Open of Bit ;
 
 Succinctly, the protocol wrapper functions as follows:
 \begin{itemize}
-\item When the protocol wrapper receives a message for some \msf{pid}, if the party doesn't exist the protocol wrapper creates all the party's channel parameterized by the correct session types (the role of the party is determined by the incoming message). The lists are stored in the list corresponding to their type. 
-\item The message sent through the session type is determined by the functional type, and it's contents sent through forwarded.
-Even functional messages sent out of the order specified by the session type exclude ``incorrect'' user code by failing to type check.
-After delivering the message, the channel is moved to the next list corresponding to its new type.
-Through this method we're able to use session types to meaningfully support writing UC protocols, functionalities, and environments, and allow for a dynamic number of parties.
+\item When the protocol wrapper receives a message for some \msf{pid}, if the party doesn't exist the protocol wrapper creates all the party's channel parameterized by the correct session types (the role of the party is determined by the incoming message). The channels are stored and outgoing channels are waiting to be read from.
+\item The message sent to the party with the session type is determined by the functional type. The wrapper creates a session-typed message and forwards the contents of the message to the party.
+Despite accepting functionally typed messages, the protocol wrapper uses session types in this way to allow the type checker to catch invalid and out of order environments, adversaries and functionalities. 
+For example, in the commitment protocol when the committer tries to commit a bit in \Fcom like this:
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+$\$$p2f.commit 
+$\tb{send}$ $\$$p2f b
+$\tb{pay}$ {p2fn} $\$$p2f
+\end{lstlisting}
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+$\$$p2f.SEND 
+$\tb{send}$ $\$$p2f pid 
+$\tb{send}$ $\$$p2f Commit(b)
+$\tb{pay}$ {p2fn} $\$$p2f
+\end{lstlisting}
+The party wrapper intercepts and converts it to a functionally typed message:
 \item For outgoing messages, the protocol wrapper does a similar conversion where it reads the sesion typed channel output by the party and converts its message to the appropriate functional message type.
 \end{itemize}
 
-For the commitment example, at the beginning the type of the committer's \inline{p2f} channel is given by (1). 
-When the party \inline{PID} sends a bit with
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\$$f2p.commit 
-$\tb{send}$ $\$$f2p b
-$\tb{pay}$ {p2fn} $\$$f2p 
-\end{lstlisting}
-the party wrapper sends the corresponding functional message to the functionality:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\$$z2p.SEND 
-$\tb{send}$ $\$$z2p pid 
-$\tb{send}$ $\$$z2p Commit(b)
-$\tb{pay}$ {p2fn} $\$$f2p
-\end{lstlisting}
-The protoco wrapper spawns, for each party, a new process per outgoing channel that wait to translate outgoing messages.
-
 \paragraph{Functionality Wrapper}
-The functionalities in NomosUC also accept only functional message types.
-Therefore we adopt a similar construct to the protocol wrapper for functionalities: the functionality wrapper.
-It converts functional messages to session typed messages along with storing the outward facing, session-typed channels of the functionality.
-Furtermore, the wrapper allows functionalities to be written with a separate channel to each of the protocol parties, as is the case with \Fcom presented earlier in this work. 
-Like the protocol wrapper code, the functionality wrapper searches for the channel of the sending \inline{PID} and attempts to send the message accross it.
-The full code of the functionality wrapper for the commitment ideal world is given, in full, in the appendix. 
+We adopt a similar construction for functionalities, in Nomos, with the functionality wrapper.
+The wrappers enables functionalities to also use session types but interact with the other ITIs in the execution through shared channels and functional message types. 
+It differs from the protocol wraper in that it only spawns a single instance of the functionality, and it is created by \inline{execUC} rather than dynamically like protocol parties.
 
 \subsection{Polynomial Bound}
-The UC import mechanism provides a way to define polynomial time computation and resource-bounds by ensuring that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a polynomial and $n$ the total units of import the ITM ever receives.
-In UC, it is important to reason about polynomial bounds in the security parameters $k$. Hence, the UC execution relies on an initial amount of import that is give as a polynonial in $k$. 
-In NomosUC, we take advantage of the import built into the type system to ensure ITMs are PPT in the security parameter. 
+An important constribution of this work is supporting runtime analysis in UC with a notion of ``polynomial'' time.
+The UC framework provides a way to define poylynomial time computation and resource-bounds through the import mechanism.
+It ensures that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a poynomial and $n$ is the total units of import the ITM eve receives.
+An suitable analogy for import are tokens: a machine can receive tokens, send them out, and is limited in capability by the net number of tokens it holds. 
+
+In NomosUC, we build import into the type system and allow reasoning about ITMs being polynomial both locally and in the context of other ITMS (say, \F is polynomial locally and when connected an adversary \A).
 
 \begin{definition}[PPT Term]\label{def:pptterm}
 A \textit{PPT term} is a \textit{well-typed} term $e(k, r)$ that is \textit{closed} except for security parameter $k$, random bit sequence $r$.
 \end{definition}
 
 We first-define terms that are well-typed in the traditional session-types-sense in Definition~\ref{def:pptterm}, i.e. without any resource constraints~\cite{sessiontypes}.
-Such terms are closed except for the security parameter $k$ and some uniformly random bit sequence $r$.
+Such terms are closed except for the security parameter $k$ and some uniformly random bit sequence $r$. 
 
 However, we also want to reason about terms that are well-typed when connected to another Nomos terms.
-We introduce the term \textit{well-matched} to mean a PPT term $e$ is well-typed when connected to another term $e'$.
-Simply put, the channels that $e$ and $e'$ share channels of the same type. 
-Specifically, we want to exclude processes that logically share a channel, say the channel from \inline{p} to \inline{f}, but belong to different protocols (their types message types don't match).
+We introduce the term \textit{well-matched} to mean a PPT term $e$ is well-typed when connected to another term $e'$.i
+Simply put, the channels that $e$ and $e'$ share are of the same type. 
+Specifically, we want to exclude processes that logically share a channel, say the channel from \inline{p} to \inline{f}, but send (their types message types don't match).
 This new definition becomes important when we discuss UC emulation below as we want to reason about environments that are \textit{well-matched} for a protocol $\pi$ or a specific adversary \A.
 
 \begin{definition}[Well-Matched]\label{def:wellmatched}

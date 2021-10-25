@@ -1,39 +1,44 @@
-In this section we use our emulation definition to model a simple commitment protocol in the random oracle model.
-We present a complete emulation from the canonical $\F_{\msf{com}}$ definition with a simulator for the dummy adversary.
+In this section we fully flesh out the commitment example used throughout this paper.
+We implement the ideal functionality \Fcom as well as a realizing protocol \prot{com} using the random oracle \Fro.
+In doing so, we discuss how session types influence the design of the ideal functionality, and how the import mechanism is used. 
+Finally, we present a simulatr for the dummy adversary to prove emulation.
 
-\paragraph{Random Oracles}
+\subsection{The Random Oracle}
 The random oracle model assumes the existence of an idealized hash function in the real world, denoted by \Fro.
-It accepts queries, computes their hash as a random bit string of length $k$, and stores all query/hash pairs in a table. 
-The session type of the channel with the parties for \Fro is relatively simple because it responds to hash queries and accepts message to send to the receiver.
+We augment the random oracle functionality into \Fropp the ability for parties to send messages to each other. 
+However, we alter the design of this functionality compared to \Fcom for two reasons: it interacts with a dynamic set of parties and a constraint imposed by session types.
+Usually, in p2p channel functionalities, \F activates the receiving party with the message when delivering it.
+When combined with the random oracle functionality, \Fropp, at any given point, can receive input from the receiver or be asked to deliver a message to it by the sender. 
+In a session type, the former is an \emph{external choice} and the latter is an \emph{internal choice}. 
+Session types restrict to one or the other at any time and not potentially both. 
+Therefore, for \Fropp we opt to have one session-typed channel for all parties which incorporates the \inline{pid} into the message:
 \begin{mathpar}
-\mi{stype} \; \m{hashing}[a] = \echoice{\mb{hash} : \m{int} \product \m{hashing}[a],\mb{sendmsg} : pid \arrow \m{a} \product \m{sendmsg}[a]} \\
-\mi{stype} \; \m{sendmsg}[a] = \ichoice{\mb{send}: pid \arrow \m{a} \product \m{hashing}[a]}
+\mi{stype} \; \m{party}[a] = \echoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a],\mb{send} : \m{spid} \arrow \m{rpid} \arrow \m{a} \product \m{sendmsg}[a]} \\
+\mi{stype} \; \m{hashing}[a] = \ichoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} \\
+\mi{stype} \; \m{sendmsg}[a] = \ichoice{\mb{send}: pid \arrow \m{a} \product \m{party}[a]}
 \end{mathpar}
-Above, we augmnted the hashing functionality of \Fro with the ability to send messages from one party to another.
-In the specific commitment protocol, we specifically enable message sending from the committer to the receiver, and so, without loss of generality fix the pid's of the committer and receiver to specific values.
-The corresponding functional message types are as follows:
+The session type above suggests such a consruction is even more well-suited to \Fropp because, as you can see, the session type returns to $\m{hashing}$ on ever activation of \Fropp.
+
+The corresponding functional message type between the protocl wrapper and \Fropp is given by the simple types:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
 type rop2f = SHash of Int | Send of Int ;
 type rof2p = Smsg of Int ;
 \end{lstlisting}
+Note that all messages from the protocol wrapper to the functionality are wrapped in \inline{P2FMsg} which include the \inline{pid} of the sending party.
 
 \subsection{Ideal World}
-Recall the functionality \Fcom presented earlier in this paper, and that functionalities in NomosUC are wrapped by other code which converts between functional and session typed messages. 
-It accepts messages from parties on two channels: one from the sender and one from the receiver.
+The \Fcom and presented earlier in this work accepts messages from parties on two channels: one from the sender and one from the receiver (refer to the previous section for their types).
 The channels don't directly connect to the two parties (recall the functionality wrapper and the protocol wrapper exists between the two).
-The types for sender and receiver messages to \Fcom are the following:
-\begin{gather}
-\mi{stype} \; \m{sender} = \echoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
-\mi{stype} \; \m{scommitted} = \echoice{\mb{open} : 1} \\
-\mi{stype} \; \m{receiver} = \ichoice{\mb{committed} : \m{rcommitted}} \\
-\mu{stype} \; \m{rcommitted} = \ichoice{\mb{open} : \m{bit} \arrow \one}
-\end{gather}
+%The types for sender and receiver messages to \Fcom are the following:
+%\begin{gather}
+%\mi{stype} \; \m{sender} = \echoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
+%\mi{stype} \; \m{scommitted} = \echoice{\mb{open} : 1} \\
+%\mi{stype} \; \m{receiver} = \ichoice{\mb{committed} : \m{rcommitted}} \\
+%\mu{stype} \; \m{rcommitted} = \ichoice{\mb{open} : \m{bit} \arrow \one}
+%\end{gather}
 
-We first describe at a high-level, the conversion happening within the functionality wrapper with the \inline{commit} message sent by the sender.
-On initialization the functionality wrapper creates the sesison typed channels for the sender and receiver, and initializes the functionality.
-Like the protocol wrapper, it creates lists for all the possible types specified by the session types for the external channels of \F. 
-In the case of commitment, it creates four lists: one for each of the types (15)-(18) above.
-For example, when it receives the \inline{commit} message, the functionality wrapper executes the following:
+We first describe at a high-level, the conversion happening within the functionality wrapper for \Fcom with the \inline{commit} message sent by the sender.
+When the wrapper receives the \inline{commit} message, the functionality wrapper executes the following:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
 $\tg{(* l1 : list[pid \textasciicircum sender] *)}$
 case $\$$p2f (
