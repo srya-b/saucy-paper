@@ -346,6 +346,14 @@ To this end, we introduce a novel token context $\Tokens$
 in the process typing judgment to denote the real and virtual tokens.
 This context contains the information on the total and current tokens
 of each type.
+Before we explain the token context we first motivate the need for virtual tokens
+It is a common technique in UC, especially in simulators, to internally run, or simulate, 
+the code of other ITIs. In NomosUC, we wish to enable the same sandbox running of processes,
+but its channels may have import requirements. It doesn't make sense to
+send real import to such a process, because, intuitively the internal process should use the
+import and, therefore, potential available to the ``host'' process~\footnote{As far as resource-contraints go, simulating a process should be no different from natively executing its code.}. Therefore, in 
+order to satisfy the types of internally simulated processes we introduce a virtual 
+tokens construction. 
 By default, every process contains a unique real token type $K_0$
 and corresponding number of total and current tokens $n$ and $n'$ resp.\
 denoted by $K_0 \hookrightarrow (n, n')$.
@@ -355,7 +363,7 @@ Virtual tokens, on the other hand, can be created (under certain conditions,
 see below) by a process.
 However, all tokens follow a \emph{token hierarchy}: $K_0 \to K_1 \to K_2 \to \ldots K_m$
 such that we can only use tokens of type $K_i$ to withdraw tokens of type
-$K_{i+1}$.
+$K_{i+1}$~\footnote{ITIs in UC can have arbitrary simulation depth, i.e. a process simulates another process which simulates another process. Despite this, we can statically define the token heirarchy because it is statically known the maximum simulation depth of any process in the UC execution.}.
 In addition, we use a global function $\GlobalF$ as the connection
 rate between two successive token types.
 
