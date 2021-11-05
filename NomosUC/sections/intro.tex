@@ -1,22 +1,42 @@
 We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular layered constructions.
-In cryptography, the leading framework for managing such compositions is is Universal Composability (UC)~\cite{uc}.
+In cryptography, the leading framework for managing such compositions is Universal Composability (UC)~\cite{uc}.
 The central idea is the Ideal Functionality: the security specification of a protocol is given by a concrete instance of a program that, if run by a trusted central party, would exhibit all the desired behaviors of the protocol.
 This leads to a modular framework, where protocols proven secure in UC are gauranteed to be secure when composed with arbitrary other protocols running concurrently.
 Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others. However, these have several shortcomings, which we address through the following questions:
 
 \begin{itemize}
-\item RQ1: Session types are known to be useful for describing secure protocols, but what role do session types provide in a UC specification, where parties interact with the ideal functionality rather than with each other? The communication patterns between the real world and ideal world are different, yet UC security is about establishing a correspondence between them, so it is tempting to use session types to help.
+\item RQ1: Cryptographic applications often involve several different parties communicating
+with each other in a pre-defined protocol.
+However, existing tools often do not provide a streamlined approach of expressing and enforcing
+such protocols.
+As cryptographic protocols become more and more complex, it is likely that the implementation
+of such applications deviates from its intended behavior.
+In such scenarios, can the programming language provide some feedback to its user that such
+a deviation has occurred?
 
-\item RQ2: Runtime analysis plays a central role in UC, since we are only concerned with polynomial time computationally-bounded attackers. However the order of quantifiers is subtle, since the simulator, environment, and adversary, all are ``polynomial time'' when in the context of each other. Existing formalizations of UC have not addressed this.
-Can resource aware session types provide a means to add this into our language semantics framework?
+\item RQ2: Execution cost analysis plays a central role in UC, since we are only concerned with
+attackers possessing polynomial-time computational power.
+However, existing tools provide almost no support in enforcing such restrictions on adversaries.
+In addition, UC configurations contain several different components: simulator, environment,
+adversary, ideal functionality, and honest and corrupt parties.
+Thus, it is important to ensure that polynomial-time bounds are enforced on the correct
+components, which again can become challenging as the complexity of the cryptographic protocol
+increases.
+Can we introduce resource-awareness into programming languages such that these restrictions
+are automatically enforced?
 \end{itemize}
 
-We answer these questions by designing a new language, NomosUC. It builds most closely on Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc}, a process calculus for UC. ILC captures the underlying semantics of UC, interactive turing machines, different than pi calculus and meant for computational analysis. We adopt the linear read channels and write token from ILC in tact.
-Both the resource aware and session-typed features of Nomos play a critical role in our formulation of UC.
-Specifically, the Session types are applicable to both the ideal world and the real world protocol implementation.
-In the ideal world, they provide benefits such as \anote{add example from Commitment running example} and in the real world, they \anote{example from commitment protocol}.
-%We show how to use the The resource-aware component plays a central role in defining “polynomial runtime,” a subtle notion in UC that existing formulations like ILC, EasyUC, and IPDL leave entirely unaddressed
-The potential mechansim from Nomos turns out to be a good fit for implementing the \textit{import} notion of polynomial runtime as defined for UC.
+We answer these questions by designing a new language, NomosUC that combines ideas from
+Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc},
+a process calculus for UC.
+Session types in Nomos allow us to express communication protocols in both the ideal and
+real world implementations of cryptographic applications.
+For instance, for the two-party bit commitment protocol~\cite{}, session types guarantee
+\anote{ideal world guarantee} in the ideal world, and \anote{real world guarantee} in the
+real world.
+The Nomos type checker then statically enforces that these protocols are adhered to at runtime.
+Failure to typecheck provides precise feedback to the programmer on exactly where the
+implementation departs from its intended protocol.
 
    The challenge of “polynomial runtime” in UC is that individual processes must be judged as polynomial, but when eveluated in context with other concurrently running process it is difficult to assign blame.
        The current best way to define polynomial runtime, found in the 2019 and later version of UC, is based a concept of ``import tokens.''
