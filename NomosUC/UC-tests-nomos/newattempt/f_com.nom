@@ -179,6 +179,7 @@ proc f_wrapper_lf2pcomm[K][K1][f2p][p2f]:
 				$f2p.SEND ;
 				send $f2p F2P(pid, msg) ;
 				(* TODO send real tokens now *)
+				$ch <- f_wrapper_f2p[K][K1][f2p][p2f] <- k rng sid #pw_to_f #f_to_pw #a_to_f #f_to_a $lp2fcomm $lf2pcomm i+1
 		| no =>
 				$ch <- f_wrapper_p2f[K][K1][f2p][p2f] <- k rng sid #pw_to_f #f_to_pw #a_to_f #f_to_a $lp2fcomm $lf2pcomm
 		)
