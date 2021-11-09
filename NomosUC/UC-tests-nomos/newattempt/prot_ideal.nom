@@ -1,0 +1,17 @@
+stype sender = +{ commit: Bit x scommitted }
+stype scommitted = +{ open: sopened }
+stype sopened = 1 
+
+stype receiver = &{ commit: rcommitted }
+stype rcommitted = &{ open: Bit x ropened }
+stype ropened = 1 
+
+type comp2f = Commit of Bit | Open ;
+type comf2p = Commit | Open of Bit ;
+
+proc prot_ideal[K][z2p] :
+	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
+	($z2p: z2p) |- ($d: z2p) =
+{
+	$d <- $z2p ;
+}

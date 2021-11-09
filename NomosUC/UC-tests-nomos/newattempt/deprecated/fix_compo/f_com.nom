@@ -1,0 +1,229 @@
+stype sender = +{ commit: Bit x scommitted }
+stype scommitted = +{ open: sopened }
+stype sopened = 1 
+
+stype receiver = &{ commit: rcommitted }
+stype rcommitted = &{ open: Bit x ropened }
+stype ropened = 1 
+
+proc F_com[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	($S: sender), ($R: receiver), ($A: 1)  |- ($ch: 1) =
+{
+	case $S (
+		commit => b = recv $S ;
+							$R.commit ;
+							case $S (
+								open =>	$R.open ;
+												send $R b ;
+							)
+	)
+}
+
+type comp2f = Commit of Bit | Open ;
+type comf2p = Commit | Open of Bit ;
+
+(* We have that for functionalities 
+	that accept a fixed number of parties
+	there are per party processes created
+	mapping to specific PIDs. That part is
+	generically generated code. Then the
+	mapping between functional and session
+	type is determined by the user. *)
+
+proc sender1[K] :
+	(pid: Pid), (#pw_to_f: comm[p2fmsg[comp2f]]), (#f_to_pw: comm[f2pmsg[comf2p]])  |- ($S: sender) =
+{	
+	(* generic *)
+	$p2f <- acquire #pw_to_f ;
+	$p2f.PEEK
+	send $p2f pid
+	case $p2f (
+		yes => 
+			P2F(p, msg) = recv $p2f ;
+			#pw_to_f <- release $p2f ;
+			case m (
+	(* generic *)
+				(* custom *)
+				Commit(b) =>
+					$S.commit ;
+					send $S b ;
+				(* custom *)
+					$S <- sender2[K] <- #pw_to_f #t_fo_pw 
+			)
+	| no =>
+			$S <- sender1[K] <- #pw_to_f #f_to_pw 
+	)
+}
+
+proc sender2[K] : 
+	(pid: Pid), (#pw_to_f: comm[p2fmsg[commp2f]]), (#f_to_pw: comm[f2pmsg[commf2p]])  |- ($S: scommited) =
+{
+	(* generic *)
+	$p2f <- acquire #pw_to_f ;
+	$p2f.PEEK
+	send $p2f pid ;
+	case $p2f (
+		yes => 
+			P2F(p, msg) = recv $p2f ;
+			#pw_to_f <- release $p2f ;
+			case m (
+	(* generic *)
+				(* custom *)
+				Open =>
+					$S.open ;
+				(* custom *)
+	| no =>
+			$S <- sender2[K] <- #pw_to_f #f_to_pw ;
+				
+}
+
+proc receiver1[K] :
+	(pid: Pid), (#pw_to_f: comm[p2fmsg[commp2f]]), (#f_to_pw: comm[f2pmsg[commf2p]])  |- ($R: receiver) =
+{
+	case $R (
+		commit =>	
+			$f2p <- acquire #f_to_pw ;
+			$f2p.SEND ;
+			send $f2p F2P(pid, Commit) ;
+			#f_to_pw <- release $f2p ;	
+			$R <- receiver2[K] <- #pw_to_f #f_to_pw 
+	)
+}
+
+proc receiver2[K] :
+	(#pw_to_f: comm[p2fmsg[commp2f]]), (#f_to_pw: comm[f2pmsg[commf2p]])  |- ($R: rcommitted) =
+{
+	case $R (
+		open => 
+			b = recv $R ;
+			$f2p <- acquire #f_to_pw ;
+			$f2p.SEND ;
+			send $f2p F2P(pid, Open(b)) ;
+			#f_to_pw <- release $f2p ;
+	)
+} 
+
+proc adv1[K]:
+	(#a_to_f: comm[a2fmsg[coma2f]]), (#f_to_a: comm[f2amsg[comf2a]]) |- ($A: 1) =
+{
+}
+
+proc f_wrapper_init[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[comp2f]]), (#f_to_pw: comm[f2pmsg[comf2p]]),
+	(#a_to_f: comm[a2f[coma2f]]), (#f_to_a: comm[f2amsg[comf2a]])  |- ($ch: 1) =
+{
+	$S <- sender1[K] <- #pw_to_f #f_to_pw ;
+	$R <- receiver1[K] <- #pw_to_f #f_to_pw ;
+	$A <- adv1[K] <- #a_to_f #f_to_a;
+	$fcom <- F_com[K] <- k rng sid $S $R $A ;
+}
+
+(* Some comments on the above approach:
+	In the above approach, fwrapper just creates
+	the processes necessary to handle communication
+	between F_com and the parties in the wrappper.
+	The two processes act separately, are real
+	processes and read directly from the communicator.
+	One issue here is that, S and R are splitting 
+	the import they receive with F_com (and 
+	there would require 1 extra unit of import in
+	the regular case. In the case of commitment,
+	this isn't an issue because we know that F_com
+	is constant amount of computation so S and R
+	don't need their own import tokens. For more 
+	complicated functionalities, however, the 
+	processes that offer these channels inside
+	F_wrapper would need import of their own.
+	If instead, they are all virtualized, then
+	we are fine. This is what I attempt to do
+	below. Note: only the code for F_wrapper
+	Also if the processes are virtualized then
+	they cannot communicate with the outside 
+	communicator directly because of differing
+	virtual token types.
+*)
+
+proc f_wrapper_init[K][K1] : 
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[comp2f]]), (#f_to_pw: comm[f2pmsg[comf2p]]),
+	(#a_to_f: comm[a2f[coma2f]]), (#f_to_a: comm[f2amsg[comf2a]])  |- ($ch: 1) =
+{
+
+	#p2f <- communicator_init[K1] <- ;
+	#f2p <- communicator_init[K1] <- ;
+	#a2f <- communicator_init[K1] <- ;
+	#f2a <- communicator_init[K1] <- ;
+	#a2f <- communicator_init[K1] <- ;
+
+	$S <- sender1[K1] <- #p2f #f2p ;
+	$R <- receiver1[K1] <- #p2f #f2p ;
+	$A <- adv1[K1] <- #a2f #f2a ;
+
+	(*$S <- sender1[K1] <- #pw_to_f #f_to_pw ;
+	$R <- receiver1[K1] <- #pw_to_f #f_to_pw ;
+	$A <- adv1[K1] <- #a_to_f #f_to_a;*)
+	$fcom <- F_com[K1] <- k rng sid $S $R $A ;
+
+	$ch <- f_wrapper1[K][K1] <- .... ;
+}
+
+(* incoming p2f messages on the real communicator *)
+proc f_wrapper1[K][K1]:
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[comp2f]]), (#f_to_pw: comm[f2pmsg[comf2p]]),
+	(#a_to_f: comm[a2f[coma2f]]), (#f_to_a: comm[f2amsg[comf2a]]),
+	(#p2f: comm[p2fmsg[comp2f]][K1]), (#f2p: comm[f2pmsg[comf2p]][K1]),
+	(#a2f: comm[a2fmsg[coma2f]][K1]), (#f2a: comm[f2amsg[comf2a]][K1])  |- ($ch: 1) =
+{
+	$ptof <- acquire #pw_to_f ;	
+	$ptof.RECV ;	
+	case $ptof (
+		yes => 
+			m = recv $ptof ;
+			#pw_to_f <- release $ptof ;
+			$p2f <- acquire #p2f ;
+			withdrawtoken K1 p2fn+1 ;
+			send $p2f P2F(pid, msg) ;
+			pay $p2f {p2fn+1 : K1} ;
+			#p2f <- release $p2f ;
+			$ch <- f_wrapper2[K][K1] <- ... ;
+	| no =>
+			$ch <- f_wrapper2[K][K1] <- ... ;
+	)
+}
+	
+(* Outgoing messages on the virtual communicator *)
+proc f_wrapper2[K][K1]:
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[comp2f]]), (#f_to_pw: comm[f2pmsg[comf2p]]),
+	(#a_to_f: comm[a2f[coma2f]]), (#f_to_a: comm[f2amsg[comf2a]]),
+	(#p2f: comm[p2fmsg[comp2f]][K1]), (#f2p: comm[f2pmsg[comf2p]][K1]),
+	(#a2f: comm[a2fmsg[coma2f]][K1]), (#f2a: comm[f2amsg[comf2a]][K1])  |- ($ch: 1) =
+{
+	$f2p <- acquire #f2p ;
+	$f2p.RECV ;
+	case $f2p (
+		yes =>
+			msg = recv $f2p ;
+			get {f2pn : K1} $f2p ;
+			#f2p <- release $f2p ;
+			$ftop <- acquire #f_to_pw ;
+			send $ftop msg ;
+			pay $ftop {f2pn+1: K} ;
+			#f_to_pw <- release $f2p ;
+			$ch <- f_wrapper3[K][K1] <- ... ;
+	| no =>
+			$ch <- f_wrapper3[K][K1] <- ... ;
+}
+
+proc f_wrapper3[K][K1]:
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[comp2f]]), (#f_to_pw: comm[f2pmsg[comf2p]]),
+	(#a_to_f: comm[a2f[coma2f]]), (#f_to_a: comm[f2amsg[comf2a]]),
+	(#p2f: comm[p2fmsg[comp2f]][K1]), (#f2p: comm[f2pmsg[comf2p]][K1]),
+	(#a2f: comm[a2fmsg[coma2f]][K1]), (#f2a: comm[f2amsg[comf2a]][K1])  |- ($ch: 1) =
+{
+	(* basically above but with adversary messages. *)
+}
