@@ -401,11 +401,11 @@ proc contract communicator[a] : (sid : int), (rid : int), ($l : list[a]) |- (#dc
             #dc <- detach $ldc ;
             $lnew <- pappend[a] <- (to $msg) $l ;
             #dc <- communicator[a] <- sid rid $lnew
-  | RECV => case $l (
+  	| RECV => case $l (
               cons => (to, $m) <- recv $l ;
                       $ldc.yes ;
                       print ("%d-%d comm acquired by %d: message delivered\n", sid, rid, rid);
-				      send $lds to ;
+				      				send $lds to ;
                       send $ldc $m ;
                       #dc <- detach $ldc ;
                       #dc <- communicator[a] <- sid rid $l

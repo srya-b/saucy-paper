@@ -12,11 +12,11 @@ When combined with the random oracle functionality, \Fropp, at any given point, 
 In a session type, the former is an \emph{external choice} and the latter is an \emph{internal choice}. 
 Session types restrict to one or the other at any time and not potentially both. 
 Therefore, for \Fropp we opt to have one session-typed channel for all parties which incorporates the \inline{pid} into the message:
-\begin{mathpar}
-\mi{stype} \; \m{party}[a] = \echoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a],\mb{send} : \m{spid} \arrow \m{rpid} \arrow \m{a} \product \m{sendmsg}[a]} \\
-\mi{stype} \; \m{hashing}[a] = \ichoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} \\
-\mi{stype} \; \m{sendmsg}[a] = \ichoice{\mb{send}: pid \arrow \m{a} \product \m{party}[a]}
-\end{mathpar}
+%\begin{mathpar}
+%\mi{stype} \; \m{party}[a] = \echoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a],\mb{send} : \m{spid} \arrow \m{rpid} \arrow \m{a} \product \m{sendmsg}[a]} \\
+%\mi{stype} \; \m{hashing}[a] = \ichoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} \\
+%\mi{stype} \; \m{sendmsg}[a] = \ichoice{\mb{send}: pid \arrow \m{a} \product \m{party}[a]}
+%\end{mathpar}
 The session type above suggests such a consruction is even more well-suited to \Fropp because, as you can see, the session type returns to $\m{hashing}$ on ever activation of \Fropp.
 
 The corresponding functional message type between the protocl wrapper and \Fropp is given by the simple types:

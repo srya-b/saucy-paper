@@ -788,10 +788,10 @@ In either case, the communicator then detaches from the client matching the $\do
 operator.
 Internally, the communicator stores these messages in a first-in-first-out order.
 
-It is important to note that our communicators need at least 1 token of import 
-to use themselves to handle a potentially polynomial number of activations. 
-Therefore, it requires $n+1$ units of import from the sender and sends the intended
-$n$ tokens to the receiver when requested.
+%It is important to note that our communicators need at least 1 token of import 
+%to use themselves to handle a potentially polynomial number of activations. 
+%Therefore, it requires $n+1$ units of import from the sender and sends the intended
+%$n$ tokens to the receiver when requested.
 
 The communicator is also the perfect opportunity to implement an unreliable
 message buffer that can drop or reorder messages.
