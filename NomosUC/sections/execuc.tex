@@ -53,13 +53,14 @@ where \inline{a} is the protocol-specific message type.
 The environment is the first machine that \inline{execUC} spawns and receives from it the session id and list of corrupted parties for this execution.
 Its type specifies the interaction between \inline{execUC} and \Z:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
-$\tb{stype}$ EtoZ[a] = +{init: a ^ list[pid] -> exec} 
-$\tb{stype}$ exec = &{start : output_bit} ;
-$\tb{stype}$ output_bit = +{bit: Bit -> 1} ;
+$\Type$ EtoZ[a] = +{init: a ^ list[pid] -> exec} 
+$\Type$ exec = &{start : output_bit} ;
+$\Type$ output_bit = +{bit: Bit -> 1} ;
 
 $\tb{proc}$ PS.env[K][z2p,...]{p2zn,...} : 
   (k: $\tgr{int}$), (r: [Bit]), 
-  (#ztop: comm[z2p]), (#ptoz: comm[p2z])...
+  (#ztop: comm[z2pmsg[z2p]]{z2pn}),
+  (#ptoz: comm[p2zmsg[p2z]]{p2zn})...
     |- ($\$$z : EtoZ)
 \end{lstlisting}
 The environment also accepts communicators, as parameters, for communication with the protocol parties and the adversaries (in both directions), and it must offer a channel of type \inline{EtoZ}.
@@ -123,9 +124,9 @@ In the case of the ideal world with \Fcom, the both of the sender's ($\pi_1$) ch
 
 The processes \inline{Z2p} and \inline{f2p} are generated for each party based on their session-type, and they convert between them and functional messages for incoming/outgoing communcation with \Z, \F, or \A. 
 For example in the commitment example, where the functional message typed is given by: 
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily]
-type comp2f = Commit of Bit | Open ;
-type comf2p = Committed | Open of Bit ;
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+$\yo{type}$ comp2f = Commit of Bit | Open ;
+$\yo{type}$ comf2p = Committed | Open of Bit ;
 \end{lstlisting}
 the \inline{z2p} process does something like this: 
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
@@ -139,8 +140,9 @@ For protocols were a dynamic set of parties can exist, the protocol wrapper simp
 
 \begin{figure}
 \centering
-\includegraphics[scale=0.5]{figures/blankpartywrapper.pdf}
-\caption{The internals of the protocol wrapper with two parties. The processes \texttt{z2p} offer linear channels to their respective protocol parties that are typed according to that party's protocol, and they receive messages from virtual communicators that hold messages specific to one \texttt{pid}. The protocol code for $\pi_1$ and $\pi_2$ are user-specified and offer a channel to the \texttt{p2f} process according to their protocol with the functionality. The \texttt{p2f}s convert outgoing messages to, and incoming messages from, functional message types to be sent to/from the functionality. The protocol wrapper gives messages to the virtual communicators and receives messages from \texttt{p2f}s.}
+\includegraphics[scale=0.5]{figures/blankpartywrapper2.pdf}
+\caption{The internals of the protocol wrapper with two parties. The arrows indicates the client/provider relationship between each pair: provider $\rightarrow$ client. The wrapper creates \texttt{z2p} to offer a channel and convert from gunctional to message type---the \texttt{p2f} do the same. A communicator is used because \texttt{z2p} cannot send message to real one with differing token type. The types of the processes offered are (color): \tgr{comm[z2pmsg[comp2f]]}, \tb{sender}, \tr{party[Int]}, \tp{comm[p2fmsg[rop2f]]}. }
+%The processes \texttt{z2p} offer linear channels to their respective protocol parties that are typed according to that party's protocol, and they receive messages from virtual communicators that hold messages specific to one \texttt{pid}. The protocol code for $\pi_1$ and $\pi_2$ are user-specified and offer a channel to the \texttt{p2f} process according to their protocol with the functionality. The \texttt{p2f}s convert outgoing messages to, and incoming messages from, functional message types to be sent to/from the functionality. The protocol wrapper gives messages to the virtual communicators and receives messages from \texttt{p2f}s.}
 \label{fig:blankpartywrapper}
 \vspace{-1.5em}
 \end{figure}
@@ -200,8 +202,8 @@ The functionality wrapper, similar to the protocol wrapper, creates communicator
 It also supports dynamic functionalities, but only those whose type is of a specific form: for every interaction with a party the session type returns to it's original value.
 Consider the sessio type for \Fro below.
 \begin{mathpar}
-\mi{stype} \; \m{party}[a] = \echoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a]} \\
-\mi{stype} \; \m{hashing}[a] = \ichoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} 
+\m{party}[a] = \textcolor{red}{\getpot^1} \ichoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a]} \\
+\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \product \textcolor{red}{\paypot^0} \m{party}[a]} 
 \end{mathpar}
 When a party invokes \Fro, the type it expects is \inline{party[a]}, and when it has received its hash the type is again back at \inline{party[a]}. 
 The wrapper handles such dynamic functionalities by channeling all party communication through one linear channel in the wrapper. 
@@ -441,7 +443,7 @@ If $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\fora
 The constructed simulator $\Sim_\A$ internally simulates \DS and \A through a virtual token type $K'$. 
 We describe the simulation pattern below to simulate messages to \DS and \A.
 
-On input from \Z on channel \msf{z2p}, \Sim:
+On \inline{Z2A2P} input from \Z on channel \msf{z2a}, \Sim fowards the message to the internal \A with the same type but virtual tokens instead of real ones:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape, label={lst:sim}]
 msg = $\nrecv$ $\$$z2a ;
 $\nget$ $\$$z2a {z2an : K} ;
@@ -450,7 +452,7 @@ $\nsend$ $\$$a_z2a msg ;
 $\npay$ {z2an : K1} $\$$a_z2a ; 
 \end{lstlisting}
 
-Similarly, on output from \A to a protocol party on channel \msf{a2p}
+Similarly, on \inline{A2P(pid,msg)} output from \A to a protocol party on channel \msf{a2p}, \Sim sends the message to \DS as input from \Z (type: \inline{Z2A2P(pid, msg)}:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single,  mathescape]
 pid = $\tb{recv}$ $\$$a_a2p ;
 msg = $\tb{recv}$ $\$$a_a2p ;
@@ -487,8 +489,8 @@ We illustrate how protocol replacement works in NomosUC in Figure~\ref{fig:repla
 
 \begin{figure}
 \centering
-\includegraphics[scale=0.5]{figures/replacement.pdf}
-\caption{When we compose protocols we replace the \emph{p2f} process of $\rho$ with the corresponding instance of $\pi$ and its \emph{p2f} processes. By emulation and the construction of the channels in the functionality and protocol wrappers, we are guaranteed that the type, along with the client/provider relationship, between $\rho$ and $\pi$ will type-check.}
+\includegraphics[scale=0.5]{figures/replacement2.pdf}
+\caption{When we compose protocols we replace the \emph{p2f} process of $\rho$ with the corresponding instance of $\pi$ and its \emph{p2f} processes. By the emulation theorem, the channel offered by $\rho$ and accepted by $\pi$ have the same type.}
 \label{fig:replacement}
 \end{figure}
 
@@ -538,40 +540,26 @@ If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realiz
 \end{theorem}
 
 \begin{proof}
-The pre-condition ensures the existence of a \textit{well-resource-typed} simulator $\Sim_\pi$ for $\F_1 \xrightarrow{\pi} \F_2$, and, it is obvious that the composed protocol is also well-resource-typed.
-We construct a simulator \Sim' to show
-\[
-    \msf{execUC}\ (\rho \circ \pi)\ \F_1 \Z \A \approx \msf{execUC}\ \rho\ \F_2 \Z \Sim
-\]
-and then conclude that there exists a simulator \Sim'' such that
+The pre-condition ensures the existence of \textit{well-resource-typed} simulators $\Sim_\rho$ for $\F_2 \xrightarrow{\rho} \F_3$ and $\Sim_\pi$ for $\F_1 \xrightarrow{\pi} \F_2$, and, it is obvious that the composed protocol is also well-resource-typed.
+We construct a simulator \Sim' for the dummy adversary to show
 \[
 	\msf{execUC}\ (\rho \circ \pi)\ \F_1\ \Z\ \A \approx \msf{execUC}\ \idealP\ \F_3\ \Z\ \Sim''
 \]	
 
-The simulator $\Sim'$ relies only on simulating $\Sim_\pi$ for:
-\[
-	\msf{execUC}\ (\rho \circ \pi)\ \F_1\ \Z\ \A \approx \msf{execUC}\ \idealP\ \F_3\ \Z\ \Sim
-\]	
-It is a trivial construction where inputs intended for parties of $\rho$ are forwarded to them, and the inputs for parties of $\pi$ or the ideal functionalirt $\F_1$ are forwarded to $\Sim_\pi$.
-Similarly, outputs from these parties are passed to $\Sim_\pi$. 
-By the $\F_1 \xrightarrow{\pi} \F_2$ assumption it is clear that \Sim' satisfied
-\[
-    \msf{execUC} (\rho \circ \pi) \F_1 \Z \DA \approx \msf{execUC}\ \rho \F_2\ \Z \Sim'
-\]
-
-Given the above emulation proof, the fact that $\F_2 \xrightarrow{\rho} \F_3$, and the transitivity of emulation, it is clear that a simulator exists such that $\F_1 \xrightarrow{\rho \circ \pi} \F_3$.
-
-%The constructed simulator is trivial as we pass inputs intended for parties of the protocol $\pi$ to $\SIM{\pi}$ and forward other inputs for parties of $\rho$ directly to them.
-%Similary, $\SIM{\pi}$ handles outputs from $\F$
-%
-%We don't need to perform simulation on any inputs by \Z to the main parties of $\rho$ (it's the same protocol in both worlds).
-%The constructed simulator \Sim simulates \SIM{\pi} internally and passes messages intended for the parties of $\pi$, or for $\F_2$, to \SIM{\pi} and simulates its computation.
-%Similariy, \Sim sends any message from $\F_3$ to \SIM{\pi} for simulation.  
-%Input to any party of the main protocol $\rho$ from \Z, or outout from them to \Sim, are forwarded without any modification or simulation.
-%The constructed simulator performs constant overhead in routing messages to the simulated \SIM{\pi} and forwrading messages to/from parties of $\rho$/\Z. 
-%Given that \SIM{\pi} is \textit{well-resource-typed}, with bounding polynomial $T_{\SIM{\pi}}$, it suffices to show that an additional linear term is sufficient to create a bounding polynomial for \Sim.
-
-It is clear that \Sim' is \emph{well-resource-typed} as it performs constant overhead on simulating a well-resource-typd $\Sim_\pi$.
+The simulator $\Sim'$ relies only simulating \SIM{\pi} and \SIM{\rho}.
+Note that \SIM{\pi} can accept messages for $\pi$ or $\F_1$, simulate them, and generate input for $\F_2$. 
+Similarly, \SIM{\rho} can take inputs for $\rho$ or $\F_2$, simulate them, and generate input for $\F_3$.
+Therefore, we connect the two simulators in the natural way:
+\begin{itemize}
+\item Inputs from \Z of \inline{Z2A2P(msg)} are passed to \SIM{\rho}, and inputs of \inline{Z2A2F(msg)} are passed to \SIM{\pi}.  
+\item \inline{P2A2Z(pid, msg)} outputs from \SIM{\rho} are forwarded to \Z unaltered.
+\item \inline{A2F(msg)} and \inline{A2P(pid, msg)} messages from \SIM{\pi} for $\F_2$ are sent to \SIM{\rho} as \inline{Z2A2F(msg)} and \inline{Z2A2P(pid, msg)}, respectively. 
+\item In the reverse direction, \inline{F2A2Z(msg)} messages from \SIM{\rho} are sent to \SIM{\pi} as \inline{F2A(msg)}, and, finally, \inline{F2A2Z(msg)} output generated by \SIM{\pi} is forwarded to \Z.
+\item \inline{A2P(pid,msg)}, \inline{A2F(msg)} messages from \SIM{\rho}, and \inline{P2A(pid,msg)} and \inline{F2A(msg)} from $\F_3$, are forwarded unaltered. 
+\end{itemize}
+It is clear that \Sim' is able to emulate inputs from \Z to both parties of $\rho$ and the ideal functionalty $\F_1$.
+\Sim' performs constant over head in simulating two \emph{well-resource-typed}, and therefore it is clear that \Sim' is \emph{well-resource-typed}.
+When combined with the \emph{dummy lemma}, a well-resource-typed simulator exists for composition for any adverasry \A. 
 The dummy lemma presented above ensures that a simulator for any \A can be constructed that is well-resource-typed for all wel-resource-typed \A.
 \end{proof}
 
@@ -590,36 +578,41 @@ In line (13) above, $\rho$ is moved into the execution environment with an uncha
 \subsection{Multisession}
 The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
 The ITM simulates multiple instances of the protocol/functionality intnerally and multiplexes input/output to/from them in same way as the party wrapper for protocol parties.
-The channel from the protocol wrapper to the multisession operator can be typed as:
-\begin{gather}
-\mi{stype} \; \m{{P2MS}[a]\{n\}} = \echoice{\mb{push}: pid \textasciicircum ssid \textasciicircum a \arrow |\{n\}> \m{P2MS[a]\{n\}}}
-\end{gather}
-The operator accepts messages of the form $(\msf{ssid}, msg)$ from a particular \msf{pid}, where \msf{ssid} is a sub-session identifier.
-If an instance of the functionality with $\msf{sid} := \msf{ssid}$ then $!\F$ creates one and forwards the message to it.
-Additionally, $!\F$ listens for outgoing messages from each of the instances and forwards them to the outside execution.
-The operator differs from the party wrapper in one crucial way: it only works with functional messages types and does not wrap around any session types like any other standalone functionality in Nomos UC.
-udT
-The multisession behaves like the protocol wrapper in that we rely on code generation to create the operator for a particular functionality. 
-The reason behind this is that the operator simulates many instances of a functionality and must use virtual tokens to communicate with them. 
-For the commitment example we've used throughout this paper, the multisession needs only one virtual token type alongside the real token type.
-The commitment functionality doesn't internally simulate any other machines and therefore does not need any virtual token type itself. 
+In keeping with our previous constructions, the multisession functionality runs a given protocol in the same was as the protocol wrapper, or a functionality as the functionality wrapper does, and spawns multiple instances of them on-demand.
+
+In keeping with our previous constructions, the multisession also has a session type given by
+\begin{mathpar}
+\mi{stype} \; \m{{P2MS}[a][b]\{n,m\}} = \textcolor{red}{\getpot^n} \ichoice{\mb{Inp}: ssid \product a \arrow \m{MS2P[a][b]\{n,m\}}} \\
+\mi{stype} \; \m{{MS2P}[a][b]\{n,m\}} = \echoice{\mb{Ok}: \textcolor{red}{\paypot^0} \; \m{P2MS[a][b]\{n,m\}}, \mb{Out}: ssid \product b \arrow \textcolor{red}{\paypot^m} \; \m{P2MS[a][b]\{n,m\}}}  
+\end{mathpar}
+and the functional types that are send to the wrapper surrounding it are given by
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+$\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
+$\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
+\end{lstlisting}
+It is important to note that we require a session type here instead of allowing !\F act as the functionality wrapper because, when composed it must communicate directly communicate, over a session-typed channel, to another protocol.
+Furthermore, the construction of !\F is the same as in the \Fro example: one session typed channel for all parties.
+In Figure~\ref{fig:multisession} illustrated the functionality wrapper (right) and the multisession extension (left) for \Fcom. 
+\begin{figure}
+\centering
+\includegraphics[scale=0.5]{figures/multisession.pdf}
+\caption{The multisession extension of \Fcom (right) with only two instances, creates the same processes $S$ and $R$ (offering the session typed channel to \Fcom) for every created instance. A communicator per session buffers messages for the $S$ and $R$ processes to consume and forward along their session-typed channel to \Fcom.}
+\label{fig:multisession}
+\end{figure}
+
+As a generic construction provided by NomosUC, the multisession operator requires some code generation but only to accept an arbitrary number of virtual token types if the underlying \F simulators other processes. 
+Furthermore, similar to the functionality wrapper, the multisession operator constructs the processes around \F in the same way and spawns them on-demand.
 The process definition for $!\F_\msf{com}$ is shown in Figure \ref{lst:bangf} accepting two token types: the real token type $K$ and the virtual token type $K_1$ for instances of $\F_\msf{com}$.
 
-The communicators between \bangf and the other ITMs all use the real token type.
-Only the internal channels that it creates use virtual token types.
-The communication pattern between the operator and the simulated functionalities works in the same was as Listing \ref{lst:sim}.
-
-\begin{figure*}
+\begin{figure}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-type sid[a] = SID of String ^ a ;
-
-proc bangF_1[K, K1][$p2f$][$f2p$][$a2f$][$f2a$]{$p2fn$}{$f2pn$}{$a2fn$} : 
-    ($\$$pw_to_f: P2MS[K][p2f]), ($\$$f_to_pw: MS2P[K][f2p]), ($\$$f_to_a: MS2A[K][f2a]), ($\$$a_to_f: A2MS[K][a2f]),
-	($\$\l1: list[sender] ), ($\$$l2: list[scommitted]), ($\$$l3: list[receiver]), ($\$$l4: list[rcommitted]) |- ($\$$ms: 1)
+$\tb{proc}$ bangF[K,K1][p2f,...] :
+  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
+  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
 \end{lstlisting}
-\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters.}
+\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
 \label{lst:bangf}
-\end{figure*}
+\end{figure}
 
 \begin{theorem}[PPT !]\label{thm:bangppt}
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
@@ -653,29 +646,29 @@ Therefore, it is clear that there exists a global connecting poltnomial $f$ that
 \end{mathpar}
 \end{theorem}
 
-\begin{figure}
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
-type p2bFmsg[a] = P2bF of ssid ^ a ;
-type p2bbFmsg[a] = P2bbF of ssid ^ ssid ^ a ;
-$\tg{(* z2p : comm[z2pmsg[p2bbf[a]]] *)}$
-$\tg{(* p2f : comm[p2fmsg[P2bf[a]]] *)}$
-pid = recv $\$$z2p ;
-m = recv $\$$z2p ;
-case m (
-  P2bbF(ssid1, ssid2, m) =>
-    send $\$$p2f P2bF(ssid1 + ssid2, m) ;
-)
-\end{lstlisting}
-\caption{The \textit{squash protocol} accepts a message intended intended for $!!\F$ of the form $(\msf{ssid}_1, (\msf{ssid}_1, msg))$ and ``flattens'' it into a single $\msf{ssid}_3 = \msf{ssid}_1 + \msf{ssid}_2$ that can be passed to $!\F$. The result is the same number of instances of \F but behind only a single $!$ operator.}
-\label{fig:squash}
-\end{figure}
+%\begin{figure}
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
+%$\yo{type}$ p2bFmsg[a] = P2bF of ssid ^ a ;
+%$\yo{type}$ p2bbFmsg[a] = P2bbF of ssid ^ ssid ^ a ;
+%$\tg{(* z2p : comm[z2pmsg[p2bbf[a]]] *)}$
+%$\tg{(* p2f : comm[p2fmsg[P2bf[a]]] *)}$
+%pid = recv $\$$z2p ;
+%m = recv $\$$z2p ;
+%case m (
+%  P2bbF(ssid1, ssid2, m) =>
+%    send $\$$p2f P2bF(ssid1 + ssid2, m) ;
+%)
+%\end{lstlisting}
+%\caption{The \textit{squash protocol} accepts a message intended intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_1, msg))$.
+%It ``flattens'' it into a single $\msf{ssid}_3 = \msf{ssid}_1 + \msf{ssid}_2$ that can be passed to $!\F$. The result is the same number of instances of \F but behind only a single $!$ operator.}
+%\label{fig:squash}
+%\end{figure}
 
 \begin{proof}
-First we describe the \msf{squash} protocol in figure \ref{fig:squash}.
-Note that $!!\F$ is nested $!$ operators. The top level process maintains multiple sessions of $!\F$ each with their own \msf{ssid}.
-Functionalities in each $!\F[\msf{ssid}]$ have their own \msf{sid}. 
+First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
+The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
 
-In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $!!\F[\msf{ssid}_1][\msf{ssid}_2]$).
+In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $\F[\msf{ssid}_1][\msf{ssid}_2]$).
 The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$ into a single \msf{ssid}: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$.
 If follows intuitively that the view for the environment remains the same. 
 
@@ -690,7 +683,6 @@ Output from $!!\F$ is modified inversely and sent to \Z.
 
 The proposed simulator is trivially analyzed to be \textit{well-resource-typed}.
 It performs constant work per activation and does ``real'' simulation other than message modification to/from $!!\F$.
-
 \end{proof}
 
 \subsection{UC Composition}
@@ -715,6 +707,6 @@ This generalized form of composition follows directly from Theorems \ref{thm:sin
 
 \begin{proof}
 The proof of full composition follows directly from the single composition Theorem~\ref{thm:singlecomp} and the Squash Theorem~\ref{thm:squash}.
-By Theorem~\ref{thm:singlecomp} we can infer $!!\F_1 \xrightarrow{\rho \, \circ \, !\pi} \F_3$.
-Theorem~\ref{thm:squash} allows us to ``squash'' $!!\F_1$ and construct a simulator for $!\F_1 \xrightarrow{\rho \, \circ \, !\pi \, \circ \, \msf{squash}} \F_3$
+By Theorem~\ref{thm:singlecomp} we can construct a simulator \SIM{1} for $!!\F_1 \xrightarrow{\rho \, \circ \, !\pi} \F_3$.
+Theorem~\ref{thm:squash} then allows us to ``squash'' $!!\F_1$ and construct a simulator using \SIM{1} for $!\F_1 \xrightarrow{\rho \, \circ \, !\pi \, \circ \, \msf{squash}} \F_3$
 \end{proof}

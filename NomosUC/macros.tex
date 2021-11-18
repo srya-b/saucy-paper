@@ -52,7 +52,8 @@
 \newcommand{\Allinputs}{{\bf \color{Cerulean} All other input~}}
 \newcommand{\OnAdvInput}{{\bf \color{BrickRed} On input}~}
 \newcommand{\heading}[1]{\textbf{#1}}
-\newcommand{\Type}{\ensuremath{\tb{type}}}
+\newcommand{\Type}{\ensuremath{\yo{type}}}
+\newcommand{\Stype}{\ensuremath{\yo{stype}}}
 \newcommand{\bangf}{\ensuremath{!\F}}
 \newcommand{\execuc}{\ensuremath{\msf{execUC}}}
 \newcommand{\UC}[4]{\ensuremath{\execuc #1  #2  #3  #4}}
@@ -61,10 +62,13 @@
 \newcommand{\prot}[1]{\ensuremath{\pi_{\msf{#1}}}}
 \newcommand{\lla}{\leftarrow}
 \newcommand{\lvd}{\vdash}
-\newcommand{\tb}[1]{\text{\color{blue}{#1}}}
+\newcommand{\tb}[1]{\text{\color{RoyalBlue}{#1}}}
 \newcommand{\tgr}[1]{\text{\color{ForestGreen}{#1}}}
 \newcommand{\tm}[1]{\text{\color{magenta}{#1}}}
 \newcommand{\tg}[1]{\text{\color{gray}{#1}}}
+\newcommand{\tp}[1]{\text{\color{Purple}{#1}}}
+\newcommand{\tr}[1]{\text{\color{Red}{#1}}}
+\newcommand{\yo}[1]{\text{\color{YellowOrange}{#1}}}
 \newcommand{\inline}[1]{\lstinline[basicstyle=\small\BeraMonottFamily, mathescape]!#1!}
 \newcommand{\nrecv}{\tb{recv}}
 \newcommand{\nsend}{\tb{send}}
@@ -103,6 +107,7 @@
 \newcommand{\checknextarg}{\@ifnextchar\bgroup{\gobblenextarg}{)~}}
 \newcommand{\gobblenextarg}[1]{, #1\@ifnextchar\bgroup{\gobblenextarg}{)~}}
 \makeatother
+
 
 \newcommand{\transfermsg}{\inmsg{transfer}{to}{val}{data}{from}}
 \newcommand{\createmsg}{\inmsg{contract \ create}{addr}{val}{data}{private}{from}}

@@ -1,0 +1,35 @@
+
+proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
+	(k: Int), (rng: [Bit]) |- ($d: Bit) =
+{
+
+	#z_to_pw <- communicator_init[K][z2p][K] <- ; 
+	#pw_to_z <- communicator_init[K][p2z][K] <- ; 
+
+	#pw_to_f <- communicator_init[K][p2f][K] <- ; 
+	#f_to_pw <- communicator_init[K][f2p][K] <- ; 
+
+	#a_to_pw <- communicator_init[K][a2p][K] <- ; 
+	#pw_to_a <- communicator_init[K][p2a][K] <- ; 
+
+	#a_to_f <- communicator_init[K][a2f][K] <- ; 
+	#f_to_a <- communicator_init[K][f2a][K] <- ; 
+	
+	#z_to_a <- communicator_init[K][z2a][K] <- ; 
+	#a_to_z <- communicator_init[K][a2z][K] <- ; 
+
+	$z <- PS.env <- k rng #z_to_pw #pw_to_z #z_to_a #a_to_z ;
+	sid = recv $z ;
+	clist = recv $z ;
+	
+	$pw <- party_wrapper[K][K1][p2z,z2p][p2f,f2p][p2a,a2p] <- 
+					k rng sid clist #pw_to_z #z_to_pw #pw_to_f #f_to_pw #pw_to_a #a_to_pw ;
+
+	$f <- f_wrapper[K][K1][f2p,p2f][f2a,a2f] <-
+					k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f ;
+
+	$a <- PS.adv[K] <- k rng sid clist #a_to_z #z_to_a #a_to_pw #pw_to_a #a_to_f #f_to_a ;
+	 
+	$z.start ;
+	$d <- $z 
+}

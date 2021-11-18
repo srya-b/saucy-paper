@@ -1,7 +1,7 @@
 In this section we fully flesh out the commitment example used throughout this paper.
 We implement the ideal functionality \Fcom as well as a realizing protocol \prot{com} using the random oracle \Fro.
 In doing so, we discuss how session types influence the design of the ideal functionality, and how the import mechanism is used. 
-Finally, we present a simulatr for the dummy adversary to prove emulation.
+Finally, we present a simulator for the dummy adversary to prove emulation.
 
 \subsection{The Random Oracle}
 The random oracle model assumes the existence of an idealized hash function in the real world, denoted by \Fro.
@@ -21,8 +21,8 @@ The session type above suggests such a consruction is even more well-suited to \
 
 The corresponding functional message type between the protocl wrapper and \Fropp is given by the simple types:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
-type rop2f = SHash of Int | Send of Int ;
-type rof2p = Smsg of Int ;
+$\Type$ rop2f = SHash of Int | Send of Int ;
+$\Type$ rof2p = Smsg of Int ;
 \end{lstlisting}
 Note that all messages from the protocol wrapper to the functionality are wrapped in \inline{P2FMsg} which include the \inline{pid} of the sending party.
 
@@ -61,7 +61,7 @@ The wrapper also spawns a process to read from each of \Fcom's outgoing channels
 We summarize the message types in use by describing the type parameters to the ideal world execution.
 For the ideal, \inline{execUC} is invoked as follows (refer to the \inline{execUC} definition in Figure~\ref{lst:execuc} for what each of the parameters refers to):
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\tb{type}$ z2amsg[a][b] = Z2A2P of pid ^ a 
+$\Type$ z2amsg[a][b] = Z2A2P of pid ^ a 
                      | Z2A2F of b ;
 $\tg{(* ideal world *)}$
 execUC[K1,K2][comf2p][comp2f][comp2f][comf2p]
@@ -92,8 +92,8 @@ The ideal world protocl is a dummy party which forwards all messages to the func
 The message content from \inline{z2p} and \inline{p2f} is the same in the ideal world, but it is wrapped in different parameteric typed when it is sent from the \inline{z} or \inline{p}.
 As shown below the messages themselves are the same (\inline{comp2f} but typed differently (\inline{z2pmsg} vs \inline{p2fmsg}):
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\tb{type}$ z2pmsg[a] = Z2P of pid ^ a ;
-$\tb{type}$ p2fmsg[a] = P2F of pid ^ a ;
+$\Type$ z2pmsg[a] = Z2P of pid ^ a ;
+$\Type$ p2fmsg[a] = P2F of pid ^ a ;
 #z_to_p: comm[z2pmsg[comp2f]] ;
 #p_to_f: comm[p2fmsg[comp2f]] ;
 \end{lstlisting}
