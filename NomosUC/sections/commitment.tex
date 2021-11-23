@@ -1,179 +1,208 @@
-In this section we fully flesh out the commitment example used throughout this paper.
-We implement the ideal functionality \Fcom as well as a realizing protocol \prot{com} using the random oracle \Fro.
-In doing so, we discuss how session types influence the design of the ideal functionality, and how the import mechanism is used. 
-Finally, we present a simulator for the dummy adversary to prove emulation.
+In this section we work through the entire commimtne example that has been used throughout this paper.
+We add an implementation of the random oracle \Fro, the real world commitment protocol, \prot{com} that uses it, and a simulator for emulation.
+Throughout this section we note where session types have impacted the design decisions of the various processes.
+
+\subsection{Static Corruptions}
+We deal in the static corruptions model of UC in this work. 
+This means that the environment decides the set of corrupt parties before the UC execution begins, and the adversary has no ability to corrupt any new parties mid-execution.
+The way NomosUC handles corrupt parties, and their inputs, is also how it handles ideal world (dummy parties).
+
+The dummy protocol does nothing but forward messages on its \inline{z2p} channel to its offered channel, and vice versa. 
+Its code has the same type definition as any other protocol party but the code is trivial:
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+$\$$ch <- $\$$d ;
+\end{lstlisting}
+where \inline{$\$$d} is the channel it offers.
+For honest and corrupt dummy parties in the ideal world, their incoming type from \Z or \A is the same and matches the type of the underlying \F.
+It follows, then, that in the real world the type of \A's channel with the party is the same as that of \Fro.
 
 \subsection{The Random Oracle}
-The random oracle model assumes the existence of an idealized hash function in the real world, denoted by \Fro.
-We augment the random oracle functionality into \Fropp the ability for parties to send messages to each other. 
-However, we alter the design of this functionality compared to \Fcom for two reasons: it interacts with a dynamic set of parties and a constraint imposed by session types.
-Usually, in p2p channel functionalities, \F activates the receiving party with the message when delivering it.
-When combined with the random oracle functionality, \Fropp, at any given point, can receive input from the receiver or be asked to deliver a message to it by the sender. 
-In a session type, the former is an \emph{external choice} and the latter is an \emph{internal choice}. 
-Session types restrict to one or the other at any time and not potentially both. 
-Therefore, for \Fropp we opt to have one session-typed channel for all parties which incorporates the \inline{pid} into the message:
-%\begin{mathpar}
-%\mi{stype} \; \m{party}[a] = \echoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a],\mb{send} : \m{spid} \arrow \m{rpid} \arrow \m{a} \product \m{sendmsg}[a]} \\
-%\mi{stype} \; \m{hashing}[a] = \ichoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} \\
-%\mi{stype} \; \m{sendmsg}[a] = \ichoice{\mb{send}: pid \arrow \m{a} \product \m{party}[a]}
-%\end{mathpar}
-The session type above suggests such a consruction is even more well-suited to \Fropp because, as you can see, the session type returns to $\m{hashing}$ on ever activation of \Fropp.
+The random oracle functionality captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
+It allows both protocol parties and the adversary to request hashes from it.
+We augment \Fro with a single communication channel allowing it parties to send messages to each other. The functionality is called \Fropp from now on.
 
-The corresponding functional message type between the protocl wrapper and \Fropp is given by the simple types:
+The design of the random oracle is different from \Fcom in that it has only one channel for all parties to communicate over.
+We discussed the unique structure of the session type for \Fro in Section~\ref{sec:execuc}: its type before and after interaction with a party is the same.
+This enables a dynamic set of parties to communicate with it by moving the \inline{pid} of the message sender/receiver into the type.
+Our augmented functionality's type retains this feature, as described by its session type:
+\begin{mathpar}
+\mi{stype} \; \m{party}[a] = \ichoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a],\mb{send} : \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{party}[a], \mb{recv}: \m{pid} \product \m{newmsg[a]}} \\
+\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} \\
+\m{newmsg}[a] = \echoice{ \mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{party}[a], \mb{no}: \m{pid} \product \m{party[a]}}
+\end{mathpar}
+One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
+We cannot directly deliver messages to their receivers, because the committer's and receiver's \inline{p2f} channel would end up with different types and back to \inline{party[a]}.
+The corresponding functional message type between the protocol wrapper and functionality is also updated with inputs for the channel:
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
-$\Type$ rop2f = SHash of Int | Send of Int ;
-$\Type$ rof2p = Smsg of Int ;
-\end{lstlisting}
-Note that all messages from the protocol wrapper to the functionality are wrapped in \inline{P2FMsg} which include the \inline{pid} of the sending party.
-
-\subsection{Ideal World}
-The \Fcom and presented earlier in this work accepts messages from parties on two channels: one from the sender and one from the receiver (refer to the previous section for their types).
-The channels don't directly connect to the two parties (recall the functionality wrapper and the protocol wrapper exists between the two).
-%The types for sender and receiver messages to \Fcom are the following:
-%\begin{gather}
-%\mi{stype} \; \m{sender} = \echoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
-%\mi{stype} \; \m{scommitted} = \echoice{\mb{open} : 1} \\
-%\mi{stype} \; \m{receiver} = \ichoice{\mb{committed} : \m{rcommitted}} \\
-%\mu{stype} \; \m{rcommitted} = \ichoice{\mb{open} : \m{bit} \arrow \one}
-%\end{gather}
-
-We first describe at a high-level, the conversion happening within the functionality wrapper for \Fcom with the \inline{commit} message sent by the sender.
-When the wrapper receives the \inline{commit} message, the functionality wrapper executes the following:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\tg{(* l1 : list[pid \textasciicircum sender] *)}$
-case $\$$p2f (
-  yes => 
-    pid = recv $\$$p2f ; msg = recv $\$$p2f ;
-    case msg (
-      Commit(b) => 
-        $\$$ch_ = get_channel_by_pid pid $\$$l1 $\$$l2 ... ;
-        $\$$ch_.commit ;
-        send $\$$ch_ b ;
-        $\$$l2' <- append $\$$ch_ $\$$l2 ;
-\end{lstlisting}
-The wrapper also spawns a process to read from each of \Fcom's outgoing channels, case analyze on their value and send out the corresponding functional message to the protocol wrapper.
-
-%The \msf{execUC} function in Figure~\ref{lst:execuc} accepts some number of type parameter which it spawns the main channels of the protocol with. 
-%Most important out of these channels is the types governing communication between \Z and \A and between \Z and the protocol wrapper.
-%If the types for these channel in both worlds aren't the same, even the import token expected, then it is trivial for an environment to distinguish the two worlds.
-%It suffices to specify the import type parameters (\inline{p2f}, \inline{f2p}, \inline{z2p}, etc.) to \inline{execUC}.
-\paragraph{The Ideal World Execution}
-We summarize the message types in use by describing the type parameters to the ideal world execution.
-For the ideal, \inline{execUC} is invoked as follows (refer to the \inline{execUC} definition in Figure~\ref{lst:execuc} for what each of the parameters refers to):
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\Type$ z2amsg[a][b] = Z2A2P of pid ^ a 
-                     | Z2A2F of b ;
-$\tg{(* ideal world *)}$
-execUC[K1,K2][comf2p][comp2f][comp2f][comf2p]
-  [comf2p][comp2f][comf2a][coma2f][rof2a][roa2f]
-  [rof2p][rop2f]
-\end{lstlisting}
-%$\tg{(* real world *)}$
-%execUC[K1,K2][comf2p][comp2f][rop2f][rof2p]
-%  [rof2p][rop2f][comf2a][coma2f][rof2a][roa2f]
-%  [rof2p][rop2f]
-Notice that the message types over \inline{p2z} and over \inline{p2f} are the same, because the ideal world parties are dummy parties which simply forward the messages to \Fcom.
-The type parameters for the adversary in the ideal world, though, still take the form of the types of \Fro.
-This is because the inputs \Z gives to both worlds (the dummy adversary in the real world) is intended for \Fro when communicating with the functionality through the adverasary or through corrupt parties 
-
-The party inputs from \inline{a2p} in the ideal world are intended for \Fcom, not \Fro, so they are of the same type \inline{comp2f}.
-Similarly, output from corrupt parties to the adversary in the ideal world is the same as output from \Fcom, and, therefore the message type is the same as \inline{comf2p}.
-The messages type parameters are wrapped in channel-specific types as well.
-For example, the channel \inline{z2a} is typed as follows:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-type z2amsg[a][b] = Z2A2P of pid ^ a
-                      | Z2A2F of b ;
-#z_to_a: comm[z2amsg[a2p][a2f]]
-$\tg{(* a2p=rop2f, a2f=roa2f in execUC above*)}$
+$\Type$ rop2f[a] = QHash of $\tgr{Int}$ | Send of pid ^ a 
+               | Recv ;
+$\Type$ rof2p[a] = RHash of $\tgr{Int}$ | Yes of pid ^ a 
+               | No ;
 \end{lstlisting}
 
-\paragraph{Ideal Protocol}
-The ideal world protocl is a dummy party which forwards all messages to the functionality. 
-The message content from \inline{z2p} and \inline{p2f} is the same in the ideal world, but it is wrapped in different parameteric typed when it is sent from the \inline{z} or \inline{p}.
-As shown below the messages themselves are the same (\inline{comp2f} but typed differently (\inline{z2pmsg} vs \inline{p2fmsg}):
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\Type$ z2pmsg[a] = Z2P of pid ^ a ;
-$\Type$ p2fmsg[a] = P2F of pid ^ a ;
-#z_to_p: comm[z2pmsg[comp2f]] ;
-#p_to_f: comm[p2fmsg[comp2f]] ;
-\end{lstlisting}
-The protocol wrapper only needs to forward the message unaltered but using a different type construtor. 
+\subsection{Commitment Protocol}
+The real world commitment protocol is constructed in the random oracle model in the way of ~\cite{hofheinz}.
+Its incoming channel from \Z is typed identically to \Fcom to ensure that emulation and composition hold.
 
-\subsection{Real World}
-The real world protocol $\prot{com}$ necessarily accepts the same message type, \inline{z2pmsg[comp2f]}, as the ideal protocol to ensure its not trivially distinguishable to all environments. 
-It also usesa hybrid functionality: the random oracle, or \Fro.
+We include in Figure~\ref{lst:committed} the most important part of the protocol: how the sender computes the commitment for its input bit. The receivers check of the commitment follows the same pattern for querying hashes. 
+The sender accepts a bit from its \inline{z2p} channel and generates a nonce to blind the bit through a \inline{sample} of randomness~\footnote{Blinding is necessary otherwise \A knows the pre-image and can query \Fro for its hash value.}.
+It creates the commitment by sending \Fropp the blinded bit and receiving a hash value from \inline{p2f}.
+Finally it sends the hash to the receiver (which has pid=2).
 
+Conversely, the receiver must request the commitment \inline{h} message from \Fropp, notify \Z of the commitment, and, as shown in Figure~\ref{lst:receiver}, when it receives the bit and the nonce it checks that its hash with the commitment.
 \begin{figure}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
 $\tb{case}$ $\$$z2p (
   commit => 
     b = $\tm{recv}$ $\$$z2p ;
-    bits = sample k r ;
+    bits = sample k rng ;
     $\$$p2f.hash ;
+    $\tm{send}$ $\$$p2f pid ;
     $\tm{send}$ $\$$p2f b + bits ;
-    $\tm{case}$ $\$$p2f (
-      hash => 
+    $\tb{case}$ $\$$p2f (
+      shash => 
         h = $\tm{recv}$ $\$$p2f ;
         $\$$p2f.send ;
-        $\tm{send}$ $\$$p2f hash ;
+        $\tm{send}$ $\$$p2f pid 2 hash;
 \end{lstlisting}
-\caption{The code for the committer in $\prot{com}$ when it receives a \msf{commit} message from \Z. It obtains a hash of the message from \Fro over \msf{p2f} and sends it to the receiver through the same functionality.}
+\caption{The code for the committer in $\prot{com}$ when it receives a \msf{commit} message from \Z. It obtains a hash of the message from \Fropp over \msf{p2f} and sends it to the receiver (pid=2) through the same functionality.}
 \label{lst:committer}
 \end{figure}
-
-The protocol wrapper performs the message conversion outlined in the previous section. Here we only present what the protocol party itself does with session typed channels. 
-We provide the simple code of the committer in Figure~\ref{lst:committer}.
-
-Similarly, the receiver, which doesn't pass any input to \Fro informs \Z when a commitment has been made in Figure~\ref{lst:receiver}.
 \begin{figure}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\tb{case}$ $\$$f2p (
-  hashmsg => 
-    $\$$p2z.committed ;
-    $\tb{case}$ $\$$f2p (
-      openmsg => 
-        h = recv $\$$f2p ;
-$\tg{TODO: finish this code snippet}$
+$\$$p2f.recvmsg ;
+$\tb{case}$ $\$$p2f (
+  Yes(p, h)
+  $\tm{recv}$ $\$$p2f ;
+  sender = $\tm{recv}$ $\$$p2f ;
+  (b,h) = recv $\tm{recv}$ $\$$p2f ;
+  ...
+  $\tm{send}$ $\$$p2f (b+h);
+  ...
+  h = $\tm{recv} $\$$p2f ;
+  $\yo{if}$ h == hash
+  $\yo{then}$
+    $\$$z2p.open
 \end{lstlisting}
-\caption{The code for the receiver when it is activated by the committer's commitment with a \msf{hashmsg}. Its output to \Z is the same as \Fcom: a \msf{committed} message. It then waits to receive the opening of the commitment and confirms with that random oracle that it is correct.}
+\caption{The code for the receiver checks for a new message and receives the bit and nonce from the committer. If the hash of the bit and nonce matches the commitment it received, it returns \msf{open} to \Z to confirm the commitment.}
 \label{lst:receiver}
 \end{figure}
 
-The protocol works as follows:
-\begin{enumerate}
-\item When the committer receives a \inline{Commit(b)} message from \Z, it samples some random bits $r$ and generates a hash $h$ by sending \inline{SHash(b + r)} to \Fro.
-\item It then sends the commitment to the receiver who notifies \Z with a \inline{committed} message.
-\item Finally, when \Z instructs the committer to \inline{Open} the commitment, it sends bit \inline{b} and randomness \inline{r} to the receiver. The receiver checks the commitment, with \inline{b} and \inline{r}, against \Fro and outputs \inline{Open(b)} to \Z if it checks out.
-\end{enumerate}
+%The protocol works as follows:
+%\begin{enumerate}
+%\item When the committer receives a \inline{Commit(b)} message from \Z, it samples some random bits $r$ and generates a hash $h$ by sending \inline{SHash(b + r)} to \Fro.
+%\item It then sends the commitment to the receiver who notifies \Z with a \inline{committed} message.
+%\item Finally, when \Z instructs the committer to \inline{Open} the commitment, it sends bit \inline{b} and randomness \inline{r} to the receiver. The receiver checks the commitment, with \inline{b} and \inline{r}, against \Fro and outputs \inline{Open(b)} to \Z if it checks out.
+%\end{enumerate}
 
 \subsection{Simulation}
-The simulator for commitment in the random oracle model relies on simulating the random oracle internally and creating/storing entries queried by the environment.
-There are two corruptions modes for the protocol: the committer is corrupt or the receiver is corrupt.
-When the receiver is corrupt, the simulator generates some random commitment value $h$ when it receives \inline{Committed} from \Fcom and forwards \inline{P2A2Z(pid,SMsg(h))} to \Z. 
-Finally, when the committed bit is revealed, the simulator returns \inline{SMsg(b + x)}, where $x$ is some randomly generated nonce, and stores the mapping $b+x \rightarrow h$ in its internal instance of \Fro.
+Finally, we present a simulator \simcom, for the dummy adversary, for which the \Fcom is realized by \prot{com} in the \Fropp-hybrid world.
+The simulator is straightforward and internally maintains a table like \Fro and responds to the environments queries for hashes. 
 
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
-m = recv $\$$p2a ;
-case m (
-  P2A(pid, msg) =>
-   	case msg (
-      Committed =>
-        h = sample r k ;
-        send $\$$z2a P2A2Z(pid, SMsg(h)) ;
-      Open(b) =>
-	    x = sample r k ;
-        send $\$$z2a P2A2Z(pid, SMsg(b, x)) ;
-\end{lstlisting}
+When the receiver is corrupt, \simcom returns \inline{P2A2Z(2, No)} to all new message requests by \Z for the receiver until a commitment is made.
+After the sender commits, the receiver sends \simcom a \inline{Commit} message. The simulator simply generates randomness in the way of \Fro and returns \inline{P2A2Z(2, RHash(h))} to \Z.
+When a bit is revealed, \simcom generates a random nonce $x$, stores \inline{b+x} as the pre-image to \inline{h}, and sends \inline{Yes(1, (b,x)} to \Z as the receiver.
 
-When the committer is corrupt, the simulator has to do more work. 
-The key point that makes commitment in the RO model realizable is that \Z acquires commitment to give to the corrupt committer from \Fro through \A. 
-In th ideal world, the simulator recrods all the (key,value) pairs generated by its simulation of \Fro and therefore can always determine the bit \Z is committed to.
-When \Z queries \Sim with \inline{Z2A2F(SHash(b + x))} it stores the value and generates a hash value for it and returns it to \Z. 
-When instructed to give input to the corrupt party the simulator, \Sim gives input \inline{A2P(1, Commit(b))} where $b$ is the bit whos hash was requested.
+When the committer is corrupt, the simulator receives a query from \Z to generate a commitment. 
+\simcom generates a hash for the query, stores the bit \inline{b} from the the given pre-image \inline{b+x}, and returns a hash with \inline{P2A2Z(1, Rhash(h)}.
+When \Z sends \inline{Z2A2P(Send(2, h)}, the simulator does nothing and waits for \Z to open it.
+Finally, when it receives and \inline{Open} message from \Z for the sender, it sends \inline{A2P(1, Commit(b))} to the protocol wrapper.
 
-There is a unique edge case where \Z give some random bit sequence to \S as the commitment which wasn't generated by the random oracle. 
-In this case \S chooses a bit at random annd passes \inline{A2P(1, Commit(b))} to the protocol wrapper where $b$ is randomly selected.
-When prompted to open the commitment, \S does nothing as the real world receiver would fail to confirm whether the commitment corresponds to the bit $b$.
+It is clear to see from this simulator that emulation must hold between the two worlds.
+In both of the corruption cases, \Z receives the appropriate commitments and, since \Fro samples random bits, it can not distinguish between hashes from \Fro and hashes from \simcom.
+In the case of the corrupt committer, \simcom simply reads the bit from queries made by \Z and can always ensure that \Fcom commits to the correct bit.
+
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
+%m = recv $\$$p2a ;
+%case m (
+%  P2A(pid, msg) =>
+%   	case msg (
+%      Committed =>
+%        h = sample r k ;
+%        send $\$$z2a P2A2Z(pid, (h)) ;
+%      Open(b) =>
+%	    x = sample r k ;
+%        send $\$$z2a P2A2Z(pid, SMsg(b, x)) ;
+%\end{lstlisting}
+
+%When the committer is corrupt, the simulator has to do more work. 
+%The key point that makes commitment in the RO model realizable is that \Z acquires commitment to give to the corrupt committer from \Fro through \A. 
+%In th ideal world, the simulator recrods all the (key,value) pairs generated by its simulation of \Fro and therefore can always determine the bit \Z is committed to.
+%When \Z queries \Sim with \inline{Z2A2F(SHash(b + x))} it stores the value and generates a hash value for it and returns it to \Z. 
+%When instructed to give input to the corrupt party the simulator, \Sim gives input \inline{A2P(1, Commit(b))} where $b$ is the bit whos hash was requested.
+%
+%There is a unique edge case where \Z give some random bit sequence to \S as the commitment which wasn't generated by the random oracle. 
+%In this case \S chooses a bit at random annd passes \inline{A2P(1, Commit(b))} to the protocol wrapper where $b$ is randomly selected.
+%When prompted to open the commitment, \S does nothing as the real world receiver would fail to confirm whether the commitment corresponds to the bit $b$.
+
+
+
+
+%\subsection{Ideal World}
+%We described the functionality \Fcom in detail in Section~\ref{sec:execuc} as well as the functionality wrapper construction around it.
+%We now describe how we implement ideal world (dummy) parties.
+
+%We first describe at a high-level, the conversion happening within the functionality wrapper for \Fcom with the \inline{commit} message sent by the sender.
+%When the wrapper receives the \inline{commit} message, the functionality wrapper executes the following:
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+%$\tg{(* l1 : list[pid \textasciicircum sender] *)}$
+%case $\$$p2f (
+%  yes => 
+%    pid = recv $\$$p2f ; msg = recv $\$$p2f ;
+%    case msg (
+%      Commit(b) => 
+%        $\$$ch_ = get_channel_by_pid pid $\$$l1 $\$$l2 ... ;
+%        $\$$ch_.commit ;
+%        send $\$$ch_ b ;
+%        $\$$l2' <- append $\$$ch_ $\$$l2 ;
+%\end{lstlisting}
+%The wrapper also spawns a process to read from each of \Fcom's outgoing channels, case analyze on their value and send out the corresponding functional message to the protocol wrapper.
+
+%The \msf{execUC} function in Figure~\ref{lst:execuc} accepts some number of type parameter which it spawns the main channels of the protocol with. 
+%Most important out of these channels is the types governing communication between \Z and \A and between \Z and the protocol wrapper.
+%If the types for these channel in both worlds aren't the same, even the import token expected, then it is trivial for an environment to distinguish the two worlds.
+%It suffices to specify the import type parameters (\inline{p2f}, \inline{f2p}, \inline{z2p}, etc.) to \inline{execUC}.
+%\paragraph{The Ideal World Execution}
+%We summarize the message types in use by describing the type parameters to the ideal world execution.
+%For the ideal, \inline{execUC} is invoked as follows (refer to the \inline{execUC} definition in Figure~\ref{lst:execuc} for what each of the parameters refers to):
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+%$\Type$ z2amsg[a][b] = Z2A2P of pid ^ a 
+%                     | Z2A2F of b ;
+%$\tg{(* ideal world *)}$
+%execUC[K1,K2][comf2p][comp2f][comp2f][comf2p]
+%  [comf2p][comp2f][comf2a][coma2f][rof2a][roa2f]
+%  [rof2p][rop2f]
+%\end{lstlisting}
+%%$\tg{(* real world *)}$
+%%execUC[K1,K2][comf2p][comp2f][rop2f][rof2p]
+%%  [rof2p][rop2f][comf2a][coma2f][rof2a][roa2f]
+%%  [rof2p][rop2f]
+%Notice that the message types over \inline{p2z} and over \inline{p2f} are the same, because the ideal world parties are dummy parties which simply forward the messages to \Fcom.
+%The type parameters for the adversary in the ideal world, though, still take the form of the types of \Fro.
+%This is because the inputs \Z gives to both worlds (the dummy adversary in the real world) is intended for \Fro when communicating with the functionality through the adverasary or through corrupt parties 
+%
+%The party inputs from \inline{a2p} in the ideal world are intended for \Fcom, not \Fro, so they are of the same type \inline{comp2f}.
+%Similarly, output from corrupt parties to the adversary in the ideal world is the same as output from \Fcom, and, therefore the message type is the same as \inline{comf2p}.
+%The messages type parameters are wrapped in channel-specific types as well.
+%For example, the channel \inline{z2a} is typed as follows:
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+%type z2amsg[a][b] = Z2A2P of pid ^ a
+%                      | Z2A2F of b ;
+%#z_to_a: comm[z2amsg[a2p][a2f]]
+%$\tg{(* a2p=rop2f, a2f=roa2f in execUC above*)}$
+%\end{lstlisting}
+%
+%\paragraph{Ideal Protocol}
+%The ideal world protocl is a dummy party which forwards all messages to the functionality. 
+%The message content from \inline{z2p} and \inline{p2f} is the same in the ideal world, but it is wrapped in different parameteric typed when it is sent from the \inline{z} or \inline{p}.
+%As shown below the messages themselves are the same (\inline{comp2f} but typed differently (\inline{z2pmsg} vs \inline{p2fmsg}):
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+%$\Type$ z2pmsg[a] = Z2P of pid ^ a ;
+%$\Type$ p2fmsg[a] = P2F of pid ^ a ;
+%#z_to_p: comm[z2pmsg[comp2f]] ;
+%#p_to_f: comm[p2fmsg[comp2f]] ;
+%\end{lstlisting}
+%The protocol wrapper only needs to forward the message unaltered but using a different type construtor. 
 
 %The ideal functionality \Fcom is the same one introduced in Figure~\ref{fig:fcom} in Section~\ref{sec:nomosuc}. 
 %In FIgure~\ref{lst:fcom} we present the Nomos definition of the same functionality and provide the channel types in FIgure~\ref{fig:fcomtypes}.
