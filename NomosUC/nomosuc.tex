@@ -90,9 +90,13 @@
 \maketitle
 
 \begin{abstract}
-This document is a model and instructions for \LaTeX.
-This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, 
-or Math in Paper Title or Abstract.
+The Universal Composability (UC) framework is the leading framework for analyzing cryptographic protocols and their applications.
+Many tools exist, currently, for analyzing protocol in the UC framework, however, many of them fall short of adequatley capturing its full polynomial time notion and aid in expressing complex, modular protocols.
+In this work we adapt work into resource-aware session types~\cite{dasnomos} to the UC setting and use their existing potential mechanism to implement the new import mechanism introduced by~\cite{uc}.
+Resource-aware session types enforce protocol specifications and runtime budgets in the type system, aiding in the construction of large, modular protocols.
+
+To the best of our knowledge this is the first work to meaningfully implement and use the novel import mechanism, and we demonstrate its usefulness through a case study of the two-party commitment protocol~\ref{rocommitment}.
+\todo{add more}
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -132,6 +136,10 @@ component, formatting, style, styling, insert
 \section*{Acknowledgment}
 
 \section*{References}
+
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{nomosuc}
 
 %input{figures/asyncwrapper}
 
