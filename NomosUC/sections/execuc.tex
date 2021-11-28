@@ -27,7 +27,7 @@ For the commitment example we've used throughout this work, the ideal world \inl
 $\tb{proc}$ $\tm{execUC}$[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
 \end{lstlisting}
-In this example, a virtual token type, \inline{K1}, is used because of the \emph{protocol wrapper} and the \emph{functionality wrapper}.
+In this example, a virtual token type, \inline{K1}, is used because of the \emph{protocol wrapper} and the \emph{functionality wrapper}. \anote{Mention here that $k$ is a security parameter, $r$ is the for the random choices}
 The protocol wrapper internally runs and manages all of the protocol parites and the functionality wrapper does the same with the ideal functionality.
 For this reason, every execution in NomosUC that uses the protocol wrapper and/or the functionality wrapper will \emph{always} require at least one virtual token type.
 
