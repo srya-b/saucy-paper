@@ -73,7 +73,7 @@ $\nproc$ $\tm{Fcom}$:
 \end{lstlisting}
 
 Here, $\Fcom$ is the name of the process, and $S$ and $R$ are the names
-of channels \emph{used} by $\Fcom$, while $F$ is the channel \emph{provided}
+of channels \emph{used} by $\Fcom$, while \inline{fc} is the channel \emph{provided}
 by $\Fcom$.
 Every session-typed process provides a unique channel while acting as a client
 of a non-negative number of channels.
@@ -89,11 +89,9 @@ $\Fcom$ then receives the bit $b$ (line 3) on $S$, followed by sending the
 commit message on channel $R$ (line 4).
 Once $\Fcom$ receives the $\mb{open}$ message on $S$, it sends the
 $\mb{open}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
-\todo{Is closing strictly necessary in NomosUC}
 
 A session type uniquely defines the protocol for only one role in an ideal functionality.
-The sender and receiver do different things, therefore, must have their own channels 
-to \Fcom rather than communicating over a common channel.  
+The sender and receiver are different roles in the same protocol, and, therefore, must have their own channels to \Fcom rather than communcating over a common channel.
 
 %The protocol initiates with $S$ sending a $\mb{commit}$ message to $\Fcom$
 %indicating its intent to \emph{commit} to a bit.
@@ -121,8 +119,8 @@ The core calculus of the NomosUC language is based on
 \emph{session types}: a type discipline for communication-centric programming
 based on message passing via channels. Session-typed channels describe and
 enforce the protocol of communication among processes. The base system of
-session types is derived from a Curry-Howard interpretation~\cite{CairesCONCUR2010}
-of intuitionistic linear logic~\cite{GirardTCS1987}.
+session types is derived from a Curry-Howard interpretation~\cite{caires2010session}
+of intuitionistic linear logic~\cite{girard1987linear}.
 As a result, purely linear
 propositions can be viewed as resources that must be used \emph{exactly
 once} in a proof yielding the sequent $A_1, \ldots, A_n \vdash C$
@@ -140,7 +138,7 @@ respectively. We mandate all channel names to be distinct for the judgment
 to be \emph{well-formed}. The antecedents are often abbreviated to $\D$.
 
 The operational semantics for session-typed programs are formalized as a
-system of \emph{multiset rewriting rules}~\cite{Cervesato2009SSOS}.
+system of \emph{multiset rewriting rules}~\cite{cervesato2009relating}.
 We introduce semantic objects $\proc{c}{P}$ and $\msg{c}{M}$ describing
 process $P$ (or message $M$) providing service along channel $c$.
 Remarkably, in this formulation, a message is just a particular form of process,
@@ -532,7 +530,7 @@ thus preventing a cycle in the process graph.
 Unfortunately, this restriction precludes practical programming scenarios
 where process topologies indeed have a cyclic dependency (e.g. ring networks,
 dining philosophers, etc.).
-Recognizing this limitation, Balzer et al.~\cite{Balzer17icfp} proposed
+Recognizing this limitation, Balzer et al.~\cite{balzer2017manifest} proposed
 a \emph{shared} extension of session types that allows arbitrary process topologies.
 The types are extended as follows:
 \begin{center}
