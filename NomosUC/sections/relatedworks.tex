@@ -1,29 +1,28 @@
 There is a large volume of work that introduce tools for modelling UC protocols and reasoning about UC security with some mechanizing UC proof-generation.
-Most prior work, however, is not able to capture the polynomial-time notion that underpins UC security.
+Most prior work, however, is not able to completely capture the polynomial-time notion that underpins UC security or is limited in their expressibility. 
 
 The EasyUC~\cite{easyuc} work introduces a toolset built on top of the existing EasyCrypt~\cite{easycrypt} to model UC protocols and generate proofs of security.
-It moves past the limitations of EasyCrypt which is limited to game-based security definitions rather than the simulation-based definitions of UC.
-Building on top of EasyCrypt constraints EasyUC to a stack-based computation model which requires a unique communication model and unique addressing scheme for machines.
-A large limitation, that the authors admit, is that it can not detect deviant behavior like the adversary and functionality exchanging messages indefinitely.
-NomosUC on the other hand can ensure that all machines are locally polynomially bound in the security parmaeter and ensures that well-typed programs always terminate in polynomial time.
+It moves past the game-based security limitation of EasyCrypt and achieves the broader simulation-based definitions of UC.
+EasyUC mechanizes UC's notion of simulation-based security and formally verifies UC realization--something Nomos doesn't attempt to do.
+However, it is limited in that it can not detect super-polynomial deviant behavior: their key exchange functionality and the adversary can exchange messages \emph{indefinitely}.
+NomosUC provides a stronger polynomial definition and allows for defining processes as locally polynomial time.
 
-Liao at al.~\cite{ilc} introduce a new process calculus, that extendes $\pi$-calculus, called ILC.
-Unlike EasyUC, ILC does not attempt to mechanize proof generation and provides some notion poynomial time.
-The definition, however, is restrictive and does not allow reasoning about PPT for individual protocols or functionalities.
-Open terms require enumerating all possible ways they can be closed making it difficult even simple ping-pong servers to be proved polynomial in this definition.
+Liao et al.~\cite{ilc} have a similar drawback in their polynomial approach as ILC also cannot reason about \emph{open} terms without enumerating all possible ways to close them.
+ILC introduces a process calculus for defining ITMs that extends $\pi$-calculus, but doesn't attempt mechaninizing proof generation or formal verification like EasyUC.
+The poynomial time limitation in ILC means that even simple ping-pong servers can not be reasoned to be polynomial without enumerating all possible ways of closing it.
+Furthermore, the polynomial notion in ILC requires simulation in both directions of the real/ideal world paradigm in order to prove UC emulation.
 
-There is large body of similar work that introduces process calculi, some extensions of $\pi$-calculus, like ILC.
-Mateus et al.~\cite{mateus} for example introduces process calulus for simpler, sequential composition but is constraints to a schedular-based construction where probabilistic state transitions follow unifor distribution at every step.
-SymbolicUC~\cite{symbolicuc} \todo{finish oter symbolic logic and state their weaknesses and that ther are subsumed by ILC}.
-
+%There is large body of similar work that introduces process calculi, some extensions of $\pi$-calculus, like ILC.
+%Mateus et al.~\cite{mateus} for example introduces process calulus for simpler, sequential composition but is constraints to a schedular-based construction where probabilistic state transitions follow unifor distribution at every step.
+%SymbolicUC~\cite{symbolicuc} \todo{finish oter symbolic logic and state their weaknesses and that ther are subsumed by ILC}.
 Morrisett et al.~\cite{ipdl} propose IPDL which aims to imprtove on EasyUC by providing a better notion of emulation, more akint to the UC framework.
 IPDL symbolically tracks the run time of programs but can only do so for straight-line programs or those with statically upper-bounded loops, i.e. programs without dynamic loops or recursion. 
+This means that programs must statically define an upper bound on the number of instances of an ideal functionality, and could not reason about polynomial time for programms that spawn a dynamic number greater than the bound (a crucial part of UC omposition).
 Further, the protocols in IPDL can not dynamically choose which channels to write on because channels have static dependencies for when to ``fire''.
+NomosUC is not bound by such limitations and can express a wider range of programs while still ensuring polynomial time execution.
 
-The added expressiveness of Nomos also allows full composition in the manner of UC.
-IPDL and the ILC calculus only allow composition of a fixed numeber of functionalities and protocols. 
-IPDL for example must statically define the upper bound on the number of instances of a functionality, and could not, say, adequately handle the number of instances determined by probabilisitically input on a channel.
-ILC suffers from a similar drawback.
+NomosUC overcomes the limitations of these prior works by adapting resource-aware session types, and potential from Nomos, to the UC setting with the import mechanism. 
+The only constraints on functionalities and protocol that NomosUC currently possesses is on the set of functionalities that accept input froma a dynamic set of parties: only those with session types of a specific form (elaborated on in Section~\ref{sec:execuc}).
 
 %One of the most relevant works to our own is EasyUC~\cite{easyuc}. 
 %EasyUC uses the existing EasyCrypy~\cite{easycrypt} toolset to model UC protocols and mechanize proof generation. 
