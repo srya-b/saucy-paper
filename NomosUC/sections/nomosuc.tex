@@ -746,7 +746,24 @@ case either $\config$ can take a step or is poised.
 \end{proof}
 
 
-\subsection{UC Communicators}
+\subsection{UC Communicators} \label{sec:communicators}
+% all the processes conncted together leads to a cycle of linear channels ==> Z <--> P so here we use a communicator 
+The UC execution connects the protocol to the environment in both directions of communication.
+This poses a technical challenge where, if linear channels are used, the resulting topology contains a cycle of linear channels: the environmtne offers a channel to the wrapper and the wrapper to the environment.
+Such cycles violate type preservation because a client is acquiring its client~\ref{dasnomos}.
+Therefore, we use a message buffers called communicators which offered shared channels that both ends of the communication can use.
+Communicators are used in the main UC execution in Section~\ref{sec:execuc} to connect the main processes together, as well as within the \partywrapper. 
+
+A communicator has a \emph{sender} and a \emph{receiver}. 
+The shared channel offered by the communicator has the following polymorphic session type:
+\begin{tabbing}
+  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
+  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{push} : \m{msg} \arrow
+  \down \m{comm[msg]},$\\
+  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
+  \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
+\end{tabbing}
+
 One illustration of the use of shared session types is a \emph{communicator}.
 We use communicators as message buffers between two arbitrary processes: a
 \emph{sender} and a \emph{receiver}.
@@ -760,38 +777,45 @@ and responds appropriately with the message if one is stored inside the communic
 Formally, a communicator has the following polymorphic session type
 \begin{tabbing}
   $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
-  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{push} : \m{msg} \arrow
+  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{SEND} : \m{msg} \arrow
   \down \m{comm[msg]},$\\
-  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
-  \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
+  \>$\mb{RECV} : \ichoice{$\=$\mb{yes} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
+  \>\>$\mb{no} : \down \m{comm[msg]} }}$
 \end{tabbing}
+The $\up$ indicates that it is a shared channel that must be \emph{acquired} by a process in order to send something over it.
 
-The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
-messages in the buffer, and import type parameter, i.e. the amount of import tokens sent with
-the message. 
-The type initiates with an $\up$ denoting that $\m{comm}$ is a shared session type.
-The type prescribes that the communicator needs to be acquired by the sender (or receiver)
-for further interaction.
-Such an acquire-release discipline is automatically enforced by the shared session type.
-Once acquired, the communicator can either receive $\mb{push}$ (from sender) or
-$\mb{pop}$ requests (from receiver).
-In the former case, the communicator receives a message of type $\m{msg}$ and $n+1:K$ import tokens, and
-then detaches from the client using the dual $\down$ operator.
-In the latter case, the communicator checks if it internally contains a message
-for the receiver.
-If yes, the communicator replies with the $\mb{yesmsg}$ label followed by sending
-the message (the $\product$ constructor) and $n:K$ import tokens.
-Otherwise, the communicator replies with the $\mb{nomsg}$ label.
-In either case, the communicator then detaches from the client matching the $\down$
-operator.
-Internally, the communicator stores these messages in a first-in-first-out order.
+The sender can $\mb{SEND}$ a message into the communicator, and the receiver can periodically try to $\mb{RECV}$ a message from it.
+If there is a message, it responds with $\mb{yes}$, the message of the parameterized type $\m{msg}$, and the import sent with it.
+Note that the communicator retains one unit of import from every message. 
+It needs at least one because it may be activated a polynomial number of times, and, therefore a constant amount of potential is insufficient. 
+At the end of activation, the channel is released with $\down$, and another process can acquire it.
+
+%The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
+%messages in the buffer, and import type parameter, i.e. the amount of import tokens sent with
+%the message. 
+%The type initiates with an $\up$ denoting that $\m{comm}$ is a shared session type.
+%The type prescribes that the communicator needs to be acquired by the sender (or receiver)
+%for further interaction.
+%Such an acquire-release discipline is automatically enforced by the shared session type.
+%Once acquired, the communicator can either receive $\mb{push}$ (from sender) or
+%$\mb{pop}$ requests (from receiver).
+%In the former case, the communicator receives a message of type $\m{msg}$ and $n+1:K$ import tokens, and
+%then detaches from the client using the dual $\down$ operator.
+%In the latter case, the communicator checks if it internally contains a message
+%for the receiver.
+%If yes, the communicator replies with the $\mb{yesmsg}$ label followed by sending
+%the message (the $\product$ constructor) and $n:K$ import tokens.
+%Otherwise, the communicator replies with the $\mb{nomsg}$ label.
+%In either case, the communicator then detaches from the client matching the $\down$
+%operator.
+%Internally, the communicator stores these messages in a first-in-first-out order.
 
 %It is important to note that our communicators need at least 1 token of import 
 %to use themselves to handle a potentially polynomial number of activations. 
 %Therefore, it requires $n+1$ units of import from the sender and sends the intended
 %$n$ tokens to the receiver when requested.
 
-The communicator is also the perfect opportunity to implement an unreliable
-message buffer that can drop or reorder messages.
-All we would need to do is change the internal implementation of the communicator
-\emph{without} changing the offered session type.
+%The communicator is also the perfect opportunity to implement an unreliable
+%message buffer that can drop or reorder messages.
+%All we would need to do is change the internal implementation of the communicator
+%\emph{without} changing the offered session type.

@@ -14,6 +14,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{listings}
 \usepackage{tabularx}
+\usepackage{bbm}
 
 %% PL packages
 \usepackage{stmaryrd} 
@@ -133,7 +134,8 @@ component, formatting, style, styling, insert
 %\section{Reliable Broadcast} \label{sec:rbc}
 %\input{sections/rbc}
 
-\section*{Acknowledgment}
+\section{Discussion and Future Work}
+\input{sections/future}
 
 \section*{References}
 
@@ -144,6 +146,21 @@ component, formatting, style, styling, insert
 %input{figures/asyncwrapper}
 
 \appendix
+
+\section{\fwrapper} \label{app:fwrapper}
+The \fwrapper adopts a similar approach to the \partywrapper, except it only creates one instance of the underlying functionality.
+For the same reason as the \partywrapper, we use an \fwrapper to enable a dynamic set of parties.
+One caveat in supporting such functionalities, is that, so far, only functionalities whose type follows a specific form are allowed.
+In the random oracle type given below, notice that the type before and after a party interacts with it is the same: type $\m{party}[a]$.
+\begin{mathpar}
+\m{party}[a] = \textcolor{red}{\getpot^1} \ichoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a]} \\
+\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \product \textcolor{red}{\paypot^0} \m{party}[a]} 
+\end{mathpar}
+A party queries a $\mb{hash}$ of an integer from \Fro and receives an integer as a response. The session type includes the \inline{pid}, which enables it to handle all parties over the same channel.
+
+An example of the internals of the \fwrapper are showing on the left-hand-side of Figure~\ref{fig:multisession}.
+Like the \inline{z2p} processes in the \partywrapper, \inline{S} and \inline{R} represent the sender and receiver in the commitment protocol, and they read from their virtual communicators and communicate with \Fcom over a session-typed channel.
+
 
 %\section{Proofs}
 %\input{sections/brachaproof}
