@@ -695,16 +695,52 @@ Another illustrative description of why composition works, logically, is shown b
 %In line (13) above, $\rho$ is moved into the execution environment with an unchanged simulator as no additional simulation is required: the simulator allows unfettered communication between parties of $\rho$ and \Z.
 
 \subsection{Multisession}
+
+\begin{theorem}[Composition]\label{thm:composition}
+\begin{mathpar}
+\inferrule*[right=compose]
+{
+	%(\pi, !\F_1) \sim (\idealP, F_2) \semi (\rho, !\F_2) \sim (\idealP, \F_3) \\ 
+	!\F_1 \xrightarrow{\pi} \F_2 \semi !\F_2 \xrightarrow{\rho} \F_3 \\
+	%\Rightarrow \exists \Sim(\A) \vdash (\rho^{!\F_2 \rightarrow (!\pi \, \circ \, \msf{squash})}, !\F_1) \sim (\idealP, \F_3)
+}
+{
+	!\F_1 \xrightarrow{\rho \, \circ !\pi \circ \, \msf{squash}} \F_3
+	%(\rho \, \circ \, !\pi \circ \msf{squash}, !\F_1) \sim (\idealP, \F_3)
+}
+\end{mathpar}
+\end{theorem}
+Full composition in the UC framework extends beyond the simpler composition in Theorem~\ref{thm:singlecomp} which only defines replacement of one functionality with a protocol that replaces it.
+Instead, UC composition allows for replacement of any number of instances of a functionality with instancesof the realizing protocol.
+Theorem~\ref{thm:composition} illustrates the full composition theorem using our arrow notation, and highlights a theorem that we must prove before we can achieve full composition.
+It relies on Theorem~\ref{thm:squash} that introduces the \msf{squash} protocol and the $!$ operator.
+Notice that Theorem~\ref{thm:compose} follows directly from Theorem~\ref{thm:singlecomp} and Theorem~\ref{thm:squash}.
+
+%UC composition allows replacement of any number of instaces of a functionality with instances of the protocol 
 The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances to be run within a sinlge ITM.
 The ITM simulates multiple instances of the protocol/functionality intnerally and multiplexes input/output to/from them in same way as the party wrapper for protocol parties.
 In keeping with our previous constructions, the multisession functionality runs a given protocol in the same was as the protocol wrapper, or a functionality as the functionality wrapper does, and spawns multiple instances of them on-demand.
 
-In keeping with our previous constructions, the multisession also has a session type given by
+\begin{theorem}[Squash Theorem]\label{thm:squash}
+%If a functionality \F is well-resource-typed, then $!\F$ and $!!\F$ are well-resource-typed (by Theorem~\ref{thm:bangppt}) and $(\idealP, !!\F) \sim (\msf{squash}, !\F)$.
+%\textit{Well-resource-typed} \F $\Rightarrow$ $!\F \xrightarrow{\msf{squash}} !!\F$%  $(\idealP, !!\F) \sim (\msf{squash}, !\F)$
+\begin{mathpar}
+\inferrule*[right=squash]
+{
+\textit{well-resource-typed} \; \F
+}
+{
+!\F \xrightarrow{\msf{squash}} !!\F
+}
+\end{mathpar}
+\end{theorem}
+
+In type of the communication for the the multisession operator is given by the following session type:
 \begin{mathpar}
 \mi{stype} \; \m{{P2MS}[a][b]\{n,m\}} = \textcolor{red}{\getpot^n} \ichoice{\mb{Inp}: ssid \product a \arrow \m{MS2P[a][b]\{n,m\}}} \\
 \mi{stype} \; \m{{MS2P}[a][b]\{n,m\}} = \echoice{\mb{Ok}: \textcolor{red}{\paypot^0} \; \m{P2MS[a][b]\{n,m\}}, \mb{Out}: ssid \product b \arrow \textcolor{red}{\paypot^m} \; \m{P2MS[a][b]\{n,m\}}}  
 \end{mathpar}
-and the functional types that are send to the wrapper surrounding it are given by
+and the functional types that are sent to the wrapper surrounding it are given by
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
 $\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
 $\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
@@ -751,19 +787,6 @@ Similarly, \F being \textit{well-resource-typed} ensures a valid token context f
 Therefore, it is clear that there exists a global connecting poltnomial $f$ that ensures a valid token context for $!\F$.
 \end{proof}
 
-\begin{theorem}[Squash Theorem]\label{thm:squash}
-%If a functionality \F is well-resource-typed, then $!\F$ and $!!\F$ are well-resource-typed (by Theorem~\ref{thm:bangppt}) and $(\idealP, !!\F) \sim (\msf{squash}, !\F)$.
-%\textit{Well-resource-typed} \F $\Rightarrow$ $!\F \xrightarrow{\msf{squash}} !!\F$%  $(\idealP, !!\F) \sim (\msf{squash}, !\F)$
-\begin{mathpar}
-\inferrule*[right=squash]
-{
-\textit{well-resource-typed} \; \F
-}
-{
-!\F \xrightarrow{\msf{squash}} !!\F
-}
-\end{mathpar}
-\end{theorem}
 
 %\begin{figure}
 %\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
@@ -805,27 +828,10 @@ It performs constant work per activation and does ``real'' simulation other than
 \end{proof}
 
 \subsection{UC Composition}
-Composition in the UC setting is not limited to replacement of a single instance of a protocol.
-Instead, it permits replacement of any number of instances of a protocol $\phi$, each with their own session id, with instances of a realizing protocol $\pi$.
-This generalized form of composition follows directly from Theorems \ref{thm:singlecomp} and \ref{thm:squash}.
-
-\begin{theorem}[Composition]\label{thm:composition}
-\begin{mathpar}
-\inferrule*[right=compose]
-{
-	%(\pi, !\F_1) \sim (\idealP, F_2) \semi (\rho, !\F_2) \sim (\idealP, \F_3) \\ 
-	!\F_1 \xrightarrow{\pi} \F_2 \semi !\F_2 \xrightarrow{\rho} \F_3 \\
-	%\Rightarrow \exists \Sim(\A) \vdash (\rho^{!\F_2 \rightarrow (!\pi \, \circ \, \msf{squash})}, !\F_1) \sim (\idealP, \F_3)
-}
-{
-	!\F_1 \xrightarrow{\rho \, \circ !\pi \circ \, \msf{squash}} \F_3
-	%(\rho \, \circ \, !\pi \circ \msf{squash}, !\F_1) \sim (\idealP, \F_3)
-}
-\end{mathpar}
-\end{theorem}
+Finally, we can conlude with full composition in Theorem~\ref{thm:compose}.
+The proof follows directly from Theorems~\ref{thm:singlecomp} and \ref{thm:squash}.
 
 \begin{proof}
-The proof of full composition follows directly from the single composition Theorem~\ref{thm:singlecomp} and the Squash Theorem~\ref{thm:squash}.
 By Theorem~\ref{thm:singlecomp} we can construct a simulator \SIM{1} for $!!\F_1 \xrightarrow{\rho \, \circ \, !\pi} \F_3$.
 Theorem~\ref{thm:squash} then allows us to ``squash'' $!!\F_1$ and construct a simulator using \SIM{1} for $!\F_1 \xrightarrow{\rho \, \circ \, !\pi \, \circ \, \msf{squash}} \F_3$
 \end{proof}
