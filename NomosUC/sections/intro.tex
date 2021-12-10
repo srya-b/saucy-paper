@@ -38,14 +38,40 @@ The Nomos type checker then statically enforces that these protocols are adhered
 Failure to typecheck provides precise feedback to the programmer on exactly where the
 implementation departs from its intended protocol.
 
-   The challenge of “polynomial runtime” in UC is that individual processes must be judged as polynomial, but when eveluated in context with other concurrently running process it is difficult to assign blame.
-       The current best way to define polynomial runtime, found in the 2019 and later version of UC, is based a concept of ``import tokens.''
-       This turns out to be a good fit for the ``Potential'' from Nomos and Resource-Aware ML.
-Our construction can reason about local polynomial time for open terms based only on the channel types and assert polynomial-bound in the security parameter by checking valid polynomial and import bounds, and it even guarnatees termination.
-The result is a deep connection between session type semantics and the formal foundation of UC.
-    The Preservation theorem we prove associated with our type system and operational semantics proves the following: 
-  well-typed terms in Nomos UC are “locally polynomial time”, in the sense required of UC, meaning they do not take more steps that some polynomial function $T(N)$ of the net number of import tokens it has received.
-  \anote{Explain better connection between Preservation theorem and what is needed in UC proofs}
+A core novelty of NomosUC is its support for ensuring \emph{resource bounded computation}.
+As is common in cryptography, security of a protocol is expressed via universal quantification
+on feasible computation and thus, crucially relies on the exact formulation of computational cost.
+In UC, computational cost is controlled using an \emph{import mechanism}.
+Every message exchanged between individual processes contains an import field represented by
+a natural number.
+The \emph{run-time budget} $n$ of a process is then defined as the sum of import of messages
+received by a process \emph{minus} the sum of import of messages sent by it.
+Each process is constrained in a way that its total number of execution steps is bounded
+by $T(n)$ where $T$ is a \emph{reasonable} polynomial.
+
+This import mechanism is closely connected to the \emph{potential mechanism} in Nomos, and
+generally speaking, resource-aware session types.
+Nomos features special messages that contain \emph{potential} (again represented as a natural
+number) that can be exchanged among processes involved in a computation.
+And processes consume this potential to make an execution step, thereby guaranteeing that
+the total potential of a process bounds the total computational cost.
+
+NomosUC unifies these two mechanisms resulting in a deep connection between session type
+semantics and the formal foundation of UC.
+We achieve this unification in 2 novel steps: first we provide a construct to exchange import along
+with messages among UC processes.
+In addition, we provide another construct for using import to generate potential which
+is then used to bound the total number of execution steps.
+The latter construct guarantees that if the total import of a process is $n$, then we
+can never generate more than $T(n)$ potential units
+This ensures that the total computational cost of each process is bounded by a polynomial
+in the import stored by it.
+Furthermore, since import is ultimately connected to the security parameter, NomosUC
+therefore, not only guarantees termination, but also asserts polynomial bounds on
+the execution cost in terms of the security parameter.
+The soundness of our approach is achieved by proving a \emph{preservation theorem}
+which states that well-typed processes in NomosUC are ``locally polynomial time"
+in the sense required by UC.
 
 %In this work we attempt to improve on the state of the art by applying \textit{resource-aware session types} to realize the UC framework that we call Nomos UC.
 
