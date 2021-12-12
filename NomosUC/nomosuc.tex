@@ -91,6 +91,14 @@
 \maketitle
 
 \begin{abstract}
+The Universal Composability (UC) framework is the leading framework for analyzing cryptographic protocols, however, is limited to on-paper proofs which can be cumnersome and difficult to analyze and understand.
+A large body of prior work has attempted to create formal analysis tools around the UC framework.
+Many of these works fall short in either expressiveness, reasoning about computational security, or capturing the full compositional security guarantees provided by it.
+
+In this work we propose NomosUC, a programming language that combines ideas resource aware session-types and existing process calculi for UC.
+Resource-aware session types capture protocol communication and ordering at the type level, and they enable us to capture the novel import mechanism for polynomial time proposed by Canetti~\cite{uc}.
+
+
 The Universal Composability (UC) framework is the leading framework for analyzing cryptographic protocols and their applications.
 Many tools exist, currently, for analyzing protocol in the UC framework, however, many of them fall short of adequatley capturing its full polynomial time notion and aid in expressing complex, modular protocols.
 In this work we adapt work into resource-aware session types~\cite{dasnomos} to the UC setting and use their existing potential mechanism to implement the new import mechanism introduced by~\cite{uc}.
