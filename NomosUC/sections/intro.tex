@@ -1,42 +1,58 @@
-We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular layered constructions.
+We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
 In cryptography, the leading framework for managing such compositions is Universal Composability (UC)~\cite{uc}.
-The central idea is the Ideal Functionality: the security specification of a protocol is given by a concrete instance of a program that, if run by a trusted central party, would exhibit all the desired behaviors of the protocol.
-This leads to a modular framework, where protocols proven secure in UC are gauranteed to be secure when composed with arbitrary other protocols running concurrently.
+The central idea of the frameowkr is in the ideal functionality: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
+This leads to a modular framework, where larger protocols can be designed using simple ideal functionalitieis, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
 Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others. However, these have several shortcomings, which we address through the following questions:
 
-\begin{itemize}
-\item RQ1: Cryptographic applications often involve several different parties communicating
-with each other in a pre-defined protocol.
+\begin{enumerate}
+\item Increasinglt complex cryptographic applications often involve several parties communicating according to a pre-defined protocol, and implementations of them can deviate from their intended behavior.
 However, existing tools often do not provide a streamlined approach of expressing and enforcing
 such protocols.
-As cryptographic protocols become more and more complex, it is likely that the implementation
-of such applications deviates from its intended behavior.
-In such scenarios, can the programming language provide some feedback to its user that such
-a deviation has occurred?
+For such protocols, can the programming language provide alert its user to such deviations in their code?
 
-\item RQ2: Execution cost analysis plays a central role in UC, since we are only concerned with
+%\item RQ1: Cryptographic applications often involve several different parties communicating
+%with each other in a pre-defined protocol.
+%However, existing tools often do not provide a streamlined approach of expressing and enforcing
+%such protocols.
+%As cryptographic protocols become more and more complex, it is likely that the implementation
+%of such applications deviates from its intended behavior.
+%In such scenarios, can the programming language provide some feedback to its user that such
+%a deviation has occurred?
+\item Execution cost analysis plays a central role in UC, since we are only concerned with
 attackers possessing polynomial-time computational power.
-However, existing tools provide almost no support in enforcing such restrictions on adversaries.
-In addition, UC configurations contain several different components: simulator, environment,
-adversary, ideal functionality, and honest and corrupt parties.
-Thus, it is important to ensure that polynomial-time bounds are enforced on the correct
-components, which again can become challenging as the complexity of the cryptographic protocol
-increases.
+However, existing tools provide almost no support in enforcing such restrictions on adversaries, and,
+as protocol complexity increases it is increasingly important to ensure polynomial-time bounds on the
+rest of the UC components: protocols, simulators, functionalities, and environments.
 Can we introduce resource-awareness into programming languages such that these restrictions
 are automatically enforced?
-\end{itemize}
 
-We answer these questions by designing a new language, NomosUC that combines ideas from
+%\item Execution cost analysis plays a central role in UC, since we are only concerned with
+%attackers possessing polynomial-time computational power.
+%However, existing tools provide almost no support in enforcing such restrictions on adversaries.
+%In addition, UC configurations contain several different components: simulator, environment,
+%adversary, ideal functionality, and honest and corrupt parties.
+%Thus, it is important to ensure that polynomial-time bounds are enforced on the correct
+%components, which again can become challenging as the complexity of the cryptographic protocol
+%increases.
+%Can we introduce resource-awareness into programming languages such that these restrictions
+%are automatically enforced?
+\end{enumerate}
+
+We answer these questions by designing a new language, NomosUC, that combines ideas from
 Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc},
 a process calculus for UC.
 Session types in Nomos allow us to express communication protocols in both the ideal and
 real world implementations of cryptographic applications.
 For instance, for the two-party bit commitment protocol~\cite{rocommitment}, session types guarantee
-\anote{ideal world guarantee} in the ideal world, and \anote{real world guarantee} in the
-real world.
-The Nomos type checker then statically enforces that these protocols are adhered to at runtime.
-Failure to typecheck provides precise feedback to the programmer on exactly where the
+the interface and resource requirements that the protocol offers to the environment in the ideal world, and the specific protocol 
+message and import exchange between the two parties in the real world.
+The polynomial time guarantee in NomosUC is defined by the resource requirements specified by the import in the ideal and real world
+session types.
+They ensure composed protocols can provide enough computational resources to capture party communication and adverasrial capabilities in the real and ideal worlds to the sub-protocols they rely on.
+THe Nomos type checker then statically enforces both of these requirements are adhered to at runtime, and  
+failure to typecheck provides precise feedback to the programmer on exactly where the
 implementation departs from its intended protocol.
+
 
    The challenge of “polynomial runtime” in UC is that individual processes must be judged as polynomial, but when eveluated in context with other concurrently running process it is difficult to assign blame.
        The current best way to define polynomial runtime, found in the 2019 and later version of UC, is based a concept of ``import tokens.''
