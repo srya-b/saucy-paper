@@ -9,11 +9,132 @@ type rof2p[a] = RHash of Int | Yes of pid ^ a  | No ;
 type roa2f = QHash of Int ;
 type rof2a = RHash of Int ;
 
-proc sim_com[K] :
+proc sim_com_sender[K] :
 	(k: Int), (rng: [Bit]), (sid: session[1]),
 	(#z_to_a: comm[z2a[comp2f][roa2f]]), (#a_to_z: comm[a2z[comf2p][rof2a]),
 	(#p_to_a: comm[p2a[rof2p]]), (#a_to_p: comm[p2a[rop2f]]),
 	(#f_to_a: comm[f2a[rof2a]]), (#a_to_f: comm[a2f[roa2f]]) |- ($ch: 1) =
+{	
+	$z2a <- acquire #z_to_a ;
+	$z2a.RECV ;
+	case $a2z (
+		Z2A2F(QHash(b)) =>
+			h <- sample rng k ;	
+			(* store (b, h) in table *)
+			#z_to_a <- release $z2a ;
+			$a2z <- acquire #z_to_z ;
+			$a2z.SEND ;
+			send a2z F2A2Z(RHash(x)) ;
+			#a_to_z <- release $a2z ;
+		
+			$z2a <- acquire #z_to_a ;
+			$z2a.RECV ;
+			case $z2a (
+				yes =>
+					msg = recv $z2a ;
+					#z_to_a <- release $z2a ;
+					case msg (
+						Z2A2P(1, Send(2, x)) =>
+							$z2a <- acquire #z_to_a ;
+							$z2a.RECV ;	
+							case $z2a (
+								yes =>
+									msg = recv $z2a ;	
+									case msg (
+										Z2A2P(1, Send(2, (bit, hash))) =>
+											if bit != b
+											then
+												(* do nothing *)
+											else
+												#z_to_a <- release $z2a ;
+												$a2p <- acquire #a_to_p ;	
+												send $a2p A2P(1, Commit(bit)) 
+											end
+									)
+							)
+					)
+			)
+	)
+												
+}
+
+proc sim_com_receiver[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#z_to_a: comm[z2a[comp2f][roa2f]]), (#a_to_z: comm[a2z[comf2p][rof2a]),
+	(#p_to_a: comm[p2a[rof2p]]), (#a_to_p: comm[p2a[rop2f]]),
+	(#f_to_a: comm[f2a[rof2a]]), (#a_to_f: comm[a2f[roa2f]]), (h: Int) |- ($ch: 1) =
 {
-	
+	$z2a <- acquire #z_to_a ;
+	$z2a.RECV ;
+	case $z2a (	
+		yes =>
+			msg = recv $z2a ;
+				Z2A2P(2, Recv) =>	
+					#z_to_a <- release $z2a ;
+					$a2z <- acquire #a_to_z ;
+					$a2z.SEND ;	
+					send $a2z P2A2Z(2, No) ;
+				Z2A2P(2, QHash(x)) =>
+					(* check for hashes or create new one in the style of F_ro *)
+					(* h <- sample rng k ; *)
+					(* store (x,h) in table *)
+					#z_to_a <- release $z2a ;
+					$a2z <- acquire #a_to_z ;
+					send $a2z P2A2Z(2, RHash(h)) ;
+		no =>
+			$ch <- sim_com_receiver_commitcheck[K] <- ... h ;
+	)
+}
+					
+proc sim_com_receiver_commitcheck[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#z_to_a: comm[z2a[comp2f][roa2f]]), (#a_to_z: comm[a2z[comf2p][rof2a]),
+	(#p_to_a: comm[p2a[rof2p]]), (#a_to_p: comm[p2a[rop2f]]),
+	(#f_to_a: comm[f2a[rof2a]]), (#a_to_f: comm[a2f[roa2f]]), (h: Int) |- ($ch: 1) =
+{
+	$p2a <- acquire #p_to_a ;
+	$p2a.RECV ;
+	case $p2a (
+		yes =>
+			msg = recvf $p2a ;
+			case msg (
+				P2A(2, Commit) =>	
+					#p_to_a <- release $p2a ;
+					$z2a <- acquire #z_to_a ;
+					$z2a.RECV ;
+					case $z2a (
+						yes => 
+							msg = recv $z2a ;
+							case msg (
+								Z2A2P(2, Recv) =>
+									#z_to_a <- release $z2a ;
+									$a2z <- acquire #z_to_a ;
+									$a2z.SEND ;
+									h <- sample rng k ;
+									(* store h *)
+									send $a2z P2A2Z(2, Yes(1, k)) ;
+									$ch <- sim_com_receiver[K] <- ... h ;
+							)
+					)
+				P2A(2, Open(b)) =>
+					#p_to_a <- release $p2a ;
+					x <- sample rng k ;
+					(* store (b+x, h) in table *)
+					$z2a <- acquire #z_to_a ;
+					$z2a.RECV ;
+					case $z2a (
+						yes =>
+							msg = recv $z2a ;
+							case msg (	
+								(* todo continue to repond to hash queries here as well *)
+								Z2A2P(2, Recv) =>
+									#z_to_a <- release $z2a ;
+									$a2z <- acquire #a_to_z ;
+									$a2z.SEND ;
+									send $a2z P2A2Z(2, Yes(1, b, x)) ; 
+									$ch <- sim_com_receiver[K] <- ... h ;
+							)
+					)
+			)
+	)
 }

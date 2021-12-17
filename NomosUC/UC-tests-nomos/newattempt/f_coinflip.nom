@@ -58,3 +58,5 @@ proc F_coinflip_receiver[K]:
 {
 	case $R ( getflip => $R.res; send $R b; )
 }
+
+
