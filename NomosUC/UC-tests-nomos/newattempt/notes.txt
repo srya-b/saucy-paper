@@ -1,0 +1,55 @@
+F_coinflip:
+* on input (fllip) from P_f:
+	- b <-$- {0,1}^1
+	- Leak (flip) to A 
+* on input (recv) from P_i:
+	- if b: Send b --> P_i
+	- else: Send -1 --> P_i
+
+
+prot_coinflip_flipper:
+* on input (flip) from Z:
+	- b <-$- {0,1}^1
+	- send (Commit, b) to F_com
+	* on input (send_to_flipper, r) from F_com:
+		- Send (open) to F_com
+		- flip = r xor b
+* on input (recv) from Z:
+	- if flip: Send slip to Z
+	- else: send -1 to Z
+
+prot_coinflip_recv:
+* on input (Committed) from F_com:
+	r <-$- {0,1}^1
+	Send (send_to_flipper, r) to F_com
+	* on input (open, b) from F_com:
+		- flip = r xor b
+* on input (recv) from Z:
+	- if flip: Send slip to Z
+	- else: send -1 to Z
+
+Simulator_if_flipper_crupt:
+* on input Z2A2P(flipper, (Commit, b)) from Z:
+	- r <-$- {0,1}^1
+	- Send P2A2Z(flipper, (send_to_flipper, r)) to Z
+
+	* on input Z2A2P(flipper, Open) from Z:
+		- Send A2P(flipper, flip) to flipper
+	
+		* on input Z2A2P(flipper, recv) from Z:
+			- Send A2P(flipper, recv) to flipper
+			* recv P2A(flipper, flip) from flipper
+			-  Send P2A2Z(flipper, flip) to Z
+
+
+Simulator_if_receiver_crupt:
+* on input (flip) from F_coinflip
+	- Send P2A2Z(receiver, committed) to Z
+
+	* on input Z2A2P(receiver, (send_to_flipper, r)) from Z:
+		- store r
+		- Send A2P(receiver, (recv)) to receiver
+		* recv P2A(receiver, flip) from receiver
+		- b <- r xor f 
+		- Send P2A2Z(receiver, (open, b)) to Z
+

@@ -1,0 +1,19 @@
+type comp2f = Commit of Bit | Open ;
+type comf2p = Commit | Open of Bit ;
+type z2a[a][b] = Z2A2P of pid ^ a | Z2A2F of b ;
+type a2z[a][b] = P2A2Z of pid ^ a  F2A2Z of b ;
+
+type rop2f[a] = QHash of Int | Send of pid ^ a | Recv ;
+type rof2p[a] = RHash of Int | Yes of pid ^ a  | No ;
+
+type roa2f = QHash of Int ;
+type rof2a = RHash of Int ;
+
+proc sim_com[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#z_to_a: comm[z2a[comp2f][roa2f]]), (#a_to_z: comm[a2z[comf2p][rof2a]),
+	(#p_to_a: comm[p2a[rof2p]]), (#a_to_p: comm[p2a[rop2f]]),
+	(#f_to_a: comm[f2a[rof2a]]), (#a_to_f: comm[a2f[roa2f]]) |- ($ch: 1) =
+{
+	
+}
