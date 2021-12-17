@@ -91,13 +91,14 @@
 \maketitle
 
 \begin{abstract}
-The Universal Composability (UC) framework is the leading framework for analyzing cryptographic protocols and their applications.
-Many tools exist, currently, for analyzing protocol in the UC framework, however, many of them fall short of adequatley capturing its full polynomial time notion and aid in expressing complex, modular protocols.
-In this work we adapt work into resource-aware session types~\cite{dasnomos} to the UC setting and use their existing potential mechanism to implement the new import mechanism introduced by~\cite{uc}.
-Resource-aware session types enforce protocol specifications and runtime budgets in the type system, aiding in the construction of large, modular protocols.
+The Universal Composability (UC) framework is the leading framework for analyzing cryptographic protocols with compositional security, however, is limited to on-paper proofs which can be cumbersome and difficult to analyze.
+A large body of work has attempted to make it more accessible by creating formal analysis tools and programming langauge artefacts around it.
+Many of these works, hoever, fall short in either expressiveness, in reasoning about computational security, or capturing full composition security guarantees of the framework.
 
-To the best of our knowledge this is the first work to meaningfully implement and use the novel import mechanism, and we demonstrate its usefulness through a case study of the two-party commitment protocol~\ref{rocommitment}.
-\todo{add more}
+In this work we propose a programming language called NomosUC that combines resource-aware session types\cite{nomos} and existing process calculi for UC~\cite{ilc}.
+Session types provide a type system that can express and enforce ordering and the communication in a protocol.
+Resource-aware session types extend them further to to track the computational cost of processes, and we extend them in this work to implement the import mechanism~\cite{uc} for better polynomial time reasoning compared to existing works~\cite{easyuc, ipdl, ilc}.
+We introduce the new mechanisms, required for UC, that we add to Nomos, and provide a composition operator that achieves full UC composability.
 \end{abstract}
 
 \begin{IEEEkeywords}
