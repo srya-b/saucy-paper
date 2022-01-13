@@ -9,9 +9,9 @@ stype ropened = 1
 type comp2f = Commit of Bit | Open ;
 type comf2p = Commit | Open of Bit ;
 
-proc prot_ideal[K][z2p] :
+proc prot_ideal[z2p][f2p] :
 	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
-	($z2p: z2p) |- ($d: z2p) =
+	($z2p: z2p[()]) |- ($d: f2p[()]) =
 {
 	$d <- $z2p ;
 }

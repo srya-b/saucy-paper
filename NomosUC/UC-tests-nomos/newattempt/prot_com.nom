@@ -271,9 +271,10 @@ proc prot_wrapper[K][K1] :
 	(k: Int), (rng: [Bit]), (sid: session[1]),
 	(#z_to_pw <- comm[z2pmsg[comp2f]][K]), (#pw_to_z <- comm[p2zmsg[comf2p]][K]),
 	(#f_to_pw <- comm[f2pmsg[rof2p[Int]]][K]), (#pw_to_f <- comm[p2fmsg[rop2g[Int]]][K]),
-	(#a_to_pw <- comm[a2pmsg[???][K]), (#pw_to_a <- comm[p2amsg[???]][K])  |- ($ch: 1) =
+	(#a_to_pw <- comm[a2pmsg[???][K]), (#pw_to_a <- comm[p2amsg[???]][K]), (#z: pump)  |- ($ch: 1) =
 {
 	
+	#ds <- control ;	
 	$lz2pcomm <- pnil[comm[z2pmsg[comp2f]]] <- ;
 	$lp2zcomm <- pnil[comm[p2zmsg[comf2p]]] <- ;
 	$lf2pcomm <- pnil[comm[f2pmsg[rof2p]]] <- ;
@@ -304,6 +305,21 @@ proc prot_wrapper[K][K1] :
 
 	(* TODO wrapper reads/writes from all items of these three lists and forwards them *)	
 }
+
+proc control :
+	(#reald: pump)  |- (#d: pump) =
+{
+	$d <- acquire #d ;
+	case $d (
+		dump =>
+			$d.reset ;
+			#d <- release 
+			$reald <- acquire #reald ;
+			$reald.dump ;
+			#reald <- release $reald ;
+			$c <- party_wrapper_1[K] <- ....
+	)
+} 
 
 
 

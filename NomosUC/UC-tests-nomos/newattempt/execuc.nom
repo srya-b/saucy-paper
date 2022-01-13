@@ -1,8 +1,16 @@
 
-proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
-	(k: Int), (rng: [Bit]) |- ($d: Bit) =
-{
+stype EtoZ[a] = +{ init: a ^ list[Int] -> exec }
+stype exec = &{ start: pump } ;
+stype pump = &{ dump: out }
+stype out = +{ reset: pump ;
+					 		 output: Bit -> 1 } ;
 
+stype execout = +{ out: Bit -> 1 } ;
+
+proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
+	(k: Int), (rng: [Bit]) |- ($d: execout) =
+{
+	
 	#z_to_pw <- communicator_init[K][z2p][K] <- ; 
 	#pw_to_z <- communicator_init[K][p2z][K] <- ; 
 
@@ -18,18 +26,29 @@ proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
 	#z_to_a <- communicator_init[K][z2a][K] <- ; 
 	#a_to_z <- communicator_init[K][a2z][K] <- ; 
 
-	$z <- PS.env <- k rng #z_to_pw #pw_to_z #z_to_a #a_to_z ;
-	sid = recv $z ;
-	clist = recv $z ;
+	#z <- PS.env <- k rng #z_to_pw #pw_to_z #z_to_a #a_to_z ;
+	sid = recv #z ;
+	clist = recv #z ;
 	
 	$pw <- party_wrapper[K][K1][p2z,z2p][p2f,f2p][p2a,a2p] <- 
-					k rng sid clist #pw_to_z #z_to_pw #pw_to_f #f_to_pw #pw_to_a #a_to_pw ;
+					k rng sid clist #pw_to_z #z_to_pw #pw_to_f #f_to_pw #pw_to_a #a_to_pw #z ;
 
 	$f <- f_wrapper[K][K1][f2p,p2f][f2a,a2f] <-
-					k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f ;
+					k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f #z ;
 
-	$a <- PS.adv[K] <- k rng sid clist #a_to_z #z_to_a #a_to_pw #pw_to_a #a_to_f #f_to_a ;
-	 
+	$a <- PS.adv[K] <- k rng sid clist #a_to_z #z_to_a #a_to_pw #pw_to_a #a_to_f #f_to_a #z ;
+	
+	$z <- acquire #z ; 
 	$z.start ;
-	$d <- $z 
+	(*$d <- $z *)
+	#z <- release $z ;
+	case $z (
+		output =>
+			b = recv $z ;
+			$d.output ; send $d b ;
+		reset =>
+			#z <- release $z ;
+	)
 }
+
+	

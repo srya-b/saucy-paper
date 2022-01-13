@@ -1,62 +1,53 @@
-stype flipper = +{ f_flip: flipped } ;
-stype flipped = +{ getflip: &{res: Bit * 1}}} ;
+stype flipper[K] = +{ init : K -> flipped } ;
+stype fflipped = +{ getflip: &{ flip: Bit * 1,
+																noflip: fflipped }} ;
 
-stype freceiver = +{ receive: getflip} ;
-stype r_getflip = &{ noflip: getflip,
-									res: Bit * 1} ;
+(*stype receiver[K] = &{ flipped: K -> rflipped } ;
+stype rflipped = +{ getflip: &{ flip: Bit * 1} ;*)
+stype receiver[K] = +{ getflip: &{ flip: K -> Bit -> 1 ,
+																	 noflip: receiver[K] }} ;
 
+stype adv[K] = +{ flipped: K -> deliver } ;
+stype deliver = +{ askflip: &{ yes: deliver,
+															 no: deliver }}
 
-stype adversary = &{ flip: 1 } ;
+type flipp2f = Init | GetFlip | Recv ;
+type flipf2p = Flip of Bit ;
+
+type flipa2f = 1 ;
+type flipf2a = Flip ;
 
 proc F_coinflip[K] :
 	(k: Int), (rng: [Bit]), (sid: session[1]),
-	($F: flipper), ($R: freceiver), ($A: adversary) |- ($ch: 1) =
+	($F: flipper[K]), ($R: receiver[K]) |- ($ch: 1) =
 {
-	choice $F $R
-	| case $F (
-			f_flip =>
-				b = sample 1 rng ;
-				$A.flip ;
-				$ch <- F_coinflip[K] <- k rng sid $F $R $A b
-		)
-	| case $R (
-			receive =>
-				$R.noflip ;
-				$ch <- F_coinflip[K] <- k rng sid $F $R $A 
-		)			
+	case $F (
+		init =>
+			x = recv $F ;
+			b = sample 1 rng ;
+			$A.flipped ; 
+			send $R x ;
+			$f <- F_coinflip_flipper <- b $F ;
+			$r <- F_coinflip_receiver[K] <- b x $R ;
 }
 
-proc F_coinflip[K]:
-	(k: Int), (rng: [Bit]), (sid: session[1]),
-	($F: flipped), ($R: freceiver), ($A: 1), (b: Bit) |- ($ch: 1) =
+proc F_coinflip_flipper:
+	(b: Bit), ($F: fflipped) |- ($f: 1) =
 {
-	choice $F $R
-	| case $F (
+	case $F ( getflip => $F.flip ; send $F b ; ) 
+	case $F (
 		getflip =>
-			$F.res ;
-			send $F b ;
-			$ch <- F_coinflip_receiver[K] <- k rng $R b	
-		)
-	| case $R (
-			getflip =>
-				$R.res ;
-				send $R b ;
-				$ch <- F_coinflip_flipper[K] <- k rng $F b 
-		)
+			$A.askflip ;
+			case $A (
+				yes =>
+					$F.flip ;
+					se	nd $F b ;
+						
 }
 
-proc F_coinflip_flipper[K] :
-	(k: Int), (rng: [Bit]), (sid: session[1]),
-	($F: f_flipped) (b: Int) |- ($ch: 1) =
-{	
-	case $F( getflip => $F.res ; send $F b )
-}
-
-proc F_coinflip_receiver[K]:
-	(k: Int), (rng: [Bit]), (sid: session[1]),
-	($R: freceiver), (b: Bit) |- ($ch: 1) =
+proc F_coinflip_receiver[K] :
+	(b: Bit), (x: K), ($R: receiver[K]) |- ($r: 1) =
 {
-	case $R ( getflip => $R.res; send $R b; )
-}
-
+	case $R ( getflip => $R.flip ; send $F x ; send $F b ; )
+} 
 

@@ -1,20 +1,20 @@
-In this section we work through the entire commimtne example that has been used throughout this paper.
-We add an implementation of the random oracle \Fro, the real world commitment protocol, \prot{com} that uses it, and a simulator for emulation.
-Throughout this section we note where session types have impacted the design decisions of the various processes.
+In this section we work throgh the entire commitment example that has veen used throughout this paper, and we show composition by realizing a coin flipping ideal functionality \Fflip and a protocol realizing it in the \Fcom-hybrid world.
+We present the random oracle functionalitt \Fro, the real world protocol \prot{com}, and a simulator for the dummy adversary.
+Finally, we give \Fflip, and a realizing protocol and sketch the composed simulator for $\Fro \xrightarrow{\prot{flip} \circ \prot{com}} \Fflip$.
 
-\subsection{Static Corruptions}
-We deal in the static corruptions model of UC in this work. 
-This means that the environment decides the set of corrupt parties before the UC execution begins, and the adversary has no ability to corrupt any new parties mid-execution.
-The way NomosUC handles corrupt parties, and their inputs, is also how it handles ideal world (dummy parties).
-
-The dummy protocol does nothing but forward messages on its \inline{z2p} channel to its offered channel, and vice versa. 
-Its code has the same type definition as any other protocol party but the code is trivial:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
-$\$$ch <- $\$$d ;
-\end{lstlisting}
-where \inline{$\$$d} is the channel it offers.
-For honest and corrupt dummy parties in the ideal world, their incoming type from \Z or \A is the same and matches the type of the underlying \F.
-It follows, then, that in the real world the type of \A's channel with the party is the same as that of \Fro.
+%\subsection{Static Corruptions}
+%We deal in the static corruptions model of UC in this work. 
+%This means that the environment decides the set of corrupt parties before the UC execution begins, and the adversary has no ability to corrupt any new parties mid-execution.
+%The way NomosUC handles corrupt parties, and their inputs, is also how it handles ideal world (dummy parties).
+%
+%The dummy protocol does nothing but forward messages on its \inline{z2p} channel to its offered channel, and vice versa. 
+%%Its code has the same type definition as any other protocol party but the code is trivial:
+%%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+%%$\$$ch <- $\$$d ;
+%%\end{lstlisting}
+%%where \inline{$\$$d} is the channel it offers.
+%%For honest and corrupt dummy parties in the ideal world, their incoming type from \Z or \A is the same and matches the type of the underlying \F.
+%%It follows, then, that in the real world the type of \A's channel with the party is the same as that of \Fro.
 
 \subsection{The Random Oracle}
 The random oracle functionality captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
@@ -98,19 +98,115 @@ $\tb{case}$ $\$$p2f (
 \subsection{Simulation}
 Finally, we present a simulator \simcom, for the dummy adversary, for which the \Fcom is realized by \prot{com} in the \Fropp-hybrid world.
 The simulator is straightforward and internally maintains a table like \Fro and responds to the environments queries for hashes. 
+When the receiver is corrupt:
+\begin{itemize}
+\item \simcom responds with \inline{P2A2Z(2, no)} to all messages by \Z to get a message from the functionality
+\item On \inline{Committed} by the ideal receiver, \simcom generates a random $r$ and sends \inline{P2A2Z(2, RHash(h))}.
+\item In \inline{Open(b)} from the ideal receiver, \simcom generates a random nonce $x$ and stores \inline{b+x : h} in its \Fro table, and sends \inline{Yes(1, (b,x))} to \Z when asked for messages for the corrupt receiver.
+\end{itemize}
 
-When the receiver is corrupt, \simcom returns \inline{P2A2Z(2, No)} to all new message requests by \Z for the receiver until a commitment is made.
-After the sender commits, the receiver sends \simcom a \inline{Commit} message. The simulator simply generates randomness in the way of \Fro and returns \inline{P2A2Z(2, RHash(h))} to \Z.
-When a bit is revealed, \simcom generates a random nonce $x$, stores \inline{b+x} as the pre-image to \inline{h}, and sends \inline{Yes(1, (b,x)} to \Z as the receiver.
+The corrupt committer is not much different from the above case. In this case
+the simulator stores the bit $b$, the none $x$ and the corresponding hash $h$ that \Z uses to create a commitment.
+When the simulator receives the message to send the commitment to the receiver, it tells the ideal world committer to commit to $b$, and when it's told to open the commitment it opens it in the ideal world. 
 
-When the committer is corrupt, the simulator receives a query from \Z to generate a commitment. 
-\simcom generates a hash for the query, stores the bit \inline{b} from the the given pre-image \inline{b+x}, and returns a hash with \inline{P2A2Z(1, Rhash(h)}.
-When \Z sends \inline{Z2A2P(Send(2, h)}, the simulator does nothing and waits for \Z to open it.
-Finally, when it receives and \inline{Open} message from \Z for the sender, it sends \inline{A2P(1, Commit(b))} to the protocol wrapper.
+It is immediately clear that this simulator satisfied $\Fro \xrightarrow{\prot{com}} \Fcom$ for the dummy adversary.
 
-It is clear to see from this simulator that emulation must hold between the two worlds.
-In both of the corruption cases, \Z receives the appropriate commitments and, since \Fro samples random bits, it can not distinguish between hashes from \Fro and hashes from \simcom.
-In the case of the corrupt committer, \simcom simply reads the bit from queries made by \Z and can always ensure that \Fcom commits to the correct bit.
+\subsection{Coin Flipping}
+We present secure coin flipping here as another example and one that makes use of our composition operator. 
+Securely flipping a coin is a basic cryptographic primitive whose ideal functilnalitt \Fflip is captured by the session types in Figure~\ref{fig:fflip}.
+It's a 2-party protocol where one party is the initator of the flip and the other is a receiver.
+The desired property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
+\begin{figure}
+\centering
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+$\Type$ flipper[K] = +{ init: K -> flipped } ;
+$\Type$ fflipped = +{ getflip: &{ flip: Bit * 1 ,
+                                  noflip: fflipped }} ;
+$\Type$ receiver[K] = +{ getflip: &{ flip: K -> Bit -> 1 ,
+                                     noflip: recever[K] }} ;
+$\Type$ adv[K] = &{ flipped: K -> deliver } ;
+$\Type$ deliver = &{ askflip: +{ yes: deliver,
+                                 no: deliver }}
+\end{lstlisting}
+\end{figure}
+
+\Fflip only sends messages to the receiver when asked for the outcome of the flip with a \inline{getflip}. 
+We augment the session type, and the corresponding ideal functionality, with a polymorphic \inline{K} to strengthen the type and ensure that the receiver can not receive anything from \inline{getflip} until the flipped sends something of type \inline{K} to \Fflip.
+We concretize \inline{K} with the unit type \inline{()} at the protocol level as we only care about ordering in the functionality. 
+This gives the type more power and allows the resulting functionality and protocol code to be simpler. 
+
+The code for \Fflip is quite simple and shown below:
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+$\nproc$ F_coinflip[K] :
+  (k: Int), (rng: [Bit]), (sid: session[1]),
+  ($\$$F: flipper[K]), ($\$$R: receiver[K]),
+  ($\$$A: adv[K]) |- ($\$$c: 1) =
+{
+  $\ncase$ $\$$F (
+    init =>
+      x = $\nrecv$ $\$$F ;
+      b = sample 1 rng ;
+      $\$$A.flipped ;
+      $\nsend$ $\$$A x ;
+	  $\tg{(* wait for getflips *)}$
+      $\$$f <- getflip_f <- b $\$$F ;
+      $\$$r <- getflip_r[K] <- b x $\$$R ;
+  )
+}
+\end{lstlisting}
+We elide the code for \inline{getflip} although it is straightforward. 
+The adversary decides whether to deliver the output flip to a party asking for it.
+Much like the real-world case where the corrupt committer never opens its commitment, the simulator here can ensure that only the flipper receives the flip.
+As the session type indicates, the adversary responds with a \inline{yes} or \inline{no} to deliver the flip.
+
+%Upon a \inline{getflip} request, the adversary is activated and asked whether to deliver the outcome as shown in Figure~\ref{fig:optional}. 
+%\begin{figure}
+%\centering
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+%$\ncase$ $\$$F (
+%  getflip =>
+%    $\$$A.askflip ;
+%    $\ncase$ $\$$A (
+%      yes =>
+%        $\$$F.flip ; send $\$$F b ;
+%      no =>
+%        $\tg{(* loop and wait for getflip *)}$
+%    )
+%)
+%\end{lstlisting}
+%\caption{} \label{fig:optional}
+%\end{figure}
+
+The protocol for the coin flip uses \Fcom. 
+The flipper commits to a bit $b$, the receiver sends the flipper a random bit $r$ in return, the flipper opens its commitment, and both parties compute the flip as $r \oplus b$.
+The simulator for this protocol to realize \Fflip is straightforward:
+\begin{itemize}
+\item If the flipper is corrupt, the simulator tells the flipper to \inline{init} the flip when the environment sends it a \inline{Commit b} message. It gets the flip outcome $f$ from the flipper and simulates the receivers random bit $r = f \oplus b$ for the environment. It never delivers the flip outcome to the receiver unless the environment instructs it to open the flipper's commitment. By setting $r = f \oplus b$, when the environment receives $f$ it can check that $r \oplus b = f$.
+\item If the receiver is corrupt, the simulator waits for \Fflip to inform it that the flip was initiated. It simulates the \inline{Commit} message from \Fcom to the receiver, for \Z. When it receives the random bit that \Z wants the receiver to send, it gets the flip outcome from the receiver, computes $b = r \oplus f$ and sends \inline{Open b} to \Z. Again, \Z can verify $b \oplus r$ similar to the above case.
+nl
+\end{itemize}
+
+\subsection{Composition}
+We describe a composition theorem in the previous section and a composition operator for protocols.
+Here we demonstrate how to compose the simulatlors from the two experiments to create a simulator to prove Theorem~\ref{thm:compose}.
+Two simulators being composed are: \SIM{com} for $\Fro \xrightarrow{\prot{com}} \Fcom$ and \SIM{flip} for $\Fcom \xrightarrow{\prot{flip}} \Fflip$. 
+The full code for the simulators will be given in the appendix, and it is described below for the sake of verbosity.
+For the sake of generality, we refer to protocols $\pi$, $\rho$, and functionalities $\F_1$, $\F_2$, and $\F_3$, where $\rho$ is \prot{flip}, $\pi$ is \prot{com}, $\F_1$ is \Fro, $\F_2$ is \Fcom, and $\F_3$ is \Fflip.
+
+The numbered steps in the description below correspond to the numbered arrows in Figure~\ref{fig:simcomp}.
+\begin{enumerate}
+\item Input from \Z: \inline{Z2A2P(p, msg)} for dummy parties of $\F_1$ and \inline{Z2A2F(msg)} for $\F_1$  are forwarded to \SIM{\pi}, and, Outputs from \SIM{\pi}: \inline{F2A2Z(msg)} and \inline{P2A2Z(p,msg)} are forwarded to \Z unaltered.
+\item Inputs from \SIM{\pi}: \inline{A2F(msg)} for $\F_2$ and \inline{A2P(msg)} for dummy parties of $\F_2$ are forwarded to \SIM{\rho} as \inline{Z2A2F(msg)} \inline{Z2A2P(p,msg)}, respectively.
+\item Outputs from \SIM{\rho}: \inline{P2A2Z(p,msg)} from simulated parties of $\rho$  and \inline{F2A2Z(msg)} from the simulated $\F_2$ are forwarded to \SIM{\pi} as \inline{P2A(p,m)} and \inline{F2A(m)}, respectively.
+\item Inputs from \SIM{\rho}: \inline{A2F(msg)} for $\F_3$ and \inline{A2P(p,msg)} for dummy parties of $\F_3$ are forwarded unaltered, and, Outputs from $\F_3$ and its ideal parties: \inline{F2A(msg)} from $\F_3$ and \inline{P2A(p,msg)} from its ideal parties is forwarded to \SIM{\rho} unaltered.
+\end{enumerate}
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.62]{figures/simcomp.pdf}
+\caption{The composed simulators for $\F_1 \xrightarrow{\rho \circ \pi} \F_3$. The real world consists of $(\rho \circ \pi, \F_1)$. Inputs from \Z are for $\F_1$ and dummy parties interacting with $\F_1$, which \SIM{\pi} is equipped to handle. Outputs from \SIM{\pi} are for $\F_2$ and dummy parties of $\F_2$ which \SIM{\rho} is equipped to handle. FInally, outputs from \SIM{\rho} are for $\F_3$ and dummy parties of $\F_3$, which is just the ideal world in Theorem~\ref{thm:composition}.}
+\label{fig:simcomp}
+\end{figure}
 
 %\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
 %m = recv $\$$p2a ;
@@ -151,6 +247,7 @@ In the case of the corrupt committer, \simcom simply reads the bit from queries 
 %    pid = recv $\$$p2f ; msg = recv $\$$p2f ;
 %    case msg (
 %      Commit(b) => 
+
 %        $\$$ch_ = get_channel_by_pid pid $\$$l1 $\$$l2 ... ;
 %        $\$$ch_.commit ;
 %        send $\$$ch_ b ;

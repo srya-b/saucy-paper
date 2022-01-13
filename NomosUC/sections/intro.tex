@@ -46,6 +46,8 @@ real world implementations of cryptographic applications.
 For instance, for the two-party bit commitment protocol~\cite{rocommitment}, session types guarantee
 the interface and resource requirements that the protocol offers to the environment in the ideal world, and the specific protocol 
 message and import exchange between the two parties in the real world.
+We show that for some functionalities, like \Fflip used in Section~\ref{sec:commitment}, we are able to use polymorphic types to extend 
+the power of the type to enforce ordering between messages in different channels as well.
 The polynomial time guarantee in NomosUC is defined by the resource requirements specified by the import in the ideal and real world
 session types.
 They ensure composed protocols can provide enough computational resources to capture party communication and adverasrial capabilities in the real and ideal worlds to the sub-protocols they rely on.

@@ -328,6 +328,15 @@ Given an $n \in poly(k)$, all programs that type check must be \textit{well-reso
 %Therefore, given an initial amount of import $n(k) \in poly(k)$, the existence of some $T$ ensures that any process, regardless of its randomized execution according to the bit sequence $r$, $e$ is guarantees to be upper-bounded by $poly(k)$ satisfying the definition of probabilistic polynomial time in $k$.
 \end{proof}
 
+\paragraph{Sending/Receiving Import}
+Our construction of the \partywrapper and \fwrapper rely on sending functional messages between them through a shared communicator.
+The same holds true between the adversary and the two wrappers, and also holds true between the environment and the \partywrapper.
+When any of these parties is sending import to each other, they must always send the maximum import of any message that can be exchanged with each other.
+For example if parties $p_1$ and $p_2$ send $n_1$ and $n_2$ import to the functionality, then the communicator between the \partywrapper and \fwrapper will be typed to expect $max(n_1, n_2)+1$ import on every message from the \partywrapper and vice versa for messages from \fwrapper to \partywrapper. 
+Recall from Section~\ref{sec:nomosuc} that the $+1$ is required to give the communicator at least one unit of import.
+Similarly, \Z will send the maximum of the imports required by $p_1$ and $p_2$ plus two additional import for communicators.
+In total, for any activation by \A or \Z there can be up to three communicators activated in the execution. 
+
 \subsection{Emulation}
 A proof of security in the UC framework relies upon emulation of different executions.
 
@@ -571,7 +580,7 @@ We rely on the code generation for to handle spawning instaces of a \inline{p2f}
 The operator is given in Figure~\ref{lst:compose}.
 \begin{figure}
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\tb{proc}$ compose[K][z][r][p]:
+$\tb{proc}$ compose[K][z,p]:
   (pid: Int), (rng: [Bit]), (sid: session[1]),
   (pid: Int), ($\$$z2p: z) |- ($\$$c: p) =
 {
@@ -579,7 +588,7 @@ $\tb{proc}$ compose[K][z][r][p]:
   $\$$c <- Ps.pi <- k rng sid pid $\$$ch 
 }
 \end{lstlisting}
-\caption{The composition operator accepts the same parameters as any other protocol party and offers the channel of type $p2f$ of the realizing protocol $\pi$. All protocols in NomosUC accept type parameters for the channel types, and here, we connect an instance of $\rho$ with an instance of $\pi$. In the same way that regular protocols require separate code for each ``role'' within a protocol (sender and receiver in the commitment example, for example), here we require the same be done for composing the protocol for each ``role'' of $\rho$.}
+\caption{The composition operator accepts the same parameters as any other protocol party and offers the channel of type $p2f$ of the realizing protocol $\pi$. We connect $\rho$ to $\pi$ as an environment giving input to $\pi$. We do not need to include any import in our composition operator as the two protocols are guaranteed to be well-matched by the emulation definition. The operator replaces only one party (one \msf{pid}), and the \partywrapper instantiates parties that run the composed protocol.}
 \label{lst:compose}
 \end{figure}
 
@@ -604,8 +613,12 @@ You can find the full simulator composition operator in the appendix.
 	\end{itemize}
 \end{itemize}
 The simulator relies on simulators for $\F_1 \xrightarrow{\pi} \F_3$ and $\F_2 \xrightarrow{\rho} \F_3$ to satisfy simulation for Theorem~\ref{thm:singlecomp}.
-It is clear that this construction adequately simulates composition.
-Another illustrative description of why composition works, logically, is shown by this series of UC executions where the $\equiv$ operator denotes equivalent UC executions that result from moving ITMs around, and $\approx$ indicates emulation:
+It is clear that this construction adequately simulates the composed protocol. 
+The type in the ideal world gurantees that both the real and ideal world adversaries get at least as much impor as any of the protocol parties. 
+This ensures that the composed simulator has enough import to sandbox the two existing simulators and send import out to the ideal world parties and ideal funfctionality.
+Therefore it is trivial to see that the composed simulator is well-resource-typed.
+
+Another illustrative description of what composition proposes, logically, is shown by this series of UC executions where the $\equiv$ operator denotes equivalent UC executions that result from moving ITMs in and out of a sandbox, and $\approx$ indicates emulation:
 \begin{align}
 & \msf{execUC} \: \Z \, (\rho \circ \pi) \, \F_1 \, \DA \\
 \equiv \; & \msf{execUC} \: (\Z \circ \rho) \, \pi \, \F_1 \, \DA \\
