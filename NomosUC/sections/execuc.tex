@@ -305,9 +305,10 @@ This new definition becomes important when we discuss UC emulation below as we w
 \footnotesize
 \inferrule*[right=Well-matched]
 {\Tokens_1, K \semi \Delta_1 \vdash e :: \Delta_1' \semi 
-\Tokens_2, K' \semi \Delta_2 \vdash e' :: \Delta_2' \\ \\
+\Tokens_2, K \semi \Delta_2 \vdash e' :: \Delta_2' \\ \\
  S \equiv \Delta_1 \bigcap \Delta_2 \neq \emptyset}
-{\Delta_1 \equiv_{S} \Delta_2 \semi K \equiv K'} 
+%{\Delta_1 \leftrightarrow \Delta_2}
+{\Delta_1 \equiv_{S} \Delta_2 \semi e \leftrightarrow e'} 
 \end{mathpar}
 \end{definition}
 
@@ -445,19 +446,20 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 \footnotesize
 	\inferrule*[right=emulate]
 	{
-		. \models \msf{execUC}[\Tokentypes][\alpha] :: \Delta[\Tokentypes][\alpha] \\ \\ \\
+		. \models \msf{execUC}[\Tokentypes][\alpha] :: \Delta[\Tokentypes][\alpha] \\ \\ 
 		% Protocols that are well-matched with their functionalities
 		%\pi \rightarrow \Delta_1' \semi \phi \rightarrow \Delta_2' \semi \\
-		\pi : \Delta_1' \semi \phi : \Delta_2' \semi \\
+		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
 		%\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_1 \rangle \\
 		% Type of execUC[DELTA_pi] and execUC[DELTA_phi]
-		\Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \equiv_{\Z} \Delta_1\ 
-		\semi \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \equiv_\Z \Delta_2 \\
+		\forall \A \, | \, \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
+		%\Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \equiv_{\Z} \Delta_1\ 
+		%\semi \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \equiv_\Z \Delta_2 \\
 		% For all A if exists well-typed A that is well-matched with real world
 		%\forall \A, (\exists (\Delta_4, \Delta_4') | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
-		\forall \A | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
+		%\forall \A | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
 		% implies simulator that is well-matched for ideal world
-		\Rightarrow \exists (\Delta_3,\Delta_3') | \Delta_3 \vdash \Sim_\A :: \Delta_3', \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
+		\Rightarrow \exists (\Delta_3,\Delta_3') \, | \, \Delta_3 \vdash \Sim_\A :: \Delta_3', \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
 		% for all Z they that's well-matched for the real world => Z is well-matched with S and ideal world
 		%\forall \Z (\langle \Z \leftrightarrow \A \rangle, \langle \Z \leftrightarrow \pi \rangle \Rightarrow \langle \Z \leftrightarrow \Sim_\A \rangle, \langle \Z \leftrightarrow \phi \rangle \\
 		% and emulation has to hold

@@ -1,26 +1,35 @@
-stype sender = +{ commit: Bit x scommitted }
-stype scommitted = +{ open: sopened }
+stype sender[a] = +{ commit: Bit * scommitted[a],
+									   sendmsg: a * sender[a]  }
+stype scommitted[a] = +{ open: sopened,
+											   sendmsg: a * scommitter[a] }
 stype sopened = 1 
 
-stype receiver = &{ commit: rcommitted }
-stype rcommitted = &{ open: Bit x ropened }
+stype receiver[a] = &{ commit: rcommitted[a],
+											 sendmsg[a]: a * receiver[a] }
+stype rcommitted[a] = &{ open: Bit x ropened,
+											sendmsg[a]: a * rcommitted[a] }
 stype ropened = 1 
 
 type comp2f = Commit of Bit | Open ;
 type comf2p = Commit | Open of Bit ;
 
-proc F_com[K] :
+proc F_com[K][a] :
 	(k: Int), (rng: [Bit]), (sid: session[1]),
-	($S: sender), ($R: receiver), ($A: 1)  |- ($ch: 1) =
+	($S: sender[a]), ($R: receiver[a]), ($A: 1)  |- ($ch: 1) =
 {
 	case $S (
 		commit => b = recv $S ;
+							get $S {0} ;
 							$R.commit ;
 							case $S (
 								open =>	$R.open ;
 												send $R b ;
 							)
+		sendmsg => m = recv $S ;
+							 get $S {1} ;
+							 $R.
 	)
+	
 }
 
 proc func_f2p_r1[K][f2p][p2f]:
