@@ -1,9 +1,20 @@
 
-proc dummy_adv[K][z2a,a2z][f2a,a2f][p2a,a2p]:
+proc dummy_adv[K][z2a,a2z][f2a,a2f][p2a,a2p]{z2an,a2zn}{p2an,a2pn}{a2fn,f2an} :
   (k: Int), (rng: [Bit]), (sid: ??), 
   (#a_to_z: comm[a2zmsg[a2z]][K]), (#z_to_a: comm[z2amsg[z2a]][K]),
   (#a_to_pw: comm[a2pmsg[a2z]][K]), (#pw_to_a: comm[p2amsg[p2a]][K]),
   (#a_to_f: comm[a2fmsg[a2f]][K]), (#f_to_a: comm[f2amsg[f2a]][K]) |- ($ch: 1) =
 {
-  
+	$z2a.RECV ;
+	case $z2a (
+		P2A(p, m) =>
+			get $z2a {z2an} ;
+			$a2p.SEND ;
+			send $a2p p m;
+			pay $a2z {a2zn} ;
+		F2A(m) =>
+			get $z2a {z2an} ;
+			$a2f.SEND ;
+			send $a2f {a2fn} ;
+	)
 }

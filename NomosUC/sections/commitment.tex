@@ -19,21 +19,25 @@ Finally, we give \Fflip, and a realizing protocol and sketch the composed simula
 \subsection{The Random Oracle}
 The random oracle functionality captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
 It allows both protocol parties and the adversary to request hashes from it.
-We augment \Fro with a single communication channel allowing it parties to send messages to each other. The functionality is called \Fropp from now on.
+We augment \Fro with a single communication channel allowing it parties to send messages to each other. One caveat from traditional communication
+is that the protocol parties must poll \Fro for new messages. The augmented functionality is called \Fropp from now on.
 
-The design of the random oracle is different from \Fcom in that it has only one channel for all parties to communicate over.
-We discussed the unique structure of the session type for \Fro in Section~\ref{sec:execuc}: its type before and after interaction with a party is the same.
-This enables a dynamic set of parties to communicate with it by moving the \inline{pid} of the message sender/receiver into the type.
-Our augmented functionality's type retains this feature, as described by its session type:
+The random oracle is differet from \Fcom in that it has one channel fo all parties to use. This is due to the fact that its function is the same for all parties.
+Recall the session type and its struture disusse in Section~\ref{sec:execuc}. The augmented session type is given below:
+%The design of the random oracle is different from \Fcom in that it has only one channel for all parties to communicate over.
+%We discussed the unique structure of the session type for \Fro in Section~\ref{sec:execuc}: its type before and after interaction with a party is the same.
+%This enables a dynamic set of parties to communicate with it by moving the \inline{pid} of the message sender/receiver into the type.
+%Our augmented functionality's type retains this feature, as described by its session type:
 \begin{mathpar}
 \mi{stype} \; \m{party}[a] = \ichoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a],\mb{send} : \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{party}[a], \mb{recv}: \m{pid} \product \m{newmsg[a]}} \\
 \m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} \\
 \m{newmsg}[a] = \echoice{ \mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{party}[a], \mb{no}: \m{pid} \product \m{party[a]}}
 \end{mathpar}
-One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
-We cannot directly deliver messages to their receivers, because the committer's and receiver's \inline{p2f} channel would end up with different types and back to \inline{party[a]}.
-The corresponding functional message type between the protocol wrapper and functionality is also updated with inputs for the channel:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+Similarly, the functional types are given by:
+%One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
+%We cannot directly deliver messages to their receivers, because the committer's and receiver's \inline{p2f} channel would end up with different types and back to \inline{party[a]}.
+%The corresponding functional message type between the protocol wrapper and functionality is also updated with inputs for the channel:
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
 $\Type$ rop2f[a] = QHash of $\tgr{Int}$ | Send of pid ^ a 
                | Recv ;
 $\Type$ rof2p[a] = RHash of $\tgr{Int}$ | Yes of pid ^ a 
@@ -50,39 +54,40 @@ It creates the commitment by sending \Fropp the blinded bit and receiving a hash
 Finally it sends the hash to the receiver (which has pid=2).
 
 Conversely, the receiver must request the commitment \inline{h} message from \Fropp, notify \Z of the commitment, and, as shown in Figure~\ref{lst:receiver}, when it receives the bit and the nonce it checks that its hash with the commitment.
+%$\tb{case}$ $\$$z2p (
+%  commit => 
 \begin{figure}
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\tb{case}$ $\$$z2p (
-  commit => 
-    b = $\tm{recv}$ $\$$z2p ;
-    bits = sample k rng ;
-    $\$$p2f.hash ;
-    $\tm{send}$ $\$$p2f pid ;
-    $\tm{send}$ $\$$p2f b + bits ;
-    $\tb{case}$ $\$$p2f (
-      shash => 
-        h = $\tm{recv}$ $\$$p2f ;
-        $\$$p2f.send ;
-        $\tm{send}$ $\$$p2f pid 2 hash;
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+b = $\tm{recv}$ $\$$z2p ;
+bits = sample k rng ;
+$\$$p2f.hash ;
+$\tm{send}$ $\$$p2f pid ;
+$\tm{send}$ $\$$p2f b + bits ;
+$\tb{case}$ $\$$p2f (
+  shash => 
+    h = $\tm{recv}$ $\$$p2f ;
+    $\$$p2f.send ;
+    $\tm{send}$ $\$$p2f pid 2 hash;
 \end{lstlisting}
 \caption{The code for the committer in $\prot{com}$ when it receives a \msf{commit} message from \Z. It obtains a hash of the message from \Fropp over \msf{p2f} and sends it to the receiver (pid=2) through the same functionality.}
 \label{lst:committer}
 \end{figure}
+%$\$$p2f.recvmsg ;
+%$\tb{case}$ $\$$p2f (
+%  Yes(p, h)
+%  $\tm{recv}$ $\$$p2f ;
+%...
+%$\tm{send}$ $\$$p2f (b+h);
+%...
 \begin{figure}
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\$$p2f.recvmsg ;
-$\tb{case}$ $\$$p2f (
-  Yes(p, h)
-  $\tm{recv}$ $\$$p2f ;
-  sender = $\tm{recv}$ $\$$p2f ;
-  (b,h) = recv $\tm{recv}$ $\$$p2f ;
-  ...
-  $\tm{send}$ $\$$p2f (b+h);
-  ...
-  h = $\tm{recv} $\$$p2f ;
-  $\yo{if}$ h == hash
-  $\yo{then}$
-    $\$$z2p.open
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+sender = $\tm{recv}$ $\$$p2f ;
+(b,h) = recv $\tm{recv}$ $\$$p2f ;
+$\tg{(* query the hash of b+h *)}$
+h = $\tm{recv}$ $\$$p2f ;
+$\yo{if}$ h == hash
+$\yo{then}$
+  $\$$z2p.open
 \end{lstlisting}
 \caption{The code for the receiver checks for a new message and receives the bit and nonce from the committer. If the hash of the bit and nonce matches the commitment it received, it returns \msf{open} to \Z to confirm the commitment.}
 \label{lst:receiver}
@@ -113,12 +118,13 @@ It is immediately clear that this simulator satisfied $\Fro \xrightarrow{\prot{c
 
 \subsection{Coin Flipping}
 We present secure coin flipping here as another example and one that makes use of our composition operator. 
+Additionally, this example makes use of a neat trick we use to get more guarantees out of the NomosUC type system.
 Securely flipping a coin is a basic cryptographic primitive whose ideal functilnalitt \Fflip is captured by the session types in Figure~\ref{fig:fflip}.
 It's a 2-party protocol where one party is the initator of the flip and the other is a receiver.
 The desired property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
 \begin{figure}
 \centering
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\Type$ flipper[K] = +{ init: K -> flipped } ;
 $\Type$ fflipped = +{ getflip: &{ flip: Bit * 1 ,
                                   noflip: fflipped }} ;
@@ -136,7 +142,7 @@ We concretize \inline{K} with the unit type \inline{()} at the protocol level as
 This gives the type more power and allows the resulting functionality and protocol code to be simpler. 
 
 The code for \Fflip is quite simple and shown below:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ F_coinflip[K] :
   (k: Int), (rng: [Bit]), (sid: session[1]),
   ($\$$F: flipper[K]), ($\$$R: receiver[K]),

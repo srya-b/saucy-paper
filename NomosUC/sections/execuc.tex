@@ -62,7 +62,7 @@ Despite this, we opt to generate a unique version of \inline{execUC}, for each s
 In general, a process in the execution can internally simulate any number of processes which, in turn, may simulate processes themselsves.
 Therefore, \inline{execUC} needs to be generated to accept a variable number of virtual token types are parametes.
 For the commitment example we've used throughout this work, the ideal world \inline{execUC} process definition looks like this:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
 $\tb{proc}$ $\tm{execUC}$[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
 \end{lstlisting}
@@ -81,7 +81,7 @@ We separate NomosUC into two modules: generic code and protocol-specific code.
 Therefore, the \inline{execUC} refers to user specified code through the \inline{PS} module which defines \inline{PS.env} for \Z, \inline{PS.func} for the functionality, \inline{PS.prot} for the protocol, and \inline{PS.adv} for the adversary.
 All communication between these processes happens through communicators---introduced in Section~\ref{sec:nomosuc}.
 Messages between the main machines: the protocol wrapper, \A, \Z, and \F happen with parameteric types
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\Type$ p2zmsg[a] = P2Z of pid ^ a ;
 $\Type$ p2fmsg[a] = P2F of pid ^ a ;
 $\Type$ f2pmsg[a] = F2P of pid ^ a ;
@@ -91,7 +91,7 @@ where \inline{a} is the protocol-specific message type.
 \paragraph{The Environment}
 The environment is the first machine that \inline{execUC} spawns and receives from it the session id and list of corrupted parties for this execution.
 Its offered channel type \inline{EtoZ} specifies the interaction between \inline{execUC} and \Z:
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape, frame=single]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
 $\Type$ EtoZ[a] = +{init: a ^ list[pid] -> exec} 
 $\Type$ exec = &{start : output_bit} ;
 $\Type$ output_bit = +{bit: Bit -> 1} ;
@@ -172,12 +172,12 @@ Figure~\ref{fig:blankpartywrapper} indicates the type of the offered channel for
 
 %The processes \inline{Z2p} and \inline{f2p} are generated for each party based on their session-type, and they convert between them and functional messages for incoming/outgoing communcation with \Z, \F, or \A. 
 For example in the commitment example, where the functional message type is given by: 
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
 $\yo{type}$ comp2f = Commit of Bit | Open ;
 $\yo{type}$ comf2p = Committed | Open of Bit ;
 \end{lstlisting}
 the \inline{z2p} process does something like this for the sender (where \inline{msg} is received from its virtual communicator):
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 case msg (
   Commit(b) =>
     $\$$z2p.commit ;
@@ -282,7 +282,7 @@ Therefore, they are not wrapper like protocols and functionalities, and communic
 \subsection{Polynomial Bound}
 An important constribution of this work is supporting runtime analysis in UC with a notion of ``polynomial'' time.
 The UC framework provides a way to define poylynomial time computation and resource-bounds through the import mechanism.
-It ensures that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a poynomial and $n$ is the total units of import the ITM eve receives.
+It ensures that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a poynomial and $n$ is the its net import \emph{token} balance (received - sent).
 An suitable analogy for import are tokens: a machine can receive tokens, send them out, and is limited in capability by the net number of tokens it holds. 
 
 In NomosUC, we build import into the type system and allow reasoning about ITMs being polynomial both locally and in the context of other ITMS (say, \F is polynomial locally and when connected an adversary \A).
@@ -294,11 +294,13 @@ A \textit{PPT term} is a \textit{well-typed} term $e(k, r)$ that is \textit{clos
 We first-define terms that are well-typed in the traditional session-types-sense in Definition~\ref{def:pptterm}, i.e. without any resource constraints~\cite{caires2010session}.
 Such terms are closed except for the security parameter $k$ and some uniformly random bit sequence $r$. 
 
-However, we also want to reason about terms that are well-typed when connected to another Nomos terms.
+%However, we also want to reason about terms that are well-typed when connected to another Nomos terms.
 We introduce the term \textit{well-matched} to mean a PPT term $e$ is well-typed when connected to another term $e'$.
-Simply put, the channels that $e$ and $e'$ share are of the same type. 
-Specifically, we want to exclude processes that logically share a channel, say the channel from \inline{p} to \inline{f}, but send (their types message types don't match).
-This new definition becomes important when we discuss UC emulation below as we want to reason about environments that are \textit{well-matched} for a protocol $\pi$ or a specific adversary \A.
+Simply put, we want to capture terms $e$ and $e'$ that can be connected over the channels the share given their type.
+The resulting terms in Definition~\ref{def:wellmatched} are partionall closed after connection: the terms may only be connected on some subset of their channels.
+%Simply put, the channels that $e$ and $e'$ share are of the same type. 
+%Specifically, we want to exclude processes that logically share a channel, say the channel from \inline{p} to \inline{f}, but send (their types message types don't match).
+%This new definition becomes important when we discuss UC emulation below as we want to reason about environments that are \textit{well-matched} for a protocol $\pi$ or a specific adversary \A.
 
 \begin{definition}[Well-Matched]\label{def:wellmatched}
 \begin{mathpar}
@@ -311,9 +313,6 @@ This new definition becomes important when we discuss UC emulation below as we w
 {\Delta_1 \equiv_{S} \Delta_2 \semi e \leftrightarrow e'} 
 \end{mathpar}
 \end{definition}
-
-Notice that in Definition~\ref{def:wellmatched} we are concerned with two terms that are \textit{open} even when connected. 
-We only care about being well-matched, when connected to another term, on the channels over which they are connected.
 
 Next we introduce our definition of a polynomial-bound in the security parameter $k$.
 Terms that terminate within computationsl steps are PPT in $k$ and are dubbed \textit{well-resource-typed}.
@@ -373,14 +372,15 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
 		%\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_1 \rangle \\
 		% Type of execUC[DELTA_pi] and execUC[DELTA_phi]
-		\forall \A \, | \, \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
+		\forall \A \, | \, \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle\\
 		%\Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \equiv_{\Z} \Delta_1\ 
 		%\semi \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \equiv_\Z \Delta_2 \\
 		% For all A if exists well-typed A that is well-matched with real world
 		%\forall \A, (\exists (\Delta_4, \Delta_4') | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
 		%\forall \A | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
 		% implies simulator that is well-matched for ideal world
-		\Rightarrow \exists (\Delta_3,\Delta_3') \, | \, \Delta_3 \vdash \Sim_\A :: \Delta_3', \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
+		%\Rightarrow \exists (\Delta_3,\Delta_3') \, | \, \Delta_3 \vdash \Sim_\A :: \Delta_3', \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
+		\Rightarrow \exists \Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3', \langle \Sim_\A \leftrightarrow \phi \rangle \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
 		% for all Z they that's well-matched for the real world => Z is well-matched with S and ideal world
 		%\forall \Z (\langle \Z \leftrightarrow \A \rangle, \langle \Z \leftrightarrow \pi \rangle \Rightarrow \langle \Z \leftrightarrow \Sim_\A \rangle, \langle \Z \leftrightarrow \phi \rangle \\
 		% and emulation has to hold
@@ -502,7 +502,7 @@ The code for the operator has the same type as any other protocol except, from t
 We rely on the code generation for to handle spawning instaces of a \inline{p2f} process corresponding to $\pi$ rather than $\rho$.
 The operator is given in Figure~\ref{lst:compose}.
 \begin{figure}
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\tb{proc}$ compose[K][z,p]:
   (pid: Int), (rng: [Bit]), (sid: session[1]),
   (pid: Int), ($\$$z2p: z) |- ($\$$c: p) =
@@ -652,7 +652,6 @@ Theorem~\ref{thm:composition} illustrates the full composition theorem using our
 It relies on Theorem~\ref{thm:squash} that introduces the \msf{squash} protocol and the $!$ operator.
 Notice that Theorem~\ref{thm:compose} follows directly from Theorem~\ref{thm:singlecomp} and Theorem~\ref{thm:squash}.
 
-%UC composition allows replacement of any number of instaces of a functionality with instances of the protocol 
 The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances of the protocol/functionality to be run within a sinlge ITM.
 An ITM simulates the instances and multiplexes input/output to/from them much like the \partywrapper.
 
@@ -670,12 +669,11 @@ An ITM simulates the instances and multiplexes input/output to/from them much li
 \end{mathpar}
 \end{theorem}
 
-For the multisession extension of a protocol the type is given as:
+For the multisession extension of a fuctionality, the type is straightforward and ony acts to multiplex input/outpt based on the intended target \inline{ssid}.
 \begin{mathpar}
 \mi{stype} \; \m{{P2MS}[a][b]\{n,m\}} = \textcolor{red}{\getpot^n} \ichoice{\mb{Inp}: ssid \product a \arrow \m{MS2P[a][b]\{n,m\}}} \\
 \mi{stype} \; \m{{MS2P}[a][b]\{n,m\}} = \echoice{\mb{Ok}: \textcolor{red}{\paypot^0} \; \m{P2MS[a][b]\{n,m\}}, \mb{Out}: ssid \product b \arrow \textcolor{red}{\paypot^m} \; \m{P2MS[a][b]\{n,m\}}}  
 \end{mathpar}
-Naturally the internals of the multisession wrapper mirror the \fwrapper, but with additional copies.
 The multisession extension is mentioned in greater detail in the appendix.
 %and the functional types that are sent to the wrapper surrounding it are given by
 %\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
@@ -692,37 +690,39 @@ The multisession extension is mentioned in greater detail in the appendix.
 %\label{fig:multisession}
 %\end{figure}
 
-As a generic construction provided by NomosUC, the multisession operator requires some code generation but only to accept an arbitrary number of virtual token types if the underlying \F simulators other processes. 
-Furthermore, similar to the functionality wrapper, the multisession operator constructs the processes around \F in the same way and spawns them on-demand.
-The process definition for $!\F_\msf{com}$ is shown in Figure \ref{lst:bangf} accepting two token types: the real token type $K$ and the virtual token type $K_1$ for instances of $\F_\msf{com}$.
-
-\begin{figure}
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
-$\tb{proc}$ bangF[K,K1][p2f,...] :
-  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
-  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
-\end{lstlisting}
-\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
-\label{lst:bangf}
-\end{figure}
+%As a generic construction provided by NomosUC, the multisession operator requires some code generation but only to accept an arbitrary number of virtual token types if the underlying \F simulators other processes. 
+%Furthermore, similar to the functionality wrapper, the multisession operator constructs the processes around \F in the same way and spawns them on-demand.
+%The process definition for $!\F_\msf{com}$ is shown in Figure \ref{lst:bangf} accepting two token types: the real token type $K$ and the virtual token type $K_1$ for instances of $\F_\msf{com}$.
+%
+%\begin{figure}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+%$\tb{proc}$ bangF[K,K1][p2f,...] :
+%  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
+%  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
+%\end{lstlisting}
+%\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
+%\label{lst:bangf}
+%\end{figure}
 
 \begin{theorem}[PPT !]\label{thm:bangppt}
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
 \end{theorem}
 
-\begin{proof}
-A \textit{well-resource-typed} \F guarantees a polynomial $T_{\F}$ bounding its execution.
-In the worse-case, the multisession operator must spawn a new instance of $\F$ an every activation. 
-Let $N_{\F}$ denote the total number of instances (and, hence, number of activations) of $\F$ created by the operator.
-Note that $N_{\F}$ is polynomial in the security parameter $k$ for all well-typed environments, protocols, and adversary.
-Therefore, there always exists a bounding polynomial to bound a polynomial number of simulated instances of \F.
-The polynomial can be given as:
-$$ P_{!\F}(n) = N_{\F} P_{\F}(n) + \mathcal{O}(N_{\F}) $$
-where the $\mathcal{O}(N_{\F})$ is due to the overhead of maintaining and accessing the set of all instances.
-
-Similarly, \F being \textit{well-resource-typed} ensures a valid token context for all processes it may simulate. 
-Therefore, it is clear that there exists a global connecting poltnomial $f$ that ensures a valid token context for $!\F$.
-\end{proof}
+We examine this theorem in greater detail in the appendix. 
+At a high-level it is obvious that such a construction, activated polynomially many times, is well-resource-typed as long as the underlying functionality/protocol is well-resource-typed.
+%\begin{proof}
+%A \textit{well-resource-typed} \F guarantees a polynomial $T_{\F}$ bounding its execution.
+%In the worse-case, the multisession operator must spawn a new instance of $\F$ an every activation. 
+%Let $N_{\F}$ denote the total number of instances (and, hence, number of activations) of $\F$ created by the operator.
+%Note that $N_{\F}$ is polynomial in the security parameter $k$ for all well-typed environments, protocols, and adversary.
+%Therefore, there always exists a bounding polynomial to bound a polynomial number of simulated instances of \F.
+%The polynomial can be given as:
+%$$ P_{!\F}(n) = N_{\F} P_{\F}(n) + \mathcal{O}(N_{\F}) $$
+%where the $\mathcal{O}(N_{\F})$ is due to the overhead of maintaining and accessing the set of all instances.
+%
+%Similarly, \F being \textit{well-resource-typed} ensures a valid token context for all processes it may simulate. 
+%Therefore, it is clear that there exists a global connecting poltnomial $f$ that ensures a valid token context for $!\F$.
+%\end{proof}
 
 
 %\begin{figure}
@@ -743,25 +743,27 @@ Therefore, it is clear that there exists a global connecting poltnomial $f$ that
 %\label{fig:squash}
 %\end{figure}
 
-\begin{proof}
-First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
-The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
-
-In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $\F[\msf{ssid}_1][\msf{ssid}_2]$).
-The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$ into a single \msf{ssid}: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$.
-If follows intuitively that the view for the environment remains the same. 
-
-We construct a simulator such that:
-\[
-\msf{execUC} \, \Z \, \idealP \, !!\F \, \SIM{\msf{squash}} \approx \msf{execUC} \, \Z \, \msf{squash} \, !\F \DA 
-\]
-The simulator is very simple. 
-Inputs to/from parties/\Z for a corrupt party is forwarded unmodified.
-Input intended for $!\F$ of the form $(\msf{ssid}_1 \cdot \msf{ssid}_2, msg)$ is sent as $(\msf{ssid}_1, (\msf{ssid}_2, msg))$ to $!!\F$. 
-Output from $!!\F$ is modified inversely and sent to \Z.
-
-The proposed simulator is trivially analyzed to be \textit{well-resource-typed}.
-It performs constant work per activation and does ``real'' simulation other than message modification to/from $!!\F$.
+\begin{proof} (Theorem~\ref{thm:squash})
+On examination the \msf{squash} theorem does constant work per activation and concantenates two \inline{ssid}s into one for messages going to the functionality and does the inverse for messages incoming from the functionality.
+We provide more detail for a proof of Theorem~\ref{thm:squash} in the Appendix, however, it is clear to see that the this theorem holds with a trivial simulator.
+%First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
+%The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
+%
+%In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $\F[\msf{ssid}_1][\msf{ssid}_2]$).
+%The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$ into a single \msf{ssid}: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$.
+%If follows intuitively that the view for the environment remains the same. 
+%
+%We construct a simulator such that:
+%\[
+%\msf{execUC} \, \Z \, \idealP \, !!\F \, \SIM{\msf{squash}} \approx \msf{execUC} \, \Z \, \msf{squash} \, !\F \DA 
+%\]
+%The simulator is very simple. 
+%Inputs to/from parties/\Z for a corrupt party is forwarded unmodified.
+%Input intended for $!\F$ of the form $(\msf{ssid}_1 \cdot \msf{ssid}_2, msg)$ is sent as $(\msf{ssid}_1, (\msf{ssid}_2, msg))$ to $!!\F$. 
+%Output from $!!\F$ is modified inversely and sent to \Z.
+%
+%The proposed simulator is trivially analyzed to be \textit{well-resource-typed}.
+%It performs constant work per activation and does ``real'' simulation other than message modification to/from $!!\F$.
 \end{proof}
 
 \subsection{UC Composition}

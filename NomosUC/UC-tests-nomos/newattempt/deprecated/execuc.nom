@@ -55,7 +55,6 @@ proc asset pappend : ($m : a), ($tl : list[a]) |- ($l : list[a]) =
   )
 }
 
-
 type PWtoE = k -> rng -> sid -> crupt list -> ?[a]. ?[b]. PWtoZ[a]
 type FtoE = k -> rng -> sid -> crupt list -> 1
 
