@@ -285,14 +285,25 @@ The UC framework provides a way to define poylynomial time computation and resou
 It ensures that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a poynomial and $n$ is the its net import \emph{token} balance (received - sent).
 An suitable analogy for import are tokens: a machine can receive tokens, send them out, and is limited in capability by the net number of tokens it holds. 
 
-In NomosUC, we build import into the type system and allow reasoning about ITMs being polynomial both locally and in the context of other ITMS (say, \F is polynomial locally and when connected an adversary \A).
+In NomosUC, we build import into the type system to be able to reason about ITMs being locally polynomial time given some polynomial $T$.
+Specifically, the type system can check whether a given polynomial bound in the import amount satisfies the potential generated/used by an open Nomos term.
+An simple example where that illustrates the type system's capabilities is the authenticated append/read functionality $\F_\msf{AppRd}$~\footnote{We provide the code for this functionality in the appendix for the simplified case of a single party.}.
+The functionality requires parties to provide 1 unit of import to append items to the list and 1 unit of import to read from the list, and the functionality generates potential proportional to the length of the list in order to traverse it.
+It is clear that the total work performed by $\F_\msf{AppRd}$ is bounded by a quadratic poynomail, and the NomosUC type system ensures that only bounding polynomials quadratic or larger successfully type check.
+\todo{something more to say here}
 
-\begin{definition}[PPT Term]\label{def:pptterm}
-A \textit{PPT term} is a \textit{well-typed} term $e(k, r)$ that is \textit{closed} except for security parameter $k$, random bit sequence $r$.
-\end{definition}
+The locally PPT definition that our type system ensures that if all the individual terms in the UC experiment defined above are locally PPT then the whole execution must be as well.
+To see this we reason that an ITM internally sandboxing the UC execution with virtual tokens is judged locally PPT by our type system. 
+Given some configuration of ITMs in the execution, let $T'$ be the largest bounding polynomial among all ITMs, and $n$ by the initial import into the system.
+It is clear to see that an ITM creating $n$ virtual tokens can simulate the execution with a bounding polynomial of $T' \times O(n)$ ($O(n)$ to facilitate handling messages and routing).
+Such an ITM satisfies token context validity as we create exactly $n$ virtual tokens, and given the assumption of each simulated ITM being locally PPT, we can conclude that the entire UC execution is also PPT.
 
-We first-define terms that are well-typed in the traditional session-types-sense in Definition~\ref{def:pptterm}, i.e. without any resource constraints~\cite{caires2010session}.
-Such terms are closed except for the security parameter $k$ and some uniformly random bit sequence $r$. 
+%\begin{definition}[PPT Term]\label{def:pptterm}
+%A \textit{PPT term} is a \textit{well-typed} term $e(k, r)$ that is \textit{closed} except for security parameter $k$, random bit sequence $r$.
+%\end{definition}
+%
+%We first-define terms that are well-typed in the traditional session-types-sense in Definition~\ref{def:pptterm}, i.e. without any resource constraints~\cite{caires2010session}.
+%Such terms are closed except for the security parameter $k$ and some uniformly random bit sequence $r$. 
 
 %However, we also want to reason about terms that are well-typed when connected to another Nomos terms.
 We introduce the term \textit{well-matched} to mean a PPT term $e$ is well-typed when connected to another term $e'$.
