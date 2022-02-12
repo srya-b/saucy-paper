@@ -153,7 +153,7 @@ session-typed channels along with an optional write token $\wt$
 (to resolve non-determinism in the semantics).
 The process is denoted by $P$ that offers channel $x$ of type $A$.
 Finally, token context $\Tokens$ contains the total and current ($=$ received - sent)
-tokens of each type contained by the process.
+tokens of each type contained by the process and the globally known \emph{security parameter} $k$.
 Similar to import tokens, the natural number annotations $q$ and $q'$ on the turnstile
 denote the total and current potential stored in the process.
 We also extend the semantic objects to $\proc{c}{w, P}$ and $\msg{c}{w, P}$
@@ -345,7 +345,7 @@ This enables a static reasoning of the import mechanism in NomosUC.
 To this end, we introduce a novel token context $\Tokens$
 in the process typing judgment to denote the real and virtual tokens.
 This context contains the information on the total and current tokens
-of each type.
+of each type and the \emph{security parameter}.
 Before we explain the token context we first motivate the need for virtual tokens
 It is a common technique in UC, especially in simulators, to internally run, or simulate, 
 the code of other ITIs. In NomosUC, we wish to enable the same sandbox running of processes,
@@ -370,7 +370,7 @@ rate between two successive token types.
 To maintain well-typedness of a process, an implicit side condition is
 that the token context must always be \emph{valid}.
 This involves ensuring that if the context contains $m'$ current tokens of type
-$K_i$, it can only contain at most $\GlobalF(m)$ total tokens of type
+$K_i$, it can only contain at most $\GlobalF(m,k)$ total tokens of type
 $K_{i+1}$. The inductive rules for validity of a token context are below.
 \begin{mathpar}
   \infer
@@ -380,8 +380,8 @@ $K_{i+1}$. The inductive rules for validity of a token context are below.
   \infer
   {\Tokens, K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}')\;\; \m{valid}}
   {\Tokens\;\; \m{valid} \and
-  K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and
-  t_{i+1} \leq \GlobalF(t_i')}
+  K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and k \in \Tokens \and
+  t_{i+1} \leq \GlobalF(t_i',k)}
 \end{mathpar}
 Since validity of a token context is a side condition, we mandate
 that it is implicitly satisfied by all the process typing rules
@@ -404,7 +404,7 @@ The above construct generates $n$ new tokens of type $K_{i+1}$ and adds
 them to both the total and current count for $K_{i+1}$ in the token
 context $\Tokens$.
 The implicit side condition of the validity of the token context ensures
-that $t_{i+1} + n \leq \GlobalF(t_i')$ where $K_i \hookrightarrow (t_i, t_i') \in \Tokens$.
+that $t_{i+1} + n \leq \GlobalF(t_i',k)$ where $K_i \hookrightarrow (t_i, t_i') \in \Tokens$ and $k \in \Tokens$.
 If this side condition fails, the above construct would fail to typecheck.
 
 In addition, we also introduce two dual constructs for exchanging tokens
@@ -476,7 +476,7 @@ we need is a mechanism to generate potential using import tokens.
 To this end, we introduce a novel construct $\m{genPot} \; r$.
 \begin{mathpar}
   \inferrule*[right=$\m{pot}$]
-  {q+r \leq \GlobalF(t_{\depth}') \and K_{\depth} \hookrightarrow (t_{\depth}, t_{\depth}') \in \Tokens \\\\
+  {q+r \leq \GlobalF(t_{\depth}',k) \and K_{\depth} \hookrightarrow (t_{\depth}, t_{\depth}') \in \Tokens \\\\
   \Tokens \semi \Psi \semi \wt, \D \entailpot{q+r}{q'+r} P :: (x : A)}
   {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} \m{genPot} \; r \semi P :: (x : A)}
 \end{mathpar}
@@ -487,7 +487,7 @@ a process contains.
 To this end, we introduce a \emph{token depth}: $\depth$ that signifies the number of token
 types that exist in the token hierarchy.
 Thus, when generating potential, the typechecker verifies that the total new potential (i.e., $q+r$)
-is bounded by $\GlobalF(t_{\depth}')$ where $(t_{\depth}, t_{\depth}')$ is the number of tokens
+is bounded by $\GlobalF(t_{\depth}',k)$ where $(t_{\depth}, t_{\depth}')$ is the number of tokens
 of type $K_{\depth}$, the highest token in the hierarchy.
 
 The purpose of introducing potential into NomosUC is to bound the
