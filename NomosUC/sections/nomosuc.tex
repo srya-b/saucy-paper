@@ -55,11 +55,9 @@ process definitions.
 As an illustration, consider the $\Fcom$ process that is connected
 to both $S$ and $R$.
 The process is written as
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ $\tm{Fcom}$: 
-  (k: $\tgr{int}$), (rng: [Bit]), (sid: SID), 
-  ($\$$S: sender), ($\$$R: receiver)
-    |- ($\$$fc: 1) =
+  (k: $\tgr{int}$), (rng: [Bit]), (sid: SID), ($\$$S: sender), ($\$$R: receiver)  |- ($\$$fc: 1) =
 {
   $\ncase$ $\$$S (
     commit => 
@@ -81,6 +79,10 @@ The used channels with their types are written to the left of the turnstile
 ($\vdash$) while the offered channel and type are written on the right.
 This is analogous to function definitions where used channels correspond to
 arguments, while offered channel corresponds to the result.
+In the case of $\Fcom$ the offered channel \inline{fc} is not used. This is
+a result of how we design functionalities in NomosUC, which we explain later, 
+however, it it imposes no limitations on the expressiveness on our framework.
+
 The process first case analyzes on channel $S$ branching on the
 message received.
 Since there is only one choice $\mb{commit}$, we only have one
@@ -789,6 +791,25 @@ If there is a message, it responds with $\mb{yes}$, the message of the parameter
 Note that the communicator retains one unit of import from every message. 
 It needs at least one because it may be activated a polynomial number of times, and, therefore a constant amount of potential is insufficient. 
 At the end of activation, the channel is released with $\down$, and another process can acquire it.
+
+\subsection{Discussion on Realizing Import}
+Our adaptation of the import mechanism to resource-aware session types concretizes some parts of the import mechanism like the run-time budget and adds new mechanisms
+to facilitate common UC design pattersn such as simulation and virtualization of machines. 
+It's important to validate our realization of the import mechanism by ensuring that it faithfully provides the same guarantees.
+Furthermore, in this section we discuss existing pitfalls and drawbacks of prior mechanisms that import was created to over come, and assert that our implementation steers clear of them as well.
+
+
+
+\begin{itemize}
+\item Identify design decisions like concretizing potential, sandboxing and virtualizing with withdrawTokens, the valid token context rule, the type system in general
+\item Identify polytime concerns that need to be discussed in the context of our polytime design
+	\begin{itemize}
+	\item is PPT efficiently recognizable?
+	\item address the infinite runs problem and make sure it isn't allowed here with particular attention paid to withdrawTokens and infinite virtualizations
+	\item the type system guarantees we don't have a case where, given some polynomial, a machine just halts mid execution so we avoid any additional information that an environment can use to distinguish based on execution timing in both word
+	\end{itemize}
+\item end with the virtualization point and tie that into proposition 7 and the universal turing machine that can simulate the UC execution. This goes a long way in assuring PPT notion in NomosUC, even thought we aren't dealing exactly with ITMs here.
+\end{itemize}
 
 %The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
 %messages in the buffer, and import type parameter, i.e. the amount of import tokens sent with

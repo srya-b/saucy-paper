@@ -1,18 +1,22 @@
 \subsection{Universal Composability}
-The universal composability framework~\cite{uc} proposes a new framework for proving the security of cryptographic and distributed protocol.
-Compared to previous works, the UC framework provides a stronger notion of security where protocols that are UC-secure are secure even when composed with arbitrary other protocols running concurrently. 
+The universal composability framework~\cite{uc} proposes a new framework for proving the security of cryptographic and distributed protocols.
+It builds on compositional guarantees attemted by previous works and provides a security under arbitrary composition with any other, arbitrary protocols running concurrently in the same environment.
+The framework relies probabilistic polynomial time (PPT) interactive turing machines (ITMs) providing input and output to each other by means of multipe tapes as its model of computation. 
 
-Such a strong notion of security is achieved through the real-ideal world paradigm.
-The ideal world encompasses an ideal implementation of a protocol, called the \textit{ideal functionality} $\mathcal{F}$, which acts as a trusted third party that caputures all the desired security properties.
-The ideal functionality is usually a simple definition making it trivial to prove its security properties.
-The real world, on the other hand, consists of parties running an actual protocol, $\pi$, against a real adversary.
+Its compositional security relies on the real/ideal paradign defined by the real world with its protocol $\pi$ and real adversary \A, and by the ideal world with the ideal functionality $\F$ and a simulator, \Sim.
+The ideal functionaity is a trusted party which accepts inputs from dummy parties~\footnote{Dummy parties do nothing but forward input from the environment (if they are honest) or the adversary (if they are corrupt) to the functionality and vice versa.} and performs the intended computation. Due to it's trusted, or ``ideal'', nature, the functionality is simple and rarely requires any cryptography or networking. 
+The real world protocol is code run locally by mutually distrustful protocol parties (ITMs) which can communicate each other and interact with an ideal functionality called the hybrid functionality.
+An environment \Z, meant to capture all possible concurrently running protocols, gives input to the honest parties of the protocol and input to the adverasary who controls the corrupt protocol parties. 
+Based on the output it receives, \Z outputs a bit as its guess as to which world it is in. 
 
-Security proofs in UC involve creating a simulator $\mathcal{S}$ in the ideal world that can simulate every potential attack on a real protocol in the real world.
-If $\mathcal{S}$ can make the two worlds indistinguishable for any real world adversary $\mathcal{A}$ for all distinguishing environments $\mathcal{Z}$, then we say the protocol $\pi$ UC-emulates the ideal functionality $\mathcal{F}$.
-Indistinguishability of the two worlds to any $\mathcal{Z}$ implies that the protocol $\pi$ must exhibit the same security properties as the ideal functionality $\mathcal{F}$ otherwise there should be sobe distinguishing environment. 
-More formally, indistinguishability is stated:
+Proving the security of a protocol in UC relies on creating a simulator in the ideal world to simulate a given adversary in the real world and making the two worlds computationally indistinguishable to all possible environments. 
+Full emulation requires that for each real world adversary there is a such a simulator for all environments. We define emulation as follows, where \msf{execUC} is encapsulates a UC execution consisting of the component parts:
+\[ \forall \A \; \exists \Sim \; \forall \Z \; \; \msf{execUC} \; \Z \, \phi \, \F \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F' \, \A \]
 
-$$ \text{EXEC}_{\mathcal{F},\mathcal{S},\Z} \approx \text{EXEC}_{\pi,\mathcal{A},\Z} $$
+The security definition above guarantees compositional security as well.
+Notice that the real world can also have a ``hydbrid'' functionality in it which the protocol parties can access.
+The UC framework ensures that if there exists a real world protocol that \emph{realizes} a functionality according to the emulation definition, then replacing the ideal functionality with it preserves the security properties of the protocol it is used by. 
+Composition makes the framework modular and allows large protocols to be specified succintly by relying on an ideal functionalities instead of complex sub-protocols.
 
 %\paragraph{GUC-Framework}
 %A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.
@@ -24,22 +28,26 @@ $$ \text{EXEC}_{\mathcal{F},\mathcal{S},\Z} \approx \text{EXEC}_{\pi,\mathcal{A}
 
 \subsection{The Import Mechanism}
 A notion of resource-bound computation is necessary for the UC framework to reason about computationally efficient algorithms as well as the capabilities of ITIs under a particular resource constraint.
-Often we would like to reason about adversarial capabilities under such constraints and perform efficient transformations (transforming an adversary into a simulator).
+Often we would like to reason about adversarial capabilities under such constraints and perform efficient transformations (transforming an real-world adversary into an ideal-world simulator).
 
-Current definitions of polynomial-time computation take the form of bounding the computation of an ITI by some polynomial $T$:
-given an input of length $n$ a machine $\mu$ halts within $T(n)$ steps.
-However, using the length of the inputs to the machine as $n$, in this case leads to an infinite runs problems identified by Canetti~\cite{uc}.
-Machines that are locally $T(n)$-bounded are able to spawn other machines to the point that an infinite chain of such machines can be spawed where, although, each is locally $T$-bounded, the whole system of of ITMs is no longer PPT. 
-Therefore, a new notion of $n$ is needed. 
 
-The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomial amount of import which can be thought of as tokens or coins.
-The environment can then activate other ITIs with some import tokens allowing them to run for as long as their import token balance permits. 
-In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps where $n'$ is the difference between the import it has received from incoming messages and outgoing import it's given to other machines.
-Any ITI can write to any other ITI in it's communication set and send it import tokens until the balance of import is exhausted.
-Eventually, the system of ITMs must halt when it runs out of import until it receives more from the environment.
+Existing definitions of polynomial-time usually center around the lengths of input and output messages. In GNUC~\cite{gnuc} consideres a function of the sum of all inputs a machine receives as a bound on its runtime. Previous versions of the UC framework similarly rely on functions of the difference between the lengths of a machine's inputs and outputs
+The latest iteration of UC overcomes some drawbacks in polytime notions around ```input lenghts''~\footnote{Namely, the \emph{infinite runs} problem identified in \cite{uc}.} and introduces the import mechanism.
+The import mechanism allocates the first ITI, the environment with a number of import ``tokens'', that is poynomial in the the security parameter $k$. 
+This makes up the runtime budget of the entire UC execution, and the environment can give import tokens along with inputs to other machines in the execution. Any ITM in the execution can pass import to another if it possesses enough.
+The polynomial time definition in the import mechanism takes the following form:
 
-\paragraph{Realizing Import in saUCy} \label{sec:realizeimport}
-\todo{Need to add potentia in Nomos here}
+\begin{center} {\small An ITM is considered PPT if there exists a polynomial $T$ such that its runtime is bounded by $T(n)$ where $n$ is the net amount of tokens it ever holds.} \end{center}
+
+This notion of poynomial time directly provides a guarantee on the entire UC execution by limited the entire import in a sytem to be polynomial in $k$. Therefore, we avoid pitfalls of existing input length-based local polynomial notions.
+%The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomial amount of import which can be thought of as tokens or coins.
+%The environment can then activate other ITIs with some import tokens allowing them to run for as long as their import token balance permits. 
+%In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps where $n'$ is the difference between the import it has received from incoming messages and outgoing import it's given to other machines.
+%Any ITI can write to any other ITI in it's communication set and send it import tokens until the balance of import is exhausted.
+%Eventually, the system of ITMs must halt when it runs out of import until it receives more from the environment.
+
+%\paragraph{Realizing Import in saUCy} \label{sec:realizeimport}
+%\todo{Need to add potentia in Nomos here}
 %The import mechanism in the UC framework describes at a high level how to reason about resource bounded computation in the import model.
 %However, for our purposes it is necessary to instantiate it concretely and make explicit the conditions under which a machine halts as we care about an implementation the UC framework in our proposed Nomos language. 
 %
