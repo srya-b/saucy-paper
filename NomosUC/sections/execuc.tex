@@ -281,6 +281,9 @@ Therefore, they are not wrapper like protocols and functionalities, and communic
 The security of the UC framework relies on computational constraints on adversaries, and, generally, on what all ITMs can do.
 It introduces the concept of import tokens as a new way to reason about ITMs being polynomial in the security parameter $k$. 
 The import mechanism, which we describe in greater detail in Section~\ref{sec:background}, ensures that a single ITM's execution is upper-bounded by some value $T(n)$ where $T$ is a poynomial and $n$ is the its net import \emph{token} balance (received - sent).
+In this work we depart slightly from this definition and, instead, define the upper bound in with $T(n,k)$, a bivariate polynomial in both the net import and the security parameter $k$.
+We do this for two reasons. First, it remedies our exclusion of the "parameterized systems" from the UC framework which require that ITMs don't start until they receive at least $k$ import.
+Second, we add $k$ to reflect a more natural notion of import as a ``budget'' by allowing minimal import for constant-work processes and zero import for constant-work one-shot processes like \Fcom.
 
 In NomosUC, we build import into the type system to be able to reason about ITMs being locally polynomial time given some polynomial $T$.
 Specifically, the system provides novel constructs to exchange import, generate potential from that import, and create virtual import for simulating other machines.
@@ -289,7 +292,7 @@ The language additionally encodes the computational cost of each operation perfo
 The locally polynomial invariant can be extended to claim that the entire UC execution of locally PPT ITMs is also PPT.
 
 \begin{ddef}[PPT in $k$]\label{def:ppt}
-A \textit{PPT Term} $e(k, r)$ is well-resource-typed if, given $n(k) \in poly(k)$, there exists a polynomial $T$ s.t. $\forall k, r, e(k, r) \{n(k)\}$  terminates in at most $T(n)$ steps. Here $\{n(k)\}$ the term's net import and is $poly(k)$, a polynomial in the security parameter $k$.
+A \textit{PPT Term} $e(k, r)$ is well-resource-typed if, given $n(k) \in poly(k)$, there exists a polynomial $T$ s.t. $\forall k, r, e(k, r) \{n(k)\}$  terminates in at most $T(n,k)$ steps. Here $\{n(k)\}$ the term's net import and is $poly(k)$, a polynomial in the security parameter $k$.
 \end{ddef}
 
 %\begin{proof}
