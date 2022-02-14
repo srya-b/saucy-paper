@@ -147,13 +147,13 @@ Remarkably, in this formulation, a message is just a particular form of process,
 thereby not requiring any special rules for typing; it can be typed just as processes.
 
 Formally, the typing judgment for processes in NomosUC is written as
-$\Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)$.
+$k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)$.
 Here, $\Psi$ denotes the functional data structures and $\D$ collects the
 session-typed channels along with an optional write token $\wt$
 (to resolve non-determinism in the semantics).
 The process is denoted by $P$ that offers channel $x$ of type $A$.
 Finally, token context $\Tokens$ contains the total and current ($=$ received - sent)
-tokens of each type contained by the process and the globally known \emph{security parameter} $k$.
+tokens of each type contained by the process and $k$ is the globally known \emph{security parameter}.
 Similar to import tokens, the natural number annotations $q$ and $q'$ on the turnstile
 denote the total and current potential stored in the process.
 We also extend the semantic objects to $\proc{c}{w, P}$ and $\msg{c}{w, P}$
@@ -183,16 +183,16 @@ by the \emph{left rule} $\oplus L$.
 \begin{mathpar}
   \footnotesize
   \infer[{\oplus}R]
-  {\B{\Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
+  {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
     (x : \ichoice{\ell : A_\ell}_{\ell \in L})}
-  {(k \in L) \qquad \B{\Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} P :: (x : A_k)}
+  {(k \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} P :: (x : A_k)}
 \end{mathpar}
 \begin{mathpar}
   \footnotesize
   \infer[{\oplus}L]
-  {\B{\Tokens \semi \Psi} \semi \D, (x : \ichoice{\ell : A_\ell}_{\ell \in L})
+  {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : \ichoice{\ell : A_\ell}_{\ell \in L})
     \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{Q_\ell}_{\ell \in L} :: (z : C)}
-  {(\forall \ell \in L) \qquad \B{\Tokens \semi \Psi} \semi \wt, \D, (x : A_\ell)
+  {(\forall \ell \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \wt, \D, (x : A_\ell)
     \entailpot{\B{q}}{\B{q'}} Q_\ell :: (z : C)}
 \end{mathpar}
 Additionally, the provider should possess the write token to be able to send the
@@ -237,17 +237,17 @@ $k \in L$ (described in $\with R$), while the client sends this label
 \begin{mathpar}
   \footnotesize
   \infer[\with R]
-  {\B{\Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
+  {\B{k \semi \Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
     (x : \echoice{\ell : A_\ell}_{\ell \in L})}
-  {(\forall \ell \in L) \qquad \B{\Tokens \semi \Psi} \semi \wt, \D
+  {(\forall \ell \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \wt, \D
     \entailpot{\B{q}}{\B{q'}} P_\ell :: (x : A_\ell)}
 \end{mathpar}
 \begin{mathpar}
   \footnotesize
   \infer[\with L]
-  {\B{\Tokens \semi \Psi} \semi \wt, \D, (x : \echoice{\ell : A_\ell}_{\ell \in L})
+  {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D, (x : \echoice{\ell : A_\ell}_{\ell \in L})
     \entailpot{\B{q}}{\B{q'}} \esendl{x}{k} \semi Q :: (z : C)}
-  {\B{\Tokens \semi \Psi} \semi \D, (x : A_k) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
+  {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : A_k) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
 \end{mathpar}
 Dual to internal choice, the client contains the write token which is
 sent to the provider along with the label.
@@ -262,12 +262,12 @@ closes channel $x$ while the client waits for this close message to arrive.
 \begin{mathpar}
   \footnotesize
   \infer[{\one}R]
-  {\B{\Tokens \semi \Psi} \semi \wt \entailpot{\B{q}}{\B{q'}} \eclose{x} :: (x : \one)}
+  {\B{k \semi \Tokens \semi \Psi} \semi \wt \entailpot{\B{q}}{\B{q'}} \eclose{x} :: (x : \one)}
   {\B{q = 0}}
   \and
   \infer[{\one}L]
-  {\B{\Tokens \semi \Psi} \semi \D, (x : \one) \entailpot{\B{q}}{\B{q'}} (\ewait{x} \semi Q) :: (z : C)}
-  {\B{\Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
+  {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : \one) \entailpot{\B{q}}{\B{q'}} (\ewait{x} \semi Q) :: (z : C)}
+  {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
 \end{mathpar}
 Similar to internal choice, the closing process transfers the write
 token to its waiting client along with the close message.
@@ -313,9 +313,9 @@ below (rules for $\product$ are inverse).
 \begin{mathpar}
   \footnotesize
   \infer[\arrow R]
-  {\B{\Tokens} \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}}
+  {\B{k \semi \Tokens} \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}}
   \erecvch{x}{v} \semi P :: (x : \tau \arrow A)}
-  {\B{\Tokens} \semi \Psi, (v : \tau) \semi \wt, \D \entailpot{\B{q}}{\B{q'}}
+  {\B{k \semi \Tokens} \semi \Psi, (v : \tau) \semi \wt, \D \entailpot{\B{q}}{\B{q'}}
   P :: (x : A)}
   %
   \and
@@ -324,9 +324,9 @@ below (rules for $\product$ are inverse).
   {\B{r' = p+q'} \qquad
   \B{\Psi \share (\Psi_1, \Psi_2)} \qquad
   \Psi_1 \exppot{\B{p}} M : \tau \\
-  \B{\Tokens} \semi \Psi_2 \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}}
+  \B{k \semi \Tokens} \semi \Psi_2 \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}}
   Q :: (z_k : C)}
-  {\B{\Tokens} \semi \Psi \semi \wt, \D, (x : \tau \arrow A)
+  {\B{k \semi \Tokens} \semi \Psi \semi \wt, \D, (x : \tau \arrow A)
   \entailpot{\B{q}}{\B{r'}} \esendch{x}{M} \semi Q :: (z : C)}
 \end{mathpar}
 As indicated in the $\arrow R$ rule, receiving a value $y : \tau$ on a channel
@@ -378,9 +378,9 @@ $K_{i+1}$. The inductive rules for validity of a token context are below.
   {}
   \and
   \infer
-  {\Tokens, K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}')\;\; \m{valid}}
+  {k \and \Tokens, K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}')\;\; \m{valid}}
   {\Tokens\;\; \m{valid} \and
-  K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and k \in \Tokens \and
+  K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and
   t_{i+1} \leq \GlobalF(t_i',k)}
 \end{mathpar}
 Since validity of a token context is a side condition, we mandate
@@ -395,16 +395,16 @@ syntax for creating new tokens of a given token type.
 We call this construct $\m{withdrawToken} \; K_i \; n \; K_{i+1}$.
 \begin{mathpar}
   \inferrule*[right=$\m{tok}$]
-  {\Tokens, K_{i+1} \hookrightarrow (t_{i+1} + n, t_{i+1}' + n) \semi
+  {k \semi \Tokens, K_{i+1} \hookrightarrow (t_{i+1} + n, t_{i+1}' + n) \semi
   \Psi \semi\wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
-  {\Tokens, K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}') \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} \hspace{4em} \\
+  {k \semi \Tokens, K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}') \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} \hspace{4em} \\
     \hspace{5em}\m{withdrawToken} \; K_i \; n\; K_{i+1}  \semi P :: (x : A)}
 \end{mathpar}
 The above construct generates $n$ new tokens of type $K_{i+1}$ and adds
 them to both the total and current count for $K_{i+1}$ in the token
 context $\Tokens$.
 The implicit side condition of the validity of the token context ensures
-that $t_{i+1} + n \leq \GlobalF(t_i',k)$ where $K_i \hookrightarrow (t_i, t_i') \in \Tokens$ and $k \in \Tokens$.
+that $t_{i+1} + n \leq \GlobalF(t_i',k)$ where $K_i \hookrightarrow (t_i, t_i') \in \Tokens$.
 If this side condition fails, the above construct would fail to typecheck.
 
 In addition, we also introduce two dual constructs for exchanging tokens
@@ -425,16 +425,16 @@ The corresponding typing rules are
 \begin{mathpar}
   \footnotesize
   \infer[\getpot R]
-  {\Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}} \eget{x}{r : K_i} \semi P ::
+  {k \semi \Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}} \eget{x}{r : K_i} \semi P ::
   (x : \tgetpot{A}{r : K_i})}
-  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
+  {k \semi \Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
   %
   \and
   %
   \infer[\getpot L]
-  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : K_i}) \entailpot{\B{q}}{\B{q'}}
+  {k \semi \Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : K_i}) \entailpot{\B{q}}{\B{q'}}
   \epay{x}{r : K_i} \semi P :: (z : C)}
-  {\Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
+  {k \semi \Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
 \end{mathpar}
 In the rule $\getpot R$, process $P$ storing $(t_i, t_i')$ import tokens of type $K_i$
 receives $r$ additional $K_i$ tokens adding it to the current token counter, thus
@@ -445,7 +445,7 @@ process is gaining import tokens.
 In the dual rule $\getpot L$, a process containing $(t_i, t_i'+r)$ tokens of type $K_i$
 pays $r$ units along channel $x$ leaving $(t_i, t_i')$ import tokens of type $K_i$ with
 the continuation.
-In this case, the validity of the token context establishes that $t_{i+1} \leq \GlobalF(t_i')$,
+In this case, the validity of the token context establishes that $t_{i+1} \leq \GlobalF(t_i',k)$,
 a condition that is necessary for successful typechecking.
 The typing rules for the dual constructor $\tpaypot{A}{r : K}$
 are the exact inverse.
@@ -477,8 +477,8 @@ To this end, we introduce a novel construct $\m{genPot} \; r$.
 \begin{mathpar}
   \inferrule*[right=$\m{pot}$]
   {q+r \leq \GlobalF(t_{\depth}',k) \and K_{\depth} \hookrightarrow (t_{\depth}, t_{\depth}') \in \Tokens \\\\
-  \Tokens \semi \Psi \semi \wt, \D \entailpot{q+r}{q'+r} P :: (x : A)}
-  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} \m{genPot} \; r \semi P :: (x : A)}
+  k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q+r}{q'+r} P :: (x : A)}
+  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} \m{genPot} \; r \semi P :: (x : A)}
 \end{mathpar}
 A process initially storing $(q, q')$ potential units generates $r$ potential so that
 the continuation contains $(q+r, q'+r)$ potential units.
@@ -498,8 +498,8 @@ $p = q-r$ units, as described in the rule below.
 \begin{mathpar}
   \footnotesize
   \infer[\m{tick}]
-  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'+r} \etick{r} \semi P :: (x : A)}
-  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (x : A)}
+  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'+r} \etick{r} \semi P :: (x : A)}
+  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (x : A)}
 \end{mathpar}
 NomosUC is equipped with a cost instrumentation engine that automatically
 inserts a $\etick{1}$ construct before each primitive operation.
@@ -553,17 +553,17 @@ The corresponding typing rules are
 \begin{mathpar}
   \footnotesize
   \infer[\up L]
-  {\Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
+  {k \semi \Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
   \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
-  {\Tokens \semi \Psi \semi \D, (y : A_L)
+  {k \semi \Tokens \semi \Psi \semi \D, (y : A_L)
   \entailpot{q}{q'} Q :: (z : C)}
   %
   \and
   %
   \infer[\up R]
-  {\Tokens \semi \Psi \semi \D \entailpot{q}{q'}
+  {k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'}
   \eaccept{y}{x} \semi P :: (x : \up A_L)}
-  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
+  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
 \end{mathpar}
 The $\up L$ rule describes a client acquiring a shared channel $x$
 and obtaining a private linear channel $y$ along which it can communicate
@@ -798,7 +798,9 @@ to facilitate common UC design pattersn such as simulation and virtualization of
 It's important to validate our realization of the import mechanism by ensuring that it faithfully provides the same guarantees.
 Furthermore, in this section we discuss existing pitfalls and drawbacks of prior mechanisms that import was created to over come, and assert that our implementation steers clear of them as well.
 
-
+An important part of our discussion must focus around our sandboxing technique and ensuring that it does not provide a pathway for a process to run infinitely.
+The infinite runs problems is a persistent issue in existing length-of-input based approaches to polynoimal time.
+The $\m{withdrawToken}$ definition permits creation of a bounded number of virtual tokens that use their own ``potential''
 
 \begin{itemize}
 \item Identify design decisions like concretizing potential, sandboxing and virtualizing with withdrawTokens, the valid token context rule, the type system in general
