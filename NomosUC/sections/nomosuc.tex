@@ -800,18 +800,18 @@ Furthermore, in this section we discuss existing pitfalls and drawbacks of prior
 
 An important part of our discussion must focus around our sandboxing technique and ensuring that it does not provide a pathway for a process to run infinitely.
 The infinite runs problems is a persistent issue in existing length-of-input based approaches to polynoimal time.
-The $\m{withdrawToken}$ definition permits creation of a bounded number of virtual tokens that use their own ``potential''
+It naturally appears in our sandboxing mechanism by the continual creation of new virtual token types. Following from the intent of sandboxing, the NomosUC rule for a valid token context ensures that all virtual token types  \todo{ finish this by deciding which rule to update: \inline{genPot} or \inline{withdrawTokens}}
 
-\begin{itemize}
-\item Identify design decisions like concretizing potential, sandboxing and virtualizing with withdrawTokens, the valid token context rule, the type system in general
-\item Identify polytime concerns that need to be discussed in the context of our polytime design
-	\begin{itemize}
-	\item is PPT efficiently recognizable?
-	\item address the infinite runs problem and make sure it isn't allowed here with particular attention paid to withdrawTokens and infinite virtualizations
-	\item the type system guarantees we don't have a case where, given some polynomial, a machine just halts mid execution so we avoid any additional information that an environment can use to distinguish based on execution timing in both word
-	\end{itemize}
-\item end with the virtualization point and tie that into proposition 7 and the universal turing machine that can simulate the UC execution. This goes a long way in assuring PPT notion in NomosUC, even thought we aren't dealing exactly with ITMs here.
-\end{itemize}
+%\begin{itemize}
+%\item Identify design decisions like concretizing potential, sandboxing and virtualizing with withdrawTokens, the valid token context rule, the type system in general
+%\item Identify polytime concerns that need to be discussed in the context of our polytime design
+%	\begin{itemize}
+%	\item is PPT efficiently recognizable?
+%	\item address the infinite runs problem and make sure it isn't allowed here with particular attention paid to withdrawTokens and infinite virtualizations
+%	\item the type system guarantees we don't have a case where, given some polynomial, a machine just halts mid execution so we avoid any additional information that an environment can use to distinguish based on execution timing in both word
+%	\end{itemize}
+%\item end with the virtualization point and tie that into proposition 7 and the universal turing machine that can simulate the UC execution. This goes a long way in assuring PPT notion in NomosUC, even thought we aren't dealing exactly with ITMs here.
+%\end{itemize}
 
 %The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
 %messages in the buffer, and import type parameter, i.e. the amount of import tokens sent with
