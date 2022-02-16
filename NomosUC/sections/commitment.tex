@@ -1,5 +1,6 @@
-In this section we work throgh the entire commitment example that has veen used throughout this paper, and we show composition by realizing a coin flipping ideal functionality \Fflip and a protocol realizing it in the \Fcom-hybrid world.
+In this section we work throgh the entire commitment example that has seen used throughout this paper, and we show composition by realizing a coin flipping ideal functionality \Fflip and a protocol realizing it in the \Fcom-hybrid world.
 We present the random oracle functionalitt \Fro, the real world protocol \prot{com}, and a simulator for the dummy adversary.
+Along the way we address the apparent import mismatch between \Fcom and \Fro, and we discuss how emulation and composition work around it.
 Finally, we give \Fflip, and a realizing protocol and sketch the composed simulator for $\Fro \xrightarrow{\prot{flip} \circ \prot{com}} \Fflip$.
 
 %\subsection{Static Corruptions}
@@ -28,11 +29,18 @@ Recall the session type and its struture disusse in Section~\ref{sec:execuc}. Th
 %We discussed the unique structure of the session type for \Fro in Section~\ref{sec:execuc}: its type before and after interaction with a party is the same.
 %This enables a dynamic set of parties to communicate with it by moving the \inline{pid} of the message sender/receiver into the type.
 %Our augmented functionality's type retains this feature, as described by its session type:
-\begin{mathpar}
-\mi{stype} \; \m{party}[a] = \ichoice{\mb{hash} : \m{pid} \arrow \m{int} \product \m{hashing}[a],\mb{send} : \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{party}[a], \mb{recv}: \m{pid} \product \m{newmsg[a]}} \\
-\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \product \m{party}[a]} \\
-\m{newmsg}[a] = \echoice{ \mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{party}[a], \mb{no}: \m{pid} \product \m{party[a]}}
-\end{mathpar}
+%\begin{mathpar}
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{party}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{hash} : \m{pid} \arrow \m{int} \tensor \m{hashing}[a],$\\
+\>$\mb{send} : \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \m{party}[a],$ \\
+\>$\mb{recv}: \m{pid} \tensor \m{newmsg[a]}}$ \\
+$\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{party}[a]}$ \\
+$\m{newmsg}[a] = \echoice{ \mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \textcolor{red}{\paypot^1} \m{party}[a], \mb{no}: \m{pid} \tensor \m{party[a]}}$
+%\end{mathpar}
+\end{tabbing}}
+\end{center}
 Similarly, the functional types are given by:
 %One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
 %We cannot directly deliver messages to their receivers, because the committer's and receiver's \inline{p2f} channel would end up with different types and back to \inline{party[a]}.

@@ -17,7 +17,7 @@ A protocol $\pi$ UC-realizes an ideal functionality $\F_1$ if $(\pi, \F_2) \sim 
 \end{definition}
 The dummy protocol \idealP is a trivial protocol defined such that for all \F
 \begin{mathpar}
-\inferrule*[right=dummy]
+\inferrule
 { }
 { \F \xrightarrow{\idealP} \F }
 \end{mathpar}
@@ -54,21 +54,26 @@ Below, we introdue how the UC experiment is implemented in NomosUC, and then pro
 
 \subsection{The UC Experiment}
 The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
-The expeirment is created by an \inline{execUC} function which spawns all the relevant processes: the environment, a \partywrapper, the adversary, the \fwrapper.
+The experiment, parameterized by a security parameter $k$ and source of randomness $r$,is created by an \inline{execUC} function  which spawns all the relevant processes: the environment, a \partywrapper, the adversary, the \fwrapper.
 The two wrappers encapsulate the protocol parties and the functionality, respectively, and are necessary to allow dynamic creation of parties. Furthermore, they are connected to each other, and \Z and \A, through communicators (Section~\ref{sec:communicators}).
 
-The statically-typed nature of NomosUC requires generic process like \inline{execUC} to be parametric in the message and the import token types of the protocol and functionality being executed.
-Despite this, we opt to generate a unique version of \inline{execUC}, for each set of \Z, \F, $\pi$, and \A, based the virtual token types it requires.
-In general, a process in the execution can internally simulate any number of processes which, in turn, may simulate processes themselsves.
-Therefore, \inline{execUC} needs to be generated to accept a variable number of virtual token types are parametes.
+The statically-typed nature of NomosUC requires us to be explicit at the cost of expressiveness. One example is the \msf{execUC} function which which can be paramterized with different numbers of virtul token types. 
+A statically-typed NomosUC process does not support this feature, and, therefore we use some simple code generation in order to craft the \inline{execUC} function to fit the protocol/functionality/adversary at hand.
+It is clear that code generation only affects the process definition and doesn't affect the UC framework as it is realized by NomosUC.
+%The statically-typed nature of NomosUC requires generic process like \inline{execUC} to be parametric in the message and the import token types of the protocol and functionality being executed.
+%Despite this, we opt to generate a unique version of \inline{execUC}, for each set of \Z, \F, $\pi$, and \A, based the virtual token types it requires.
+%In general, a process in the execution can internally simulate any number of processes which, in turn, may simulate processes themselsves.
+%Therefore, \inline{execUC} needs to be generated to accept a variable number of virtual token types are parametes.
 For the commitment example we've used throughout this work, the ideal world \inline{execUC} process definition looks like this:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
 $\tb{proc}$ $\tm{execUC}$[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
 \end{lstlisting}
-In this example, a virtual token type, \inline{K1}, is used because of the \emph{protocol wrapper} and the \emph{functionality wrapper}. \anote{Mention here that $k$ is a security parameter, $r$ is the for the random choices}
-The protocol wrapper internally runs and manages all of the protocol parites and the functionality wrapper does the same with the ideal functionality.
-For this reason, every execution in NomosUC that uses the protocol wrapper and/or the functionality wrapper will \emph{always} require at least one virtual token type.
+In general we will always have at least one virtual token type (type \inline{K1} in \inline{execUC}) to accommodate a process called the \emph{protocol wrapper} and it's analogue the \emph{functioality wrapper}. 
+We describe these two processes in greater detail later in this section.
+%In this example, a virtual token type, \inline{K1}, is used because of the \emph{protocol wrapper} and the \emph{functionality wrapper}. \anote{Mention here that $k$ is a security parameter, $r$ is the for the random choices}
+%The protocol wrapper internally runs and manages all of the protocol parites and the functionality wrapper does the same with the ideal functionality.
+%For this reason, every execution in NomosUC that uses the protocol wrapper and/or the functionality wrapper will \emph{always} require at least one virtual token type.
 
 %\begin{figure*}
 %\input{listings/execuc}
@@ -77,16 +82,16 @@ For this reason, every execution in NomosUC that uses the protocol wrapper and/o
 %\label{lst:execuc}
 %\end{figure*}
 
-We separate NomosUC into two modules: generic code and protocol-specific code. 
-Therefore, the \inline{execUC} refers to user specified code through the \inline{PS} module which defines \inline{PS.env} for \Z, \inline{PS.func} for the functionality, \inline{PS.prot} for the protocol, and \inline{PS.adv} for the adversary.
-All communication between these processes happens through communicators---introduced in Section~\ref{sec:nomosuc}.
-Messages between the main machines: the protocol wrapper, \A, \Z, and \F happen with parameteric types
+%We separate NomosUC into two modules: generic code and protocol-specific code. 
+%Therefore, the \inline{execUC} refers to user specified code through the \inline{PS} module which defines \inline{PS.env} for \Z, \inline{PS.func} for the functionality, \inline{PS.prot} for the protocol, and \inline{PS.adv} for the adversary.
+Communication between all of the major processes in the UC execution (\Z, \A, \partywrapper, and \fwrapper) is done through communicators introduced in Section~\ref{sec:nomosuc}.
+Communicators are restricted to only sending functionally types messages in NomosUC, and we give generic types, below, to all such messages.
+\todo{Is this important to even have here? seems a useless implementation detail.}
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\Type$ p2zmsg[a] = P2Z of pid ^ a ;
 $\Type$ p2fmsg[a] = P2F of pid ^ a ;
 $\Type$ f2pmsg[a] = F2P of pid ^ a ;
 \end{lstlisting}
-where \inline{a} is the protocol-specific message type.
 
 \paragraph{The Environment}
 The environment is the first machine that \inline{execUC} spawns and receives from it the session id and list of corrupted parties for this execution.
@@ -434,13 +439,14 @@ If a simulator exists such that emulation holds for $(\pi, \F_1) \sim (\idealP, 
 %\end{mathpar}
 %\end{definition}
 
-\subsection{Dummy Lemma}
-The Dummy Lemma is an important lemma in the UC framework that requires only one simulator to work with a dummy adversary in order to prove emulation with respect to any adversary.
-The Lemma states that if a simulator exists for the dummy adversary, the dummy simulator \DS, then there exists a simulator for any other adversary \A. 
+\subsection{Dummy Lemma} \label{sec:dummy}
+The dummy lemma is a crucial result in UC that reduces the design space of simulators to just one: for the dummy adversary in the real world.
+The Lemma states that if a simulator exists for the dummy adversary, called the dummy simulator \DS, then there it is easy to construct a simulator for any other adversary \A. 
 The simulator constructed in this lemma uses virtual tokens to internally run \DS and \A.
 
-The intuition behind the proof of this lemma is that emulation with respect to the dummy adverasary holds even for environments that run the real world adversary internall and pass its output to \DS. 
-Therefore, moving \A into the execution in both the real and ideal worlds should maintain emulation.
+The intuitiom behind this results rests in the fact that emulation must hold over $\forall \Z$ for a particular \A. 
+Particularly, in the case of \DS and \DummyAdv, emulation holds for a \Z that may be running any other possible \A internally and passing it's output to \DS and \DummyAdv.
+Therefore, moving \A out of the simulation and into the execution, as the real adversary and as providing input to \DS, should maintain emulation between the two worlds.
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
 If $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
@@ -687,10 +693,15 @@ An ITM simulates the instances and multiplexes input/output to/from them much li
 \end{theorem}
 
 For the multisession extension of a fuctionality, the type is straightforward and ony acts to multiplex input/outpt based on the intended target \inline{ssid}.
-\begin{mathpar}
-\mi{stype} \; \m{{P2MS}[a][b]\{n,m\}} = \textcolor{red}{\getpot^n} \ichoice{\mb{Inp}: ssid \product a \arrow \m{MS2P[a][b]\{n,m\}}} \\
-\mi{stype} \; \m{{MS2P}[a][b]\{n,m\}} = \echoice{\mb{Ok}: \textcolor{red}{\paypot^0} \; \m{P2MS[a][b]\{n,m\}}, \mb{Out}: ssid \product b \arrow \textcolor{red}{\paypot^m} \; \m{P2MS[a][b]\{n,m\}}}  
-\end{mathpar}
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{{P2MS}[a,b]\{n,m\}} = \textcolor{red}{\getpot^n} \ichoice{\mb{Inp}: ssid \arrow a \tensor \echoice{$\=$\mb{Ok}: \textcolor{red}{\paypot^0} \; \m{P2MS[a,b]\{n,m\}},$ \\
+\>$\mb{Out}: ssid \arrow b \tensor \textcolor{red}{\paypot^m} \; \m{P2MS[a,b]\{m,n\}}}}$
+%\m{MS2P[a][b]\{n,m\}}}$ \\
+%\mi{stype} \; \m{{MS2P}[a][b]\{n,m\}} = \echoice{\mb{Ok}: \textcolor{red}{\paypot^0} \; \m{P2MS[a][b]\{n,m\}}, \mb{Out}: ssid \product b \arrow \textcolor{red}{\paypot^m} \; \m{P2MS[a][b]\{n,m\}}}  
+\end{tabbing}}
+\end{center}
 The multisession extension is mentioned in greater detail in the appendix.
 %and the functional types that are sent to the wrapper surrounding it are given by
 %\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
@@ -791,3 +802,45 @@ The proof follows directly from Theorems~\ref{thm:singlecomp} and \ref{thm:squas
 By Theorem~\ref{thm:singlecomp} we can construct a simulator \SIM{1} for $!!\F_1 \xrightarrow{\rho \, \circ \, !\pi} \F_3$.
 Theorem~\ref{thm:squash} then allows us to ``squash'' $!!\F_1$ and construct a simulator using \SIM{1} for $!\F_1 \xrightarrow{\rho \, \circ \, !\pi \, \circ \, \msf{squash}} \F_3$
 \end{proof}
+
+\subsection{Design Discussion}
+One of the core research questions that this work aims to study session types applied to the UC framework. 
+In this section, we discuss how resource-aware session types impact the design of functionalities in NomosUC as well as which are implementable.
+We use the two-way authenticated channel functionality \Fauth to througout this discussion.
+
+In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
+In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionaty involving $P_s$, $P_r$, \F, and \A. 
+The simplest, and most common approach, to \Fauth is the following communication pattern: a party $P_s$ sends a message to \Fauth, \Fauth sends the message to \A and waits for \A to say \inline{OK} before delivering the message to $P_r$.
+Since both parties can send a message and receive a message, it is unclear which process, \Fauth or $P$, will be active along that channel at any given time.
+Session types require this information to be statically known when two processes are communicating over a single channel--making this communication pattern unexpressable over a single channel.
+
+There a few ways to overcome this constraint. 
+In general, even though the UC framework places few restructions of communication patterns, most functionalities stick to a few.
+\Fauth, for example, can take a few forms:
+\begin{enumerate}
+\item (presented above) Receiver and adverasry are activated directly: \Fauth waits for \A to tell it to deliver the message.
+\item \Fauth ``polling'' approach: messages from $P_s$ are buffered for both \A and $P_r$. \A and $P_r$ must ask \Fauth for new messages. This is a more invonconvenient method, but can be useful for novel functionality designs that need a channel.
+\item ``polling'' but receiver is activated: the message is stored in a buffer for \A, and \A's deliver message directly sends it to $P_r$.
+\end{enumerate}
+The simplest way to implement \Fauth in NomosUC is ``polling'' approach. As far as we know, we can systematically tranform any UC functionality into one that uses ``polling''. 
+The consequences are that polling is inconvenient from a programming point of view because \Z needs to continuously activate parties to ask for new messages.
+Hope is not lost though, because it turns out our type system can express functionalities in all three of the ways listed above. 
+The first, and most natural, approach only requires splitting communicating between $P$ and \Fauth into two unidirectional channels
+Such an extension to NomosUC trivially modifies the \partywrapper to handle two channels instead of one, and the types of the channels can be succintly expressed as: 
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{sending}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{sendmsg}: \m{a} \tensor \m{sendmsg}}$ \\
+$\m{receive}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \tensor \m{receive}}$ \\
+$\m{adv}[a] = \echoice{\mb{leakmsg}: a \tensor \ichoice{ \mb{ok}: \m{leakmsg}}}$
+\end{tabbing}}
+\end{center}
+The first to correspond to the channels for sending from $P$ to \Fauth and the second in the opposite direction. The third is the adversary's channel at \Fauth.
+
+A notable part of our contruction is the machinery created around the protocol parties and functionality that intemediate their communication with communicators and functionally-typed messages.
+Recall that such compromises are required in order to allow a \emph{dynamic} number of parties in UC.
+The session type of the shared channel of a communicator only allows for a fixed amount of import to be sent over it with every messages. 
+Protocols and functionalities that send different amounts of import depending on the message, say $i_1,...,i_n$, must now send $\m{max}(\{i_j\})$ import with every messages.
+For existing UC definitions this appears to be an issue of ensuring a machine has \emph{enough} import, however, we can systematically map any UC import definition to one that works in NomosUC~\footnote{The problem can be reduced to ensuring enough ``latent'' import needed to compute, and, because we aren't concerned here with \emph{tight} computational bounds the problem is quite easy to solve. We discuss in greater detail in the appendix.}.
+
+

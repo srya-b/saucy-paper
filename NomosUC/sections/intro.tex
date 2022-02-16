@@ -1,14 +1,14 @@
 We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
 In cryptography, the leading framework for managing such compositions is Universal Composability (UC)~\cite{uc}.
-The central idea of the frameowkr is in the ideal functionality: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
+The central idea of the framework is in the ideal functionality: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
 This leads to a modular framework, where larger protocols can be designed using simple ideal functionalitieis, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
 Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others. However, these have several shortcomings, which we address through the following questions:
 
 \begin{enumerate}
-\item Increasinglt complex cryptographic applications often involve several parties communicating according to a pre-defined protocol, and implementations of them can deviate from their intended behavior.
+\item Increasingly complex cryptographic applications often involve several parties communicating according to a pre-defined protocol, and implementations of them can deviate from their intended behavior.
 However, existing tools often do not provide a streamlined approach of expressing and enforcing
 such protocols.
-For such protocols, can the programming language provide alert its user to such deviations in their code?
+Can the programming language alert its user to such deviations in their code?
 
 %\item RQ1: Cryptographic applications often involve several different parties communicating
 %with each other in a pre-defined protocol.
@@ -50,8 +50,8 @@ We show that for some functionalities, like \Fflip used in Section~\ref{sec:comm
 the power of the type to enforce ordering between messages in different channels as well.
 The polynomial time guarantee in NomosUC is defined by the resource requirements specified by the import in the ideal and real world
 session types.
-They ensure composed protocols can provide enough computational resources to capture party communication and adverasrial capabilities in the real and ideal worlds to the sub-protocols they rely on.
-THe Nomos type checker then statically enforces both of these requirements are adhered to at runtime, and  
+They ensure composed protocols can provide enough computational resources to capture party communication and adverasrial capabilities, in the real and ideal worlds, to the sub-protocols they rely on.
+The Nomos type checker then statically enforces both of these requirements are adhered to at runtime, and  
 failure to typecheck provides precise feedback to the programmer on exactly where the
 implementation departs from its intended protocol.
 
