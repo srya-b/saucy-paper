@@ -98,9 +98,10 @@
 %\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
 %}
 \begin{abstract}
-The Universal Composability (UC) framework is the leading framework for analyzing cryptographic protocols with compositional security, however, is limited to on-paper proofs which can be cumbersome and difficult to analyze.
-A large body of work has attempted to make it more accessible by creating formal analysis tools and programming langauge artefacts around it.
-Many of these works, hoever, fall short in either expressiveness, in reasoning about computational security, or capturing full composition security guarantees of the framework.
+The Universal Composability (UC) framework is the leading framework for proving compositional security of cryptographic protocols, however, is limited to on-paper proofs which can be cumbersome and difficult to analyze.
+There are a wealth of previous attempts at formalizing it with programming lanuage logic, but many of them still fall short in either expressiveness, capturing full compositional security, and reasoning about resource-bounded protocols and adversaries. 
+
+In this work we propose a programming language called NomosUC that combines resource-aware session types~\cite{nomos} 	
 
 In this work we propose a programming language called NomosUC that combines resource-aware session types\cite{nomos} and existing process calculi for UC~\cite{ilc}.
 Session types provide a type system that can express and enforce ordering and the communication in a protocol.

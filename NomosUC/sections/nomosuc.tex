@@ -23,9 +23,9 @@ In the session-typed setting, we use typed channels to connect two
 parties. For instance, the channel connecting $S$ to $\Fcom$
 has the session type $\m{sender}$ defined as
 \begin{mathpar}
-  \mi{stype} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
-  \mi{stype} \; \m{scommitted} = \ichoice{\mb{open} : \m{sopen}} \\
-  \mi{stype} \; \m{sopen} = 1
+  \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \m{scommitted}} \\
+  \m{scommitted} = \ichoice{\mb{open} : \m{sopen}} \\
+  \m{sopen} = 1
 \end{mathpar}
 The type constructor $\ichoice$ denotes an \emph{internal choice}
 (here with only one choice) dictating that $S$ must send the
@@ -38,9 +38,9 @@ that $S$ sends $\mb{open}$ to $\Fcom$.
 Analogously, the channel connecting $R$ and $\Fcom$ has
 type $\m{receiver}$ defined as
 \begin{mathpar}
-	\mi{stype} \; \m{receiver} = \echoice{\mb{commit}: \m{rcommitted}} \\
-	\mi{stype} \; \m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \m{ropen}} \\
-	\mi{stype} \; \m{ropen} = 1
+	\m{receiver} = \echoice{\mb{commit}: \m{rcommitted}} \\
+	\m{rcommitted} = \echoice{\mb{open} : \m{bit} \arrow \m{ropen}} \\
+	\m{ropen} = 1
 \end{mathpar}
 Type constructor $\echoice$ represents \emph{external choice}
 which is the dual to internal choice.
