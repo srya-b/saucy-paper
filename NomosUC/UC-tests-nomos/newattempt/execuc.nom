@@ -5,7 +5,7 @@ stype pump = &{ dump: out }
 stype out = +{ reset: pump ;
 					 		 output: Bit -> 1 } ;
 
-stype execout = +{ out: Bit -> 1 } ;
+stype execout{n} = <{n}| &{ exec: +{ out: Bit -> 1 }} ;
 
 proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
 	(k: Int), (rng: [Bit]) |- ($d: execout) =
