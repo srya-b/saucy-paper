@@ -36,44 +36,24 @@ Given an $\F_1 \xrightarrow{\pi} \F_2$ and and $\F_2 \xrightarrow{\rho} \F_3$, t
 }
 \end{mathpar}
 
-%If \textit{well-typed} $(\pi, \F_1$) realizes $\F_2$ and ($\rho$, $\F_2$) realizes some $\F_3$, then $(\rho \circ \pi, \F_2)$ is \textit{well-typed} and realizes $\F_3$ when $\circ$ is defined as in Figure~\ref{lst:compose}.
 \end{theorem}
 Below, we introdue how the UC experiment is implemented in NomosUC, and then provide a composition operator $\circ$ for protocols, and one for simulators, that satisfied Theorem~\ref{thm:singlecomp}.
-%We also express a critically important result in the UC framework: the dummy lemma, and a composition theorem.
-%An important part of our definition is using code-generation techniques~\cite{somecodegeneration} to constructs some processes in the UC experiment as well ass useful operators to achieve full composition in the sense of Canetti et al.~\cite{uc}.
-
-%We first introduce some convenient notation.
-%For the remainder of this section, when we refer to a protocol, we actually refer to a pair of ITMs as in Definition~\ref{def:protocol}.
-%\begin{definition}\label{def:protocol}
-%A \textit{protocol} is a pair of terms ($\pi$, $\mathcal{F}$) where $\pi$ is the protocol run by honest parties and \F is an ideal functionality that parties an access.
-%\end{definition}
-%In the ideal world, $\pi$ is replaced by an an ideal protocol, \idealP, which is a dummy protocol: it frorwards message between \Z to \F for honest parties  and between \A and \F for corrupt parties.
-%In the real world, \F is called the \textit{hybrid functionality} and stands in for a real protocol that emulates it.
-%For protocols that don't make calls to any hybrid functionality, \F is just the dummy protocol which does nothing on activation by any other ITM.
-%The dummy functionality accepts all messages, does nothing, and continues to wait for more messages.
 
 \subsection{The UC Experiment}
 The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
 The experiment, parameterized by a security parameter $k$ and source of randomness $r$,is created by an \inline{execUC} function  which spawns all the relevant processes: the environment, a \partywrapper, the adversary, the \fwrapper.
 The two wrappers encapsulate the protocol parties and the functionality, respectively, and are necessary to allow dynamic creation of parties. Furthermore, they are connected to each other, and \Z and \A, through communicators (Section~\ref{sec:communicators}).
 
-The statically-typed nature of NomosUC requires us to be explicit at the cost of expressiveness. One example is the \msf{execUC} function which which can be paramterized with different numbers of virtul token types. 
-A statically-typed NomosUC process does not support this feature, and, therefore we use some simple code generation in order to craft the \inline{execUC} function to fit the protocol/functionality/adversary at hand.
-It is clear that code generation only affects the process definition and doesn't affect the UC framework as it is realized by NomosUC.
-%The statically-typed nature of NomosUC requires generic process like \inline{execUC} to be parametric in the message and the import token types of the protocol and functionality being executed.
-%Despite this, we opt to generate a unique version of \inline{execUC}, for each set of \Z, \F, $\pi$, and \A, based the virtual token types it requires.
-%In general, a process in the execution can internally simulate any number of processes which, in turn, may simulate processes themselsves.
-%Therefore, \inline{execUC} needs to be generated to accept a variable number of virtual token types are parametes.
-For the commitment example we've used throughout this work, the ideal world \inline{execUC} process definition looks like this:
+Virtualization and sandboxing of code is a common design pattern in UC, especially with adversaries nd simulators.
+NomosUC support it through the use of virtual okens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
+Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on simple code generation to declare \inline{execUC} with a sufficient number of type parameters.
+
+For example, an execution where the simulator sandboxes thereal world adverasry, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
 $\tb{proc}$ $\tm{execUC}$[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
 \end{lstlisting}
-In general we will always have at least one virtual token type (type \inline{K1} in \inline{execUC}) to accommodate a process called the \emph{protocol wrapper} and it's analogue the \emph{functioality wrapper}. 
-We describe these two processes in greater detail later in this section.
-%In this example, a virtual token type, \inline{K1}, is used because of the \emph{protocol wrapper} and the \emph{functionality wrapper}. \anote{Mention here that $k$ is a security parameter, $r$ is the for the random choices}
-%The protocol wrapper internally runs and manages all of the protocol parites and the functionality wrapper does the same with the ideal functionality.
-%For this reason, every execution in NomosUC that uses the protocol wrapper and/or the functionality wrapper will \emph{always} require at least one virtual token type.
+In general, as we will discuss when introducing the \partywrapper, an execution always requires at least one virtual token type.
 
 %\begin{figure*}
 %\input{listings/execuc}
@@ -82,20 +62,19 @@ We describe these two processes in greater detail later in this section.
 %\label{lst:execuc}
 %\end{figure*}
 
-%We separate NomosUC into two modules: generic code and protocol-specific code. 
-%Therefore, the \inline{execUC} refers to user specified code through the \inline{PS} module which defines \inline{PS.env} for \Z, \inline{PS.func} for the functionality, \inline{PS.prot} for the protocol, and \inline{PS.adv} for the adversary.
-Communication between all of the major processes in the UC execution (\Z, \A, \partywrapper, and \fwrapper) is done through communicators introduced in Section~\ref{sec:nomosuc}.
-Communicators are restricted to only sending functionally types messages in NomosUC, and we give generic types, below, to all such messages.
-\todo{Is this important to even have here? seems a useless implementation detail.}
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\Type$ p2zmsg[a] = P2Z of pid ^ a ;
-$\Type$ p2fmsg[a] = P2F of pid ^ a ;
-$\Type$ f2pmsg[a] = F2P of pid ^ a ;
-\end{lstlisting}
+%Communication between all of the major processes in the UC execution (\Z, \A, \partywrapper, and \fwrapper) is done through communicators introduced in Section~\ref{sec:nomosuc}.
+%Communicators are restricted to only sending functionally types messages in NomosUC, and we give generic types, below, to all such messages.
+%\todo{Is this important to even have here? seems a useless implementation detail.}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+%$\Type$ p2zmsg[a] = P2Z of pid ^ a ;
+%$\Type$ p2fmsg[a] = P2F of pid ^ a ;
+%$\Type$ f2pmsg[a] = F2P of pid ^ a ;
+%\end{lstlisting}
 
 \paragraph{The Environment}
-The environment is the first machine that \inline{execUC} spawns and receives from it the session id and list of corrupted parties for this execution.
-Its offered channel type \inline{EtoZ} specifies the interaction between \inline{execUC} and \Z:
+The environment is the first machine that \inline{execUC} spawns and receives from it the session id and list of corrupted parties for this execution. 
+It can be considered the \emph{first} ITM in the execution.
+Its role in the execution is specified by the type \inline{EtoZ} of the channel it offers.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
 $\Type$ EtoZ[a] = +{init: a ^ list[pid] -> exec} 
 $\Type$ exec = &{start : output_bit} ;
@@ -105,14 +84,13 @@ $\tb{proc}$ PS.env[K][z2p,...]{p2zn,...} :
   (k: $\tgr{int}$), (r: [Bit]), (#ztop: comm[z2pmsg[z2p]]{z2pn}), 
   (#ptoz: comm[p2zmsg[p2z]]{p2zn})...  |- ($\$$z : EtoZ) $\tg{(* <- offered channel *)}$
 \end{lstlisting}
-The environment also accepts communicators, as parameters, for communication with the protocol parties and the adversaries (in both directions), and offer a channel \inline{$\$$z} of type \inline{EtoZ}.
-The type (above) states \Z provides an \emph{sid} of some user-defined type \inline{a} and a list of the \emph{pid}s of corrupted parties. 
-Finally, \inline{execUC} instructs it to \inline{start} (\emph{external choice}) and return a bit $b$ as its guess for which world it is in.
+It reflects that the environment must first determine the session id, or \inline{sid}, of the execution as well as which parties it wants to statically corrupt in the form of a \inline{list} of \inline{pid}s.
+Finally, it is told to start and eventually returns an output \inline{bit} indicating it's guess as to whether it's in the real world or the ideal world.
+This output bit, and the environment's decision function, go on to define emulation and indistinguishability later in this section. 
 
-%The \inline{\{z2pn\}}, for example, specifies the amount of import that must be sent by \Z with every message to a protocol party.
-%The rest of the processes---the adversary, protocol wrapper, and functionality--are declared in the same way except the type parameters they expect are different: the protocol wrapper would of course accept type parameters for communication between it and \F, \A, and \Z.
-%Finally the type of the offered channel \inline{$\$$z} is the same for all environments and communicates the \inline{sid} and set of corrupt parties chosen by \Z to \inline{execUC}.
-%The \inline{sid} and corrupt list are parameters to the rest of the processes that \inline{execUC} spawns. 
+%The environment also accepts communicators, as parameters, for communication with the protocol parties and the adversaries (in both directions), and offer a channel \inline{$\$$z} of type \inline{EtoZ}.
+%The type (above) states \Z provides an \emph{sid} of some user-defined type \inline{a} and a list of the \emph{pid}s of corrupted parties. 
+%Finally, \inline{execUC} instructs it to \inline{start} (\emph{external choice}) and return a bit $b$ as its guess for which world it is in.
 
 %The communicators created by \inline{execUC} always use the same parametric types. 
 %For example, for communication with the protocol, the types look like:
@@ -152,26 +130,76 @@ Finally, \inline{execUC} instructs it to \inline{start} (\emph{external choice})
 %$\$$d <- $\$$z
 %\end{lstlisting}
 
+\subsection{Ideal Functionalities}
+One of the core research questions that this work aims to study session types applied to the UC framework. 
+In this section, we discuss how resource-aware session types impact the design of functionalities in NomosUC.
+We use the two-way authenticated channel functionality \Fauth to througout this discussion.
+
+In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
+In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionaty involving $P_s$, $P_r$, \F, and \A. 
+The simplest, and most common approach, to \Fauth is the following communication pattern: a party $P_s$ sends a message to \Fauth, and \Fauth sends the message to \A and waits for \A to say \inline{OK} before delivering the message to $P_r$.
+Since both parties can send and receive messages, it is unclear which process, \Fauth or $P$, will be active along their mutual channel at any given time.
+Session types require this information to be statically known when two processes are communicating over a single channel--making this communication pattern unexpressable over a single channel.
+
+There a few ways to overcome this constraint. 
+In general, even though the UC framework places few restructions of communication patterns, most functionalities stick to a few.
+Despite the constraint above, our type system is able to express each of the following implementations of \Fauth:
+\begin{enumerate}
+\item (presented above) Receiver and adverasry are activated directly: \Fauth waits for \A to tell it to deliver the message. If we extend the parties and functionality to communicate over two unidirectional channels. Given the type
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{sending}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{sendmsg}: \m{a} \tensor \m{sendmsg}}$ \\
+$\m{receive}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \tensor \m{receive}}$ \\
+$\m{adv}[a] = \echoice{\mb{leakmsg}: a \tensor \ichoice{ \mb{ok}: \m{leakmsg}}}$
+\end{tabbing}}
+\end{center}
+mitigates the problem.
+The first two correspond to the channels for sending from $P$ to \Fauth and the second in the opposite direction. The third is the adversary's channel at \Fauth.
+\item \Fauth ``polling'' approach: messages from $P_s$ are buffered for both \A and $P_r$. \A and $P_r$ must ask \Fauth for new messages. This is more inconvenient from the point of view of simplicity of the code, however, it is a common approach used given its flexibility and only requires a single channel in here. It's type can be given as
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{receive}[a] = \textcolor{red}{\getpot^m} \ichoice{\mb{recv}: \echoice{$\=$\mb{yes}: a \tensor \m{receive}[a] $ \\
+\>$\mb{no}: \m{receive}[a]}}$ \\
+$\m{adv}[a] = \ichoice{\m{get}: \echoice{$\=$\mb{yes}: a \tensor \m{adv}[a]$ \\
+\>$\mb{no}: \m{adv}[a]}}$
+\end{tabbing}}
+\end{center}
+\item ``polling'' but receiver is activated: the message is stored in a buffer for \A, and \A's deliver message directly sends it to $P_r$. This approach, like the first, requires two uni-directional channels. The type of this approach is the same as $\m{sending}[a]$/$\m{receive}[a]$ from the first bullet and $\m{adv}[a]$ from the second one.
+\end{enumerate}
+
+%Recall that such compromises are required in order to allow a \emph{dynamic} number of parties in UC.
+%The session type of the shared channel of a communicator only allows for a fixed amount of import to be sent over it with every messages. 
+%Protocols and functionalities that send different amounts of import depending on the message, say $i_1,...,i_n$, must now send $\m{max}(\{i_j\})$ import with every messages.
+%For existing UC definitions this appears to be an issue of ensuring a machine has \emph{enough} import, however, we can systematically map any UC import definition to one that works in NomosUC~\footnote{The problem can be reduced to ensuring enough ``latent'' import needed to compute, and, because we aren't concerned here with \emph{tight} computational bounds the problem is quite easy to solve. We discuss in greater detail in the appendix.}.
+
+
 \subsection{The \partywrapper}
-NomosUC departs slightly from the standard UC framework by using a \partywrapper to encapsulate all protocol parties and run them internally.
-Rather than passing protocol party channels as parameters to \Z or \A (supporting a static set of parties), the \partywrapper provides a single endpoint for all messages to parties.
-Similarly we adapt a \fwrapper to function like the \partywrapper but on functionalities. The main pupose of this wrapper and the \partywrapper is to intermediate communication between the session types the functionality uses and the functionally typed messages exchanges through communicators.
+NomosUC departs slightly from the standard UC framework by using a \partywrapper to encapsulate all protocol parties and run them internally, and using communicators to intermediate communication between \Z, \A, \F, and the \partywrapper.
+We use the notation \m{PW}(\PI) to denote the party wrapper running parties of protocol \PI.
 
-Like \iexecuc, we genrate the \partywrapper based on the protocol or functionality being executed. 
-Converting between functional and session-typed messages is an easy task to automate and we push that onto code generation rather than requiring a user to produce it.
-The extra processes generated within the \partywrapper are shown in Fiure~\ref{fig:blankpartywrapper}.
-%In a nutshell, the wrapper accepts messages from a communicator, say from \Z, demultiplexes it, converts its type to one over a session-typed channel and conveys it to the necessary protocol party.
+The purpose of the wrapper is to support a dynamic set of parties without \Z, \A, or \F having to reat to new parties and managing a growing set of channels.
+Instead, the \partywrapper acts as singular endpoint for all communication with protoco parties, and it manages the creation of new parties and routing messages to/from them.
 
-Following along with Figure~\ref{fig:blankpartywrapper}, the generated processes \inline{C} are use to de-multiplex messages based on the \inline{pid} of the receipient, and the \inline{z2p} and \inline{p2f} processes convert messages between the session typed channels and the functional messages that are received.
-The arrow notation in Figure~\ref{fig:blankpartywrapper} indicates the $\m{prodiver} \leftarrow \m{client}$ relationship for each channel and provides their types.
+\paragraph{Communicators}
+One consequence of the \partywrapper is that communication in the UC experiment is intermediated by communicators in NomosUC.
+The singular endpoint for all party communications makes it difficult to connect \pw directly to \Z with a session typed channel.
+Session types are statically typed, therefore, it is not possible to modify the session type of a single channel to accomocate newly created parties with potentially differing types. 
+Communicators enable NomosUC to continue using session types to govern communication between \Z, \PI, and \F by intermediating communication with functional messages.
+The \pw runs the protocol parties internally with their session types, and shuttles incoming functionally typed messages to those channels and vice versa for outgoing messages.
 
-We elaborate on the processes \inline{z2p}. For the commitment protocol the messages received by the \partywrapper are type as 
+Figure~\ref{fig:blankpartywrapper} shows the internals of \pw for two parties. The process \inline{C} demultiplexes incoming messages based on \inline{pid}, and the \inline{z2p} and \inline{f2p} processes convert to/from functionally typed messages. 
+
+Obviously, the processes \inline{z2p} and \inline{f2p} are protocol/functionality specific.
+Therefore, like \iexecuc, we generate those processes for the \partywrapper based on the protocol/functionality definition provided by the user~\footnote{It is equally valid to not generate them but let the user write the code for them manually. However, given the straightfoward nature of the processes, we opt to relieve the user of this burden.}.
+
+We provide an example of what \inline{z2p} does for a commitment protocol when \pw receives messages typed as:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
 $\yo{type}$ comp2f = Commit of Bit | Open ;
 $\yo{type}$ comf2p = Committed | Open of Bit ;
 \end{lstlisting}
-and the \inline{z2p} process intercepts them and communicates to the party over a channel typed with the \Fcom session types in Section~\ref{sec:nomosuc}.
-For example when \Z gives the command to commit to a bit, \inline{z2p} does the following:
+\inline{z2p} intercepts receives the message and communicates the message to the committer over its channel:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 case msg (
   Commit(b) =>
@@ -179,47 +207,24 @@ case msg (
     $\tb{send}$ $\$$z2p b ;
     $\tb{pay}$ {z2pn} $\$$z2p ;
 \end{lstlisting}
-where \inline{$\$$z2p} is the session-typed channel to the committer.
+Here \inline{z2p} in the code refers to the committer's channel for \Z
 The \inline{f2p} processes does the same for communication between the parties and the functionality.
 
-Virtualizing the protoocl parties means that the wrapper and the parties it runs are, effectively, using the same import and potential.
-We reason that the \partywrapper and protocol parties it runs will always have enough import by noticing that the \partywrapper does constant work on each activation.
-Therefore, if protocol parties intend to hold on to import, there is always a suficient polynomial to allow both the wrapper and the party to perform potentially polynomial computation.
-\todo{Reword this to make it crisper}.
+As a resut of their session types, communicators also require that all messages be sent with some static amount of import.
+Therefore, a user must set import requirements for a protocol work in this constrainted system.
+Furthermore, as far as we know, we can systematically map any UC import definition to one that works in NomosUC.
 
-%Folling along with Figure~\ref{fig:blankpartywrapper}, the generatd processes \inline{z2p} and \inline{f2p} communicate with the party over a session-typed channel and perform the message type conversion mentioned above based on a simple message type mapping provided by the user.
-%The \inline{z2p} process offers a linear channel to the party with the correct session type with \Z. 
-%The wrapper reads messages from \Z, demultiplexes them based on \inline{pid} and puts them in the appropriate virtual communcator (the green box labeled \inline{C}) for the \inline{z2p} processes to read from, convert, and send to the party.
-%The protocol party offers a linear channel of its type with \F, and \inline{p2f} converts this to a functional type. \inline{p2f} offers the same type as a communciator to the wrapper which reads the message and sends it to \F. 
-%Figure~\ref{fig:blankpartywrapper} indicates the type of the offered channel for all the relevant processes within the wrapper. 
-
-%In order to use session types, the each protocol party is internally connected to two processes \inline{z2p} and \inline{f2p} over with session-typed channels for their communication with \Z and \F, respectively.
-%\inline{z2p} is connected to party-specific virtual communicators so that \inline{z2p} and \inline{f2p} can read/send messages from. It can not read/write directly to/from the actual communicators connecting the protocol wrapper because, being simulations inside the protocol wrapper, they do not use the same token type.
-%In the case of the ideal world with \Fcom, the both of the sender's ($\pi_1$) channel with \inline{z2p} channels with \inline{z2p} and \inline{f2p} are typed as \inline{sender}, and the protocol party itself ($\pi_1$) just fowards messages from one channel to the other.
-
-%The processes \inline{Z2p} and \inline{f2p} are generated for each party based on their session-type, and they convert between them and functional messages for incoming/outgoing communcation with \Z, \F, or \A. 
-%For example in the commitment example, where the functional message type is given by: 
-%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
-%$\yo{type}$ comp2f = Commit of Bit | Open ;
-%$\yo{type}$ comf2p = Committed | Open of Bit ;
-%\end{lstlisting}
-%the \inline{z2p} process does something like this for the sender (where \inline{msg} is received from its virtual communicator):
-%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-%case msg (
-%  Commit(b) =>
-%    $\$$z2p.commit ;
-%    $\tb{send}$ $\$$z2p b ;
-%    $\tb{pay}$ {z2pn} $\$$z2p ;
-%\end{lstlisting}
-%It sends a commit message over the linear channel with the sender, and pays the necessary amount of (virtual) import tokens with the message.
-%When \Z, \A, or \F send a message to a party that doesn't exist, the \partywrapper creates the new party's \inline{z2p}/\inline{f2p} processes and an instance of the party itself, and it connects them together in the same way shown. 
-%We do something similar for functionalities, in Appefix~\ref{app:fwrapper}
+\paragraph{Import with the \partywrapper}
+Virtualizing protocol parties in a wrpper means that they all, effectively, share the same \emph{real} import and potential, even though they are given virtual potential.
+We reason that the \partywrapper does not change the import requirements of protocols or make some protocols unrealizable in NomosUC.
+Mainly, for any activation of a party, the party either retains some import or gives away all the import it receives. 
+The former case allows parties to do polynomial work or be activated a polynomial number of times, and the latter case allows for parties activated a constant number of times and doing constant work per activation.
+The \pw alone does constant work per activation, therefore, in either case boththe protocol party and \pw have enough import to perform their necessary computations.
 
 \begin{figure}
 \centering
 \includegraphics[scale=0.5]{figures/blankpartywrapper2.pdf}
 \caption{The internals of the protocol wrapper with two parties. The arrows indicates the client/provider relationship between each pair: provider $\rightarrow$ client. The wrapper creates \texttt{z2p} to offer a channel and convert from gunctional to message type---the \texttt{p2f} do the same. A communicator is used because \texttt{z2p} cannot send message to real one with differing token type. The types of the processes offered are (color): \tgr{comm[z2pmsg[comp2f]]}, \tb{sender}, \tr{party[Int]}, \tp{comm[p2fmsg[rop2f]]}. }
-%The processes \texttt{z2p} offer linear channels to their respective protocol parties that are typed according to that party's protocol, and they receive messages from virtual communicators that hold messages specific to one \texttt{pid}. The protocol code for $\pi_1$ and $\pi_2$ are user-specified and offer a channel to the \texttt{p2f} process according to their protocol with the functionality. The \texttt{p2f}s convert outgoing messages to, and incoming messages from, functional message types to be sent to/from the functionality. The protocol wrapper gives messages to the virtual communicators and receives messages from \texttt{p2f}s.}
 \label{fig:blankpartywrapper}
 \vspace{-1.5em}
 \end{figure}
@@ -302,9 +307,9 @@ Therefore, if protocol parties intend to hold on to import, there is always a su
 %Additionally, moving the \inline{pid} into the session type means that the protocol wrapper can create arbitrarily many \inline{pid}s to communicate with \Fro.
 
 \paragraph{The Adversary}
-The adversary, much like the environment, is providing input to the protocol and functionalities.
-As the UC framework is concerned with modular construction for protocols, and NomosUC with using session types to aid in suc construction, we do not give adversaries session types.
-Therefore, they are not wrapper like protocols and functionalities, and communicate with all other processes directly through functional message types.
+The adversary, much like the environment, is providing input to the protocol and functionalities. Specifically to corrupt parties and for special adversarial capabilities in the functionality.
+Unlike protocols and functionalities, for which enforcing messages ordering for protocols is important, the adverasary in NomosUC is not session typed and receives inputs from \Z in the form of functional messages.
+Furthermore, it communicates with functionalities and \pw through functional messages and relies on their types to enforce message ordering.
 
 \subsection{Polynomial Bound}
 The security of the UC framework relies on computational constraints on adversaries, and, generally, on what all ITMs can do.
@@ -317,14 +322,15 @@ First, it remedies our exclusion of ``parameterized systems'' by easing the impo
 Second, we add $k$ to reflect a more natural notion of import and modularity in UC by allowing minimial import for constant-work one-shot processes like \Fcom which no longer need import just to handle $k$-bit strings.
 
 In NomosUC, we build import into the type system to be able to reason about ITMs being locally polynomial time given some polynomial $T$.
-Specifically, the system provides novel constructs to exchange import, generate potential from that import, and create virtual import for simulating other machines.
-%Specifically, the type system can check whether a given polynomial bound in the import amount satisfies the potential generated/used by an open Nomos term.
+Specifically, the system provides novel constructs to exchange import, generate potential from that import, and create virtual import for virtualization and cryptographic reductions.
 The language additionally encodes the computational cost of each operation performed by an ITM, and statically guarantees that the execution cost of each ITM is locally polynomial in the net import it has over its entire execution. 
-The locally polynomial invariant can be extended to claim that the entire UC execution of locally PPT ITMs is also PPT.
+In this section show the soundness of our import definition by extending the local polynomial guarantee to show that the entire UC experiment is PPT in the security parameter $k$.
 
+We first define what it means to be PPT for a process, or term, in NomosUC. 
 \begin{ddef}[PPT in $k$]\label{def:ppt}
 A term $e(k,r)$ is \emph{well-resource-typed} and PPT if, given some amount of initial import $n$, there exists a polynomial $T(n,k)$ such that $\forall k, r, e(r,k) \{n\}$ terminates in at most $T(n,k)$ steps. 
 \end{ddef}
+Notice that our choice of polynomial representation, a function of both the import and security parameter $k$, only partially defines PPT in terms of the security parameter. It still remains to be shown that the system is polynomial \emph{only} in $k$.
 
 %\begin{proof}
 %The Nomos type system only type checks programs for which a satisfying assignment of polynomial $T$ is possible.
@@ -361,13 +367,13 @@ The Preservation Theorem in conjunction with \m{compose} ensures type safety of 
 If we take the intial import $n$ to be polynomial in the security parameter $k$, we conclude that \m{UC} is PPT in $k$.
 \end{proof}
 
-\paragraph{Sending/Receiving Import}
-Our construction of the UC experiment requires communicators (introduced in Section~\ref{sec:nomosuc}) to intermediate communication between the \Z, \A, \F, and \m{PW}(\PI).
-Their use adds import requirements to the experiment that are not captures by just the types of \F, \A, and \PI. 
-It results from them being activates a potentially polynomial number of times. Therefore, the communicator's type, introduced in Section~\ref{sec:nomosuc} defines the, reflects this computation by
-retaining one of the import tokens that is sent accross it. 
-Given that our functionalities are parameteric in the amount of import they send/receive (so as to not restriction wat protocols can realize them), the user must take into account the number of import taken by communicators.
-In our commitment example, the messages from \Z that uses the most import in the real world is the sending the \inline{open} message to the committer. This activationa results in 5 communicators being activated and so five more import than the protocol already requires. As long as the ideal functionality is parameterized to accept the same amount of import, indistinguishability still holds. \todo{This belongs somewhere else}.
+%\paragraph{Sending/Receiving Import}
+%Our construction of the UC experiment requires communicators (introduced in Section~\ref{sec:nomosuc}) to intermediate communication between the \Z, \A, \F, and \m{PW}(\PI).
+%Their use adds import requirements to the experiment that are not captures by just the types of \F, \A, and \PI. 
+%It results from them being activates a potentially polynomial number of times. Therefore, the communicator's type, introduced in Section~\ref{sec:nomosuc} defines the, reflects this computation by
+%retaining one of the import tokens that is sent accross it. 
+%Given that our functionalities are parameteric in the amount of import they send/receive (so as to not restriction wat protocols can realize them), the user must take into account the number of import taken by communicators.
+%In our commitment example, the messages from \Z that uses the most import in the real world is the sending the \inline{open} message to the committer. This activationa results in 5 communicators being activated and so five more import than the protocol already requires. As long as the ideal functionality is parameterized to accept the same amount of import, indistinguishability still holds. \todo{This belongs somewhere else}.
 
 %Our construction of the \partywrapper and \fwrapper rely on sending functional messages between them through a shared communicator.
 %The same holds true between the adversary and the two wrappers, and also holds true between the environment and the \partywrapper.
@@ -866,45 +872,5 @@ The proof follows directly from Theorems~\ref{thm:singlecomp} and \ref{thm:squas
 By Theorem~\ref{thm:singlecomp} we can construct a simulator \SIM{1} for $!!\F_1 \xrightarrow{\rho \, \circ \, !\pi} \F_3$.
 Theorem~\ref{thm:squash} then allows us to ``squash'' $!!\F_1$ and construct a simulator using \SIM{1} for $!\F_1 \xrightarrow{\rho \, \circ \, !\pi \, \circ \, \msf{squash}} \F_3$
 \end{proof}
-
-\subsection{Design Discussion}
-One of the core research questions that this work aims to study session types applied to the UC framework. 
-In this section, we discuss how resource-aware session types impact the design of functionalities in NomosUC as well as which are implementable.
-We use the two-way authenticated channel functionality \Fauth to througout this discussion.
-
-In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
-In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionaty involving $P_s$, $P_r$, \F, and \A. 
-The simplest, and most common approach, to \Fauth is the following communication pattern: a party $P_s$ sends a message to \Fauth, \Fauth sends the message to \A and waits for \A to say \inline{OK} before delivering the message to $P_r$.
-Since both parties can send a message and receive a message, it is unclear which process, \Fauth or $P$, will be active along that channel at any given time.
-Session types require this information to be statically known when two processes are communicating over a single channel--making this communication pattern unexpressable over a single channel.
-
-There a few ways to overcome this constraint. 
-In general, even though the UC framework places few restructions of communication patterns, most functionalities stick to a few.
-\Fauth, for example, can take a few forms:
-\begin{enumerate}
-\item (presented above) Receiver and adverasry are activated directly: \Fauth waits for \A to tell it to deliver the message.
-\item \Fauth ``polling'' approach: messages from $P_s$ are buffered for both \A and $P_r$. \A and $P_r$ must ask \Fauth for new messages. This is a more invonconvenient method, but can be useful for novel functionality designs that need a channel.
-\item ``polling'' but receiver is activated: the message is stored in a buffer for \A, and \A's deliver message directly sends it to $P_r$.
-\end{enumerate}
-The simplest way to implement \Fauth in NomosUC is ``polling'' approach. As far as we know, we can systematically tranform any UC functionality into one that uses ``polling''. 
-The consequences are that polling is inconvenient from a programming point of view because \Z needs to continuously activate parties to ask for new messages.
-Hope is not lost though, because it turns out our type system can express functionalities in all three of the ways listed above. 
-The first, and most natural, approach only requires splitting communicating between $P$ and \Fauth into two unidirectional channels
-Such an extension to NomosUC trivially modifies the \partywrapper to handle two channels instead of one, and the types of the channels can be succintly expressed as: 
-\begin{center}
-\parbox{0cm}{
-\begin{tabbing}
-$\m{sending}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{sendmsg}: \m{a} \tensor \m{sendmsg}}$ \\
-$\m{receive}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \tensor \m{receive}}$ \\
-$\m{adv}[a] = \echoice{\mb{leakmsg}: a \tensor \ichoice{ \mb{ok}: \m{leakmsg}}}$
-\end{tabbing}}
-\end{center}
-The first to correspond to the channels for sending from $P$ to \Fauth and the second in the opposite direction. The third is the adversary's channel at \Fauth.
-
-A notable part of our contruction is the machinery created around the protocol parties and functionality that intemediate their communication with communicators and functionally-typed messages.
-Recall that such compromises are required in order to allow a \emph{dynamic} number of parties in UC.
-The session type of the shared channel of a communicator only allows for a fixed amount of import to be sent over it with every messages. 
-Protocols and functionalities that send different amounts of import depending on the message, say $i_1,...,i_n$, must now send $\m{max}(\{i_j\})$ import with every messages.
-For existing UC definitions this appears to be an issue of ensuring a machine has \emph{enough} import, however, we can systematically map any UC import definition to one that works in NomosUC~\footnote{The problem can be reduced to ensuring enough ``latent'' import needed to compute, and, because we aren't concerned here with \emph{tight} computational bounds the problem is quite easy to solve. We discuss in greater detail in the appendix.}.
 
 
