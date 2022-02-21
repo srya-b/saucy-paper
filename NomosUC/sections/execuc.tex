@@ -327,8 +327,10 @@ The language additionally encodes the computational cost of each operation perfo
 In this section show the soundness of our import definition by extending the local polynomial guarantee to show that the entire UC experiment is PPT in the security parameter $k$.
 
 We first define what it means to be PPT for a process, or term, in NomosUC. 
+\todo{experimental addition of the $\leq$ in the definition below, unclear if that is a good decision}
 \begin{ddef}[PPT in $k$]\label{def:ppt}
-A term $e(k,r)$ is \emph{well-resource-typed} and PPT if, given some amount of initial import $n$, there exists a polynomial $T(n,k)$ such that $\forall k, r, e(r,k) \{n\}$ terminates in at most $T(n,k)$ steps. 
+A term $e(k,r)$ is \emph{well-resource-typed} and PPT if, given some amount of initial import $n$, there exists a polynomial $T(n,k)$ such that $\forall k, r, e(r,k) \{n\}$ terminates in at most $T(n,k)$ steps.
+We use the notation $e(r,k) \leq T(n,k)$ to refer to a PPT process.
 \end{ddef}
 Notice that our choice of polynomial representation, a function of both the import and security parameter $k$, only partially defines PPT in terms of the security parameter. It still remains to be shown that the system is polynomial \emph{only} in $k$.
 
@@ -439,7 +441,7 @@ Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\ma
 
 UC emulation combines the UC exeution with indistinguishability resuting in the following NomosUC emulation definition.
 \begin{definition}[Emulation]\label{def:emulation}
-Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed then if $\forall \A$ well-matched with $(\pi, \F_1)$, $\exists \Sim$ s.t. $\forall \Z$ well-matched with \A and $(\pi, \F_1)$: \Sim is well-matched with $(\phi, \F_2)$, \Z is well-matched with $(\phi, \Sim)$, and $\msf{execUC}(\pi, \F_1, \Z, \A) \approx \msf{execUC}(\phi, \F_2, \Z, \Sim)$:
+Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed, if $\forall \A$ well-matched with $(\pi, \F_1)$, $\exists \Sim$ s.t. $\forall \Z$ well-matched with \A and $(\pi, \F_1)$: \Sim is well-matched with $(\phi, \F_2)$, \Z is well-matched with $(\phi, \Sim)$, and $\msf{execUC}(\pi, \F_1, \Z, \A) \approx \msf{execUC}(\phi, \F_2, \Z, \Sim)$:
 
 \begin{mathpar}
 \footnotesize
@@ -448,10 +450,10 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 		%. \models \msf{execUC}[\Tokentypes][\alpha] :: \Delta[\Tokentypes][\alpha] \\ \\ 
 		% Protocols that are well-matched with their functionalities
 		%\pi \rightarrow \Delta_1' \semi \phi \rightarrow \Delta_2' \semi \\
-		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
+		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \leq T(n,k) \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \leq T(n,k) \semi \\
 		%\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_1 \rangle \\
 		% Type of execUC[DELTA_pi] and execUC[DELTA_phi]
-		\forall \A \, | \, \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle\\
+		\forall \A \, | \, \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_4' \leq T(n,k), \langle \A \leftrightarrow \pi \rangle \\
 		%\Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \equiv_{\Z} \Delta_1\ 
 		%\semi \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \equiv_\Z \Delta_2 \\
 		% For all A if exists well-typed A that is well-matched with real world
@@ -459,11 +461,11 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed the
 		%\forall \A | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
 		% implies simulator that is well-matched for ideal world
 		%\Rightarrow \exists (\Delta_3,\Delta_3') \, | \, \Delta_3 \vdash \Sim_\A :: \Delta_3', \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
-		\Rightarrow \exists \Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3', \langle \Sim_\A \leftrightarrow \phi \rangle \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
+		\Rightarrow \exists \Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3' \leq T(n,k), \langle \Sim_\A \leftrightarrow \phi \rangle \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
 		% for all Z they that's well-matched for the real world => Z is well-matched with S and ideal world
 		%\forall \Z (\langle \Z \leftrightarrow \A \rangle, \langle \Z \leftrightarrow \pi \rangle \Rightarrow \langle \Z \leftrightarrow \Sim_\A \rangle, \langle \Z \leftrightarrow \phi \rangle \\
 		% and emulation has to hold
-		\Rightarrow \forall \Z \; \msf{execUC} \ \pi\ \Z\ \F_1\ \A \approx\ \msf{execUC} \ \phi\ \Z\ \F_2\ \Sim_\A
+		\Rightarrow \forall \Z \; (\msf{execUC} \ \pi\ \Z\ \F_1\ \A \leq T(k)) \approx\ (\msf{execUC} \ \phi\ \Z\ \F_2\ \Sim_\A \leq T(k))
 	}
 	{
 		% EMULATION DEFINITION
