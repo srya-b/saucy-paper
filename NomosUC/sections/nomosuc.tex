@@ -339,6 +339,85 @@ Intuitively, the potential in functional context $\Psi$ is \emph{shared}
 between $\Psi_1$ and $\Psi_2$ (second premise); $\Psi_1$ is used to type
 $M$ while $\Psi_2$ is passed on to the continuation $Q$.
 
+\subsection{Expressing ITMs With Session Types}
+Despite the seemingly stuctured nature of execution in UC, the framework is meant to capture arbitrary connections, communication patterns, or configurations of ITMs. 
+In this section we highlight a common pattern in UC that requires additional machinery to be express with session types.
+
+The pattern emerges from the following code: a machine $M$ either writes to another machine $N$ or is written to by $N$. 
+At first glance, it is a trivial scenario, but we encounter a problem trying to encode this with a single session type.
+A real example of this scenario is give by three processes $P$, $Q_1$, and $Q_2$ which execute as follows:
+\begin{itemize}
+	\item $P$ flips a bit and writes to either $Q_1$ or to $Q_2$
+	\item If $Q_1$ is activated by $P$ it writes to $Q_2$ and the execution terminates. 
+	\item Otherwise, if $Q_2$ is activated by $P$, it writes a message to $Q_1$, $Q_2$ writes something back, and the execution terminates.
+\end{itemize}
+A single type between $Q_1$ and $Q_2$ would have to allow either of the two parties to write on the channel, but session types require it to be statically known.
+
+If we try to separate communication between $Q_1$ and $Q_2$ into two uni-directional channels, we end up with Figure~\ref{fig:pandq}, and can express the session type for each of the channels:
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{q1toq1} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
+$\m{q2toq1} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
+\end{tabbing}}
+\end{center}
+
+This approach, however, poses another problem. 
+Channels are only created by a process offering them, and a process can only offer a single channel.
+Without adding any additional processes, $Q_1$ must offer a channel to $Q_2$ and $Q_2$ offers one to $Q_1$. 
+Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
+Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
+
+In order to capture this communication, and, in general, to break all possible cycles while still making meaningful use of session types, we propose a construction like Figure~\ref{fig:newpandq}.
+We wrap each of $Q_1$ and $Q_2$ in shell code, call them $S_1$ and $S_2$, which spawn two dummy proceses to offer each of the channels of type \m{q1toq2} and \m{q2toq1} to $Q_1$ and $Q_2$.
+The arrows within each shell represent the direction of communication rather than a provider-client relationship. 
+In reality, any of the process can offer any of the channels as long as it doesn't result in a cycle.
+\begin{figure}
+	\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[scale=0.4]{figures/p_and_q.png}
+	\caption{Implementing the configuration with two channels is also impossible because $Q_1$ can't be both client and provider for $Q_2$, and vice versa.}
+	\label{fig:pandq}
+	\end{subfigure}
+	~ \ \ \ \ 
+	\begin{subfigure}{0.6\textwidth}
+	\centering
+	\includegraphics[scale=0.4]{figures/new_p_and_q.png}
+	\caption{We can systematically convert any such execution into one intermediated by communicators in a mechanical way. Session types are still used by $P$ and $Q$ but a cycle is avoided through the used oa communicators offering a shared channel.}
+	\label{fig:newpandq}
+	\end{subfigure}
+	\caption{An ITM configuration realized in NomosUC.}
+\end{figure}
+Communication between $S_1$ and $S_2$ along channels they each offer results in another cycle. 
+Therefore, we break the cycle by intermediating their communication through a \emph{communicator}.
+The communicator avoids cycles by offered a \emph{shared channel} rather than the typical linear channel.
+
+\paragraph*{\textbf{Shared Channels}}
+\todo{Here I'm not too sure on whether this is enoug information or if it's correct.}
+Linear channels are exclusive to the parent and child that are at their endpoints.
+Balzer et al.~\cite{balzer2017manifest} proposed a \emph{shared} extension of session types which allows them to capture more natural programming scenarios where cyles naturally occurrs (ring network, dining philosophers, etc.).
+Shared channels are still restricted to one provider but can be used by multiple clients to communicate with the provider. 
+They introduce non-determinism that isn't present in UC where many clients can be attempting to communciate with the same provider, however, NomosUC borrows the write token from ILC to ensure activation and control are always with only on process at a time.
+
+\paragraph*{\textbf{Communicators}}
+Communicators act as channel buffers that two parties can use to communicate to each other.
+The shared type of the communicators is given by 
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$\\
+\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{a} \product \down \m{comm[a]},$\\
+\>\>$\mb{no}: \down \m{comm[a]}}}$
+\end{tabbing}}
+\end{center}
+The $\up$ and $\down$ operations around the session type indicate that it is \emph{shared}, and they denote a \emph{critical section} analogous to traditional concurrency controls like the mutex.
+The type suggests that one party can send a message to the communicator, the communicator, buffers the message, and responds with it when asked to \m{RECV} is from a another process.
+
+Returning to the initial example of $Q_1$ and $Q_2$, although the contruction appears excessive, it is generic and can intermediate communication between any pair of processes in NomosUC. 
+It allows us to continue to meaningfully use session types and avoid worrying about cyclical provider/client relationships for the remainder of this paper.
+As we show in Section~\ref{sec:execuc}, communicators also help intermediat eocmmunication between each of the main processes of the execution.
+
+\section{The rest of nomos? don't know how to break up this section to include the above.}
 \paragraph*{\textbf{Import Tokens}}
 A defining aspect of NomosUC is the representation of import tokens in the type system.
 This enables a static reasoning of the import mechanism in NomosUC.
@@ -748,49 +827,49 @@ case either $\config$ can take a step or is poised.
 \end{proof}
 
 
-\subsection{UC Communicators} \label{sec:communicators}
-% all the processes conncted together leads to a cycle of linear channels ==> Z <--> P so here we use a communicator 
-The UC execution connects the protocol to the environment in both directions of communication.
-This poses a technical challenge where, if linear channels are used, the resulting topology contains a cycle of linear channels: the environmtne offers a channel to the wrapper and the wrapper to the environment.
-Such cycles violate type preservation because a client is acquiring its client~\ref{dasnomos}.
-Therefore, we use a message buffers called communicators which offered shared channels that both ends of the communication can use.
-Communicators are used in the main UC execution in Section~\ref{sec:execuc} to connect the main processes together, as well as within the \partywrapper. 
-
-A communicator has a \emph{sender} and a \emph{receiver}. 
-The shared channel offered by the communicator has the following polymorphic session type:
-\begin{tabbing}
-  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
-  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{push} : \m{msg} \arrow
-  \down \m{comm[msg]},$\\
-  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
-  \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
-\end{tabbing}
-
-One illustration of the use of shared session types is a \emph{communicator}.
-We use communicators as message buffers between two arbitrary processes: a
-\emph{sender} and a \emph{receiver}.
-The communicator is connected to both the sender and the receiver using a shared
-channel.
-
-Intuitively, the communicator receives \emph{push} requests from the sender followed
-by receiving a message and stores them internally.
-Analogously, the communicator receives \emph{pop} requests from the receiver,
-and responds appropriately with the message if one is stored inside the communicator.
-Formally, a communicator has the following polymorphic session type
-\begin{tabbing}
-  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
-  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{SEND} : \m{msg} \arrow
-  \down \m{comm[msg]},$\\
-  \>$\mb{RECV} : \ichoice{$\=$\mb{yes} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
-  \>\>$\mb{no} : \down \m{comm[msg]} }}$
-\end{tabbing}
-The $\up$ indicates that it is a shared channel that must be \emph{acquired} by a process in order to send something over it.
-
-The sender can $\mb{SEND}$ a message into the communicator, and the receiver can periodically try to $\mb{RECV}$ a message from it.
-If there is a message, it responds with $\mb{yes}$, the message of the parameterized type $\m{msg}$, and the import sent with it.
-Note that the communicator retains one unit of import from every message. 
-It needs at least one because it may be activated a polynomial number of times, and, therefore a constant amount of potential is insufficient. 
-At the end of activation, the channel is released with $\down$, and another process can acquire it.
+%\subsection{UC Communicators} \label{sec:communicators}
+%% all the processes conncted together leads to a cycle of linear channels ==> Z <--> P so here we use a communicator 
+%The UC execution connects the protocol to the environment in both directions of communication.
+%This poses a technical challenge where, if linear channels are used, the resulting topology contains a cycle of linear channels: the environmtne offers a channel to the wrapper and the wrapper to the environment.
+%Such cycles violate type preservation because a client is acquiring its client~\ref{dasnomos}.
+%Therefore, we use a message buffers called communicators which offered shared channels that both ends of the communication can use.
+%Communicators are used in the main UC execution in Section~\ref{sec:execuc} to connect the main processes together, as well as within the \partywrapper. 
+%
+%A communicator has a \emph{sender} and a \emph{receiver}. 
+%The shared channel offered by the communicator has the following polymorphic session type:
+%\begin{tabbing}
+%  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
+%  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{push} : \m{msg} \arrow
+%  \down \m{comm[msg]},$\\
+%  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
+%  \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
+%\end{tabbing}
+%
+%One illustration of the use of shared session types is a \emph{communicator}.
+%We use communicators as message buffers between two arbitrary processes: a
+%\emph{sender} and a \emph{receiver}.
+%The communicator is connected to both the sender and the receiver using a shared
+%channel.
+%
+%Intuitively, the communicator receives \emph{push} requests from the sender followed
+%by receiving a message and stores them internally.
+%Analogously, the communicator receives \emph{pop} requests from the receiver,
+%and responds appropriately with the message if one is stored inside the communicator.
+%Formally, a communicator has the following polymorphic session type
+%\begin{tabbing}
+%  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
+%  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{SEND} : \m{msg} \arrow
+%  \down \m{comm[msg]},$\\
+%  \>$\mb{RECV} : \ichoice{$\=$\mb{yes} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
+%  \>\>$\mb{no} : \down \m{comm[msg]} }}$
+%\end{tabbing}
+%The $\up$ indicates that it is a shared channel that must be \emph{acquired} by a process in order to send something over it.
+%
+%The sender can $\mb{SEND}$ a message into the communicator, and the receiver can periodically try to $\mb{RECV}$ a message from it.
+%If there is a message, it responds with $\mb{yes}$, the message of the parameterized type $\m{msg}$, and the import sent with it.
+%Note that the communicator retains one unit of import from every message. 
+%It needs at least one because it may be activated a polynomial number of times, and, therefore a constant amount of potential is insufficient. 
+%At the end of activation, the channel is released with $\down$, and another process can acquire it.
 
 \subsection{Discussion on Realizing Import}
 Our adaptation of the import mechanism to resource-aware session types concretizes some parts of the import mechanism like the run-time budget and adds new mechanisms

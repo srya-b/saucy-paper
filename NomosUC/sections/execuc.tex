@@ -794,15 +794,15 @@ The multisession extension is mentioned in greater detail in the appendix.
 %Furthermore, similar to the functionality wrapper, the multisession operator constructs the processes around \F in the same way and spawns them on-demand.
 %The process definition for $!\F_\msf{com}$ is shown in Figure \ref{lst:bangf} accepting two token types: the real token type $K$ and the virtual token type $K_1$ for instances of $\F_\msf{com}$.
 %
-%\begin{figure}
-%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-%$\tb{proc}$ bangF[K,K1][p2f,...] :
-%  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
-%  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
-%\end{lstlisting}
-%\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
-%\label{lst:bangf}
-%\end{figure}
+\begin{figure}
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+$\tb{proc}$ bangF[K,K1][p2f,...] :
+  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
+  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
+\end{lstlisting}
+\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
+\label{lst:bangf}
+\end{figure}
 
 \begin{theorem}[PPT !]\label{thm:bangppt}
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
