@@ -42,6 +42,7 @@
 \definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
 \definecolor{YellowOrange}{rgb}{0.98, 0.6, 0.01}
 \definecolor{Red}{rgb}{0.89, 0.0, 0.13}
+\definecolor{Black}{rgb}{0.0, 0.0, 0.0}
 \definecolor{Purple}{rgb}{0.63, 0.36, 0.94}
 
 \newcommand{\anote}[1]{\textcolor{magenta}{AM: #1}}
@@ -52,7 +53,9 @@
     %colbacktitle=white!90!roug,
 	colbacktitle=white!40!gg,
     coltitle=black,
-    fonttitle=\bfseries, 
+    fonttitle=\small\bfseries, 
+	fontupper=\small,
+	fontlower=\small,
     enhanced,
     attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
     #1,% For possible options
@@ -75,28 +78,6 @@
 \input{macros}
 \input{st-macros}
 
-% \author{You}
-% \author{Me}
-% \author{Them}
-
-%\author{\IEEEauthorblockN{Given Name Surname}
-%\IEEEauthorblockA{\textit{University of Science}}
-%\and
-%\IEEEauthorblockN{Given Name Surname}
-%\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-%\and
-%\IEEEauthorblockN{Given Name Surname}
-%\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-%\and
-%\IEEEauthorblockN{Given Name Surname}
-%\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-%\and
-%\IEEEauthorblockN{Fiven Name Surname}
-%\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-%\and
-%\IEEEauthorblockN{Given Name Surname}
-%\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-%}
 \begin{abstract}
 The Universal Composability (UC) framework is the leading framework for proving compositional security of cryptographic protocols, however, is limited to on-paper proofs which can be cumbersome and difficult to analyze.
 There are a wealth of previous attempts at formalizing it with programming lanuage logic, but many of them still fall short in either expressiveness, capturing full compositional security, and reasoning about resource-bounded protocols and adversaries. 
@@ -137,21 +118,10 @@ We introduce the new mechanisms, required for UC, that we add to Nomos, and prov
 \section{Coin Flipping and Commitment} \label{sec:commitment}
 \input{sections/commitment}
 
-%\section{Multisession Operator}
-%\input{sections/multisession}
-
-%\section{Programming-Friendly Communication Models for UC} \label{sec:wrappers}
-%\input{sections/wrappers}
-%
-%\section{Reliable Broadcast} \label{sec:rbc}
-%\input{sections/rbc}
-
 \section{Discussion and Future Work}
 \input{sections/future}
 
 \section*{References}
-
-
 %\bibliographystyle{ACM-Reference-Format}
 %\bibliography{nomosuc}
 

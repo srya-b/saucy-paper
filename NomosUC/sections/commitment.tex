@@ -33,11 +33,15 @@ Recall the session type and its struture disusse in Section~\ref{sec:execuc}. Th
 \begin{center}
 \parbox{0cm}{
 \begin{tabbing}
-$\m{party}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{hash} : \m{pid} \arrow \m{int} \tensor \m{hashing}[a],$\\
-\>$\mb{send} : \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \m{party}[a],$ \\
-\>$\mb{recv}: \m{pid} \tensor \m{newmsg[a]}}$ \\
-$\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{party}[a]}$ \\
-$\m{newmsg}[a] = \echoice{ \mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \textcolor{red}{\paypot^1} \m{party}[a], \mb{no}: \m{pid} \tensor \m{party[a]}}$
+$\m{party}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{hash}: \m{pid} \arrow \m{int} \tensor \echoice{$\=$\mb{shash}: \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{party[a]}}$ \\
+\>$\mb{recv}: \m{pid} \tensor \echoice{$\=$\mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \textcolor{red}{\paypot^1} \m{party}[a],$\\
+\>\>$\mb{no}: \m{pid} \tensor \m{party[a]}},$ \\
+\>$\mb{send}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \m{party}[a]}$
+%$\m{party}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{hash} : \m{pid} \arrow \m{int} \tensor \m{hashing}[a],$\\
+%\>$\mb{send} : \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \m{party}[a],$ \\
+%\>$\mb{recv}: \m{pid} \tensor \m{newmsg[a]}}$ \\
+%$\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{party}[a]}$ \\
+%$\m{newmsg}[a] = \echoice{ \mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \textcolor{red}{\paypot^1} \m{party}[a], \mb{no}: \m{pid} \tensor \m{party[a]}}$
 %\end{mathpar}
 \end{tabbing}}
 \end{center}
