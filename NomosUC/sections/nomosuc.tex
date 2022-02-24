@@ -52,47 +52,6 @@ In this article, we restrict to a subset of these connectives that
 are sufficient for our language and purposes.
 We follow a detailed description of each of these session type constructors.
 
-An example process is given below, implementing \Fcom according to the \m{sender} and
-\m{receiver} types.
-\Fcom 
-As an illustration, consider the $\Fcom$ process that is connected
-to both $S$ and $R$ in Figure~\ref{fig:profcom}.
-\begin{figure}
-\centering
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\nproc$ $\tm{Fcom}$: 
-  (k: $\tgr{int}$), (rng: [Bit]), (sid: SID), ($\$$S: sender), ($\$$R: receiver)  |- ($\$$fc: 1) =
-{
-  $\ncase$ $\$$S (
-    commit => b = $\nrecv$ $\$$S ; $\$$R.commit ;
-              case $\$$S (
-                open => $\$$R.open ; $\nsend$ $\$$R b ;
-}
-\end{lstlisting}
-\caption{The process code for \Fcom.}
-\label{fig:procfcom}
-\vspace{-4mm}
-\end{figure}
-
-Here, $\Fcom$ is the name of the process, and $S$ and $R$ are the names
-of channels \emph{used} by $\Fcom$, while \inline{fc} is the channel \emph{provided}
-by $\Fcom$.
-The used channels with their types are written to the left of the turnstile
-($\vdash$) while the offered channel and type are written on the right.
-This is analogous to function definitions where used channels correspond to
-arguments, while offered channel corresponds to the result.
-In the case of $\Fcom$ the offered channel \inline{fc} is not used. This is
-a result of how we design functionalities in NomosUC, which we explain later.
-
-The process first case analyzes on channel $S$ branching on the
-message received.
-Since there is only one choice $\mb{commit}$, we only have one
-branch in the definition.
-$\Fcom$ then receives the bit $b$ (line 3) on $S$, followed by sending the
-commit message on channel $R$ (line 4).
-Once $\Fcom$ receives the $\mb{open}$ message on $S$, it sends the
-$\mb{open}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
-
 \paragraph*{\textbf{Internal Choice}}
 The internal choice $\ichoice{\ell : A_\ell}_{\ell \in L}$ constructor
 is an $n$-ary labeled generalization of the additive disjunction $A \oplus B$.

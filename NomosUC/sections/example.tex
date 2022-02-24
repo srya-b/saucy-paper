@@ -14,7 +14,16 @@ which, given its simplicity is an ideal learning example.
 \subsection{Ideal Commitment} \label{subsec:idealcommitment}
 The ideal functionality of the two-phase commitment protocol consists of a \emph{sender} $S$
 and \emph{receiver} $R$ connected to a trusted third-party, which we
-name $\Fcom$.
+name $\Fcom$ and show in Figure~\ref{fig:fcomideal}
+
+\begin{figure}
+\centering
+\input{figures/f_com}
+\caption{A one-shot \Fcom parameterized by a sender $S$ and receiver $R$.}
+\label{fig:fcomideal}
+\vspace{-4mm}
+\end{figure}
+
 The session types for the committer and receiver encapsulate this protocol by
 typing the channels connected between two parties.
 As notation, every session-typed channel has a unique \emph{provider} that

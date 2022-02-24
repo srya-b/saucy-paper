@@ -183,6 +183,9 @@ The purpose of the wrapper is to support a dynamic set of parties without \Z, \A
 Instead, the \partywrapper acts as singular endpoint for all communication with protoco parties, and it manages the creation of new parties and routing messages to/from them.
 
 \paragraph{Communicators}
+One consequence of the \partywrapper and our construction of the UC experiment is that we intermediate communcation between the major processes in NomosUC, with communicators.
+For example, if we opt for a linear channel, offered by the party wrapper or \Z, for communication between between them, then its type must be static and therefore can no longer handle an arbitrary number of parties.
+Similarly, a channel offered by
 One consequence of the \partywrapper is that communication in the UC experiment is intermediated by communicators in NomosUC.
 The singular endpoint for all party communications makes it difficult to connect \pw directly to \Z with a session typed channel.
 Session types are statically typed, therefore, it is not possible to modify the session type of a single channel to accomocate newly created parties with potentially differing types. 
