@@ -183,6 +183,9 @@ The purpose of the wrapper is to support a dynamic set of parties without \Z, \A
 Instead, the \partywrapper acts as singular endpoint for all communication with protoco parties, and it manages the creation of new parties and routing messages to/from them.
 
 \paragraph{Communicators}
+One consequence of the \partywrapper and our construction of the UC experiment is that we intermediate communcation between the major processes in NomosUC, with communicators.
+For example, if we opt for a linear channel, offered by the party wrapper or \Z, for communication between between them, then its type must be static and therefore can no longer handle an arbitrary number of parties.
+Similarly, a channel offered by
 One consequence of the \partywrapper is that communication in the UC experiment is intermediated by communicators in NomosUC.
 The singular endpoint for all party communications makes it difficult to connect \pw directly to \Z with a session typed channel.
 Session types are statically typed, therefore, it is not possible to modify the session type of a single channel to accomocate newly created parties with potentially differing types. 
@@ -794,15 +797,15 @@ The multisession extension is mentioned in greater detail in the appendix.
 %Furthermore, similar to the functionality wrapper, the multisession operator constructs the processes around \F in the same way and spawns them on-demand.
 %The process definition for $!\F_\msf{com}$ is shown in Figure \ref{lst:bangf} accepting two token types: the real token type $K$ and the virtual token type $K_1$ for instances of $\F_\msf{com}$.
 %
-%\begin{figure}
-%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-%$\tb{proc}$ bangF[K,K1][p2f,...] :
-%  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
-%  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
-%\end{lstlisting}
-%\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
-%\label{lst:bangf}
-%\end{figure}
+\begin{figure}
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+$\tb{proc}$ bangF[K,K1][p2f,...] :
+  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
+  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
+\end{lstlisting}
+\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
+\label{lst:bangf}
+\end{figure}
 
 \begin{theorem}[PPT !]\label{thm:bangppt}
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
