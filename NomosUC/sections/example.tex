@@ -46,7 +46,9 @@ followed by an $\mb{open}$ message (using another $\echoiceop$ constructor) from
 Then, provider $R$ is required to receive a bit using the $\arrow$ constructor (dual to $\product$).
 Finally, the session terminates as indicated by type $\one$.
 
-Protocols expressed via session types are realized by process definitions.
+Protocols expressed via session-typed channels are realized by processes that interact on these channels.
+The type checker guarantees that every process adheres to the protocol on every channel as defined by
+the corresponding session type.
 As an illustration, consider the $\Fcom$ process that is connected
 to both $S$ and $R$.
 The process is written as
