@@ -204,9 +204,11 @@ nl
 We describe a composition theorem in the previous section and a composition operator for protocols.
 Here we demonstrate how to compose the simulatlors from the two experiments to create a simulator to prove Theorem~\ref{thm:compose}.
 Two simulators being composed are: \SIM{com} for $\Fro \xrightarrow{\prot{com}} \Fcom$ and \SIM{flip} for $\Fcom \xrightarrow{\prot{flip}} \Fflip$. 
-The full code for the simulators will be given in the appendix, and it is described below for the sake of verbosity.
-For the sake of generality, we refer to protocols $\pi$, $\rho$, and functionalities $\F_1$, $\F_2$, and $\F_3$, where $\rho$ is \prot{flip}, $\pi$ is \prot{com}, $\F_1$ is \Fro, $\F_2$ is \Fcom, and $\F_3$ is \Fflip.
+The code for the composed is very similar to the simulator for the Dummy Lemma described in Section~\ref{sec:dummy} and expanded on in Appendix~\ref{app:dummy}.
+The exact connects are different but it follows identical virtualization and sandboxing.
+Therefore, we elide any code snippets from this secion and, instead, present a high-level description of the simulator.
 
+For the sake of generality, we refer to protocols $\pi$, $\rho$, and functionalities $\F_1$, $\F_2$, and $\F_3$, where $\rho$ is \prot{flip}, $\pi$ is \prot{com}, $\F_1$ is \Fro, $\F_2$ is \Fcom, and $\F_3$ is \Fflip.
 The numbered steps in the description below correspond to the numbered arrows in Figure~\ref{fig:simcomp}.
 \begin{enumerate}
 \item Input from \Z: \inline{Z2A2P(p, msg)} for dummy parties of $\F_1$ and \inline{Z2A2F(msg)} for $\F_1$  are forwarded to \SIM{\pi}, and, Outputs from \SIM{\pi}: \inline{F2A2Z(msg)} and \inline{P2A2Z(p,msg)} are forwarded to \Z unaltered.
