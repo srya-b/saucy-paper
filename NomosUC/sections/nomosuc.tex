@@ -343,50 +343,50 @@ $M$ while $\Psi_2$ is passed on to the continuation $Q$.
 Despite the seemingly stuctured nature of execution in UC, the framework is meant to capture arbitrary connections, communication patterns, or configurations of ITMs. 
 In this section we highlight a common pattern in UC that requires additional machinery to be express with session types.
 
-The pattern emerges from the following code: a machine $M$ either writes to another machine $N$ or is written to by $N$. 
+The pattern emerges from the following code: a machine $P$ either writes to another machine $Q$ or is written to by $Q$. 
 At first glance, it is a trivial scenario, but we encounter a problem trying to encode this with a single session type.
-A real example of this scenario is give by three processes $P$, $Q_1$, and $Q_2$ which execute as follows:
+A example are machines $P$ and $Q$ which execute as follows:
 \begin{itemize}
-	\item $P$ flips a bit and writes to either $Q_1$ or to $Q_2$
-	\item If $Q_1$ is activated by $P$ it writes to $Q_2$ and the execution terminates. 
-	\item Otherwise, if $Q_2$ is activated by $P$, it writes a message to $Q_1$, $Q_2$ writes something back, and the execution terminates.
+	\item An external machines flips a bit and activates either $P$ or $Q$.
+	\item If $P$ is activated it writes to $Q$ and the execution terminates. 
+	\item Otherwise, if $Q$ is activated, it writes a message to $P$, $P$ writes something back, and the execution terminates.
 \end{itemize}
-A single type between $Q_1$ and $Q_2$ would have to allow either of the two parties to write on the channel, but session types require it to be statically known.
+A single type between $P$ and $Q$ would have to allow either of the two parties to write on the channel, but session types require it to be statically known.
 
-If we try to separate communication between $Q_1$ and $Q_2$ into two uni-directional channels, we end up with Figure~\ref{fig:pandq}, and can express the session type for each of the channels:
+If we try to separate communication between $P$ and $Q$ into two uni-directional channels, we end up with Figure~\ref{fig:pandq}, and can express the session type for each of the channels:
 \begin{center}
 \parbox{0cm}{
 \begin{tabbing}
-$\m{q1toq1} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
-$\m{q2toq1} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
+$\m{PtoQ} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
+$\m{QtoP} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
 \end{tabbing}}
 \end{center}
 
 This approach, however, poses another problem. 
 Channels are only created by a process offering them, and a process can only offer a single channel.
-Without adding any additional processes, $Q_1$ must offer a channel to $Q_2$ and $Q_2$ offers one to $Q_1$. 
+Without adding any additional processes, $P$ must offer a channel to $Q$ and $Q$ offer one to $P$. 
 Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
 Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
 
 In order to capture this communication, and, in general, to break all possible cycles while still making meaningful use of session types, we propose a construction like Figure~\ref{fig:newpandq}.
-We wrap each of $Q_1$ and $Q_2$ in shell code, call them $S_1$ and $S_2$, which spawn two dummy proceses to offer each of the channels of type \m{q1toq2} and \m{q2toq1} to $Q_1$ and $Q_2$.
+We wrap each of $P$ and $Q$ in shell code, call them $S_P$ and $S_Q$, which spawn two dummy proceses to offer each of the channels of type \m{PtoQ} and \m{QtoP} to $P$ and $Q$.
 The arrows within each shell represent the direction of communication rather than a provider-client relationship. 
 In reality, any of the process can offer any of the channels as long as it doesn't result in a cycle.
 \begin{figure}
 	\begin{subfigure}{0.3\textwidth}
 	\centering
 	\includegraphics[scale=0.4]{figures/p_and_q.png}
-	\caption{Implementing the configuration with two channels is also impossible because $Q_1$ can't be both client and provider for $Q_2$, and vice versa.}
+	\caption{Two channels can define capture communication, but provider-client cycles are not allowed in NomosUC.}
 	\label{fig:pandq}
 	\end{subfigure}
 	~ \ \ \ \ 
 	\begin{subfigure}{0.6\textwidth}
 	\centering
 	\includegraphics[scale=0.4]{figures/new_p_and_q.png}
-	\caption{We can systematically convert any such execution into one intermediated by communicators in a mechanical way. Session types are still used by $P$ and $Q$ but a cycle is avoided through the used oa communicators offering a shared channel.}
+	\caption{We can realize the left be intermediating communication with communicators. The direction of messages from $P$ to $Q$ still suggest a cycle but the communicator is provider (dot) to \emph{both} shell codes.}
 	\label{fig:newpandq}
 	\end{subfigure}
-	\caption{An ITM configuration realized in NomosUC.}
+	\caption{Two ITM configurations. One possible with ITMs (left) and one realized in NomosUC (right). Arrows indicate direction of messages and the dot indicates the provider of the channel.}
 \end{figure}
 Communication between $S_1$ and $S_2$ along channels they each offer results in another cycle. 
 Therefore, we break the cycle by intermediating their communication through a \emph{communicator}.
@@ -413,7 +413,7 @@ $\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$
 The $\up$ and $\down$ operations around the session type indicate that it is \emph{shared}, and they denote a \emph{critical section} analogous to traditional concurrency controls like the mutex.
 The type suggests that one party can send a message to the communicator, the communicator, buffers the message, and responds with it when asked to \m{RECV} is from a another process.
 
-Returning to the initial example of $Q_1$ and $Q_2$, although the contruction appears excessive, it is generic and can intermediate communication between any pair of processes in NomosUC. 
+Returning to the initial example of $P$ and $Q$, although the contruction appears excessive, it is generic and can intermediate communication between any pair of processes in NomosUC. 
 It allows us to continue to meaningfully use session types and avoid worrying about cyclical provider/client relationships for the remainder of this paper.
 As we show in Section~\ref{sec:execuc}, communicators also help intermediat eocmmunication between each of the main processes of the execution.
 
