@@ -11,92 +11,86 @@ We illustrate Nomos UC with an example ideal funtionality: a cryptographic commi
 The commitment functionality \Fcom encapsulates the security properties of a two-phase, two-party commitment,
 which, given its simplicity is an ideal learning example.
 
-\subsection{Ideal Commitment} \label{subsec:idealcommitment}
 The ideal functionality of the two-phase commitment protocol consists of a \emph{sender} $S$
-and \emph{receiver} $R$ connected to a trusted third-party, which we
-name $\Fcom$ and show in Figure~\ref{fig:fcomideal}
+and \emph{receiver} $R$ connected to a trusted third-party, named as
+name $\Fcom$.
+Figure~\ref{fig:fcomideal}(a) provides the implementation of $\Fcom$ in pseudocode.
 
-\begin{figure}
-\centering
-\input{figures/f_com}
-\caption{A one-shot \Fcom parameterized by a sender $S$ and receiver $R$.}
-\label{fig:fcomideal}
-\vspace{-4mm}
-\end{figure}
-
-The session types for the committer and receiver encapsulate this protocol by
-typing the channels connected between two parties.
-As notation, every session-typed channel has a unique \emph{provider} that
-offers the channel and \emph{client} that uses the offered channel.
-As an example, we start by defining the session type of the channel offered by $S$ that is used by
+This protocol of interaction between the sender $S$ and $\Fcom$ (and also the receiver $R$
+and $\Fcom$) is enforced via \emph{binary session types}.
+Session types are a type system for statically expressing bi-directional communication protocols
+in message-passing process systems.
+The key insight here is that we assign a session type to the communication channel connecting
+two processes.
+As notation, every channel has a unique \emph{provider} process that offers the channel and a
+\emph{client} process that uses the offered channel.
+And the session type governs the type and direction of message that is exchanged between
+the processes, with the provider and client processes performing dual send/receive actions.
+As an example, we start with the session type of the channel offered by $S$ that is used by
 $\Fcom$.
 \begin{mathpar}
-  \mi{type} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \ichoice{\mb{open} : \one}}
+  \mi{type} \; \m{sender} = \ichoice{\mb{Commit} : \m{bit} \product \ichoice{\mb{Open} : \one}}
 \end{mathpar}
 The type constructor $\ichoiceop$ denotes an \emph{internal choice}
 (here with only one choice) dictating that the provider $S$ must first send the
-$\mb{commit}$ message to $\Fcom$.
+$\mb{Commit}$ message to $\Fcom$.
 Next, the type constructor $\product$ denotes that $S$
 sends a value of type $\m{bit}$ ($\m{bit} \product \ldots$).
 Finally, the $\ichoiceop$ constructor (again with one choice)
 \footnote{Although $\ichoiceop$ with only one choice is redundant, we still use
 it here for the purpose of exposition}
-enforces that $S$ sends $\mb{open}$ to $\Fcom$ followed by type $\one$
+enforces that $S$ sends $\mb{Open}$ to $\Fcom$ followed by type $\one$
 that indicates termination meaning that $S$ must close the channel and terminate.
 
 Similar to the sender, we define a channel provided by the receiver $R$ and
 used by $\Fcom$ with the following session type
 \begin{mathpar}
-	\mi{type} \; \m{receiver} = \echoice{\mb{commit}: \echoice{\mb{open} : \m{bit} \arrow \one}}
+	\mi{type} \; \m{receiver} = \echoice{\mb{Committed}: \echoice{\mb{Open} : \m{bit} \arrow \one}}
 \end{mathpar}
-Dual to internal choice, the $\echoiceop$ type constructor  represents \emph{external choice}
-prescribing that the provider $R$ must receive a $\mb{commit}$ message 
-followed by an $\mb{open}$ message (using another $\echoiceop$ constructor) from $\Fcom$.
-Then, provider $R$ is required to receive a bit using the $\arrow$ constructor (dual to $\product$).
-Finally, the session terminates as indicated by type $\one$.
+Dual to internal choice, the $\echoiceop$ type constructor represents \emph{external choice}
+prescribing that the provider $R$ must receive a $\mb{Committed}$ message from $\Fcom$
+followed by an $\mb{Open}$ message (using another $\echoiceop$ constructor) from $\Fcom$.
+Then, $R$ must receive a bit from $\Fcom$ as depicted by the $\arrow$ constructor (dual to $\product$).
+Finally, the type $\one$ indicates that the session terminates after a $\m{close}$ message
+has been sent from $R$ to $\Fcom$.
 
-Protocols expressed via session-typed channels are realized by processes that interact on these channels.
+\begin{figure}
+\centering
+\input{figures/f_com}
+\caption{(a) Pseudocode for a one-shot \Fcom parameterized by a sender $S$ and receiver $R$,
+and (b) the corresponding code in NomosUC}
+\label{fig:fcomideal}
+\vspace{-4mm}
+\end{figure}
+
+Protocols expressed via session types channels are realized by process implementations.
+A session-typed process \emph{uses} a set of channels in its context (similar to a function
+having arguments) and provides a unique channel (similar to a function returning a single value).
+Nomos also allows processes to store functional data (like integers, booleans, lists, etc.)
+and either transfer them to other processes or perform local computation on them.
 The type checker guarantees that every process adheres to the protocol on every channel as defined by
 the corresponding session type.
-As an illustration, consider the $\Fcom$ process that is connected
-to both $S$ and $R$.
-The process is written as
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\nproc$ $\tm{Fcom}$: 
-  (k: $\tgr{int}$), (rng: [Bit]), (sid: SID), ($\$$S: sender), ($\$$R: receiver)  |- ($\$$fc: 1) =
-{
-  $\ncase$ $\$$S (
-    commit => 
-      b = $\nrecv$ $\$$S ;
-      $\$$R.commit ;
-      case $\$$S (
-        open => 
-          $\$$R.open ;
-          $\nsend$ $\$$R b ;
-}
-\end{lstlisting}
 
-Here, $\Fcom$ is the name of the process, and $S$ and $R$ are the names
-of channels \emph{used} by $\Fcom$, while \inline{fc} is the channel \emph{provided}
-by $\Fcom$.
-Every session-typed process provides a unique channel while acting as a client
-of a non-negative number of channels.
+
+As an illustration, consider the $\Fcom$ process implemented in Figure~\ref{fig:fcomideal}(b).
+The process is named as $\Fcom$, \emph{uses} channels $S$ and $R$ and \emph{provides} channel \inline{fc}.
 The used channels with their types are written to the left of the turnstile
 ($\vdash$) while the offered channel and type are written on the right.
 This is analogous to function definitions where used channels correspond to
 arguments, while offered channel corresponds to the result.
-In the case of $\Fcom$ the offered channel \inline{fc} is not used. This is
-a result of how we design functionalities in NomosUC, which we explain later, 
-however, it it imposes no limitations on the expressiveness on our framework.
-
 The process first case analyzes on channel $S$ branching on the
 message received.
-Since there is only one choice $\mb{commit}$, we only have one
+Since there is only one choice $\mb{Commit}$, we only have one
 branch in the definition.
-$\Fcom$ then receives the bit $b$ (line 3) on $S$, followed by sending the
-commit message on channel $R$ (line 4).
-Once $\Fcom$ receives the $\mb{open}$ message on $S$, it sends the
-$\mb{open}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
+$\Fcom$ then receives the bit $b$ (line 6) on $S$, followed by sending the
+\m{Committed} message on channel $R$ to the receiver (line 7).
+Then, $\Fcom$ receives the $\mb{Open}$ message on $S$ followed by sending the
+$\mb{Open}$ message on $R$ (line 10), followed by the bit $b$ (line 11).
+$\Fcom$ then waits for the channels $R$ and $S$ to close and then finally
+closes the \inline{fc} channel.
+The reason we omit this code is a result of how we design functionalities in NomosUC,
+which we explain later.
+But more importantly, it imposes no limitations on the expressiveness on our framework.
 
 A session type uniquely defines the protocol for only one role in an ideal functionality.
 The sender and receiver are different roles in the same protocol, and, therefore, must have their own channels to \Fcom rather than communcating over a common channel.

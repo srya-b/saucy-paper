@@ -1,5 +1,21 @@
 \begin{bbox}[title={Functionality $\F_{\m{com}}(S, R)$}]
 
-\OnInput \inmsg{Commit}{$b$} from $S$, store $b$ and output (\m{Committed}) to $R$. Then, {\bf on input} \inmsg{Open} from $S$, send $(\m{Open}, b)$ to $R$.
+{\bf on input} \inmsg{\m{Commit}}{$b$} from $S$: store $b$ and output (\m{Committed}) to $R$.\\
+Then, {\bf on input} \inmsg{\m{Open}} from $S$: send $(\m{Open}, b)$ to $R$.
 
 \end{bbox}
+
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, numbers=right]
+$\nproc$ $\tm{Fcom}$: 
+(k: $\tgr{int}$), (rng: [Bit]), (sid: SID), (S: sender), (R: receiver)  |- (fc: 1) =
+{
+  $\ncase$ S (
+    Commit => 
+      b = $\nrecv$ S ;
+      R.Committed ;
+      case S (
+        Open => 
+          R.Open ;
+          $\nsend$ R b ;
+}
+\end{lstlisting}
