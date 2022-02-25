@@ -1,13 +1,19 @@
-\begin{bbox}[title={Functionality $\F_{\m{com}}(S, R)$}]
-
-{\bf on input} \inmsg{\m{Commit}}{$b$} from $S$: store $b$ and output (\m{Committed}) to $R$.\\
-Then, {\bf on input} \inmsg{\m{Open}} from $S$: send $(\m{Open}, b)$ to $R$.
-
+\begin{figure}
+\begin{minipage}{0.38\textwidth}
+\begin{bbox}[title={Functionality $\F_{\m{com}}(S, R)$}]\\
+\textbf{on input} \inmsg{\m{Commit}}{$b$} from $S$:\\
+\hspace*{1em} store $b$;\\
+\hspace*{1em} output (\m{Committed}) to $R$.\\ \\
+Then, \textbf{on input} \inmsg{\m{Open}} from $S$:\\
+\hspace*{1em} send $(\m{Open}, b)$ to $R$.
 \end{bbox}
-
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, numbers=right]
+\end{minipage}
+\hspace{3em}
+\begin{minipage}{0.5\textwidth}
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, numbers=left]
 $\nproc$ $\tm{Fcom}$: 
-(k: $\tgr{int}$), (rng: [Bit]), (sid: SID), (S: sender), (R: receiver)  |- (fc: 1) =
+(k: $\tgr{int}$), (rng: [Bit]), (sid: SID),
+(S: sender), (R: receiver)  |- (fc: 1) =
 {
   $\ncase$ S (
     Commit => 
@@ -19,3 +25,10 @@ $\nproc$ $\tm{Fcom}$:
           $\nsend$ R b ;
 }
 \end{lstlisting}
+\end{minipage}
+\caption{(a) Pseudocode for a one-shot \Fcom parameterized by a sender $S$ and receiver $R$,
+and (b) the corresponding code in NomosUC}
+\label{fig:fcomideal}
+\vspace{-4mm}
+\Description{Ideal Fcom}
+\end{figure}

@@ -54,14 +54,7 @@ Then, $R$ must receive a bit from $\Fcom$ as depicted by the $\arrow$ constructo
 Finally, the type $\one$ indicates that the session terminates after a $\m{close}$ message
 has been sent from $R$ to $\Fcom$.
 
-\begin{figure}
-\centering
 \input{figures/f_com}
-\caption{(a) Pseudocode for a one-shot \Fcom parameterized by a sender $S$ and receiver $R$,
-and (b) the corresponding code in NomosUC}
-\label{fig:fcomideal}
-\vspace{-4mm}
-\end{figure}
 
 Protocols expressed via session types channels are realized by process implementations.
 A session-typed process \emph{uses} a set of channels in its context (similar to a function
