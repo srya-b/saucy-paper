@@ -150,6 +150,7 @@ proc f_wrapper_p2f[K][K1][K2][f2p][p2f]:
 	(#a_to_f: comm[a2fmsg[a2f]][K]), (#f_to_a: comm[f2amsg[f2a]][K]),
 	($lp2fcomm: list[comm[p2fmsg[p2f]][K1]), ($lf2pcomm: list[comm[f2pmsg[f2p]][K1]]) |- ($ch: 1) =
 {
+(*
 	$p2f <- acquire #pw_to_f ;
 	$p2f.RECV ;
 	case $p2f (
@@ -163,8 +164,25 @@ proc f_wrapper_p2f[K][K1][K2][f2p][p2f]:
 	| no =>
 		$ch <- f_wrapper_lf2pcomm[K][K1][f2p][p2f] <- k rn sid #pw_to_f #f_to_pw #a_to_f #f_to_a $lp2fcomm $lf2pcomm 0
 	)
+*)
+	read $p2f f_wrapper_lf2pcomm (
+		P2F(pid,msg) =>
+			$ch <- getbypid $lp2fcomm pid ;
+			$ch.SEND ; send $ch P2F(pid,msg) ;
+			withdrawtoken K1 f2pn ;
+			pay $ch {f2pn : K1} ;
+	)
 }
 
+
+(* 
+
+read #pw_to_f f_wrapper_lf2pcomm[K][K1][f2p][p2f] (
+	$p2f <- acquire #pw_to_f ;
+	$p2f.RECV ;
+	case $p2f 
+	
+*)
 proc f_wrapper_lf2pcomm[K][K1][f2p][p2f]:
 	(k: Int), (rng: [Bit]), (sid: session[1]),
 	(#pw_to_f: comm[p2fmsg[p2f]][K]), (#f_to_pw: comm[f2pmsg[f2p]][K]),

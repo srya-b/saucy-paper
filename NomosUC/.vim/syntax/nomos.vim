@@ -75,7 +75,7 @@ syn match nmBoolean     "\<\(True\|False\)\>"
 
 " Functions from the standard prelude.
 syn match nmFunction    "\<\(compare\|max\|min\|genpot\)\>"
-syn match nmFunction    "\<\(get\|pay\|recv\|send\|acquire\|release\)\>"
+syn match nmFunction    "\<\(get\|pay\|recv\|send\|acquire\|release\|read\)\>"
 syn match nmSimulate    "\<\(simulate\|simpay\|simget\|withdrawtoken\|wait\|close\|stype\)\>"
 "syn match hsFunction    "\<\(succ\|pred\|toEnum\|fromEnum\|enumFrom\|enumFromThen\|enumFromTo\|enumFromThenTo\)\>"
 "syn match hsFunction    "\<\(minBound\|maxBound\)\>"
