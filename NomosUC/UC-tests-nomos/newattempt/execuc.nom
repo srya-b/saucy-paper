@@ -7,6 +7,23 @@ stype out = +{ reset: pump ;
 
 stype execout{n} = <{n}| &{ exec: +{ out: Bit -> 1 }} ;
 
+(* 
+Syntax sugar for 
+   $ch1, $ch2 <- makeChan[s][f] <- ;
+*)
+{
+
+	proc ch1[K][
+
+	#c <- communicator_init[K][f] <- ;
+	
+
+}
+
+
+
+
+
 proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
 	(k: Int), (rng: [Bit]) |- ($d: execout) =
 {

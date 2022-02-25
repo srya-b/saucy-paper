@@ -745,27 +745,14 @@ Another illustrative description of what composition proposes, logically, is sho
 \end{mathpar}
 \end{theorem}
 Full composition in the UC framework extends beyond the simpler composition in Theorem~\ref{thm:singlecomp} which only defines replacement of one functionality with a protocol that realizes it.
-Instead, UC composition allows for replacement of any number of instances of a functionality with instancesof the realizing protocol.
+Instead, UC composition allows for replacement of any number of instances of a functionality with instances of the realizing protocol.
 Theorem~\ref{thm:composition} illustrates the full composition theorem using our arrow notation, and highlights a theorem that we must prove before we can achieve full composition.
-It relies on Theorem~\ref{thm:squash} that introduces the \msf{squash} protocol and the $!$ operator.
-Notice that Theorem~\ref{thm:compose} follows directly from Theorem~\ref{thm:singlecomp} and Theorem~\ref{thm:squash}.
+We rely on two sub-theorems that make use of the multisession extension: Theorem~\ref{thm:squash} and Theorem~\ref{thm:functor}.
+Notice that Theorem~\ref{thm:compose} follows directly from Theorem~\ref{thm:singlecomp}, Theorem~\ref{thm:squash}, and Theorem~\ref{thm:functor}.
 
 The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances of the protocol/functionality to be run within a sinlge ITM.
 An ITM simulates the instances and multiplexes input/output to/from them much like the \partywrapper.
 
-\begin{theorem}[Squash Theorem]\label{thm:squash}
-%If a functionality \F is well-resource-typed, then $!\F$ and $!!\F$ are well-resource-typed (by Theorem~\ref{thm:bangppt}) and $(\idealP, !!\F) \sim (\msf{squash}, !\F)$.
-%\textit{Well-resource-typed} \F $\Rightarrow$ $!\F \xrightarrow{\msf{squash}} !!\F$%  $(\idealP, !!\F) \sim (\msf{squash}, !\F)$
-\begin{mathpar}
-\inferrule*[right=squash]
-{
-\textit{well-resource-typed} \; \F
-}
-{
-!\F \xrightarrow{\msf{squash}} !!\F
-}
-\end{mathpar}
-\end{theorem}
 
 For the multisession extension of a fuctionality, the type is straightforward and ony acts to multiplex input/outpt based on the intended target \inline{ssid}.
 \begin{center}
@@ -811,8 +798,39 @@ $\tb{proc}$ bangF[K,K1][p2f,...] :
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
 \end{theorem}
 
-We examine this theorem in greater detail in the appendix. 
-At a high-level it is obvious that such a construction, activated polynomially many times, is well-resource-typed as long as the underlying functionality/protocol is well-resource-typed.
+It easy to see why the multisession extension, performing constant work and being activated a polynomial number of times, remains well-resource-typed and PPT given that \F is PPT.
+We formally treat this and the remaining theorems in this section in the Appendix.
+
+\begin{theorem}[Something About Functors]\label{thm:functor}
+	\begin{mathpar}
+		\inferrule*[right=somefunctor]
+		{
+			\F_1 \xrightarrow{\pi} \F_2
+		}
+		{
+			!\F_1 \xrightarrow{!\pi} !\F_2
+		}
+	\end{mathpar}
+\end{theorem}
+Theorem~\ref{thm:functor} is intuitive in the sense that each session of the real world protocol $\pi$ communicates with an analogous session of $\F_1$ in isolation to realize the corresponding instance of $\F_2$. 
+A UC proof for this is more involved that just providing a simulator but, instead, relies on a hybrid argmuent. 
+We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
+
+\begin{theorem}[Squash Theorem]\label{thm:squash}
+	\begin{mathpar}
+		\inferrule*[right=squash]
+		{
+			\textit{well-resource-typed} \; \F
+		}
+		{
+			!\F \xrightarrow{\msf{squash}} !!\F
+		}
+	\end{mathpar}
+\end{theorem}
+The Squash theorem, is more straigtforward to prove than Theorem~\ref{thm:functor}.
+It is a direct \todo{finish explaining and shove off to the Appendix.}
+
+
 %\begin{proof}
 %A \textit{well-resource-typed} \F guarantees a polynomial $T_{\F}$ bounding its execution.
 %In the worse-case, the multisession operator must spawn a new instance of $\F$ an every activation. 
