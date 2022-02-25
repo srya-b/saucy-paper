@@ -417,9 +417,13 @@ $\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$
 The $\up$ and $\down$ operations around the session type indicate that it is \emph{shared}, and they denote a \emph{critical section} analogous to traditional concurrency controls like the mutex.
 The type suggests that one party can send a message to the communicator, the communicator, buffers the message, and responds with it when asked to \m{RECV} is from a another process.
 
-Returning to the initial example of $P$ and $Q$, although the contruction appears excessive, it is generic and can intermediate communication between any pair of processes in NomosUC. 
-It allows us to continue to meaningfully use session types and avoid worrying about cyclical provider/client relationships for the remainder of this paper.
-As we show in Section~\ref{sec:execuc}, communicators also help intermediat eocmmunication between each of the main processes of the execution.
+Communicators are parametric in a messages type \inline{a}.
+Only channels in Nomos can be session typed, and  allowing channels to be sent over communicators enables flawed non-UC behavior.
+Therefore, communicators are limited to buffering functionally typed messages.
+This places extra functionality in the two spawned processes inside $S_1$ in Figure~\ref{fig:new_p_and_q}: the process must read functionally typed message and then send one on its session-typed channel and vice versa.
+
+In general, mapping between functional and session-typed messages is achieved through a simple mapping between types and represents a systematic approach to intermediating communcation between $P$ and $Q$.
+As we show in Section~\ref{sec:execuc}, we repeat this design pattern and rely on the creation of protocol-specific processes to conver functionally typed messages to session-typed messages.
 
 \section{The rest of nomos? don't know how to break up this section to include the above.}
 \paragraph*{\textbf{Import Tokens}}
@@ -925,3 +929,10 @@ It naturally appears in our sandboxing mechanism by the continual creation of ne
 %message buffer that can drop or reorder messages.
 %All we would need to do is change the internal implementation of the communicator
 %\emph{without} changing the offered session type.
+
+
+\section{Syntax Sugar}
+The machnery that we have introduced around NomosUC processes to achieve the expressiveness of ITMs is systematic in nature and can be statically defined given some protocol specification.
+In this section we consider some syntatic sugar and automation around some parts of the NomosUC.
+
+The first, and arguably most important, part of the 
