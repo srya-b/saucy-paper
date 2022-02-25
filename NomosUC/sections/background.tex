@@ -1,22 +1,52 @@
 \subsection{Universal Composability}
-The universal composability framework~\cite{uc} proposes a new framework for proving the security of cryptographic and distributed protocols.
-It builds on compositional guarantees attemted by previous works and provides a security under arbitrary composition with any other, arbitrary protocols running concurrently in the same environment.
-The framework relies probabilistic polynomial time (PPT) interactive turing machines (ITMs) providing input and output to each other by means of multipe tapes as its model of computation. 
+The Universal Composability (UC) framework~\cite{uc} is a leading framework for defining security in cryptographic protocols.
+UC is based on the real/ideal paradigm, where security is defined as a relation between two systems: the real world, which features the protocol $\pi$ under analysis, as well as an arbitrary adversary \A that controls corrupt parties; and the ideal world, which mainly comprises ideal functionality \F, a trusted third party that carries out the desired task directly.
+A reason ideal functionalities have become a popular alternative to traditional game-based definitions is that a security definition consists of a single program for one trusted party, rather than a collection of properties pertaining to several (potentially faulty) parties.
 
-Its compositional security relies on the real/ideal paradign defined by the real world with its protocol $\pi$ and real adversary \A, and by the ideal world with the ideal functionality $\F$ and a simulator, \Sim.
-The ideal functionaity is a trusted party which accepts inputs from dummy parties~\footnote{Dummy parties do nothing but forward input from the environment (if they are honest) or the adversary (if they are corrupt) to the functionality and vice versa.} and performs the intended computation. Due to it's trusted, or ``ideal'', nature, the functionality is simple and rarely requires any cryptography or networking. 
-The real world protocol is code run locally by mutually distrustful protocol parties (ITMs) which can communicate each other and interact with an ideal functionality called the hybrid functionality.
-An environment \Z, meant to capture all possible concurrently running protocols, gives input to the honest parties of the protocol and input to the adverasary who controls the corrupt protocol parties. 
-Based on the output it receives, \Z outputs a bit as its guess as to which world it is in. 
+To summarize the ideal/real security relation, roughly we need to show ``any attack in the real world is also exhibited by the ideal functionality.'' This means constructing a simulator \S that plays the role of adversary in the ideal world.
+What makes UC the strongest among ideal/real frameworks is that the inputs of honest parties are chosen adaptively by the distinguishing environment \Z, which can also communicate with the adversary and interleave its interactions with honest parties.
+This adversary model leads to a flexible approach to composition, which we'll say more about shortly.
+More formally, the security definition says that a protocol $\pi$ realizes an ideal functionality $\F$
+ if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal world are indistinguishable for any environment \Z:
+ \[ \forall \A \; \exists \Sim \; \forall \Z \; \; \msf{execUC} \; \Z \, \idealP \, \F \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F_0 \, \A \]
+Here $\textsf{id}_\pi$ is the ideal protocol that simply passes inputs between environment and ideal functionality, and $\F_0$ takes the place of the ideal functionality in the real world, and is typically used to express network assumptions or assumed primitives the current protocol relies on.
+The \msf{execUC} defines the UC execution experiment that hooks up the channels to the processes in its arguments.
+Importantly, the number of protocol parties in UC is entirely dynamic and chosen at runtime by the environment. 
+Defining \msf{execUC} in our core calculus, and especially reconciling its the dynamic nature with the static guarantees of our type system will be the central technical challenge we'll tackle later.
 
-Proving the security of a protocol in UC relies on creating a simulator in the ideal world to simulate a given adversary in the real world and making the two worlds computationally indistinguishable to all possible environments. 
-Full emulation requires that for each real world adversary there is a such a simulator for all environments. We define emulation as follows, where \msf{execUC} is encapsulates a UC execution consisting of the component parts:
-\[ \forall \A \; \exists \Sim \; \forall \Z \; \; \msf{execUC} \; \Z \, \phi \, \F \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F' \, \A \]
+\paragraph{Composition Notation}
+The UC framework is designed to encourage a highly compositional and modular design approach, where we analyze single-instance protocols in isolation, then apply generic composition operators to build more complex systems.
+Encoding the standard theory of UC composition in our framework will be the main way we validate our effort. We summarize this standard theory using category notation
+First, if $\pi$ realizes $\F$ in the $\F_0$ hybrid world according to the definition above, we write:
+\[
+	\F_1 \xrightarrow{\pi} \F_2
+\]
+Specifically, the real world involves a single instance of $\F_1$, and the ideal world involves a single instance of $\F_2$.
+The first composition theorem states that this relation is transitive.
+\begin{theorem}[Composition]\label{thm:singlecomp}
+\begin{mathpar}
+\inferrule*[right=single-compose]
+{
+	\F_1 \xrightarrow{\pi} \F_2 \semi \F_2 \xrightarrow{\rho} \F_3 \\
+}
+{
+	\F_1 \xrightarrow{\rho \circ \pi} \F_3
+}
+\end{mathpar}
 
-The security definition above guarantees compositional security as well.
-Notice that the real world can also have a ``hydbrid'' functionality in it which the protocol parties can access.
-The UC framework ensures that if there exists a real world protocol that \emph{realizes} a functionality according to the emulation definition, then replacing the ideal functionality with it preserves the security properties of the protocol it is used by. 
-Composition makes the framework modular and allows large protocols to be specified succintly by relying on an ideal functionalities instead of complex sub-protocols.
+The next generic operation is the multi-session extension of $\F$, denoted $!\F$, which provides $\pi$ with an arbtirary number of instances of $F$, each tagged with a separate \textsf{sid} (for \emph{session identifier}).
+The Universal Composition theorem says that composition also holds when working with multiple sessions, stated as $!\F_1 \rightarrow \F_2$, $!\F_2 \rightarrow \F_3$, then $!\F_1 \rightarrow F_3$.
+
+\paragraph{Universal Composability and ITMs}
+The UC framework is defined on top of a communication model called interactive turing machines (ITMs).
+Are proesses that communicate by passing messages along tapes. Focus on the channel centric version, like in IPDL and Barbosa et al.
+of probabilistic polynomial time (PPT)
+
+The framework is somewhat structured compared to process calculus. Only one process is active at a given time, writing to a channel immediately activates. There are no race conditions or non-determinism (except for random coin flips) in the underlying model, which is essential for cryptographic reductions.
+Adversarial choices, such as adversarial network scheduling, are expressed within the model, with an explicit adversary process input to the ideal network model.
+The final step in a UC proof is to show that a distinguishing environment Z can be leveraged to construct a polynomial time solution to a hard problem like Discrete Log. This involves simulating the entire \msf{execUC} experiment on an ordinary (non-interactive) Turing Machine.
+
+Related work IPDL Barbosa et al., make significant limitations in order to complete their guarantees.
 
 %\paragraph{GUC-Framework}
 %A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.
@@ -25,21 +55,34 @@ Composition makes the framework modular and allows large protocols to be specifi
 %The standard UC formulation, however, is incapable of modelling such an adversarial strategy as protocol sessions are completely distinct and can not share any state with each other---namely, an ideal functionality that stores signed certificates is bound only to the current protocol session.
 %\todo{Is is worth motivting the GUC framework rather than just introducing what it is and that the environment can also interact with a shared functionality?}
 
+%% There have been recent work in formalizing UC. is channel based or based.
+%% A short summary is this:
+%% {\small
+  
+%% \begin{tabular}{ccccccc}
+%%   & Channel/Process & Static \# of parties & Polynomial time & Formal verification & Session types \\
+%%   \hline
+%%   Symbolic UC \\
+%%   IPDL \\
+%%   ILC \\
+%%   EasyUC \\
+%%   Barbosa et al. \\
+%% \end{tabular}
+%% } 
 
-\subsection{The Import Mechanism}
-A notion of resource-bound computation is necessary for the UC framework to reason about computationally efficient algorithms as well as the capabilities of ITIs under a particular resource constraint.
+\subsubsection{The Import Mechanism}
+A notion of resource-bound computation is necessary for the UC framework to reason about computationally efficient algorithms as well as the capabilities of ITMs under a particular resource constraint.
 Often we would like to reason about adversarial capabilities under such constraints and perform efficient transformations (transforming an real-world adversary into an ideal-world simulator).
 
-
-Existing definitions of polynomial-time usually center around the lengths of input and output messages. In GNUC~\cite{gnuc} consideres a function of the sum of all inputs a machine receives as a bound on its runtime. Previous versions of the UC framework similarly rely on functions of the difference between the lengths of a machine's inputs and outputs
-The latest iteration of UC overcomes some drawbacks in polytime notions around ```input lenghts''~\footnote{Namely, the \emph{infinite runs} problem identified in \cite{uc}.} and introduces the import mechanism.
+Existing definitions of polynomial-time usually center around the lengths of input and output messages. In GNUC~\cite{gnuc} considers a function of the sum of all inputs a machine receives as a bound on its runtime. Previous versions of the UC framework similarly rely on functions of the difference between the lengths of a machine's inputs and outputs
+The latest iteration of UC overcomes some drawbacks in polytime notions around ```input lengths''~\footnote{Namely, the \emph{infinite runs} problem identified in \cite{uc}.} and introduces the import mechanism.
 The import mechanism allocates the first ITI, the environment with a number of import ``tokens'', that is poynomial in the the security parameter $k$. 
 This makes up the runtime budget of the entire UC execution, and the environment can give import tokens along with inputs to other machines in the execution. Any ITM in the execution can pass import to another if it possesses enough.
 The polynomial time definition in the import mechanism takes the following form:
 
 \begin{center} {\small An ITM is considered PPT if there exists a polynomial $T$ such that its runtime is bounded by $T(n)$ where $n$ is the net amount of tokens it ever holds.} \end{center}
 
-This notion of poynomial time directly provides a guarantee on the entire UC execution by limited the entire import in a sytem to be polynomial in $k$. Therefore, we avoid pitfalls of existing input length-based local polynomial notions.
+This notion of poynomial time directly provides a guarantee on the entire UC execution by limited the entire import in a system to be polynomial in $k$. Therefore, we avoid pitfalls of existing input length-based local polynomial notions.
 %The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomial amount of import which can be thought of as tokens or coins.
 %The environment can then activate other ITIs with some import tokens allowing them to run for as long as their import token balance permits. 
 %In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps where $n'$ is the difference between the import it has received from incoming messages and outgoing import it's given to other machines.
@@ -64,3 +107,42 @@ This notion of poynomial time directly provides a guarantee on the entire UC exe
 %
 %Over the lifetime of $\mu$ it will need to generate potential multiple times as it needs to perform more computation.
 %Eventually, thought, we can guarantee that every machine $\mu$ will \textit{halt} when it can no longer generate more potential, i.e.  $\msf{in}_t - \msf{out}_t - \msf{marked}_t > n$.
+
+
+
+
+\subsection{Overview of our Solution}
+Overview of the main parts of our design.
+
+    \subsubsection{Adding Session types to ITMs.}
+
+    Characteristic goal of UC is the dynamic execution pattern afforded by ITMs. The environment is able to interleave interactions with honest parties in between its interactions with the adversary.
+    Need generality, since the theory of UC is built around highly-general composition operators.
+    Thus our design goals are most closely related to ILC, in that the goal is to preserve the expressiveness of UC.
+
+    Session types are useful for expressing the control flow structure created in a program. The session type is a partial specification of a process. We start by envisioning session types as complements to the ideal functionality definition.
+
+       \anote{Insert here UC Pseudocode for FCom}
+       \anote{Insert here our session type for FCom}
+    
+    are meaningful to apply to a single channel between a pair of parties at a time.
+    \anote{why not use global session types or alternatives?}
+    
+    Session type is centered around a judgment that says that channel $c$ carries the session type $Sess$, which is provided by process $P$.
+    \[
+       c_1:A_1,c_2:A_2,... \vdash P :: \{c : Sess\}
+       \]
+       Each channel is associated with a single process that is its provider.
+       No cycles are allowed.
+
+       Encoding the exec UC experiment to support functionalities written like this.
+       A typical interaction in two party protocols (like Commitment, for example) allows Z to choose between two next actions.
+       One involves activating the honest party first, in which case.
+
+       Our approach is this: we'll use session types like in Nomos, and make use of the shared channels feature of Nomos  in order to avoid cycles.
+       Furthermore, 
+       for communication between a pair of processes. We need to make use of shared channels.
+
+
+       One of the characteristic qualities is that the number of parties and their identities are not statically determined, instead they can be determined adaptively at runtime by the arbitrary environment.
+       Achieves this through multiplexing between parties, called the protocol wrapper. This mechanism is also used when defining the multisession operator.
