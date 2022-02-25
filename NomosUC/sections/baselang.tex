@@ -235,7 +235,7 @@ A example are machines $P$ and $Q$ which execute as follows:
 \end{itemize}
 A single type between $P$ and $Q$ would have to allow either of the two parties to write on the channel, but session types require it to be statically known.
 
-If we try to separate communication between $P$ and $Q$ into two uni-directional channels, we end up with Figure~\ref{fig:pandq}, and can express the session type for each of the channels:
+If we try to separate communication between $P$ and $Q$ into two uni-directional channel, we can express the session type for each of the channels:
 \begin{center}
 \parbox{0cm}{
 \begin{tabbing}
@@ -258,7 +258,7 @@ In reality, any of the process can offer any of the channels as long as it doesn
 	\begin{subfigure}{0.3\textwidth}
 	\centering
 	\includegraphics[scale=0.4]{figures/p_and_q.png}
-	\caption{Two channels can define capture communication, but provider-client cycles are not allowed in NomosUC.}
+	\caption{$P$ and $Q$ connected by two logical channels which are actually implemented by the figure on the right.}
 	\label{fig:pandq}
 	\end{subfigure}
 	~ \ \ \ \ 
@@ -273,6 +273,7 @@ In reality, any of the process can offer any of the channels as long as it doesn
 Communication between $S_1$ and $S_2$ along channels they each offer results in another cycle. 
 Therefore, we break the cycle by intermediating their communication through a \emph{communicator}.
 The communicator avoids cycles by offered a \emph{shared channel} rather than the typical linear channel.
+We represent the communication in Figure~\ref{fig:newpandq} by Figure~\ref{fig:pandq} which abstracts away the implementation details of communicators and shell codes.
 
 \paragraph*{\textbf{Shared Channels}}
 \todo{Here I'm not too sure on whether this is enoug information or if it's correct.}
