@@ -50,7 +50,8 @@ Therefore, we are unable to pass in a variable number of virtual token types to 
 
 For example, an execution where the simulator sandboxes thereal world adverasry, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
-$\tb{proc}$ $\tm{execUC}$[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
+$\tm{import}$ PS 
+$\tb{proc}$ execUC[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
 \end{lstlisting}
 In general, as we will discuss when introducing the \partywrapper, an execution always requires at least one virtual token type.

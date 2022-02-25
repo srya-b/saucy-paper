@@ -135,18 +135,35 @@ Securely flipping a coin is a basic cryptographic primitive whose ideal functiln
 It's a 2-party protocol where one party is the initator of the flip and the other is a receiver.
 The desired property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
 \begin{figure}
-\centering
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\Type$ flipper[K] = +{ init: K -> flipped } ;
-$\Type$ fflipped = +{ getflip: &{ flip: Bit * 1 ,
-                                  noflip: fflipped }} ;
-$\Type$ receiver[K] = +{ getflip: &{ flip: K -> Bit -> 1 ,
-                                     noflip: recever[K] }} ;
-$\Type$ adv[K] = &{ flipped: K -> deliver } ;
-$\Type$ deliver = &{ askflip: +{ yes: deliver,
-                                 no: deliver }}
-\end{lstlisting}
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+	$\m{flip[K]} = \ichoice{\mb{init}: K \arrow \ichoice{\mb{getflip}: \echoice{$\=$\mb{yes}: Bit \product 1,$ \\
+	\>$\mb{no}: \m{flipped}[K]}}}$ \\
+	$\m{receiver[K]} = \ichoice{\mb{getflip}: \echoice{$\=$\mb{yes}: Bit \product 1,$\\
+	\>$\mb{no}: \m{receiver[K]}}}$ \\
+	$\m{adv[K]} = \echoice{\mb{flip}: K \arrow \echoice{\mb{flipok}: \ichoice{$\=$\mb{yes}: 1,$\\
+	\>$\mb{no}: 1}}}$
+\end{tabbing}}
+\end{center}
+\caption{The session types describing \Fflip's channels with the flipper, receiver, and the adversary.}
+\label{fig:fliptype}
+\vspace{-4mm}
 \end{figure}
+
+%\begin{figure}
+%\centering
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+%$\Type$ flipper[K] = +{ init: K -> flipped } ;
+%$\Type$ fflipped = +{ getflip: &{ flip: Bit * 1 ,
+%                                  noflip: fflipped }} ;
+%$\Type$ receiver[K] = +{ getflip: &{ flip: K -> Bit -> 1 ,
+%                                     noflip: recever[K] }} ;
+%$\Type$ adv[K] = &{ flipped: K -> deliver } ;
+%$\Type$ deliver = &{ askflip: +{ yes: deliver,
+%                                 no: deliver }}
+%\end{lstlisting}
+%\end{figure}
 
 \Fflip only sends messages to the receiver when asked for the outcome of the flip with a \inline{getflip}. 
 We augment the session type, and the corresponding ideal functionality, with a polymorphic \inline{K} to strengthen the type and ensure that the receiver can not receive anything from \inline{getflip} until the flipped sends something of type \inline{K} to \Fflip.
