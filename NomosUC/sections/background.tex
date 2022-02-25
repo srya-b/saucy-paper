@@ -22,7 +22,7 @@ First, if $\pi$ realizes $\F$ in the $\F_0$ hybrid world according to the defini
 	\F_1 \xrightarrow{\pi} \F_2
 \]
 Specifically, the real world involves a single instance of $\F_1$, and the ideal world involves a single instance of $\F_2$.
-The first composition theorem states that this relation is transitive.
+The first composition theorem states that this relation is transitive, where $\rho \circ \pi$ is a generic composition operator that.
 \begin{theorem}[Composition]\label{thm:singlecomp}
 \begin{mathpar}
 \inferrule*[right=single-compose]
@@ -33,9 +33,10 @@ The first composition theorem states that this relation is transitive.
 	\F_1 \xrightarrow{\rho \circ \pi} \F_3
 }
 \end{mathpar}
-
+\end{theorem}
 The next generic operation is the multi-session extension of $\F$, denoted $!\F$, which provides $\pi$ with an arbtirary number of instances of $F$, each tagged with a separate \textsf{sid} (for \emph{session identifier}).
 The Universal Composition theorem says that composition also holds when working with multiple sessions, stated as $!\F_1 \rightarrow \F_2$, $!\F_2 \rightarrow \F_3$, then $!\F_1 \rightarrow F_3$.
+
 
 \paragraph{Universal Composability and ITMs}
 The UC framework is defined on top of a communication model called interactive turing machines (ITMs).
@@ -111,38 +112,39 @@ This notion of poynomial time directly provides a guarantee on the entire UC exe
 
 
 
-\subsection{Overview of our Solution}
-Overview of the main parts of our design.
+%% \subsection{Overview of our Solution}
+%% Overview of the main parts of our design.
 
-    \subsubsection{Adding Session types to ITMs.}
+%%     \subsubsection{Adding Session types to ITMs.}
 
-    Characteristic goal of UC is the dynamic execution pattern afforded by ITMs. The environment is able to interleave interactions with honest parties in between its interactions with the adversary.
-    Need generality, since the theory of UC is built around highly-general composition operators.
-    Thus our design goals are most closely related to ILC, in that the goal is to preserve the expressiveness of UC.
+%%     Characteristic goal of UC is the dynamic execution pattern afforded by ITMs. The environment is able to interleave interactions with honest parties in between its interactions with the adversary.
+%%     Need generality, since the theory of UC is built around highly-general composition operators.
+%%     Thus our design goals are most closely related to ILC, in that the goal is to preserve the expressiveness of UC.
 
-    Session types are useful for expressing the control flow structure created in a program. The session type is a partial specification of a process. We start by envisioning session types as complements to the ideal functionality definition.
+%%     Session types are useful for expressing the control flow structure created in a program. The session type is a partial specification of a process. We start by envisioning session types as complements to the ideal functionality definition.
 
-       \anote{Insert here UC Pseudocode for FCom}
-       \anote{Insert here our session type for FCom}
+%%        \anote{Insert here UC Pseudocode for FCom}
+%%        \anote{Insert here our session type for FCom}
     
-    are meaningful to apply to a single channel between a pair of parties at a time.
-    \anote{why not use global session types or alternatives?}
+%%     are meaningful to apply to a single channel between a pair of parties at a time.
+%%     \anote{why not use global session types or alternatives?}
     
-    Session type is centered around a judgment that says that channel $c$ carries the session type $Sess$, which is provided by process $P$.
-    \[
-       c_1:A_1,c_2:A_2,... \vdash P :: \{c : Sess\}
-       \]
-       Each channel is associated with a single process that is its provider.
-       No cycles are allowed.
+%%     Session type is centered around a judgment that says that channel $c$ carries the session type $Sess$, which is provided by process $P$.
+%%     \[
+%%        c_1:A_1,c_2:A_2,... \vdash P :: \{c : Sess\}
+%%        \]
+%%        Each channel is associated with a single process that is its provider.
+%%        No cycles are allowed.
 
-       Encoding the exec UC experiment to support functionalities written like this.
-       A typical interaction in two party protocols (like Commitment, for example) allows Z to choose between two next actions.
-       One involves activating the honest party first, in which case.
+%%        Encoding the exec UC experiment to support functionalities written like this.
+%%        A typical interaction in two party protocols (like Commitment, for example) allows Z to choose between two next actions.
+%%        One involves activating the honest party first, in which case.
 
-       Our approach is this: we'll use session types like in Nomos, and make use of the shared channels feature of Nomos  in order to avoid cycles.
-       Furthermore, 
-       for communication between a pair of processes. We need to make use of shared channels.
+%%        Our approach is this: we'll use session types like in Nomos, and make use of the shared channels feature of Nomos  in order to avoid cycles.
+%%        Furthermore, 
+%%        for communication between a pair of processes. We need to make use of shared channels.
 
 
-       One of the characteristic qualities is that the number of parties and their identities are not statically determined, instead they can be determined adaptively at runtime by the arbitrary environment.
-       Achieves this through multiplexing between parties, called the protocol wrapper. This mechanism is also used when defining the multisession operator.
+%%        One of the characteristic qualities is that the number of parties and their identities are not statically determined, instead they can be determined adaptively at runtime by the arbitrary environment.
+%%        Achieves this through multiplexing between parties, called the protocol wrapper. This mechanism is also used when defining the multisession operator.
+%% }
