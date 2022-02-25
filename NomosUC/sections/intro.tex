@@ -1,14 +1,18 @@
 We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
 In cryptography, the leading framework for managing such compositions is Universal Composability (UC)~\cite{uc}.
+UC has caught on not just in cryptography, increasingly other computer security protocols provide ideal functionalities as their primary security definition.
+Especially in blockchain applications such as payment channels.
+
 The central idea of the framework is in the ideal functionality: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
 This leads to a modular framework, where larger protocols can be designed using simple ideal functionalitieis, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
 Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others. However, these have several shortcomings, which we address through the following questions:
 
 \begin{enumerate}
-\item Increasingly complex cryptographic applications often involve several parties communicating according to a pre-defined protocol, and implementations of them can deviate from their intended behavior.
-However, existing tools often do not provide a streamlined approach of expressing and enforcing
-such protocols.
-Can the programming language alert its user to such deviations in their code?
+\item 
+As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand. Can we use Session Types as a way of providing more structure and assiting in the analysis of the ideal world models?
+Session types have been employed in, however there are several reasons they are not an obvious fit.
+UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
+Is it possible to reconcile these, getting some value from session types without restricting the expressiveness of UC?
 
 %\item RQ1: Cryptographic applications often involve several different parties communicating
 %with each other in a pre-defined protocol.
@@ -20,11 +24,8 @@ Can the programming language alert its user to such deviations in their code?
 %a deviation has occurred?
 \item Execution cost analysis plays a central role in UC, since we are only concerned with
 attackers possessing polynomial-time computational power.
-However, existing tools provide almost no support in enforcing such restrictions on adversaries, and,
-as protocol complexity increases it is increasingly important to ensure polynomial-time bounds on the
-rest of the UC components: protocols, simulators, functionalities, and environments.
-Can we introduce resource-awareness into programming languages such that these restrictions
-are automatically enforced?
+However, most prior UC formalization efforts like EasyUC and ILC forego the polynomial runtime analysis entirely, while others like IPDL and achieve can enforce polynomial runtime but at the expense of restricting the UC framework to a static number of protocols.
+Can we enforce polynomial running time without otherwise imposing restrictions on the UC framework?
 
 %\item Execution cost analysis plays a central role in UC, since we are only concerned with
 %attackers possessing polynomial-time computational power.
@@ -40,55 +41,30 @@ are automatically enforced?
 
 We answer these questions by designing a new language, NomosUC, that combines ideas from
 Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc},
-a process calculus for UC.
-Session types in Nomos allow us to express communication protocols in both the ideal and
-real world implementations of cryptographic applications.
-For instance, for the two-party bit commitment protocol~\cite{rocommitment}, session types guarantee
-the interface and resource requirements that the protocol offers to the environment in the ideal world, and the specific protocol 
-message and import exchange between the two parties in the real world.
-We show that for some functionalities, like \Fflip used in Section~\ref{sec:commitment}, we are able to use polymorphic types to extend 
-the power of the type to enforce ordering between messages in different channels as well.
-The polynomial time guarantee in NomosUC is defined by the resource requirements specified by the import in the ideal and real world
-session types.
-They ensure composed protocols can provide enough computational resources to capture party communication and adverasrial capabilities, in the real and ideal worlds, to the sub-protocols they rely on.
-The Nomos type checker then statically enforces both of these requirements are adhered to at runtime, and  
-failure to typecheck provides precise feedback to the programmer on exactly where the
-implementation departs from its intended protocol.
+a process calculus previously used for encoding the UC.
+%For instance, for the two-party bit commitment protocol~\cite{rocommitment}, session types guarantee
+%the interface and resource requirements that the protocol offers to the environment in the ideal world, and the specific protocol 
+%message and import exchange between the two parties in the real world.
+
+We show how to resolve session types in Nomos...
+\anote{finish explanation of the technical challenges in making session types while still supporitng the dynamic nature of UC.}
 
 A core novelty of NomosUC is its support for ensuring \emph{resource bounded computation}.
 As is common in cryptography, security of a protocol is expressed via universal quantification
 on feasible computation and thus, crucially relies on the exact formulation of computational cost.
-In UC, computational cost is controlled using an \emph{import mechanism}.
-Every message exchanged between individual processes contains an import field represented by
-a natural number.
-The \emph{run-time budget} $n$ of a process is then defined as the sum of import of messages
-received by a process \emph{minus} the sum of import of messages sent by it.
-Each process is constrained in a way that its total number of execution steps is bounded
-by $T(n)$ where $T$ is a \emph{reasonable} polynomial.
-
-This import mechanism is closely connected to the \emph{potential mechanism} in Nomos, and
-generally speaking, resource-aware session types.
-Nomos features special messages that contain \emph{potential} (again represented as a natural
-number) that can be exchanged among processes involved in a computation.
-And processes consume this potential to make an execution step, thereby guaranteeing that
-the total potential of a process bounds the total computational cost.
-
-NomosUC unifies these two mechanisms resulting in a deep connection between session type
-semantics and the formal foundation of UC.
-We achieve this unification in 2 novel steps: first we provide a construct to exchange import along
-with messages among UC processes.
-In addition, we provide another construct for using import to generate potential which
-is then used to bound the total number of execution steps.
-The latter construct guarantees that if the total import of a process is $n$, then we
-can never generate more than $T(n)$ potential units
-This ensures that the total computational cost of each process is bounded by a polynomial
-in the import stored by it.
+In UC, computational cost is formally expressed through a mechanism of \emph{import tokens}, where runtime is related to tokens which can be passed around between processes.
+The \emph{run-time budget} $n$ of a process is then defined as the sum of import tokens received by a process \emph{minus} the sum of import of messages sent out by it.
+We find that the import tokens from UC are closely related to the \emph{potential} mechanism from Nomos.
+The main technical challenge is the need for \anote{explain why sandboxing requires us to introduce virtual tokens}.
 Furthermore, since import is ultimately connected to the security parameter, NomosUC
 therefore, not only guarantees termination, but also asserts polynomial bounds on
 the execution cost in terms of the security parameter.
 The soundness of our approach is achieved by proving a \emph{preservation theorem}
 which states that well-typed processes in NomosUC are ``locally polynomial time"
 in the sense required by UC.
+
+\anote{Explain more of the validation we accomplish by completing the standard composition operators in UC.}
+\anote{Explain more of the highlights from our \Fflip case study.}
 %=======
 %
 %   The challenge of “polynomial runtime” in UC is that individual processes must be judged as polynomial, but when eveluated in context with other concurrently running process it is difficult to assign blame.
