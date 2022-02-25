@@ -253,7 +253,7 @@ proc prot_f2p_newmsg[K][f2p][p2f]:
 			case m (
 				Yes(rp, msg) =>
 					$p.yes ;
-					send $p rp msg ;
+					send $p rp msg 
 			| No =>
 					$ch <- prot_f2p[K][f2p][p2f] <- #f2p #p2f $p 
 			)
