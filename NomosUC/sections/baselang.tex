@@ -1,29 +1,23 @@
 
-The core calculus of the NomosUC language is based on
-\emph{session types}: a type discipline for communication-centric programming
-based on message passing via channels. Session-typed channels describe and
-enforce the protocol of communication among processes. The base system of
-session types is derived from a Curry-Howard interpretation~\cite{caires2010session}
+The core calculus of NomosUC is based on \emph{binary session types}~\cite{caires2010session}:
+a type discipline for communication-centric programming derived from a Curry-Howard interpretation
 of intuitionistic linear logic~\cite{girard1987linear}.
-As a result, purely linear
-propositions can be viewed as resources that must be used \emph{exactly
-once} in a proof yielding the sequent $A_1, \ldots, A_n \vdash C$
-where $A_1, \ldots, A_n$ are linear antecedents, while $C$ is the linear
-succedent. Under this correspondence, a process term $P$ is assigned to
-the above judgment and each hypothesis as well as the conclusion is
-labeled with a \emph{channel}:
+Under this correspondence, a process term $P$ is assigned to
+a logical judgment of the form $A_1, \ldots A_n \vdash C$ and each antecedent as well as the succedent is
+labeled with a \emph{channel} to obtain
 \[
 x_1 : A_1, \ldots, x_n : A_n \vdash P :: (z : C)
 \]
 The resulting judgment states that process $P$ \emph{provides} a service
-of session type $A$ along channel $z$, \emph{using} the services of session
-types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$
-respectively. We mandate all channel names to be distinct for the judgment
-to be \emph{well-formed}. The antecedents are often abbreviated to $\D$.
+of session type $C$ along channel $z$, \emph{using} the services of session
+types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$ respectively.
+We mandate all channel names to be distinct for the judgment
+to be \emph{well-formed}.
+The linear antecedents are often abbreviated to $\D$.
 
 The operational semantics for session-typed programs are formalized as a
 system of \emph{multiset rewriting rules}~\cite{cervesato2009relating}.
-We introduce semantic objects $\proc{c}{P}$ and $\msg{c}{M}$ describing
+These rules consist of semantic objects $\proc{c}{P}$ and $\msg{c}{M}$ describing
 process $P$ (or message $M$) providing service along channel $c$.
 Remarkably, in this formulation, a message is just a particular form of process,
 thereby not requiring any special rules for typing; it can be typed just as processes.
