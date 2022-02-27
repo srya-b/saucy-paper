@@ -21,37 +21,47 @@ both of which are parameterized by the functionality message types \inline{a} an
 Recall that all functionalities are run inside some shell code, and their shell code communicates with communicators to other parities--we can call this a functionality wrapper as it wraps around the actual functionality code.
 The multisession operator runs each instance of the functionaly inside the wrapper, and provides each with ``virtual'' communicators for \A and the \partywrapper.
 
-For input from the \partywrapper the multisession extension reads a message from the communicator and then does the following:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-P2F(pid, P2MS(ssid, msg)) = $\nrecv$ $\$$p2f ;
-$\nif$ not ssid in $\$$p2ssid
-$\nthen$
-	#new_p2ssid <- communicator_init[K1][p2f] <- ;
-	#new_ssid2p <- communicator_init[K1][f2p] <- ;
-	#new_a2ssid <- communicator_init[K1][a2f] <- ;
-	#new_ssid2a <- communicator_init[K1][f2a] <- ;
-
-	$\$$p2ssidnew <- pappend $\$$p2ssid #new_p2ssid ;
-	$\$$ssid2pnew <- pappend $\$$ssid2p #new_ssid2p ;
-	$\$$a2ssidnew <- pappend $\$$a2ssid #new_a2ssid ;
-	$\$$ssid2anew <- pappend $\$$ssid2a #new_ssid2a ;
-
-	$\$$chprime <- f_wrapper[K1][f2p,p2f][f2a,a2f] <- 
-                     k rng sid clist $\#$p2ssid $\#$ssid2p $\#$a2ssid $\#$ssid2a $\#$z ;
-$\nend$
-
-#ch <- get_channel #p2ssid ssid ;
-$\nwithdraw$ K K1 {p2fn} ;
-$\$$ch.SEND ;
-$\nsend$ $\$$ch P2F(pid, msg) ;
-$\npay$ $\$$ch {p2fn : K1} ;
-	
-$\$$ch <- f_ms_p2f_i[K][K1] <- .... $\$$p2ssidnew $\$$ssid2pnew $\$$a2ssidnew $\$$ssid2anew 0;	
+The !\F, on input from the \partywrapper, reads a message from the communicator and then does the following:
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, numbers=left]
+$\nproc$ f_multisession_p2f_input[K][K1]{p2fn,f2pn} : 
+  (k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
+  (#p2f: comm[p2fmsg[p2ms]][K]), (#f2p: comm[f2pmsg[ms2p]][K]), 
+  (#a2f: comm[a2fmsg[a2ms]][K]), (#f2a: comm[f2amsg[ms2a]][K]) |- ($\$$ch: 1) =
+{
+  ...
+  msg = $\nrecv$ #p2f ;
+  $\ncase$ msg (
+    P2F(pid, P2MS(ssid, msg)) =>
+      $\nif$ not ssid in $\$$p2ssid
+      $\nthen$
+      	#new_p2ssid <- communicator_init[K1][p2f] <- ;
+      	#new_ssid2p <- communicator_init[K1][f2p] <- ;
+      	#new_a2ssid <- communicator_init[K1][a2f] <- ;
+      	#new_ssid2a <- communicator_init[K1][f2a] <- ;
+      
+      	$\$$p2ssidnew <- pappend $\$$p2ssid #new_p2ssid ;
+      	$\$$ssid2pnew <- pappend $\$$ssid2p #new_ssid2p ;
+      	$\$$a2ssidnew <- pappend $\$$a2ssid #new_a2ssid ;
+      	$\$$ssid2anew <- pappend $\$$ssid2a #new_ssid2a ;
+      
+      	$\$$chprime <- f_wrapper[K1][f2p,p2f][f2a,a2f] <- 
+                           k rng sid clist $\#$p2ssid $\#$ssid2p $\#$a2ssid $\#$ssid2a $\#$z ;
+      $\nend$
+  
+      #ch <- get_channel #p2ssid ssid ;
+      $\nwithdraw$ K K1 {p2fn} ;
+      $\$$ch.SEND ;
+      $\nsend$ $\$$ch P2F(pid, msg) ;
+      $\npay$ $\$$ch {p2fn : K1} ;
+  	
+    $\$$ch <- f_multisession_f2p_i[K][K1] <- .... $\$$p2ssidnew $\$$ssid2pnew $\$$a2ssidnew $\$$ssid2anew 0;	
+}
 \end{lstlisting}
-If an instance with the given $\m{ssid}$ does not exist, it creates one by calling the shell code for it, and creating two new virtual tokens.
-Then it withdraws the appropriate number of virtual tokens \inline{K1} and sends it along with the message to the input communicator for the appropriate instance of \F.
-Finally, !\F moves on to checking for new outgoing messages on the output communicators, to the \partywrapper, of each existing instance of \F, starting with index 0 in the communicator list.
 
+First it checks whether the \m{ssid} exists. It not it spawns new communcators for the instance \F: two for the \partywrapper and two for \A.
+It then grabs the \inline{#p2f} channel for $\F_{\m{ssid}}$, creates the appropriate virtual tokens and sends the message along that channel.
+Finally, after handling the incoming message, it moves to the next step of checking for outgoing messages, to the \partywrapper, from each \F by calling \inline{f_multisession_f2p_i}.
+The function accepts an integer at the end, in this example 0, which is the index to check in the communicator list. Eventually all communicators in the list are checked.
 
 Recall that the Theorem~\ref{sec:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
 The real world that realizes it is comprised of a protocol that ``flattens'' the pair of ssids $(\m{ssid}_1, \m{ssid}_2)$ into a single ssid $\m{ssid}_3 = \m{ssid}_1 || \m{ssid}_2$, the concatenation (can be any other one-to-one and invertible function on the pair) of them.
