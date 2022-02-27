@@ -94,3 +94,25 @@ proc sim_squash[K][p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn} :
   ...
 }	  
 \end{lstlisting}
+
+We revisit Theorem~\ref{thm:squash} and argue that we satisfy this theorem. 
+It is clear that from a direct simulation, it is clear that emulation holds, and we have that 
+\[
+	!\F \xrightarrow{\m{squash}} !!\F
+\] 
+It remains to argue that $\SIM{\m{squash}}$ is PPT in it's construction. We refer to the trivial nature of \SIM{\m{squash}} that does constant work on any activation by \F, \Z, or by the \partywrapper. Therefore, we conclude that \SIM{\m{squash}} is obviously PPT.
+
+We further require Theorem~\ref{thm:functor} in order to conclude full UC-style composition. We restate it here
+\begin{theorem}[Something About Functors]\label{thm:functor}
+	\begin{mathpar}
+		\inferrule*[right=somefunctor]
+		{
+			\F_1 \xrightarrow{\pi} \F_2
+		}
+		{
+			!\F_1 \xrightarrow{!\pi} !\F_2
+		}
+	\end{mathpar}
+\end{theorem}
+
+We justify this theorem. \anote{TODO}
