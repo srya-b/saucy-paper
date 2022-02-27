@@ -15,36 +15,43 @@ We mandate all channel names to be distinct for the judgment
 to be \emph{well-formed}.
 The linear antecedents are often abbreviated to $\D$.
 
+Formally, the typing judgment for processes in NomosUC is written as
+$\Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)$.
+$\Sg$ denotes the signature containing type and process definitions and $k$
+denotes the security parameter.
+Both these quantities are globally known and fixed, therefore we omit them from
+most typing rules for brevity.
+$\Tokens$ describes the total and current ($=$ received - sent) import tokens
+of each type stored in the process (explained more in Section~\ref{sec:import}).
+$\Psi$ represents the functional data structures and $\D$ collects the
+session-typed channels along with an optional write token $\wt$
+(to resolve non-determinism in the semantics) used by the process.
+Finally, $P$ is the process expression that is currently being executed and
+the process offers channe $x$ of type $A$.
+Similar to import tokens, the natural number annotations $q$ and $q'$ on the turnstile
+denote the total and current potential stored in the process.
+We will gradually explain each component of the language, initiating
+with the basic system of session types.
+For simplicity of exposition, we will display the yet unexplained
+parts of the system in blue.
+
 The operational semantics for session-typed programs are formalized as a
 system of \emph{multiset rewriting rules}~\cite{cervesato2009relating}.
 These rules consist of semantic objects $\proc{c}{P}$ and $\msg{c}{M}$ describing
 process $P$ (or message $M$) providing service along channel $c$.
 Remarkably, in this formulation, a message is just a particular form of process,
 thereby not requiring any special rules for typing; it can be typed just as processes.
+Since we track computational cost as well in NomosUC, we extend the semantic objects
+to $\proc{c}{w, P}$ and $\msg{c}{w, P}$ where work counter $w$ stores the work performed
+(number of computational steps executed) by process $P$ (resp. message $M$).
 
-Formally, the typing judgment for processes in NomosUC is written as
-$k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)$.
-Here, $\Psi$ denotes the functional data structures and $\D$ collects the
-session-typed channels along with an optional write token $\wt$
-(to resolve non-determinism in the semantics).
-The process is denoted by $P$ that offers channel $x$ of type $A$.
-Finally, token context $\Tokens$ contains the total and current ($=$ received - sent)
-tokens of each type contained by the process and $k$ is the globally known \emph{security parameter}.
-Similar to import tokens, the natural number annotations $q$ and $q'$ on the turnstile
-denote the total and current potential stored in the process.
-We also extend the semantic objects to $\proc{c}{w, P}$ and $\msg{c}{w, P}$
-where work counter $w$ stores the work performed by process $P$ (resp.
-message $M$).
-We will gradually explain each component of the language, initiating
-with the basic system of session types.
-For simplicity of exposition, we will display the yet unexplained
-parts of the system in blue.
+\subsection{Session Type Constructors}
+\label{subsec:constructors}
 
 The Curry-Howard correspondence gives each linear logic connective an
 interpretation as a session type.
-In this article, we restrict to a subset of these connectives that
-are sufficient for our language and purposes.
-We follow a detailed description of each of these session type constructors.
+We follow a detailed description of each of these session type constructors,
+but restricted to a subset that are sufficient for the applications of NomosUC.
 
 \paragraph*{\textbf{Internal Choice}}
 The internal choice $\ichoice{\ell : A_\ell}_{\ell \in L}$ constructor
@@ -57,14 +64,12 @@ by the \emph{right rule} $\oplus R$ in linear sequent calculus. The
 corresponding client branches on the label received along $x$ as specified
 by the \emph{left rule} $\oplus L$.
 \begin{mathpar}
-  \footnotesize
   \infer[{\oplus}R]
-  {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
+  {\B{\Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
     (x : \ichoice{\ell : A_\ell}_{\ell \in L})}
-  {(k \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} P :: (x : A_k)}
+  {(k \in L) \qquad \B{\Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} P :: (x : A_k)}
 \end{mathpar}
 \begin{mathpar}
-  \footnotesize
   \infer[{\oplus}L]
   {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : \ichoice{\ell : A_\ell}_{\ell \in L})
     \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{Q_\ell}_{\ell \in L} :: (z : C)}
