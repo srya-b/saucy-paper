@@ -183,55 +183,70 @@ We use the notation \m{PW}(\PI) to denote the party wrapper running parties of p
 The purpose of the wrapper is to support a dynamic set of parties without \Z, \A, or \F having to reat to new parties and managing a growing set of channels.
 Instead, the \partywrapper acts as singular endpoint for all communication with protoco parties, and it manages the creation of new parties and routing messages to/from them.
 
-\paragraph{Communicators}
-One consequence of the \partywrapper and our construction of the UC experiment is that we intermediate communcation between the major processes in NomosUC, with communicators.
-For example, if we opt for a linear channel, offered by the party wrapper or \Z, for communication between between them, then its type must be static and therefore can no longer handle an arbitrary number of parties.
-Similarly, a channel offered by
-One consequence of the \partywrapper is that communication in the UC experiment is intermediated by communicators in NomosUC.
-The singular endpoint for all party communications makes it difficult to connect \pw directly to \Z with a session typed channel.
-Session types are statically typed, therefore, it is not possible to modify the session type of a single channel to accomocate newly created parties with potentially differing types. 
-Communicators enable NomosUC to continue using session types to govern communication between \Z, \PI, and \F by intermediating communication with functional messages.
-The \pw runs the protocol parties internally with their session types, and shuttles incoming functionally typed messages to those channels and vice versa for outgoing messages.
+From the point of view of parties running inside the \partywrapper, they are directly connected to \F and \Z in the way of Figure~\ref{fig:newpandq}.
+The shell code offers four channels, two from \F and two from \Z, that offer the appropriate session types. 
+For commitment, the processes for \Z offer channels with type \m{sender} or \m{receiver}, and processes for \F offer the type of the hybrid functionality \Fro which we examine later.
+However, because we run parties of \PI internal to the \partywrapper, it runs instances of the shell code for each new spawned party and created communicators around it that it can write/read pid-specific messages to/from.
+Figure~\ref{fig:singlemultiplex} illustrates how the shell code $\pi_{pid}$ is connected to communicators for each direction. This construction is repeated for every new paty spawned inside the \partywrapper.
 
-Figure~\ref{fig:blankpartywrapper} shows the internals of \pw for two parties. The process \inline{C} demultiplexes incoming messages based on \inline{pid}, and the \inline{z2p} and \inline{f2p} processes convert to/from functionally typed messages. 
-
-Obviously, the processes \inline{z2p} and \inline{f2p} are protocol/functionality specific.
-Therefore, like \iexecuc, we generate those processes for the \partywrapper based on the protocol/functionality definition provided by the user~\footnote{It is equally valid to not generate them but let the user write the code for them manually. However, given the straightfoward nature of the processes, we opt to relieve the user of this burden.}.
-
-We provide an example of what \inline{z2p} does for a commitment protocol when \pw receives messages typed as:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
-$\yo{type}$ comp2f = Commit of Bit | Open ;
-$\yo{type}$ comf2p = Committed | Open of Bit ;
-\end{lstlisting}
-\inline{z2p} intercepts receives the message and communicates the message to the committer over its channel:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-case msg (
-  Commit(b) =>
-    $\$$z2p.commit ;
-    $\tb{send}$ $\$$z2p b ;
-    $\tb{pay}$ {z2pn} $\$$z2p ;
-\end{lstlisting}
-Here \inline{z2p} in the code refers to the committer's channel for \Z
-The \inline{f2p} processes does the same for communication between the parties and the functionality.
-
-As a resut of their session types, communicators also require that all messages be sent with some static amount of import.
-Therefore, a user must set import requirements for a protocol work in this constrainted system.
-Furthermore, as far as we know, we can systematically map any UC import definition to one that works in NomosUC.
+%\paragraph{Communicators}
+%One consequence of the \partywrapper and our construction of the UC experiment is that we intermediate communcation between the major processes in NomosUC, with communicators.
+%For example, if we opt for a linear channel, offered by the party wrapper or \Z, for communication between between them, then its type must be static and therefore can no longer handle an arbitrary number of parties.
+%Similarly, a channel offered by
+%One consequence of the \partywrapper is that communication in the UC experiment is intermediated by communicators in NomosUC.
+%The singular endpoint for all party communications makes it difficult to connect \pw directly to \Z with a session typed channel.
+%Session types are statically typed, therefore, it is not possible to modify the session type of a single channel to accomocate newly created parties with potentially differing types. 
+%Communicators enable NomosUC to continue using session types to govern communication between \Z, \PI, and \F by intermediating communication with functional messages.
+%The \pw runs the protocol parties internally with their session types, and shuttles incoming functionally typed messages to those channels and vice versa for outgoing messages.
+%
+%Figure~\ref{fig:blankpartywrapper} shows the internals of \pw for two parties. The process \inline{C} demultiplexes incoming messages based on \inline{pid}, and the \inline{z2p} and \inline{f2p} processes convert to/from functionally typed messages. 
+%
+%Obviously, the processes \inline{z2p} and \inline{f2p} are protocol/functionality specific.
+%Therefore, like \iexecuc, we generate those processes for the \partywrapper based on the protocol/functionality definition provided by the user~\footnote{It is equally valid to not generate them but let the user write the code for them manually. However, given the straightfoward nature of the processes, we opt to relieve the user of this burden.}.
+%
+%We provide an example of what \inline{z2p} does for a commitment protocol when the \partywrapper receives messages typed as:
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
+%$\yo{type}$ comp2f = Commit of Bit | Open ;
+%$\yo{type}$ comf2p = Committed | Open of Bit ;
+%\end{lstlisting}
+%\inline{z2p} intercepts receives the message and communicates the message to the committer over its channel:
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+%case msg (
+%  Commit(b) =>
+%    $\$$z2p.commit ;
+%    $\tb{send}$ $\$$z2p b ;
+%    $\tb{pay}$ {z2pn} $\$$z2p ;
+%\end{lstlisting}
+%Here \inline{z2p} in the code refers to the committer's channel for \Z
+%The \inline{f2p} processes does the same for communication between the parties and the functionality.
+%
+%As a resut of their session types, communicators also require that all messages be sent with some static amount of import.
+%Therefore, a user must set import requirements for a protocol work in this constrainted system.
+%Furthermore, as far as we know, we can systematically map any UC import definition to one that works in NomosUC.
 
 \paragraph{Import with the \partywrapper}
 Virtualizing protocol parties in a wrpper means that they all, effectively, share the same \emph{real} import and potential, even though they are given virtual potential.
 We reason that the \partywrapper does not change the import requirements of protocols or make some protocols unrealizable in NomosUC.
 Mainly, for any activation of a party, the party either retains some import or gives away all the import it receives. 
 The former case allows parties to do polynomial work or be activated a polynomial number of times, and the latter case allows for parties activated a constant number of times and doing constant work per activation.
-The \pw alone does constant work per activation, therefore, in either case boththe protocol party and \pw have enough import to perform their necessary computations.
+The \partywrapper alone does constant work per activation, therefore, in either case boththe protocol party and \partywrapper have enough import to perform their necessary computations.
 
 \begin{figure}
-\centering
-\includegraphics[scale=0.5]{figures/blankpartywrapper2.pdf}
-\caption{The internals of the protocol wrapper with two parties. The arrows indicates the client/provider relationship between each pair: provider $\rightarrow$ client. The wrapper creates \texttt{z2p} to offer a channel and convert from gunctional to message type---the \texttt{p2f} do the same. A communicator is used because \texttt{z2p} cannot send message to real one with differing token type. The types of the processes offered are (color): \tgr{comm[z2pmsg[comp2f]]}, \tb{sender}, \tr{party[Int]}, \tp{comm[p2fmsg[rop2f]]}. }
-\label{fig:blankpartywrapper}
-\vspace{-1.5em}
+	\centering
+	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
+	\caption{An instance of a single protocl party. The party $\pi_{pid}$ is the shell code around the actual protocol akin to Figure~\ref{fig:newpandq}, and it is given communicators for communication in both directions.}
+	\label{fig:singlemultiplex}
+	\vspace{-3mm}
 \end{figure}
+
+
+%\begin{figure}
+%\centering
+%\includegraphics[scale=0.5]{figures/blankpartywrapper2.pdf}
+%\caption{The internals of the protocol wrapper with two parties. The arrows indicates the client/provider relationship between each pair: provider $\rightarrow$ client. The wrapper creates \texttt{z2p} to offer a channel and convert from gunctional to message type---the \texttt{p2f} do the same. A communicator is used because \texttt{z2p} cannot send message to real one with differing token type. The types of the processes offered are (color): \tgr{comm[z2pmsg[comp2f]]}, \tb{sender}, \tr{party[Int]}, \tp{comm[p2fmsg[rop2f]]}. }
+%\label{fig:blankpartywrapper}
+%\vspace{-1.5em}
+%\end{figure}
 
 %For the commitment example, if $\pi_1$ and $\pi_2$ ran the commitment protocol, \inline{z2p} would offer a channel of type \inline{sender} and \inline{receiver} to $\pi_1$ and $\pi_2$, respectively, and it converts between the functional messages for the commitment protocol and the session typed ones. 
 %In the ideal world, the $\pi_1$ and $\pi_2$ run a dummy protocol where their offered channels are simply forwarded to their \inline{z2p} channels, i.e. the \inline{z2p} and \inline{f2p} channels have the same type: \inline{sender} and \inline{receiver}, respectively.
