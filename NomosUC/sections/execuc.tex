@@ -572,7 +572,22 @@ In this section we present a composition operator for protocols that completes t
 The composition operator allows replacement of a functioality with a protocol realizing it, and, potentially, any functionality that protocol uses.
 
 Say a protocol $\pi$, using hybrid functionality $\F_1$, realizes functionality $\F_2$. 
-For a protocol $\rho$ that uses $\F_2$, replacement results in parties of $\rho$ being directly connected to parties of $\pi$ within the \partywrapper.
+For a protocol $\rho$ that uses $\F_2$, replacement of the functionality with $\pi$ means connected patries of $\rho$ to the corresponding party of $\pi$ within the \partywrapper.
+We present a generic composition operator that works for any protocol, and a more specific, but cleaner, that works for only protocols where parties have one channel to the functionality, like \Fcom.
+The reason we present two is that many functionalities can be expressed via a single session type, and simplifying composition among these processes leads to more intuitive replacement.
+
+The basic composition operator replicated communication in Figure~\ref{fig:newpandq} and connects parties of \RHO and parties of \PI be means of a communicator.
+Within the party wrapper, both \RHO and \PI are connected by multiple session-typed channels to \Z and to \F, and those channels connected to generated processes which read communicator messages and ofrward them to/from the party.
+When we compose two protocols we retain all of these processes and re
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.5]{figures/generalcomposition.pdf}
+	\caption{Composing a party of $\rho$ with a party of $\pi$ maintains the respective protocols' intermediate processes and connects them with a communicator in the way of Figure~\ref{fig:newpandq}.}
+	\label{fig:generalcomp}
+	\vspace{-3mm}
+\end{figure}
+
 The protocol party $\rho_i$ that is connected to its \inline{p2f} process with a channel of type $\mb{a}$ is connected to party $\pi_i$ with the same channel.
 Party $\pi_i$ is, in turn, then connected to its \inline{p2f}.
 This replacement is visually described in Figure~\ref{fig:replacement}.
@@ -592,7 +607,7 @@ This replacement is visually described in Figure~\ref{fig:replacement}.
 
 \begin{figure}
 \centering
-\includegraphics[scale=0.5]{figures/replacement2.pdf}
+\includegraphics[scale=0.5]{figures/replacement.pdf}
 \caption{When we compose protocols we replace the \emph{p2f} process of $\rho$ with the corresponding instance of $\pi$ and its \emph{p2f} processes. By the emulation theorem, the channel offered by $\rho$ and accepted by $\pi$ have the same type.}
 \label{fig:replacement}
 \end{figure}
