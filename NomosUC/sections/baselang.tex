@@ -24,8 +24,12 @@ most typing rules for brevity.
 $\Tokens$ describes the total and current ($=$ received - sent) import tokens
 of each type stored in the process (explained more in Section~\ref{sec:import}).
 $\Psi$ represents the functional data structures and $\D$ collects the
-session-typed channels along with an optional write token $\wt$
+session-typed channels along with an optional \emph{write token} $\wt$
 (to resolve non-determinism in the semantics) used by the process.
+Intuitively, the process sending a message \emph{must possess} the write
+token which is then transferred to the receiver along with the write token.
+Globally, the process owning the write token is activated to take the
+next execution step.
 Finally, $P$ is the process expression that is currently being executed and
 the process offers channe $x$ of type $A$.
 Similar to import tokens, the natural number annotations $q$ and $q'$ on the turnstile
@@ -53,27 +57,26 @@ interpretation as a session type.
 We follow a detailed description of each of these session type constructors,
 but restricted to a subset that are sufficient for the applications of NomosUC.
 
-\paragraph*{\textbf{Internal Choice}}
+\paragraph*{\textbf{Choice Operators}}
 The internal choice $\ichoice{\ell : A_\ell}_{\ell \in L}$ constructor
 is an $n$-ary labeled generalization of the additive disjunction $A \oplus B$.
 A process that provides $x : \ichoice{\ell : A_\ell}_{\ell \in L}$ can send
 any label $k \in L$ along $x$ and then continue by providing $x : A_k$. The
 corresponding process is written as $(\esendl{x}{k} \semi P)$, where
-$P$ is the continuation that provides $A_k$. This typing is formalized
-by the \emph{right rule} $\oplus R$ in linear sequent calculus. The
-corresponding client branches on the label received along $x$ as specified
-by the \emph{left rule} $\oplus L$.
+$P$ is the continuation that provides $A_k$.
+On the other end of the channel, the client branches on the label received along $x$.
+The provider and client are typed according to the following $\oplus R$ and $\oplus L$
+rules respectively.
 \begin{mathpar}
   \infer[{\oplus}R]
   {\B{\Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
     (x : \ichoice{\ell : A_\ell}_{\ell \in L})}
   {(k \in L) \qquad \B{\Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} P :: (x : A_k)}
-\end{mathpar}
-\begin{mathpar}
+\and
   \infer[{\oplus}L]
-  {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : \ichoice{\ell : A_\ell}_{\ell \in L})
+  {\B{\Tokens \semi \Psi} \semi \D, (x : \ichoice{\ell : A_\ell}_{\ell \in L})
     \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{Q_\ell}_{\ell \in L} :: (z : C)}
-  {(\forall \ell \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \wt, \D, (x : A_\ell)
+  {(\forall \ell \in L) \qquad \B{\Tokens \semi \Psi} \semi \wt, \D, (x : A_\ell)
     \entailpot{\B{q}}{\B{q'}} Q_\ell :: (z : C)}
 \end{mathpar}
 Additionally, the provider should possess the write token to be able to send the
@@ -92,47 +95,49 @@ that the next message is sent on $c'$.
 The work counter of the process remains unaltered, and the new message
 is created with work $0$.
 \begin{tabbing}
-$(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step$ \= $\proc{c'}{w, [c'/c]P},$\\
-\> $\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}}$
+$(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step \proc{c'}{w, [c'/c]P},
+\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}}$
 \end{tabbing}
 When the message $k$ is received along $c$, the client selects branch
 $k$ and also substitutes the continuation channel $c'$ for $c$, thereby
 ensuring that it receives the next message on $c'$. This implicit
 substitution of the continuation channel ensures the ordering of the
 messages.
-The client process also collects the work performed by the message.
+The client process also collects the work performed by the message, if
+there is any.
 \begin{tabbing}
 $(\oplus C) :$ \= $\msg{c}{w, \esendl{c}{k} \semi \fwd{c}{c'}},
-\proc{d}{w', \ecase{c}{\ell}{Q_\ell}}$\\
-\> $\qquad \step \proc{d}{w+w',[c'/c]Q_k}$
+\proc{d}{w', \ecase{c}{\ell}{Q_\ell}}
+\step \proc{d}{w+w',[c'/c]Q_k}$
 \end{tabbing}
 
-\paragraph*{\textbf{External Choice}}
 The dual of internal choice is \emph{external choice} $\echoice{\ell :
 A_\ell}_{\ell \in L}$, the $n$-ary labeled generalization of the
 additive conjunction $A \with B$. This dual operator simply reverses
 the role of the provider and client. The provider process of
 $x : \echoice{\ell : A_\ell}_{\ell \in L}$ branches on receiving a label
-$k \in L$ (described in $\with R$), while the client sends this label
-(described in $\with L$).
-\begin{mathpar}
-  \footnotesize
-  \infer[\with R]
-  {\B{k \semi \Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
-    (x : \echoice{\ell : A_\ell}_{\ell \in L})}
-  {(\forall \ell \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \wt, \D
-    \entailpot{\B{q}}{\B{q'}} P_\ell :: (x : A_\ell)}
-\end{mathpar}
-\begin{mathpar}
-  \footnotesize
-  \infer[\with L]
-  {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D, (x : \echoice{\ell : A_\ell}_{\ell \in L})
-    \entailpot{\B{q}}{\B{q'}} \esendl{x}{k} \semi Q :: (z : C)}
-  {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : A_k) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
-\end{mathpar}
+using the expression $\ecase{x}{\ell}{Q_\ell}_{\ell \in L}$,
+while the client sends one such label in $L$ using the expression $(\esendl{x}{k} \semi P)$.
+% $k \in L$ (described in $\with R$), while the client sends this label
+% (described in $\with L$).
+% \begin{mathpar}
+%   \footnotesize
+%   \infer[\with R]
+%   {\B{k \semi \Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
+%     (x : \echoice{\ell : A_\ell}_{\ell \in L})}
+%   {(\forall \ell \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \wt, \D
+%     \entailpot{\B{q}}{\B{q'}} P_\ell :: (x : A_\ell)}
+% \end{mathpar}
+% \begin{mathpar}
+%   \footnotesize
+%   \infer[\with L]
+%   {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D, (x : \echoice{\ell : A_\ell}_{\ell \in L})
+%     \entailpot{\B{q}}{\B{q'}} \esendl{x}{k} \semi Q :: (z : C)}
+%   {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : A_k) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
+% \end{mathpar}
 Dual to internal choice, the client contains the write token which is
 sent to the provider along with the label.
-The operational semantics rules are just the inverse of internal choice,
+The operational semantics rules are also just the inverse of internal choice,
 and therefore skipped for brevity.
 
 \paragraph*{\textbf{Termination}}
@@ -141,7 +146,6 @@ termination of a process, which (due to linearity) is not allowed to use
 any channels. A terminating process offering on $x : \one$ simply
 closes channel $x$ while the client waits for this close message to arrive.
 \begin{mathpar}
-  \footnotesize
   \infer[{\one}R]
   {\B{k \semi \Tokens \semi \Psi} \semi \wt \entailpot{\B{q}}{\B{q'}} \eclose{x} :: (x : \one)}
   {\B{q = 0}}
@@ -153,7 +157,8 @@ closes channel $x$ while the client waits for this close message to arrive.
 Similar to internal choice, the closing process transfers the write
 token to its waiting client along with the close message.
 Additionally, the terminating process does not store
-any potential since it cannot take any further execution steps.
+any potential since it cannot take any further execution steps
+(explained more in Section~\ref{sec:import}).
 % Operationally, the provider converts into a closing message
 % with no continuation since the offered channel terminates.
 % \begin{tabbing}
@@ -175,6 +180,9 @@ any potential since it cannot take any further execution steps.
 % \]
 
 \paragraph*{\textbf{Exchanging Functional Data}}
+So far, we have discussed the channels in $\D$ in the typing judgment for NomosUC.
+Now, we turn out attention to the functional layer $\Psi$ that contains the
+traditional data structures and values.
 Communicating a \emph{value} of the functional fragment along a channel
 is expressed at the type level by adding the following two session types.
 \begin{center}
@@ -189,12 +197,10 @@ Here, $\tau$ describes a functional type, e.g. $\m{int}, \m{bool}, \tau \; \m{li
 The type $\tau \arrow A$ prescribes receiving a value of type $\tau$
 with continuation type $A$, while its dual $\tau \product A$ prescribes
 sending a value of type $\tau$ with continuation $A$. The corresponding
-typing rules for arrow ($\arrow R, \arrow L$) are given
-below (rules for $\product$ are inverse).
+typing rules for arrow ($\arrow R, \arrow L$) are given below.
 \begin{mathpar}
-  \footnotesize
   \infer[\arrow R]
-  {\B{k \semi \Tokens} \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}}
+  {\B{\Tokens} \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}}
   \erecvch{x}{v} \semi P :: (x : \tau \arrow A)}
   {\B{k \semi \Tokens} \semi \Psi, (v : \tau) \semi \wt, \D \entailpot{\B{q}}{\B{q'}}
   P :: (x : A)}
@@ -215,10 +221,12 @@ $x : \tau \arrow A$ adds it to the functional context $\Psi$. On the
 other hand, sending (value of) expression $M$ on channel $x : \tau \arrow A$
 requires that $M$ has type $\tau$ (third premise).
 The premises indicated in blue describe how potential is divided across
-the functional and session-typed layers and will be described next.
+the functional and session-typed layers and will be described further in Section~\ref{sec:import}.
 Intuitively, the potential in functional context $\Psi$ is \emph{shared}
 between $\Psi_1$ and $\Psi_2$ (second premise); $\Psi_1$ is used to type
 $M$ while $\Psi_2$ is passed on to the continuation $Q$.
+The $\product$ operator is dual to $\arrow$ reversing the roles of provider and client,
+and we omit those rules for brevity.
 
 \subsection{Expressing ITMs With Session Types}
 Despite the seemingly stuctured nature of execution in UC, the framework is meant to capture arbitrary connections, communication patterns, or configurations of ITMs. 
