@@ -180,6 +180,9 @@ any potential since it cannot take any further execution steps
 % \]
 
 \paragraph*{\textbf{Exchanging Functional Data}}
+So far, we have discussed the channels in $\D$ in the typing judgment for NomosUC.
+Now, we turn out attention to the functional layer $\Psi$ that contains the
+traditional data structures and values.
 Communicating a \emph{value} of the functional fragment along a channel
 is expressed at the type level by adding the following two session types.
 \begin{center}
@@ -194,8 +197,7 @@ Here, $\tau$ describes a functional type, e.g. $\m{int}, \m{bool}, \tau \; \m{li
 The type $\tau \arrow A$ prescribes receiving a value of type $\tau$
 with continuation type $A$, while its dual $\tau \product A$ prescribes
 sending a value of type $\tau$ with continuation $A$. The corresponding
-typing rules for arrow ($\arrow R, \arrow L$) are given
-below (rules for $\product$ are inverse).
+typing rules for arrow ($\arrow R, \arrow L$) are given below.
 \begin{mathpar}
   \infer[\arrow R]
   {\B{\Tokens} \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}}
@@ -219,10 +221,12 @@ $x : \tau \arrow A$ adds it to the functional context $\Psi$. On the
 other hand, sending (value of) expression $M$ on channel $x : \tau \arrow A$
 requires that $M$ has type $\tau$ (third premise).
 The premises indicated in blue describe how potential is divided across
-the functional and session-typed layers and will be described next.
+the functional and session-typed layers and will be described further in Section~\ref{sec:import}.
 Intuitively, the potential in functional context $\Psi$ is \emph{shared}
 between $\Psi_1$ and $\Psi_2$ (second premise); $\Psi_1$ is used to type
 $M$ while $\Psi_2$ is passed on to the continuation $Q$.
+The $\product$ operator is dual to $\arrow$ reversing the roles of provider and client,
+and we omit those rules for brevity.
 
 \subsection{Expressing ITMs With Session Types}
 Despite the seemingly stuctured nature of execution in UC, the framework is meant to capture arbitrary connections, communication patterns, or configurations of ITMs. 
