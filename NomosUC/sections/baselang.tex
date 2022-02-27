@@ -249,10 +249,25 @@ Without adding any additional processes, $P$ must offer a channel to $Q$ and $Q$
 Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
 Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
 
-In order to capture this communication, and, in general, to break all possible cycles while still making meaningful use of session types, we propose a construction like Figure~\ref{fig:newpandq}.
-We wrap each of $P$ and $Q$ in shell code, call them $S_P$ and $S_Q$, which spawn two dummy proceses to offer each of the channels of type \m{PtoQ} and \m{QtoP} to $P$ and $Q$.
-The arrows within each shell represent the direction of communication rather than a provider-client relationship. 
-In reality, any of the process can offer any of the channels as long as it doesn't result in a cycle.
+In order to enable arbitrary communication we let $P$ and $Q$ communcate over two channels, each through a process called the communicator.
+The communicator behaves like a channel buffer that allows one party to send a message to another one that must poll the communicator for it.
+Its type is given is given.
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$\\
+\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{a} \product \down \m{comm[a]},$\\
+\>\>$\mb{no}: \down \m{comm[a]}}}$
+\end{tabbing}}
+\end{center}
+This type introces new operators $\up$ and $\down$. These operators indicate that this is the type of a \emph{shared channel} that allows multiple clients to use the same channel to communicate with its provider. It is an extension to session types proposed by Balzer et al.~\cite{balzer2017manifest}, and it allows session types to capture programming scenariors where cycles naturally occur (ring networks, dining philosophers, etc.). 
+Communicators offer a session type but the parametric type \m{a} is restricted to functionally typed messages.
+
+Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, using communicators and some useful shell code.
+We wrap each of $P$ and $Q$ in shell code, call them $S_P$ and $S_Q$, which spawn two dummy processes each.
+The processes, call them $a$ and $b$,  peform two tasks. Firat $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.
+Second, $a$ and $b$ each communicate with one communicator and convert functionallty typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
+Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.
 \begin{figure}
 	\begin{subfigure}{0.3\textwidth}
 	\centering
@@ -269,43 +284,53 @@ In reality, any of the process can offer any of the channels as long as it doesn
 	\end{subfigure}
 	\caption{Two ITM configurations. One possible with ITMs (left) and one realized in NomosUC (right). Arrows indicate direction of messages and the dot indicates the provider of the channel.}
 \end{figure}
-Communication between $S_1$ and $S_2$ along channels they each offer results in another cycle. 
-Therefore, we break the cycle by intermediating their communication through a \emph{communicator}.
-The communicator avoids cycles by offered a \emph{shared channel} rather than the typical linear channel.
-We represent the communication in Figure~\ref{fig:newpandq} by Figure~\ref{fig:pandq} which abstracts away the implementation details of communicators and shell codes.
 
-\paragraph*{\textbf{Shared Channels}}
-\todo{Here I'm not too sure on whether this is enoug information or if it's correct.}
-Linear channels are exclusive to the parent and child that are at their endpoints.
-Balzer et al.~\cite{balzer2017manifest} proposed a \emph{shared} extension of session types which allows them to capture more natural programming scenarios where cyles naturally occurrs (ring network, dining philosophers, etc.).
-Shared channels are still restricted to one provider but can be used by multiple clients to communicate with the provider. 
-They introduce non-determinism that isn't present in UC where many clients can be attempting to communciate with the same provider, however, NomosUC borrows the write token from ILC to ensure activation and control are always with only on process at a time.
+In general, we reresent communication between any two ITMs as two communicators intermediated channels along with shell code. 
+We further don't restrict the types of the two channels, and allow them to each be bidirectional as well.
+For example, communication betwen \Fcom and a protocol party need only make use of one of the channels (typed by \m{sender} if the party is the committer) and type the other one with $1$.
+In such cases, we omit the second channel from the diagram entirely (see Section~\ref{sec:execuc}.
+However, for simplicity, and to be as generalized as possible, when both channels are used we refer to them as being uni-directional.
 
-\paragraph*{\textbf{Communicators}}
-Communicators act as channel buffers that two parties can use to communicate to each other.
-The shared type of the communicators is given by 
-\begin{center}
-\parbox{0cm}{
-\begin{tabbing}
-$\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$\\
-\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{a} \product \down \m{comm[a]},$\\
-\>\>$\mb{no}: \down \m{comm[a]}}}$
-\end{tabbing}}
-\end{center}
-The $\up$ and $\down$ operations around the session type indicate that it is \emph{shared}, and they denote a \emph{critical section} analogous to traditional concurrency controls like the mutex.
-The type suggests that one party can send a message to the communicator, the communicator, buffers the message, and responds with it when asked to \m{RECV} is from a another process.
+%\paragraph*{\textbf{Shared Channels}}
+%\todo{Here I'm not too sure on whether this is enoug information or if it's correct.}
+%Linear channels are exclusive to the parent and child that are at their endpoints.
+%Balzer et al.~\cite{balzer2017manifest} proposed a \emph{shared} extension of session types which allows them to capture more natural programming scenarios where cyles naturally occurrs (ring network, dining philosophers, etc.).
+%Shared channels are still restricted to one provider but can be used by multiple clients to communicate with the provider. 
+%They introduce non-determinism that isn't present in UC where many clients can be attempting to communciate with the same provider, however, NomosUC borrows the write token from ILC to ensure activation and control are always with only on process at a time.
+%
+%\paragraph*{\textbf{Communicators}}
+%Communicators act as channel buffers that two parties can use to communicate to each other.
+%The shared type of the communicators is given by 
+%\begin{center}
+%\parbox{0cm}{
+%\begin{tabbing}
+%$\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$\\
+%\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{a} \product \down \m{comm[a]},$\\
+%\>\>$\mb{no}: \down \m{comm[a]}}}$
+%\end{tabbing}}
+%\end{center}
+%The $\up$ and $\down$ operations around the session type indicate that it is \emph{shared}, and they denote a \emph{critical section} analogous to traditional concurrency controls like the mutex.
+%The type suggests that one party can send a message to the communicator, the communicator, buffers the message, and responds with it when asked to \m{RECV} is from a another process.
+%
+%Communicators are parametric in a messages type \inline{a}.
+%Only channels in Nomos can be session typed, and  allowing channels to be sent over communicators enables flawed non-UC behavior.
+%Therefore, communicators are limited to buffering functionally typed messages.
+%This places extra functionality in the two spawned processes inside $S_1$ in Figure~\ref{fig:new_p_and_q}: the process must read functionally typed message and then send one on its session-typed channel and vice versa.
+%
+%In general, mapping between functional and session-typed messages is achieved through a simple mapping between types and represents a systematic approach to intermediating communcation between $P$ and $Q$.
+%As we show in Section~\ref{sec:execuc}, we repeat this design pattern and rely on the creation of protocol-specific processes to conver functionally typed messages to session-typed messages.
 
-Communicators are parametric in a messages type \inline{a}.
-Only channels in Nomos can be session typed, and  allowing channels to be sent over communicators enables flawed non-UC behavior.
-Therefore, communicators are limited to buffering functionally typed messages.
-This places extra functionality in the two spawned processes inside $S_1$ in Figure~\ref{fig:new_p_and_q}: the process must read functionally typed message and then send one on its session-typed channel and vice versa.
+\subsection{Discussion on Realizing Import}
+In this section we present a generic way of using communicators and shared channel to realize arbitrayr communication between two parties, avoid cycles, and, still, meaningfully use session types.
+A consequence of the approch is that communicators carry only functionally typed messages and, therefore, shell code needs to convert between them and session-typed messages.
+Now that we have introduced the import and potential mechanisms in NomosUC, we introduce a final consequence of our design.
 
-In general, mapping between functional and session-typed messages is achieved through a simple mapping between types and represents a systematic approach to intermediating communcation between $P$ and $Q$.
-As we show in Section~\ref{sec:execuc}, we repeat this design pattern and rely on the creation of protocol-specific processes to conver functionally typed messages to session-typed messages.
+The communicator type, and the functional messages, restrict all messaages in one direction between two parties to send a constant amount of import.
+This means that if a protocol requires sending different import with different messages, NomosUC realizes it be sending the maximal import with every message.
+As the intent of import is not to impose very right bounds on resrouce usage, we argue that this constraint only results in users defining types that give more import than absolutely necessary.
 
-
-\section{Syntax Sugar}
-The machnery that we have introduced around NomosUC processes to achieve the expressiveness of ITMs is systematic in nature and can be statically defined given some protocol specification.
-In this section we consider some syntatic sugar and automation around some parts of the NomosUC.
-
-The first, and arguably most important, part of the 
+%\section{Syntax Sugar}
+%The machnery that we have introduced around NomosUC processes to achieve the expressiveness of ITMs is systematic in nature and can be statically defined given some protocol specification.
+%In this section we consider some syntatic sugar and automation around some parts of the NomosUC.
+%
+%The first, and arguably most important, part of the 
