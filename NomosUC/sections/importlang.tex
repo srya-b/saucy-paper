@@ -177,71 +177,6 @@ can modify the cost model to only count the resource they are interested in
 %   {\vars \vdash \D_1 \equiv \D_2 \and \vars \vdash A \equiv B}
 % \end{mathpar}
 
-\paragraph*{\textbf{Shared Channels}}
-Until now, we have only described the linear fragment of session types
-in Nomos.
-Unfortunately, this fragment imposes a strong restriction on programs.
-The only provision to spawn new processes is when a parent process creates a new
-child process, and uses an exclusive linear channel to communicate with the child.
-Thus, any two processes connected by a channel inherently maintain this parent-child
-relationship.
-Intuitively, this leads to a linear tree-like hierarchy among the processes,
-thus preventing a cycle in the process graph.
-
-Unfortunately, this restriction precludes practical programming scenarios
-where process topologies indeed have a cyclic dependency (e.g. ring networks,
-dining philosophers, etc.).
-Recognizing this limitation, Balzer et al.~\cite{balzer2017manifest} proposed
-a \emph{shared} extension of session types that allows arbitrary process topologies.
-The types are extended as follows:
-\begin{center}
-\begin{minipage}{0cm}
-\begin{tabbing}
-$A_L ::= \down A_S \mid \ldots \text{(all linear types $A$ so far)}\ldots$\\
-$A_S ::= \up A_L$
-\end{tabbing}
-\end{minipage}
-\end{center}
-We have found this extension exceedingly helpful in the design and implementation
-of cryptographic protocols.
-
-Shared session types impose an \emph{acquire-release} discipline on processes; 
-a client must acquire the channel offered by a shared process to interact with it
-and must release this channel after the interaction.
-The corresponding typing rules are
-\begin{mathpar}
-  \footnotesize
-  \infer[\up L]
-  {k \semi \Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
-  \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
-  {k \semi \Tokens \semi \Psi \semi \D, (y : A_L)
-  \entailpot{q}{q'} Q :: (z : C)}
-  %
-  \and
-  %
-  \infer[\up R]
-  {k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'}
-  \eaccept{y}{x} \semi P :: (x : \up A_L)}
-  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
-\end{mathpar}
-The $\up L$ rule describes a client acquiring a shared channel $x$
-and obtaining a private linear channel $y$ along which it can communicate
-with the corresponding acquired process.
-Correspondingly, the $\up R$ rule describes the shared process
-accepting the acquire request and creating the fresh linear channel $y$.
-The release-detach rules corresponding to the $\down$ type constructor
-are exact dual of acquire-accept.
-
-An important caveat here is that shared channels can introduce non-determinism
-in the semantics.
-The only source of non-determinism is that a shared process can latch on to
-any of the acquiring clients.
-To address this problem, we require that the acquiring client \emph{possess
-the write token}.
-Since write tokens are treated as a linear quantity, only one of the client can
-possess it enabling only that process to acquire the shared channel.
-Remarkably, this write token can resolve both read and write non-determinism
-due to linearity of the channels.
 
 
 \paragraph*{\textbf{Process Definitions and Sandboxing}}
@@ -460,6 +395,16 @@ Furthermore, in this section we discuss existing pitfalls and drawbacks of prior
 An important part of our discussion must focus around our sandboxing technique and ensuring that it does not provide a pathway for a process to run infinitely.
 The infinite runs problems is a persistent issue in existing length-of-input based approaches to polynoimal time.
 It naturally appears in our sandboxing mechanism by the continual creation of new virtual token types. Following from the intent of sandboxing, the NomosUC rule for a valid token context ensures that all virtual token types  \todo{ finish this by deciding which rule to update: \inline{genPot} or \inline{withdrawTokens}}
+
+\subsection{Discussion on Realizing Import}
+In this section we present a generic way of using communicators and shared channel to realize arbitrayr communication between two parties, avoid cycles, and, still, meaningfully use session types.
+A consequence of the approch is that communicators carry only functionally typed messages and, therefore, shell code needs to convert between them and session-typed messages.
+Now that we have introduced the import and potential mechanisms in NomosUC, we introduce a final consequence of our design.
+
+The communicator type, and the functional messages, restrict all messaages in one direction between two parties to send a constant amount of import.
+This means that if a protocol requires sending different import with different messages, NomosUC realizes it be sending the maximal import with every message.
+As the intent of import is not to impose very right bounds on resrouce usage, we argue that this constraint only results in users defining types that give more import than absolutely necessary.
+
 
 %\begin{itemize}
 %\item Identify design decisions like concretizing potential, sandboxing and virtualizing with withdrawTokens, the valid token context rule, the type system in general

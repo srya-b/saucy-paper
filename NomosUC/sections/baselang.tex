@@ -202,7 +202,7 @@ typing rules for arrow ($\arrow R, \arrow L$) are given below.
   \infer[\arrow R]
   {\B{\Tokens} \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}}
   \erecvch{x}{v} \semi P :: (x : \tau \arrow A)}
-  {\B{k \semi \Tokens} \semi \Psi, (v : \tau) \semi \wt, \D \entailpot{\B{q}}{\B{q'}}
+  {\B{\Tokens} \semi \Psi, (v : \tau) \semi \wt, \D \entailpot{\B{q}}{\B{q'}}
   P :: (x : A)}
   %
   \and
@@ -211,9 +211,9 @@ typing rules for arrow ($\arrow R, \arrow L$) are given below.
   {\B{r' = p+q'} \qquad
   \B{\Psi \share (\Psi_1, \Psi_2)} \qquad
   \Psi_1 \exppot{\B{p}} M : \tau \\
-  \B{k \semi \Tokens} \semi \Psi_2 \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}}
+  \B{\Tokens} \semi \Psi_2 \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}}
   Q :: (z_k : C)}
-  {\B{k \semi \Tokens} \semi \Psi \semi \wt, \D, (x : \tau \arrow A)
+  {\B{\Tokens} \semi \Psi \semi \wt, \D, (x : \tau \arrow A)
   \entailpot{\B{q}}{\B{r'}} \esendch{x}{M} \semi Q :: (z : C)}
 \end{mathpar}
 As indicated in the $\arrow R$ rule, receiving a value $y : \tau$ on a channel
@@ -229,35 +229,59 @@ The $\product$ operator is dual to $\arrow$ reversing the roles of provider and 
 and we omit those rules for brevity.
 
 \subsection{Expressing ITMs With Session Types}
-Despite the seemingly stuctured nature of execution in UC, the framework is meant to capture arbitrary connections, communication patterns, or configurations of ITMs. 
-In this section we highlight a common pattern in UC that requires additional machinery to be express with session types.
+\label{subsec:communicators}
+Despite the seemingly stuctured nature of execution in UC, the framework is meant to
+capture arbitrary connections, communication patterns, or configurations of ITMs.
+However, linear session types can prove to be quite restrictive in terms of realizing
+arbitrary communication patterns in practical cryptographic protocols.
+In this section, we highlight a common communication pattern in UC that requires introducing
+the notion of shared session types~\cite{balzer2017manifest} to be expressible in NomosUC.
 
-The pattern emerges from the following code: a machine $P$ either writes to another machine $Q$ or is written to by $Q$. 
-At first glance, it is a trivial scenario, but we encounter a problem trying to encode this with a single session type.
-A example are machines $P$ and $Q$ which execute as follows:
-\begin{itemize}
-	\item An external machines flips a bit and activates either $P$ or $Q$.
-	\item If $P$ is activated it writes to $Q$ and the execution terminates. 
-	\item Otherwise, if $Q$ is activated, it writes a message to $P$, $P$ writes something back, and the execution terminates.
-\end{itemize}
-A single type between $P$ and $Q$ would have to allow either of the two parties to write on the channel, but session types require it to be statically known.
+Session types naturally impose a \emph{parent-child relationship} among processes by requiring
+every channel to have a provider and client endpoint.
+Moreover, these endpoints are fixed, i.e., a process cannot transition from being a client of
+a channel to its provider, or vice-versa.
+This restriction results in an acyclic tree-like topology among processes where parents progressively
+spawn child processes becoming the client to the channel provided by the child.
+On the other hand, UC places no such restriction on communication and cyclic communication
+is quite common in UC protocols.
+Thus, a direct translation from ITM terms to NomosUC expressions can result in cyclic
+dependency among channels, thus causing the program to be ill-typed.
 
-If we try to separate communication between $P$ and $Q$ into two uni-directional channel, we can express the session type for each of the channels:
-\begin{center}
-\parbox{0cm}{
-\begin{tabbing}
-$\m{PtoQ} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
-$\m{QtoP} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
-\end{tabbing}}
-\end{center}
 
-This approach, however, poses another problem. 
-Channels are only created by a process offering them, and a process can only offer a single channel.
-Without adding any additional processes, $P$ must offer a channel to $Q$ and $Q$ offer one to $P$. 
-Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
-Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
 
-In order to enable arbitrary communication we let $P$ and $Q$ communcate over two channels, each through a process called the communicator.
+% The pattern emerges from the following code: a machine $P$ either writes to another machine $Q$ or is written to by $Q$. 
+% At first glance, it is a trivial scenario, but we encounter a problem trying to encode this with a single session type.
+% A example are machines $P$ and $Q$ which execute as follows:
+% \begin{itemize}
+% 	\item An external machines flips a bit and activates either $P$ or $Q$.
+% 	\item If $P$ is activated it writes to $Q$ and the execution terminates. 
+% 	\item Otherwise, if $Q$ is activated, it writes a message to $P$, $P$ writes something back, and the execution terminates.
+% \end{itemize}
+% A single type between $P$ and $Q$ would have to allow either of the two parties to write on the channel, but session types require it to be statically known.
+
+% If we try to separate communication between $P$ and $Q$ into two uni-directional channel, we can express the session type for each of the channels:
+% \begin{center}
+% \parbox{0cm}{
+% \begin{tabbing}
+% $\m{PtoQ} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
+% $\m{QtoP} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
+% \end{tabbing}}
+% \end{center}
+
+% This approach, however, poses another problem. 
+% Channels are only created by a process offering them, and a process can only offer a single channel.
+% Without adding any additional processes, $P$ must offer a channel to $Q$ and $Q$ offer one to $P$. 
+% Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
+% Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
+
+To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce the
+notion of \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
+Communicators act as a buffer between two processes allowing them to exchange messages via the communicator.
+Communicators also break the parent-child relationship by offering a \emph{shared channel that can have multiple clients}
+(unlike linear channels that can have only one client) that is then used by both the sender and receiver processes.
+
+In order to enable  we let $P$ and $Q$ communcate over two channels, each through a process called the communicator.
 The communicator behaves like a channel buffer that allows one party to send a message to another one that must poll the communicator for it.
 Its type is given is given.
 \begin{center}
@@ -299,6 +323,73 @@ For example, communication betwen \Fcom and a protocol party need only make use 
 In such cases, we omit the second channel from the diagram entirely (see Section~\ref{sec:execuc}.
 However, for simplicity, and to be as generalized as possible, when both channels are used we refer to them as being uni-directional.
 
+\paragraph*{\textbf{Shared Channels}}
+Until now, we have only described the linear fragment of session types
+in Nomos.
+Unfortunately, this fragment imposes a strong restriction on programs.
+The only provision to spawn new processes is when a parent process creates a new
+child process, and uses an exclusive linear channel to communicate with the child.
+Thus, any two processes connected by a channel inherently maintain this parent-child
+relationship.
+Intuitively, this leads to a linear tree-like hierarchy among the processes,
+thus preventing a cycle in the process graph.
+
+Unfortunately, this restriction precludes practical programming scenarios
+where process topologies indeed have a cyclic dependency (e.g. ring networks,
+dining philosophers, etc.).
+Recognizing this limitation, Balzer et al.~\cite{balzer2017manifest} proposed
+a \emph{shared} extension of session types that allows arbitrary process topologies.
+The types are extended as follows:
+\begin{center}
+\begin{minipage}{0cm}
+\begin{tabbing}
+$A_L ::= \down A_S \mid \ldots \text{(all linear types $A$ so far)}\ldots$\\
+$A_S ::= \up A_L$
+\end{tabbing}
+\end{minipage}
+\end{center}
+We have found this extension exceedingly helpful in the design and implementation
+of cryptographic protocols.
+
+Shared session types impose an \emph{acquire-release} discipline on processes; 
+a client must acquire the channel offered by a shared process to interact with it
+and must release this channel after the interaction.
+The corresponding typing rules are
+\begin{mathpar}
+  \footnotesize
+  \infer[\up L]
+  {k \semi \Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
+  \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
+  {k \semi \Tokens \semi \Psi \semi \D, (y : A_L)
+  \entailpot{q}{q'} Q :: (z : C)}
+  %
+  \and
+  %
+  \infer[\up R]
+  {k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'}
+  \eaccept{y}{x} \semi P :: (x : \up A_L)}
+  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
+\end{mathpar}
+The $\up L$ rule describes a client acquiring a shared channel $x$
+and obtaining a private linear channel $y$ along which it can communicate
+with the corresponding acquired process.
+Correspondingly, the $\up R$ rule describes the shared process
+accepting the acquire request and creating the fresh linear channel $y$.
+The release-detach rules corresponding to the $\down$ type constructor
+are exact dual of acquire-accept.
+
+An important caveat here is that shared channels can introduce non-determinism
+in the semantics.
+The only source of non-determinism is that a shared process can latch on to
+any of the acquiring clients.
+To address this problem, we require that the acquiring client \emph{possess
+the write token}.
+Since write tokens are treated as a linear quantity, only one of the client can
+possess it enabling only that process to acquire the shared channel.
+Remarkably, this write token can resolve both read and write non-determinism
+due to linearity of the channels.
+
+
 %\paragraph*{\textbf{Shared Channels}}
 %\todo{Here I'm not too sure on whether this is enoug information or if it's correct.}
 %Linear channels are exclusive to the parent and child that are at their endpoints.
@@ -328,14 +419,6 @@ However, for simplicity, and to be as generalized as possible, when both channel
 %In general, mapping between functional and session-typed messages is achieved through a simple mapping between types and represents a systematic approach to intermediating communcation between $P$ and $Q$.
 %As we show in Section~\ref{sec:execuc}, we repeat this design pattern and rely on the creation of protocol-specific processes to conver functionally typed messages to session-typed messages.
 
-\subsection{Discussion on Realizing Import}
-In this section we present a generic way of using communicators and shared channel to realize arbitrayr communication between two parties, avoid cycles, and, still, meaningfully use session types.
-A consequence of the approch is that communicators carry only functionally typed messages and, therefore, shell code needs to convert between them and session-typed messages.
-Now that we have introduced the import and potential mechanisms in NomosUC, we introduce a final consequence of our design.
-
-The communicator type, and the functional messages, restrict all messaages in one direction between two parties to send a constant amount of import.
-This means that if a protocol requires sending different import with different messages, NomosUC realizes it be sending the maximal import with every message.
-As the intent of import is not to impose very right bounds on resrouce usage, we argue that this constraint only results in users defining types that give more import than absolutely necessary.
 
 %\section{Syntax Sugar}
 %The machnery that we have introduced around NomosUC processes to achieve the expressiveness of ITMs is systematic in nature and can be statically defined given some protocol specification.
