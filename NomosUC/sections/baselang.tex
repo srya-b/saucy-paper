@@ -237,18 +237,35 @@ arbitrary communication patterns in practical cryptographic protocols.
 In this section, we highlight a common communication pattern in UC that requires introducing
 the notion of shared session types~\cite{balzer2017manifest} to be expressible in NomosUC.
 
-Session types naturally impose a \emph{parent-child relationship} among processes by requiring
+We motivate the use of shared session types through an example of an ITM communication pattern
+pattern common in UC, but difficult to capture with a single session type.
+Imagine two ITMS $P$ and $Q$ which communicat in the following way. If $P$ is activated first,
+it sends a message to $Q$ and terminates, but if $Q$ is activate first it writes a message to $P$, 
+$P$ writes a message back, and communication terminates.
+Session types require it to be statically known which party will write next to a channel so such
+a communication pattern can not be realized by juts a single session type.
+
+If we try to resolve this by splitting communcation among two channels, we may type them as
+\begin{center}
+ \parbox{0cm}{
+ \begin{tabbing}
+ $\m{PtoQ} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
+ $\m{QtoP} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
+ \end{tabbing}}
+\end{center}
+
+However, session types naturally impose a \emph{parent-child relationship} among processes by requiring
 every channel to have a provider and client endpoint.
 Moreover, these endpoints are fixed, i.e., a process cannot transition from being a client of
 a channel to its provider, or vice-versa.
-This restriction results in an acyclic tree-like topology among processes where parents progressively
+If $P$ and $Q$ are connected with channels they offer each other, the provider-client relationship
+is undefined as one process must spawn the other.
+In general, this restriction results in an acyclic tree-like topology among processes where parents progressively
 spawn child processes becoming the client to the channel provided by the child.
-On the other hand, UC places no such restriction on communication and cyclic communication
-is quite common in UC protocols.
+%On the other hand, UC places no such restriction on communication and cyclic communication
+%is quite common in UC protocols.
 Thus, a direct translation from ITM terms to NomosUC expressions can result in cyclic
 dependency among channels, thus causing the program to be ill-typed.
-
-
 
 % The pattern emerges from the following code: a machine $P$ either writes to another machine $Q$ or is written to by $Q$. 
 % At first glance, it is a trivial scenario, but we encounter a problem trying to encode this with a single session type.
@@ -259,7 +276,7 @@ dependency among channels, thus causing the program to be ill-typed.
 % 	\item Otherwise, if $Q$ is activated, it writes a message to $P$, $P$ writes something back, and the execution terminates.
 % \end{itemize}
 % A single type between $P$ and $Q$ would have to allow either of the two parties to write on the channel, but session types require it to be statically known.
-
+%
 % If we try to separate communication between $P$ and $Q$ into two uni-directional channel, we can express the session type for each of the channels:
 % \begin{center}
 % \parbox{0cm}{
@@ -268,15 +285,15 @@ dependency among channels, thus causing the program to be ill-typed.
 % $\m{QtoP} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
 % \end{tabbing}}
 % \end{center}
-
+%
 % This approach, however, poses another problem. 
 % Channels are only created by a process offering them, and a process can only offer a single channel.
 % Without adding any additional processes, $P$ must offer a channel to $Q$ and $Q$ offer one to $P$. 
 % Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
 % Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
 
-To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce the
-notion of \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
+To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce 
+the concept of \emph{providerless channels} using \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
 Communicators act as a buffer between two processes allowing them to exchange messages via the communicator.
 Communicators also break the parent-child relationship by offering a \emph{shared channel that can have multiple clients}
 (unlike linear channels that can have only one client) that is then used by both the sender and receiver processes.
@@ -296,13 +313,15 @@ Because the channel has two clients (the sender and the receiver), either of the
 Once acquired, the sender uses the $\mb{SEND}$ branch of the type while the receiver interacts with the $\mb{RECV}$ branch.
 In the former case, the communicator receives the $\mb{SEND}$ message from the sender followed by the actual
 message of type $\tau$ as indicated by the $\arrow$ constructor.
-Then, the type transitions to $\down$ meaning that the sender sends a \emph{release} request to the communicator effectively
-detaching from it so that the receiver can interact with the communicator.
-In the latter case, the communicator gets the $\mb{RECV}$ request from the receiver and checks whether the there is a message
-waiting for the receiver or not.
-If a message is found, the communicator replies with a $\mb{yes}$ message followed by the message of type $\tau$, and if not,
-the $\mb{no}$ message is sent.
-Finally, in either case, the communicator detaches from the receiver as indicated by the $\down$ constructor.
+Then the sender releases the channel so that the receiver can interact with the communicator and check, with $\mb{RECV}$ whether 
+there is a message waiting or not.
+%Then, the type transitions to $\down$ meaning that the sender sends a \emph{release} request to the communicator effectively
+%detaching from it so that the receiver can interact with the communicator.
+%In the latter case, the communicator gets the $\mb{RECV}$ request from the receiver and checks whether the there is a message
+%waiting for the receiver or not.
+%If a message is found, the communicator replies with a $\mb{yes}$ message followed by the message of type $\tau$, and if not,
+%the $\mb{no}$ message is sent.
+%Finally, in either case, the communicator detaches from the receiver as indicated by the $\down$ constructor.
 
 Shared session types impose an \emph{acquire-release} discipline on processes; 
 a client must acquire the channel offered by a shared process to interact with it
@@ -339,14 +358,9 @@ possess it enabling only that process to acquire the shared channel.
 Remarkably, this write token can resolve both read and write non-determinism
 due to linearity of the channels.
 
-
-
-These operators indicate that this is the type of a \emph{shared channel} that allows multiple clients to use the same
-channel to communicate with its provider. It is an extension to session types proposed by Balzer et al.~\cite{balzer2017manifest},
-and it allows session types to capture programming scenariors where cycles naturally occur (ring networks, dining philosophers, etc.). 
-Communicators offer a session type but the parametric type \m{a} is restricted to functionally typed messages.
-
-Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, using communicators and some useful shell code.
+The communicator type is parametric in the message type sent over it, and it is restricted to sending 
+functionally typed messages only. 
+Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realized our desired \emph{providerless channels} using communicators and some useful shell code.
 We wrap each of $P$ and $Q$ in shell code, call them $S_P$ and $S_Q$, which spawn two dummy processes each.
 The processes, call them $a$ and $b$,  peform two tasks. Firat $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.
 Second, $a$ and $b$ each communicate with one communicator and convert functionallty typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
@@ -368,7 +382,7 @@ Although the process code for terms $a$ and $b$ differ based on the session type
 	\caption{Two ITM configurations. One possible with ITMs (left) and one realized in NomosUC (right). Arrows indicate direction of messages and the dot indicates the provider of the channel.}
 \end{figure}
 
-In general, we represent communication between any two ITMs as two communicators intermediated channels along with shell code. 
+In general, we represent communication between any two ITMs as two providerless channels.
 We further don't restrict the types of the two channels, and allow them to each be bidirectional as well.
 For example, communication betwen \Fcom and a protocol party need only make use of one of the channels (typed by \m{sender} if the party is the committer) and type the other one with $1$.
 In such cases, we omit the second channel from the diagram entirely (see Section~\ref{sec:execuc}.
