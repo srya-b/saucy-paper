@@ -7,8 +7,11 @@ To summarize the ideal/real security relation, roughly we need to show ``any att
 What makes UC the strongest among ideal/real frameworks is that the inputs of honest parties are chosen adaptively by the distinguishing environment \Z, which can also communicate with the adversary and interleave its interactions with honest parties.
 This adversary model leads to a flexible approach to composition, which we'll say more about shortly.
 More formally, the security definition says that a protocol $\pi$ realizes an ideal functionality $\F$
- if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal world are indistinguishable for any environment \Z:
- \[ \forall \A \; \exists \Sim \; \forall \Z \; \; \msf{execUC} \; \Z \, \idealP \, \F \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F_0 \, \A \]
+if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal world are indistinguishable for any environment \Z:
+\begin{equation}
+  \label{eqn:emulation}
+  \forall \A \; \exists \Sim \; \forall \Z \; \; \msf{execUC} \; \Z \, \idealP \, \F \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F_0 \, \A
+\end{equation}
 Here $\textsf{id}_\pi$ is the ideal protocol that simply passes inputs between environment and ideal functionality, and $\F_0$ takes the place of the ideal functionality in the real world, and is typically used to express network assumptions or assumed primitives the current protocol relies on.
 The \msf{execUC} defines the UC execution experiment that hooks up the channels to the processes in its arguments.
 Importantly, the number of protocol parties in UC is entirely dynamic and chosen at runtime by the environment. 
@@ -16,14 +19,14 @@ Defining \msf{execUC} in our core calculus, and especially reconciling its the d
 
 \paragraph{Composition Notation}
 The UC framework is designed to encourage a highly compositional and modular design approach, where we analyze single-instance protocols in isolation, then apply generic composition operators to build more complex systems.
-Encoding the standard theory of UC composition in our framework will be the main way we validate our effort.
-Here we summarize the main using category notation.
+Encoding the standard theory of UC composition in our framework is one of the main ways we validate the expressiveness of our language design.
+Here we summarize the main composition theorems using category notation.
 First, if $\pi$ realizes $\F$ in the $\F_0$ hybrid world according to the definition above, we write:
 \[
 	\F_1 \xrightarrow{\pi} \F_2
 \]
-Specifically, the real world involves a single instance of $\F_1$, and the ideal world involves a single instance of $\F_2$.
-The first composition theorem states that this relation is transitive, where $\rho \circ \pi$ is a generic composition operator that combines two protocols, by connecting the $\rho \Leftarrow \F$ channels in $\rho$ to the $\pi \Leftarrow \Z$ channel of $F$. That is, when protocol $\rho$ communicates with its ideal functionality, that is relayed as subroutine input to $\pi$.
+This means in the real world $\pi$ makes use of a single instance of $\F_1$, and the ideal world consists of a single instance of $\F_2$.
+The first composition theorem states that this relation is transitive, where $\rho \circ \pi$ is a generic composition operator that combines two protocols by connecting the $\rho \Leftarrow \F$ channels in $\rho$ to the $\pi \Leftarrow \Z$ channel of $F$. That is, when protocol $\rho$ communicates with its ideal functionality, it is is relayed as subroutine input to $\pi$.
 \begin{theorem}[Composition]\label{thm:singlecomp}
 \begin{mathpar}
 \inferrule*[right=single-compose]
@@ -35,25 +38,27 @@ The first composition theorem states that this relation is transitive, where $\r
 }
 \end{mathpar}
 \end{theorem}
-The simulator is straightforward, and the complete security reduction involves translating a distinguisher for the combined protocol $\rho \circ \pi$ to a distinguisher for either $\pi$ or $\rho$ individually.
-Although the proof is straightforward, the precise statement of it in our framework will serve as good validation for the expressiveness of our framework. the theorem holds for any $\pi$ and $\rho$ and any arbitrary type $t$ for the channels between them. ~\anote{use more consistent notation here for this point?}
+To prove this theorem requires constructing a straightforward simulator that combines the underlying simulators of $\pi$ and $\rho$, and the complete security reduction involves translating a distinguisher $Z$ for the combined protocol $\rho \circ \pi$ to a distinguisher $Z^*$ for either $\pi$ or $\rho$ individually.
+Although the proof is straightforward, the precise statement of it in our framework serves as good validation for the expressiveness of our framework: the theorem holds for any \anote{how can we say that it holds for an arbitrary session type t?}
 
 The next generic operation is the multi-session extension of $\F$, denoted $!\F$, which provides $\pi$ with an arbitrary number of instances of $F$, each tagged with a separate \textsf{sid} (for \emph{session identifier}).
-Here is a central aspect of UC's flexibility, that the environment has the ability to choose the exact values of \textsf{sid} values, and even the number of distinct sessions, at runtime, with no static bound available.
-The Universal Composition theorem says that composition also holds in this setting, stated as $!\F_1 \rightarrow \F_2$, $!\F_2 \rightarrow \F_3 \implies !\F_1 \rightarrow F_3$.
-Since this proof involves reducing a distinguisher for the composition of a variable number of items, the reduction involves a sequence of hybrid games, involves cryptographic reasoning.
-
+Here is a central aspect of UC's flexibility, that the environment gets to determine at runtime the exact number and values of \textsf{sid}'s, with no static bound required.
+The Universal Composition theorem says that composition even holds in this setting, which we state as
+$!\F_1 \rightarrow \F_2$, $!\F_2 \rightarrow \F_3 \implies !\F_1 \rightarrow F_3$.
+Since this proof involves reducing a distinguisher for the composition of a variable number of hybrid, the reduction involves a sequence of variable number of hybrid games, essentially the cryptographic reasoning.
 
 \paragraph{Universal Composability and ITMs}
-The UC framework is defined on top of a communication model called interactive turing machines (ITMs).
-Are proesses that communicate by passing messages along tapes. Focus on the channel centric version, like in IPDL and Barbosa et al.
-of probabilistic polynomial time (PPT)
+The UC framework is defined on top of a communication model called interactive turing machines (ITMs), in which multiple Turing-complete processes run concurrently in a system and communicate by passing messages over channels~\cite{canettiUC}.
+Although the Turing-complete computations can be instantiated in any reasonable core calculus, the approach to message passing in ITMs has some essential but subtle restrictions.
+In order to do cryptographic analysis, we need to make reductions to (ordinary sequential) probabilistic polynomial time computations (PPTs).
+This rules out, for example, the ordinary semantics of $\pi$-calculus, which introduces unbounded non-determinism with the possible scheduler choices.
 
-The framework is somewhat structured compared to process calculus. Only one process is active at a given time, writing to a channel immediately activates. There are no race conditions or non-determinism (except for random coin flips) in the underlying model, which is essential for cryptographic reductions.
-Adversarial choices, such as adversarial network scheduling, are expressed within the model, with an explicit adversary process input to the ideal network model.
-The final step in a UC proof is to show that a distinguishing environment Z can be leveraged to construct a polynomial time solution to a hard problem like Discrete Log. This involves simulating the entire \msf{execUC} experiment on an ordinary (non-interactive) Turing Machine.
-
-Related work IPDL Barbosa et al., make significant limitations in order to complete their guarantees.
+Our approach, following ILC~\cite{ilc}, is to encode the ITMs framework as faithfully as possible.
+%This is because the final step in a UC proof is to show that a distinguishing environment Z can be leveraged to construct a polynomial time solution to a hard problem like Discrete Log.
+The basic rule that ITMs follow is that only one process is active at a given time. 
+Specifically whenever a process writes to one of its outgoing channels, the unique process that holds the read end of that channel is immediately activated next.
+In this way the message scheduling is essentially deterministic so it can be easily simulated by a sequential computation.
+This discipline means that modelling inherently non-deterministic phenomena, like network schedulers, requires us to explicitly offer choices to an adversary process defined in our model.
 
 %\paragraph{GUC-Framework}
 %A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.
@@ -77,19 +82,26 @@ Related work IPDL Barbosa et al., make significant limitations in order to compl
 %% \end{tabular}
 %% } 
 
-\subsubsection{The Import Mechanism}
-A notion of resource-bound computation is necessary for the UC framework to reason about computationally efficient algorithms as well as the capabilities of ITMs under a particular resource constraint.
-Often we would like to reason about adversarial capabilities under such constraints and perform efficient transformations (transforming an real-world adversary into an ideal-world simulator).
+Even having established the message pattern, it is still not straightforward to define a notion of polynomial runtime for ITM systems.
+Looking at the order of quantifiers in the UC emulation definition from Relation~\ref{eqn:emulation}, we need a way to make local judgments about each $\A$, $\Z$, $\pi$, and $\F$ individual, and conclude that the entire $\msf{execUC} \Z \pi \A \F$ experiment overall is polynomial time as a result.
+We follow Canetti's approach~\cite{canettiUC}, which is to keep track at runtime of quantity called ``import tokens'' and assign a runtime budget based on these.
+These tokens can be passed among the processes along with the messages sent on each tape, but the total amount of tokens must be conserved (neither created nor destroyed), and locally each process cannot take more steps than (a polynomial of) the amount of import tokens it has stored.
+Somewhat more formally, we say $P$ is a \emph{locally polynomial time process} if for \emph{any} evaluation context $e[\_]$, at any step $t$ during its execution,
+\[
+\#\textsf{stepsTaken}(e[P])_{t} \le T(n_{\textsf{in}} - n_{\textsf{out}})
+\]
+were $n_{\textsf{in}}$ is the total number of import tokens received by $P$ and $n_{\textsf{out}}$ is the total number of tokens $P$ has sent, and $T$ is an arbitrary polynomial.
+This is sufficient because it immediately ensures that if the system starts out with a total number of tokens bounded in the security parameter $k$, then the overall number of steps taken by any of the processes in the system is also bounded in $k$.
+The expressiveness comes from the arbitrary polynomial $T$, a slack parameter that allows, for example, the emulation of a universal turing machine (which potentially incurs quadratic overhead).
+%\footnote{The reason for the arbitrary polynomial $T$ is to allow enough slack to support universal simulation, for example a Universal Turing Machine simmulation may add quadratic overhead.}
+Our approach \anote{forward section reference} is to encode this notion directly into the type system, by tracking import tokens and statically enforcing the local polynomial runtime constraint.
 
-Existing definitions of polynomial-time usually center around the lengths of input and output messages. In GNUC~\cite{gnuc} considers a function of the sum of all inputs a machine receives as a bound on its runtime. Previous versions of the UC framework similarly rely on functions of the difference between the lengths of a machine's inputs and outputs
-The latest iteration of UC overcomes some drawbacks in polytime notions around ```input lengths''~\footnote{Namely, the \emph{infinite runs} problem identified in \cite{uc}.} and introduces the import mechanism.
-The import mechanism allocates the first ITI, the environment with a number of import ``tokens'', that is poynomial in the the security parameter $k$. 
-This makes up the runtime budget of the entire UC execution, and the environment can give import tokens along with inputs to other machines in the execution. Any ITM in the execution can pass import to another if it possesses enough.
-The polynomial time definition in the import mechanism takes the following form:
+%Existing definitions of polynomial-time usually center around the lengths of input and output messages. In GNUC~\cite{gnuc} considers a function of the sum of all inputs a machine receives as a bound on its runtime. Previous versions of the UC framework similarly rely on functions of the difference between the lengths of a machine's inputs and outputs
+%The latest iteration of UC overcomes some drawbacks in polytime notions around ```input lengths''~\footnote{Namely, the \emph{infinite runs} problem identified in \cite{uc}.} and introduces the import mechanism.
 
-\begin{center} {\small An ITM is considered PPT if there exists a polynomial $T$ such that its runtime is bounded by $T(n)$ where $n$ is the net amount of tokens it ever holds.} \end{center}
-
-This notion of poynomial time directly provides a guarantee on the entire UC execution by limited the entire import in a system to be polynomial in $k$. Therefore, we avoid pitfalls of existing input length-based local polynomial notions.
+%The import mechanism allocates the first ITI, the environment with a number of import ``tokens'', that is poynomial in the the security parameter $k$. 
+%This makes up the runtime budget of the entire UC execution, and the environment can give import tokens along with inputs to other machines in the execution. Any ITM in the execution can pass import to another if it possesses enough.
+%The polynomial time definition in the import mechanism takes the following form:
 %The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomial amount of import which can be thought of as tokens or coins.
 %The environment can then activate other ITIs with some import tokens allowing them to run for as long as their import token balance permits. 
 %In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps where $n'$ is the difference between the import it has received from incoming messages and outgoing import it's given to other machines.
