@@ -163,7 +163,30 @@ proc env_p2z_i[K][K1][K2]:
 		)
 		$ch <- env_p2z_i[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' (i++) ;
 	else
-		$ch <- env_real_p2z[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' (i++) ;
+		$ch <- env_real_p2z[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' ;
+}
+
+proc env_real_p2z[K][K1][K2] :
+	(k: Int), (rng: [Bit]), (#z_to_pw : comm[z2pmsg[z2p]][K]), (#pw_to_z: comm[p2zmsg[p2z]][K]),
+	(#z_to_a: comm[z2amsg[z2a]][K]), (#z_to_a: comm[a2zmsf[a2z]][K]),
+	(#z_z2a: comm[...][K1]), (#z_a2z: comm[...][K1]) 
+	(#z_p2z: comm[...][K1]), (#z_z2p: comm[...][K1]),
+	($l_p2zs: list[comm[...]][K1]), ($_z2ps: list[comm[...]][K1]),
+	(i: Int)  |- ($ch: 1) =
+{
+	#pw_to_z.RECV ;
+	case #pw_to_z (
+		yes =>
+			msg = recv #pw_to_z ;
+			get #pw_to_z {p2zn : K} ;
+			
+			withdrawtoken K K1 p2zn ;
+			#z_p2z.SEND ;
+			pay #z_p2z {p2zn : K1} ;
+			send #z_p2z msg ;
+		no =>
+	)
+	$ch <- env_real_p2z[K][K1][K1] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' ;
 }
 
 (* TODO rest of the environment code for handling real p2z and p2a messages *)
