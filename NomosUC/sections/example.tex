@@ -6,8 +6,8 @@
 % Might make sense to talk about extending session types with dependencies for commitment
 
 Just like distributed protocols, cryptographic protocols follow a predefined communication pattern.
-Our key innovation is to represent protocols and ideal functioalities in the UC framework using \emph{session types}.
-We illustrate Nomos UC with an example ideal funtionality: a cryptographic commitment.
+Our key innovation is to represent protocols and ideal functionalities in the UC framework using \emph{session types}.
+We illustrate Nomos UC with an example ideal functionality: a cryptographic commitment.
 The commitment functionality \Fcom encapsulates the security properties of a two-phase, two-party commitment,
 which, given its simplicity is an ideal learning example.
 
@@ -86,7 +86,7 @@ which we explain later.
 But more importantly, it imposes no limitations on the expressiveness on our framework.
 
 A session type uniquely defines the protocol for only one role in an ideal functionality.
-The sender and receiver are different roles in the same protocol, and, therefore, must have their own channels to \Fcom rather than communcating over a common channel.
+The sender and receiver are different roles in the same protocol, and, therefore, must have their own channels to \Fcom rather than communicating over a common channel.
 
 %The protocol initiates with $S$ sending a $\mb{commit}$ message to $\Fcom$
 %indicating its intent to \emph{commit} to a bit.

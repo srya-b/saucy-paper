@@ -39,7 +39,7 @@ The first composition theorem states that this relation is transitive, where $\r
 \end{mathpar}
 \end{theorem}
 To prove this theorem requires constructing a straightforward simulator that combines the underlying simulators of $\pi$ and $\rho$, and the complete security reduction involves translating a distinguisher $Z$ for the combined protocol $\rho \circ \pi$ to a distinguisher $Z^*$ for either $\pi$ or $\rho$ individually.
-Although the proof is straightforward, the precise statement of it in our framework serves as good validation for the expressiveness of our framework: our theorem, and constructed, proof are parameteric in the session type of the protocol.\anote{how can we say that it holds for an arbitrary session type t?}
+Although the proof is straightforward, the precise statement of it in our framework serves as good validation for the expressiveness of our framework: our theorem, and constructed, proof are parametric in the session type of the protocol.\anote{how can we say that it holds for an arbitrary session type t?}
 
 The next generic operation is the multi-session extension of $\F$, denoted $!\F$, which provides $\pi$ with an arbitrary number of instances of $\F$, each tagged with a separate \textsf{sid} (for \emph{session identifier}).
 Here is a central aspect of UC's flexibility, that the environment gets to determine at runtime the exact number and values of \textsf{sid}'s, with no static bound required.
@@ -58,7 +58,7 @@ Our approach, following ILC~\cite{ilc}, is to encode the ITMs framework as faith
 The basic rule that ITMs follow is that only one process is active at a given time. 
 Specifically whenever a process writes to one of its outgoing channels, the unique process that holds the read end of that channel is immediately activated next.
 In this way the message scheduling is essentially deterministic so it can be easily simulated by a sequential computation.
-This discipline means that modelling inherently non-deterministic phenomena, like network schedulers, requires us to explicitly offer choices to an adversary process defined in our model.
+This discipline means that modeling inherently non-deterministic phenomena, like network schedulers, requires us to explicitly offer choices to an adversary process defined in our model.
 
 %\paragraph{GUC-Framework}
 %A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.

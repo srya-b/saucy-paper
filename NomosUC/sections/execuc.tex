@@ -23,7 +23,7 @@ The dummy protocol \idealP is a trivial protocol defined such that for all \F
 \end{mathpar}
 
 A key property of the UC framework is proving security (by emulation) of protocol composition.
-Our UC-realize notation composes niceley given a composition operator between protocols and an operator between simulators.
+Our UC-realize notation composes nicely given a composition operator between protocols and an operator between simulators.
 Given an $\F_1 \xrightarrow{\pi} \F_2$ and and $\F_2 \xrightarrow{\rho} \F_3$, the composition theorem in UC states
 \begin{theorem}[Composition]\label{thm:singlecomp}
 \begin{mathpar}
@@ -37,18 +37,18 @@ Given an $\F_1 \xrightarrow{\pi} \F_2$ and and $\F_2 \xrightarrow{\rho} \F_3$, t
 \end{mathpar}
 
 \end{theorem}
-Below, we introdue how the UC experiment is implemented in NomosUC, and then provide a composition operator $\circ$ for protocols, and one for simulators, that satisfied Theorem~\ref{thm:singlecomp}.
+Below, we introduce how the UC experiment is implemented in NomosUC, and then provide a composition operator $\circ$ for protocols, and one for simulators, that satisfied Theorem~\ref{thm:singlecomp}.
 
 \subsection{The UC Experiment}
 The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
 The experiment, parameterized by a security parameter $k$ and source of randomness $r$,is created by an \inline{execUC} function  which spawns all the relevant processes: the environment, a \partywrapper, the adversary, the \fwrapper.
 The two wrappers encapsulate the protocol parties and the functionality, respectively, and are necessary to allow dynamic creation of parties. Furthermore, they are connected to each other, and \Z and \A, through communicators (Section~\ref{sec:communicators}).
 
-Virtualization and sandboxing of code is a common design pattern in UC, especially with adversaries nd simulators.
-NomosUC support it through the use of virtual okens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
+Virtualization and sandboxing of code is a common design pattern in UC, especially with adversaries and simulators.
+NomosUC support it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
 Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on simple code generation to declare \inline{execUC} with a sufficient number of type parameters.
 
-For example, an execution where the simulator sandboxes thereal world adverasry, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
+For example, an execution where the simulator sandboxes the real world adversary, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
 $\tm{import}$ PS 
 $\tb{proc}$ execUC[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
@@ -58,7 +58,7 @@ In general, as we will discuss when introducing the \partywrapper, an execution 
 
 %\begin{figure*}
 %\input{listings/execuc}
-%\caption{The \msf{execUC} function used for the two-party commitment example used througout this paper. Recall, the \msf{execUC} is customized insofar as it takes in some number of virtual token types (here, $K_1$) to enable machines that simulate other machines. In the commitment example, there is no such simulation happening at the protocol or functionality level, therefore only the real token type $K_1$ is used here. The funtion spawns all the necessary ITMs in the UC execution: the environment, the protocol wrapper, the functionalty (wrapped), and the adversary. Each is parameterized with the security parameter $k$ and a random bit sequence $\msf{rng} \in \{0,1\}^{poly(k)}$.
+%\caption{The \msf{execUC} function used for the two-party commitment example used throughout this paper. Recall, the \msf{execUC} is customized insofar as it takes in some number of virtual token types (here, $K_1$) to enable machines that simulate other machines. In the commitment example, there is no such simulation happening at the protocol or functionality level, therefore only the real token type $K_1$ is used here. The funtion spawns all the necessary ITMs in the UC execution: the environment, the protocol wrapper, the functionalty (wrapped), and the adversary. Each is parameterized with the security parameter $k$ and a random bit sequence $\msf{rng} \in \{0,1\}^{poly(k)}$.
 %At the end, the environment is started and it returns a bit $b$ which is its guess for which world it is in. The full code can be found in the Appendix.}
 %\label{lst:execuc}
 %\end{figure*}
@@ -134,19 +134,19 @@ This output bit, and the environment's decision function, go on to define emulat
 \subsection{Ideal Functionalities}
 One of the core research questions that this work aims to study session types applied to the UC framework. 
 In this section, we discuss how resource-aware session types impact the design of functionalities in NomosUC.
-We use the two-way authenticated channel functionality \Fauth to througout this discussion.
+We use the two-way authenticated channel functionality \Fauth to throughout this discussion.
 
 In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
-In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionaty involving $P_s$, $P_r$, \F, and \A. 
+In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionality involving $P_s$, $P_r$, \F, and \A. 
 The simplest, and most common approach, to \Fauth is the following communication pattern: a party $P_s$ sends a message to \Fauth, and \Fauth sends the message to \A and waits for \A to say \inline{OK} before delivering the message to $P_r$.
 Since both parties can send and receive messages, it is unclear which process, \Fauth or $P$, will be active along their mutual channel at any given time.
 Session types require this information to be statically known when two processes are communicating over a single channel--making this communication pattern unexpressable over a single channel.
 
 There a few ways to overcome this constraint. 
-In general, even though the UC framework places few restructions of communication patterns, most functionalities stick to a few.
+In general, even though the UC framework places few restrictions of communication patterns, most functionalities stick to a few.
 Despite the constraint above, our type system is able to express each of the following implementations of \Fauth:
 \begin{enumerate}
-\item (presented above) Receiver and adverasry are activated directly: \Fauth waits for \A to tell it to deliver the message. If we extend the parties and functionality to communicate over two unidirectional channels. Given the type
+\item (presented above) Receiver and adversary are activated directly: \Fauth waits for \A to tell it to deliver the message. If we extend the parties and functionality to communicate over two unidirectional channels. Given the type
 \begin{center}
 \parbox{0cm}{
 \begin{tabbing}
@@ -504,30 +504,14 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$, which we refer to only by \PI a
 \footnotesize
 	\inferrule*[right=emulate]
 	{
-		%. \models \msf{execUC}[\Tokentypes][\alpha] :: \Delta[\Tokentypes][\alpha] \\ \\ 
-		% Protocols that are well-matched with their functionalities
-		%\pi \rightarrow \Delta_1' \semi \phi \rightarrow \Delta_2' \semi \\
 		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
-		%\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_1 \rangle \\
-		% Type of execUC[DELTA_pi] and execUC[DELTA_phi]
 		\forall \A \, | \, \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle \\
-		%\Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \equiv_{\Z} \Delta_1\ 
-		%\semi \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \equiv_\Z \Delta_2 \\
-		% For all A if exists well-typed A that is well-matched with real world
-		%\forall \A, (\exists (\Delta_4, \Delta_4') | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
-		%\forall \A | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
-		% implies simulator that is well-matched for ideal world
-		%\Rightarrow \exists (\Delta_3,\Delta_3') \, | \, \Delta_3 \vdash \Sim_\A :: \Delta_3', \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
-		\Rightarrow \exists \Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3', \langle \Sim_\A \leftrightarrow \phi \rangle \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
-		% for all Z they that's well-matched for the real world => Z is well-matched with S and ideal world
-		%\forall \Z (\langle \Z \leftrightarrow \A \rangle, \langle \Z \leftrightarrow \pi \rangle \Rightarrow \langle \Z \leftrightarrow \Sim_\A \rangle, \langle \Z \leftrightarrow \phi \rangle \\
-		% and emulation has to hold
+		\Rightarrow \exists \Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3', \langle \Sim_\A \leftrightarrow \phi \rangle \\
 		\Rightarrow \forall \Z  \; \msf{execUC} \ \pi\ \Z\ \F_1\ \A \approx\ \msf{execUC} \ \phi\ \Z\ \F_2\ \Sim_\A
 	}
 	{
 		% EMULATION DEFINITION
-		\lambda \A . \Sim_\A \vdash (\pi, \F_1) \sim (\phi, \F_2) % \F_1 \xrightarrow{\pi} \F_2
-		%\lambda \A . \Sim_\A \vdash (\pi, \F_1) \sim (\phi, \F_2)
+		\lambda \A . \Sim_\A \vdash (\pi, \F_1) \sim (\phi, \F_2)
 	}
 \end{mathpar}
 \end{definition}
@@ -581,8 +565,8 @@ If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\fo
 \end{theorem}
 
 We give the proof of this lemma in the appendix, however, we provide an intuition for understanding why it is true.
-Simulation w.r.t the dummy simulator works for all environments, even those that could run any potential real-world adverasry internally. Such environments, pass input to the adversary, whose output is given to the dummy simulator. 
-The constructed simulator captures the idea of moving the adversary from the environment into the the execution, and the constructed simulator runs the real-world adverasry and dummy simulator internally.
+Simulation w.r.t the dummy simulator works for all environments, even those that could run any potential real-world adversary internally. Such environments, pass input to the adversary, whose output is given to the dummy simulator. 
+The constructed simulator captures the idea of moving the adversary from the environment into the the execution, and the constructed simulator runs the real-world adversary and dummy simulator internally.
 Environment inputs are not passed to the adversary, and the adversary's outputs are passed to the dummy simulator.
 
 %\begin{proof}
@@ -773,7 +757,7 @@ Another illustrative description of what composition proposes, logically, is sho
 %\end{itemize}
 %It is clear that \Sim' is able to emulate inputs from \Z to both parties of $\rho$ and the ideal functionalty $\F_1$.
 %\Sim' performs constant over head in simulating two \emph{well-resource-typed}, and therefore it is clear that \Sim' is \emph{well-resource-typed}.
-%When combined with the \emph{dummy lemma}, a well-resource-typed simulator exists for composition for any adverasry \A. 
+%When combined with the \emph{dummy lemma}, a well-resource-typed simulator exists for composition for any adversary \A. 
 %The dummy lemma presented above ensures that a simulator for any \A can be constructed that is well-resource-typed for all wel-resource-typed \A.
 %\end{proof}
 %
@@ -866,7 +850,7 @@ We formally treat this and the remaining theorems in this section in the Appendi
 	\end{mathpar}
 \end{theorem}
 Theorem~\ref{thm:functor} is intuitive in the sense that each session of the real world protocol $\pi$ communicates with an analogous session of $\F_1$ in isolation to realize the corresponding instance of $\F_2$. 
-A UC proof for this is more involved that just providing a simulator but, instead, relies on a hybrid argmuent. 
+A UC proof for this is more involved that just providing a simulator but, instead, relies on a hybrid argument. 
 We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
 
 \begin{theorem}[Squash Theorem]\label{thm:squash}
@@ -880,7 +864,7 @@ We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
 		}
 	\end{mathpar}
 \end{theorem}
-The Squash theorem, is more straigtforward to prove than Theorem~\ref{thm:functor}.
+The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:functor}.
 It is a direct \todo{finish explaining and shove off to the Appendix.}
 
 
@@ -941,7 +925,7 @@ We provide more detail for a proof of Theorem~\ref{thm:squash} in the Appendix, 
 \end{proof}
 
 \subsection{UC Composition}
-Finally, we can conlude with full composition in Theorem~\ref{thm:compose}.
+Finally, we can conclude with full composition in Theorem~\ref{thm:compose}.
 The proof follows directly from Theorems~\ref{thm:singlecomp} and \ref{thm:squash}.
 
 \begin{proof}

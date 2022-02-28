@@ -26,7 +26,7 @@ $K_{i+1}$~\footnote{ITIs in UC can have arbitrary simulation depth, i.e. a proce
 In addition, we use a global function $\GlobalF$ as the connection
 rate between two successive token types.
 
-To maintain well-typedness of a process, an implicit side condition is
+To maintain well-typed-ness of a process, an implicit side condition is
 that the token context must always be \emph{valid}.
 This involves ensuring that if the context contains $m'$ current tokens of type
 $K_i$, it can only contain at most $\GlobalF(m,k)$ total tokens of type
@@ -116,7 +116,7 @@ other machines as part of their construction. The program notation for \msf{with
 does not require an inverse to exchange tokens \textit{back} from type $K'$ to $K$.
 The reason is that virtual tokens only exist to allow re-use of existing processes 
 and satisfy their types. Type $K$ tokens are not deducted when new ones of type $K'$ 
-are created is because, in reality, siulating a process by calling it or simply running
+are created is because, in reality, simulating a process by calling it or simply running
 its code natively should be equivalent in cost. Therefore, there is also no need to 
 include an inverse of \msf{withdrawToken} which exchanges from $K'$ to $K$.
 
@@ -388,22 +388,22 @@ case either $\config$ can take a step or is poised.
 
 \subsection{Discussion on Realizing Import}
 Our adaptation of the import mechanism to resource-aware session types concretizes some parts of the import mechanism like the run-time budget and adds new mechanisms
-to facilitate common UC design pattersn such as simulation and virtualization of machines. 
+to facilitate common UC design patterns such as simulation and virtualization of machines. 
 It's important to validate our realization of the import mechanism by ensuring that it faithfully provides the same guarantees.
 Furthermore, in this section we discuss existing pitfalls and drawbacks of prior mechanisms that import was created to over come, and assert that our implementation steers clear of them as well.
 
 An important part of our discussion must focus around our sandboxing technique and ensuring that it does not provide a pathway for a process to run infinitely.
-The infinite runs problems is a persistent issue in existing length-of-input based approaches to polynoimal time.
+The infinite runs problems is a persistent issue in existing length-of-input based approaches to polynomial time.
 It naturally appears in our sandboxing mechanism by the continual creation of new virtual token types. Following from the intent of sandboxing, the NomosUC rule for a valid token context ensures that all virtual token types  \todo{ finish this by deciding which rule to update: \inline{genPot} or \inline{withdrawTokens}}
 
 \subsection{Discussion on Realizing Import}
-In this section we present a generic way of using communicators and shared channel to realize arbitrayr communication between two parties, avoid cycles, and, still, meaningfully use session types.
-A consequence of the approch is that communicators carry only functionally typed messages and, therefore, shell code needs to convert between them and session-typed messages.
+In this section we present a generic way of using communicators and shared channel to realize arbitrary communication between two parties, avoid cycles, and, still, meaningfully use session types.
+A consequence of the approach is that communicators carry only functionally typed messages and, therefore, shell code needs to convert between them and session-typed messages.
 Now that we have introduced the import and potential mechanisms in NomosUC, we introduce a final consequence of our design.
 
-The communicator type, and the functional messages, restrict all messaages in one direction between two parties to send a constant amount of import.
+The communicator type, and the functional messages, restrict all messages in one direction between two parties to send a constant amount of import.
 This means that if a protocol requires sending different import with different messages, NomosUC realizes it be sending the maximal import with every message.
-As the intent of import is not to impose very right bounds on resrouce usage, we argue that this constraint only results in users defining types that give more import than absolutely necessary.
+As the intent of import is not to impose very right bounds on resource usage, we argue that this constraint only results in users defining types that give more import than absolutely necessary.
 
 
 %\begin{itemize}

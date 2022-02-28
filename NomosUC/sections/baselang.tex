@@ -230,7 +230,7 @@ and we omit those rules for brevity.
 
 \subsection{Expressing ITMs With Session Types}
 \label{subsec:communicators}
-Despite the seemingly stuctured nature of execution in UC, the framework is meant to
+Despite the seemingly structured nature of execution in UC, the framework is meant to
 capture arbitrary connections, communication patterns, or configurations of ITMs.
 However, linear session types can prove to be quite restrictive in terms of realizing
 arbitrary communication patterns in practical cryptographic protocols.
@@ -239,7 +239,7 @@ the notion of shared session types~\cite{balzer2017manifest} to be expressible i
 
 We motivate the use of shared session types through an example of an ITM communication pattern
 pattern common in UC, but difficult to capture with a single session type.
-Imagine two ITMS $P$ and $Q$ which communicat in the following way. If $P$ is activated first,
+Imagine two ITMS $P$ and $Q$ which communicate in the following way. If $P$ is activated first,
 it sends a message to $Q$ and terminates, but if $Q$ is activate first it writes a message to $P$, 
 $P$ writes a message back, and communication terminates.
 Session types require it to be statically known which party will write next to a channel so such
@@ -362,8 +362,8 @@ The communicator type is parametric in the message type sent over it, and it is 
 functionally typed messages only. 
 Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realized our desired \emph{providerless channels} using communicators and some useful shell code.
 We wrap each of $P$ and $Q$ in shell code, call them $S_P$ and $S_Q$, which spawn two dummy processes each.
-The processes, call them $a$ and $b$,  peform two tasks. Firat $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.
-Second, $a$ and $b$ each communicate with one communicator and convert functionallty typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
+The processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.
+Second, $a$ and $b$ each communicate with one communicator and convert functionally typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
 Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.
 \begin{figure}
 	\begin{subfigure}{0.3\textwidth}
@@ -384,6 +384,6 @@ Although the process code for terms $a$ and $b$ differ based on the session type
 
 In general, we represent communication between any two ITMs as two providerless channels.
 We further don't restrict the types of the two channels, and allow them to each be bidirectional as well.
-For example, communication betwen \Fcom and a protocol party need only make use of one of the channels (typed by \m{sender} if the party is the committer) and type the other one with $1$.
+For example, communication between \Fcom and a protocol party need only make use of one of the channels (typed by \m{sender} if the party is the committer) and type the other one with $1$.
 In such cases, we omit the second channel from the diagram entirely (see Section~\ref{sec:execuc}.
 However, for simplicity, and to be as generalized as possible, when both channels are used we refer to them as being uni-directional.

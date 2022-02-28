@@ -1,11 +1,11 @@
-There is a large volume of work that introduce tools for modelling UC protocols and reasoning about UC security with some mechanizing UC proof-generation.
+There is a large volume of work that introduce tools for modeling UC protocols and reasoning about UC security with some mechanizing UC proof-generation.
 Most prior work, however, is not able to completely capture the polynomial-time notion that underpins UC security or is limited in their expressibility. 
 
 The EasyUC~\cite{easyuc} work introduces a toolset built on top of the existing EasyCrypt~\cite{easycrypt} to model UC protocols and generate proofs of security.
 It moves past the game-based security limitation of EasyCrypt and achieves the broader simulation-based definitions of UC.
 EasyUC mechanizes UC's notion of simulation-based security and formally verifies UC realization--something Nomos doesn't attempt to do.
 However, it is limited in that it can not detect super-polynomial deviant behavior: their key exchange functionality and the adversary can exchange messages \emph{indefinitely}.
-Therefore, a weakness in this work is that they can not prove a general composition theorem for the UC framework, but, instead, must prove instances of it for a specifif real/ideal protocol/functionality.
+Therefore, a weakness in this work is that they can not prove a general composition theorem for the UC framework, but, instead, must prove instances of it for a specific real/ideal protocol/functionality.
 
 Liao et al.~\cite{ilc} introduce ILC, a process calculus for defining ITMs that extends $\pi$-calculus.
 ILC has a similar drawback in that their polynomial approach requires simulation in both directions to prove UC-realization of a functionality by a protocol.
@@ -15,16 +15,16 @@ This means even simple functionalities realized by protocols can't be judged sec
 %There is large body of similar work that introduces process calculi, some extensions of $\pi$-calculus, like ILC.
 %Mateus et al.~\cite{mateus} for example introduces process calulus for simpler, sequential composition but is constraints to a schedular-based construction where probabilistic state transitions follow unifor distribution at every step.
 %SymbolicUC~\cite{symbolicuc} \todo{finish oter symbolic logic and state their weaknesses and that ther are subsumed by ILC}.
-Morrisett et al.~\cite{ipdl} propose IPDL which aims to imprtove on EasyUC by providing a better notion of emulation, more akint to the UC framework.
+Morrisett et al.~\cite{ipdl} propose IPDL which aims to improve on EasyUC by providing a better notion of emulation, more akin to the UC framework.
 IPDL symbolically tracks the run time of programs but can only do so for straight-line programs or those with statically upper-bounded loops, i.e. programs without dynamic loops or recursion. 
-This procludes constructs like the multisession operator, presented later in this work, from being expressed in IPDL.
+This precludes constructs like the multisession operator, presented later in this work, from being expressed in IPDL.
 The operator enables an arbitrary number of instances of an underlying protocol or functionality, whereas IPDL requires a fixed upper bound in order to reason about its runtime. 
 Further, the protocols in IPDL can not dynamically choose which channels to write on because channels have static dependencies for when to ``fire''.
 NomosUC is not bound by such limitations and can express a wider range of programs while still ensuring polynomial time execution.
 
 NomosUC adds to the body of prior work by using resource-aware session types~\cite{das} to describe protocols, functionalities, and their behavior. 
 Session types express the steps and communication in a protocol at the type level, and offer greater tooling for creating large protocols with smaller, modular pieces. 
-Resource-aware session types add a mechanism calld potential, that we use to implment the import mechanism described in the UC framework.
+Resource-aware session types add a mechanism called potential, that we use to implment the import mechanism described in the UC framework.
 Import provides a more precise notion of polynomial time in UC (refer to the UC framework~\cite{uc}), and, to the best of our knowledge, this is the first such work to implement and create tooling around it. \todo{surely there is better wording than ``create tooling around it'' to get across the point I'm trying to make}.
 
 

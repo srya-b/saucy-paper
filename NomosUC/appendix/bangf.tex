@@ -1,4 +1,4 @@
-In this section we give more extensive code on how themultisession extension work. We also exlore Theorems \ref{thm:squash} and \ref{thm:functor} in greater detail, and, specifically address the proof obligation for both.
+In this section we give more extensive code on how the multisession extension work. We also explore Theorems \ref{thm:squash} and \ref{thm:functor} in greater detail, and, specifically address the proof obligation for both.
 
 \subsection{!\F}
 The multisession operator presents the same interface to \inline{execUC} as any other functionality.
@@ -19,7 +19,7 @@ both of which are parameterized by the functionality message types \inline{a} an
 
 
 Recall that all functionalities are run inside some shell code, and their shell code communicates with communicators to other parities--we can call this a functionality wrapper as it wraps around the actual functionality code.
-The multisession operator runs each instance of the functionaly inside the wrapper, and provides each with ``virtual'' communicators for \A and the \partywrapper.
+The multisession operator runs each instance of the functionality inside the wrapper, and provides each with ``virtual'' communicators for \A and the \partywrapper.
 
 The !\F, on input from the \partywrapper, reads a message from the communicator and then does the following:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, numbers=left]
@@ -58,7 +58,7 @@ $\nproc$ f_multisession_p2f_input[K][K1]{p2fn,f2pn} :
 }
 \end{lstlisting}
 
-First it checks whether the \m{ssid} exists. It not it spawns new communcators for the instance \F: two for the \partywrapper and two for \A.
+First it checks whether the \m{ssid} exists. It not it spawns new communicators for the instance \F: two for the \partywrapper and two for \A.
 It then grabs the \inline{#p2f} channel for $\F_{\m{ssid}}$, creates the appropriate virtual tokens and sends the message along that channel.
 Finally, after handling the incoming message, it moves to the next step of checking for outgoing messages, to the \partywrapper, from each \F by calling \inline{f_multisession_f2p_i}.
 The function accepts an integer at the end, in this example 0, which is the index to check in the communicator list. Eventually all communicators in the list are checked.

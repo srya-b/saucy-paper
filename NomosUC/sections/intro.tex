@@ -4,12 +4,12 @@ UC has caught on not just in cryptography, increasingly other computer security 
 Especially in blockchain applications such as payment channels.
 
 The central idea of the framework is in the ideal functionality: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
-This leads to a modular framework, where larger protocols can be designed using simple ideal functionalitieis, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
+This leads to a modular framework, where larger protocols can be designed using simple ideal functionalities, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
 Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others. However, these have several shortcomings, which we address through the following questions:
 
 \begin{enumerate}
 \item 
-As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand. Can we use Session Types as a way of providing more structure and assiting in the analysis of the ideal world models?
+As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand. Can we use Session Types as a way of providing more structure and assisting in the analysis of the ideal world models?
 Session types have been employed in, however there are several reasons they are not an obvious fit.
 UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
 Is it possible to reconcile these, getting some value from session types without restricting the expressiveness of UC?
@@ -49,12 +49,12 @@ a process calculus previously used for encoding the UC.
 We show how to resolve the static nature of session types in Nomos with the dynamic nature of UC in some clever ways. 
 ITMs in UC are flexible enough to allow for arbitrary communication between any two machines or an arbitrary configuration of machines.
 However, the static nature of session types poses new challenges for expressing arbitrary behavior.
-In NomosUC, we abstract the notion of a channel betweeen two processes, into a generic construction, not limited by the constraint
+In NomosUC, we abstract the notion of a channel between two processes, into a generic construction, not limited by the constraint
 if linear times, that, as far as we know, can express any configuration of ITMs.
 Futhermore, we contend the the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
 and arrive at a notion of compositional security that remains surprisingly expressive and generalizable.
 Finally, we provide a systematic approach to converting any UC functionality into one that can be implemented in NomosUC.
-\anote{finish explanation of the technical challenges in making session types while still supporitng the dynamic nature of UC.}
+\anote{finish explanation of the technical challenges in making session types while still supporting the dynamic nature of UC.}
 
 A core novelty of NomosUC is its support for ensuring \emph{resource bounded computation}.
 As is common in cryptography, security of a protocol is expressed via universal quantification
