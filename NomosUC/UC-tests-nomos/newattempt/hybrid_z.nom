@@ -1,54 +1,47 @@
-proc up_to_i[K][K1][K2] :
-	(k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
-	(#z_to_hybrid: comm[z2pmsg[p2f]][K]), (#hybrid_to_z: comm[p2zmsg[f2p]][K]),
 
 
+(* entry point for the environment it chooses w/e sid it wants *)
+(* we create virtual communicators for it that use type K1 *)
 proc env[K][K1][z2p, p2z] :
 	(k: Int), (rng: [Bit]), (#z_to_pw : comm[z2pmsg[z2p]][K]), (#pw_to_z: comm[p2zmsg[p2z]][K]),
 	(#z_to_a: comm[z2amsg[z2a]][K]), (#z_to_a: comm[a2zmsf[a2z]][K])  |- ($ch: EtoZ[a]) =
 {
-	crupt <- pnil[pid] <- ;
-	sid = SID( 'test ') ;
-	#ch.init ;
-	send #ch sid ;
-	send #ch crupt ;
+	(* spawn internally running environment *)
+	#z_z2p <- communicator_init[z2p][K1] <- ;
+	#z_p2z <- communicator_init[p2z][K1] <- ;
+	#z_a2z <- communicator_init[fh2p][K1] <- ;
+	#z_z2a <- communicator_init[p2fh][K1] <- ;
+
+	#z' <- PS.env <- k rng #z_z2p #z_p2z ;
+	sid = recv #z ;
+	clist = recv #z ;
+
+	$ch.init ;
+	send $ch sid ;
+	send $ch clist ; 
+	
+(* TODO turns out we want to buffer output from the itnernal Z because if we attempt to
+		block and wait for it, we can't do anythig ese *)
 	
 	case #ch (
-		init => $z <- env_real[K][K1][K2][z2p, p2z] <- k rng sid #z_to_pw #pw_to_z #z_to_a #a_to_z 
+		start  => $z <- env_create_worlds[K][K1][K2][z2p, p2z] <- k rng sid #z_to_pw #pw_to_z #z_to_a #a_to_z 
 	)			
 }
 
+(* create channels for all of the communciators for all the sub-execucs *)
 proc env_create_worlds[K,K1,K2][z2p, p2z] :
-	...
+	(k: Int), (rng: [Bit]), (#z_to_pw : comm[z2pmsg[z2p]][K]), (#pw_to_z: comm[p2zmsg[p2z]][K]),
+	(#z_to_a: comm[z2amsg[z2a]][K]), (#z_to_a: comm[a2zmsf[a2z]][K])  |- ($ch: pump) =
 {
 	$l_z2ps <- pnil[Int,comm[z2pmsf[p2f]][K1]] <- ;
 	$l_p2zs <- pnil[Int,comm[p2zmsg[f2p]][K1]] <- ;
 
-	(* spawn internally running environment *)
-	#z_z2p <- communicator_init[z2p] <- ;
-	#z_p2z <- communicator_init[p2z] <- ;
-	#z_a2z <- communicator_init[fh2p] <- ;
-	#z_z2a <- communicator_init[p2fh] <- ;
-	
-	$z' <- PS.env <- ... #z_z2p #z_p2z ....
-	(* do this from execUC but change the channel names 
-		$z.start ;
-		(*$d <- $z *)
-		case $z (
-			output =>
-				b = recv $z ;
-				$d.output ; send $d b ;
-			reset =>
-				#z <- release $z ;
-		)
-	*)
-
-	(* TODO turns out we want to buffer output from the itnernal Z because if we attempt to
-		block and wait for it, we can't do anythig ese *)
-
 	$z <- env_multiplex[K][K1][K2] <- #z_z2p #z_p2z #z_a2z #z_z2a $l_z2ps $l_p2zs  ;
 }
 
+(* receive messages fromthe internal Z and create either an ideal execution or the
+real world execution based on if its and ssid came before or after the ith one. On 
+the ith ssid just forward to the real outpt channel of the envirnment. *)
 proc env_multiplex[K][K1][K2] :
 	(k: Int), (rng: [Bit]), (#z_to_pw : comm[z2pmsg[z2p]][K]), (#pw_to_z: comm[p2zmsg[p2z]][K]),
 	(#z_to_a: comm[z2amsg[z2a]][K]), (#z_to_a: comm[a2zmsf[a2z]][K]),
@@ -142,6 +135,11 @@ proc env_multiplex[K][K1][K2] :
 	$ch <- env_p2z_i[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' 0 ; 
 }
 
+(* reading the ith p2z channel in the list of communicators and forward that message to 
+   the internally simulated Z. These are already of the right virtual token type K1 so we 
+	 don't need to do any extra work. Function calls itself with increasing values of i and 
+	 then proceed to the next part of the environment where it reads the real p2z channel
+	 and forwards that to the internal Z *)
 proc env_p2z_i[K][K1][K2]:
 	(k: Int), (rng: [Bit]), (#z_to_pw : comm[z2pmsg[z2p]][K]), (#pw_to_z: comm[p2zmsg[p2z]][K]),
 	(#z_to_a: comm[z2amsg[z2a]][K]), (#z_to_a: comm[a2zmsf[a2z]][K]),
@@ -163,9 +161,9 @@ proc env_p2z_i[K][K1][K2]:
 				send #z_p2z msg ;
 			no =>
 		)
-		$ch <- env_p2z_i[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' 1 ;
+		$ch <- env_p2z_i[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' (i++) ;
 	else
-		$ch <- env_real_p2z[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' 1 ;
+		$ch <- env_real_p2z[K][K1][K2] <- ... #z_z2p #z_p2z #z_z2a #z_a2z $l_z2ps' $l_p2zs' (i++) ;
 }
 
 (* TODO rest of the environment code for handling real p2z and p2a messages *)
