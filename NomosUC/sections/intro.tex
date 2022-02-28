@@ -46,7 +46,14 @@ a process calculus previously used for encoding the UC.
 %the interface and resource requirements that the protocol offers to the environment in the ideal world, and the specific protocol 
 %message and import exchange between the two parties in the real world.
 
-We show how to resolve session types in Nomos...
+We show how to resolve the static nature of session types in Nomos with the dynamic nature of UC in some clever ways. 
+ITMs in UC are flexible enough to allow for arbitrary communication between any two machines or an arbitrary configuration of machines.
+However, the static nature of session types poses new challenges for expressing arbitrary behavior.
+In NomosUC, we abstract the notion of a channel betweeen two processes, into a generic construction, not limited by the constraint
+if linear times, that, as far as we know, can express any configuration of ITMs.
+Futhermore, we contend the the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
+and arrive at a notion of compositional security that remains surprisingly expressive and generalizable.
+Finally, we provide a systematic approach to converting any UC functionality into one that can be implemented in NomosUC.
 \anote{finish explanation of the technical challenges in making session types while still supporitng the dynamic nature of UC.}
 
 A core novelty of NomosUC is its support for ensuring \emph{resource bounded computation}.
@@ -62,6 +69,11 @@ the execution cost in terms of the security parameter.
 The soundness of our approach is achieved by proving a \emph{preservation theorem}
 which states that well-typed processes in NomosUC are ``locally polynomial time"
 in the sense required by UC.
+
+We validate our approach to UC both through realizing traditional UC theorems and through examples which showcase our emulation definition and composition operators.
+In Section~\ref{sec:execuc} we are able to express a composition theorem that is parametric in the type of the protocol, and showcase its generalizability through an example 
+by applying it to coin flip functionality \Fflip in Section~\ref{sec:commitment}.
+Ww show how to systematically convert \Fflip to a functionality that can be expressed in NomosUC, realize it with a protocol relying in a bit commitment \Fcom, and demonstrate the generalizability of our composition theorem by composing $\pi_{\m{flip}}$ with a protocol $\pi_{\m{com}}$ that realizes \Fcom.  
 
 \anote{Explain more of the validation we accomplish by completing the standard composition operators in UC.}
 \anote{Explain more of the highlights from our \Fflip case study.}
