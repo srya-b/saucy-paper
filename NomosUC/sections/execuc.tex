@@ -234,7 +234,7 @@ The \partywrapper alone does constant work per activation, therefore, in either 
 \begin{figure}
 	\centering
 	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
-	\caption{An instance of a single protocl party. The party $\pi_{pid}$ is the shell code around the actual protocol akin to Figure~\ref{fig:newpandq}, and it is given communicators for communication in both directions.}
+	\caption{An instance of a single protocol party. The party $\pi_{pid}$ is the shell code around the actual protocol akin to Figure~\ref{fig:newpandq}, and it is given communicators for communication in both directions. The dotted box encapsulates all the code that the \partywrapper creates for each party.}
 	\label{fig:singlemultiplex}
 	\vspace{-3mm}
 \end{figure}
@@ -329,6 +329,40 @@ The \partywrapper alone does constant work per activation, therefore, in either 
 The adversary, much like the environment, is providing input to the protocol and functionalities. Specifically to corrupt parties and for special adversarial capabilities in the functionality.
 Unlike protocols and functionalities, for which enforcing messages ordering for protocols is important, the adverasary in NomosUC is not session typed and receives inputs from \Z in the form of functional messages.
 Furthermore, it communicates with functionalities and \pw through functional messages and relies on their types to enforce message ordering.
+
+\paragraph{Arbitrary Parties}
+The example we've used throughout this paper, \Fcom, supports only a limited number of parties.
+We realize the functionality, in Section~\ref{sec:commitment}, with a protocol that uses random oracle \Fro--an idealize hash function.
+This functionality allows for an arbitrary number of parties to write to it, and is the first example so far that makes use of the arbitrary parties support.
+An environment that uses our arbitrary party mechanism is shown in Figure~\ref{fig:envarb}.
+
+\begin{figure}
+	\centering
+	\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+$\nproc$ env_ro[K] :
+  (k: Int), (rng: [Bit]), (sid: session[a]),
+  (#z_to_pw: comm[z2pmsg[rop2f]]), (#pw_to_z: comm[p2zmsg[rof2p]]),
+  (#z_to_a: comm[z2amsg[roa2f]]), (#a_to_a: comm[a2zmsg[roz2a]]) |- (#ch: EtoZ[a]) =
+{
+  ...
+  b <- $\yo{sample}$ rng 5 ;
+  i = 0 
+  $\nwhile$ i < b {
+    p <- $\tb{sample}$ rng k ;
+    #z_to_pw.SEND ;
+    $\tg{(* each call spawns a new party with pid=i *)}$
+    $\nsend$ #z_to_pw Z2P(i, QHash(p)) ;
+    ...
+  }
+  $\$$ch.output ;
+  $\nsend$ $\$$ch 1 ;
+}
+	\end{lstlisting}
+	\caption{An example of an environment that spawns an arbitrary number of parties. For the sake of clarity we present this example without the use of any import.}
+	\label{fig:envarb}
+\end{figure}
+    	
+
 
 \subsection{Polynomial Bound}
 The security of the UC framework relies on computational constraints on adversaries, and, generally, on what all ITMs can do.
@@ -588,24 +622,11 @@ The composition operator allows replacement of a functioality with a protocol re
 
 Say a protocol $\pi$, using hybrid functionality $\F_1$, realizes functionality $\F_2$. 
 For a protocol $\rho$ that uses $\F_2$, replacement of the functionality with $\pi$ means connected patries of $\rho$ to the corresponding party of $\pi$ within the \partywrapper.
-We present a generic composition operator that works for any protocol, and a more specific, but cleaner, that works for only protocols where parties have one channel to the functionality, like \Fcom.
-The reason we present two is that many functionalities can be expressed via a single session type, and simplifying composition among these processes leads to more intuitive replacement.
 
-The basic composition operator replicated communication in Figure~\ref{fig:newpandq} and connects parties of \RHO and parties of \PI be means of a communicator.
+The basic composition operator replicates communication in Figure~\ref{fig:newpandq} and connects parties of \RHO and parties of \PI be means of a communicator. This communicator is not shown as we retain the abstract notion given in Fig~\ref{fig:newpandq}.
 Within the party wrapper, both \RHO and \PI are connected by multiple session-typed channels to \Z and to \F, and those channels connected to generated processes which read communicator messages and ofrward them to/from the party.
-When we compose two protocols we retain all of these processes and re
-
-\begin{figure}
-	\centering
-	\includegraphics[scale=0.5]{figures/generalcomposition.pdf}
-	\caption{Composing a party of $\rho$ with a party of $\pi$ maintains the respective protocols' intermediate processes and connects them with a communicator in the way of Figure~\ref{fig:newpandq}.}
-	\label{fig:generalcomp}
-	\vspace{-3mm}
-\end{figure}
-
-The protocol party $\rho_i$ that is connected to its \inline{p2f} process with a channel of type $\mb{a}$ is connected to party $\pi_i$ with the same channel.
-Party $\pi_i$ is, in turn, then connected to its \inline{p2f}.
-This replacement is visually described in Figure~\ref{fig:replacement}.
+When we compose two protocols we connect them in the natural way, and the communicators reflect the appropriate type between the party and \Z and the party and \F. This replacement is seen in Figure~\ref{fig:replacement}.
+Recall that the shell codes are generated by the UC-executions of each of \RHO and \PI, and the composition operator duplicates their code here.
 
 %In this section we present a simplified composition theorem and a second theorem we call the squash theorem.
 %These two theorems combine later in the section to prove the full UC composition theorem as it appears in the UC framework~\cite{uc}.
@@ -622,29 +643,29 @@ This replacement is visually described in Figure~\ref{fig:replacement}.
 
 \begin{figure}
 \centering
-\includegraphics[scale=0.5]{figures/replacement.pdf}
-\caption{When we compose protocols we replace the \emph{p2f} process of $\rho$ with the corresponding instance of $\pi$ and its \emph{p2f} processes. By the emulation theorem, the channel offered by $\rho$ and accepted by $\pi$ have the same type.}
+\includegraphics[scale=0.5]{figures/newcompose.pdf}
+\caption{When we compose two protocols, we connect the two corresponding parties of each (with the same \m{pid}, in the way of Figure~\ref{newpandq}. The arrows between \RHO and \PI abstract away communicatior details. The communicators on the right side of \PI correspond to the type of \PI with it's hybrid \F.}
 \label{fig:replacement}
 \end{figure}
 
-The code for the operator has the same type as any other protocol except, from the description above, it's offered channel is for the type of the functionality $\F_1$ instead of $\F_2$.
-We rely on the code generation for to handle spawning instaces of a \inline{p2f} process corresponding to $\pi$ rather than $\rho$.
-The operator is given in Figure~\ref{lst:compose}.
-\begin{figure}
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\tb{proc}$ compose[K][z,p]:
-  (pid: Int), (rng: [Bit]), (sid: session[1]),
-  (pid: Int), ($\$$z2p: z) |- ($\$$c: p) =
-{
-  $\$$ch <- PS.rho <- k rng sid pid $\$$z2p ;
-  $\$$c <- Ps.pi <- k rng sid pid $\$$ch 
-}
-\end{lstlisting}
-\caption{The composition operator accepts the same parameters as any other protocol party and offers the channel of type $p2f$ of the realizing protocol $\pi$. We connect $\rho$ to $\pi$ as an environment giving input to $\pi$. We do not need to include any import in our composition operator as the two protocols are guaranteed to be well-matched by the emulation definition. The operator replaces only one party (one \msf{pid}), and the \partywrapper instantiates parties that run the composed protocol.}
-\label{lst:compose}
-\end{figure}
+%The code for the operator has the same type as any other protocol except, from the description above, it's offered channel is for the type of the functionality $\F_1$ instead of $\F_2$.
+%We rely on the code generation for to handle spawning instaces of a \inline{p2f} process corresponding to $\pi$ rather than $\rho$.
+%The operator is given in Figure~\ref{lst:compose}.
+%\begin{figure}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+%$\tb{proc}$ compose[K][z,p]:
+%  (pid: Int), (rng: [Bit]), (sid: session[1]),
+%  (pid: Int), ($\$$z2p: z) |- ($\$$c: p) =
+%{
+%  $\$$ch <- PS.rho <- k rng sid pid $\$$z2p ;
+%  $\$$c <- Ps.pi <- k rng sid pid $\$$ch 
+%}
+%\end{lstlisting}
+%\caption{The composition operator accepts the same parameters as any other protocol party and offers the channel of type $p2f$ of the realizing protocol $\pi$. We connect $\rho$ to $\pi$ as an environment giving input to $\pi$. We do not need to include any import in our composition operator as the two protocols are guaranteed to be well-matched by the emulation definition. The operator replaces only one party (one \msf{pid}), and the \partywrapper instantiates parties that run the composed protocol.}
+%\label{lst:compose}
+%\end{figure}
 
-The resulting composition operator, which composes the two simulators \SIM{\rho} and \SIM{\pi} inside the construction simulator, is best described in text as the resulting code is too verbose to include in the main body of this paper.
+We further require a composition operator for simulators and we briefly describe, in writing, how to connect two simulators \SIM{\rho} and \SIM{\pi} inside the construction simulator.
 You can find the full simulator composition operator in the appendix.
 \begin{itemize}
 	\item Input from \Z is split between the two simulators
@@ -676,8 +697,6 @@ Another illustrative description of what composition proposes, logically, is sho
 \equiv \; & \msf{execUC} \: (\Z \circ \rho) \, \pi \, \F_1 \, \DA \\
 \approx \; & \msf{execUC} \: (\Z \circ \rho) \, \idealP \, \F_2 \, \SIM{\pi} \\
 \equiv \; & \msf{execUC} \: \Z \, \rho \, \F_3 \, (\SIM{\pi} \circ \SIM{\rho})
-%\approx \; & \msf{execUC} \: (\Z \circ \Sim{\pi}) \, \idealP \, \F_3 \, \Sim{\rho} \\
-%\equiv \; & \msf{execUC} \: \Z \, \idealP \, \F_3 \, (\Sim{\pi} \circ \Sim{\rho}) 
 \end{align}
 
 %\item Inputs from \Z of \inline{Z2A2P(msg)} are passed to \SIM{\rho}, and inputs of \inline{Z2A2F(msg)} are passed to \SIM{\pi}.  
