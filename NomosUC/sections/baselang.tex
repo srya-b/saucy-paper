@@ -281,18 +281,69 @@ Communicators act as a buffer between two processes allowing them to exchange me
 Communicators also break the parent-child relationship by offering a \emph{shared channel that can have multiple clients}
 (unlike linear channels that can have only one client) that is then used by both the sender and receiver processes.
 
-In order to enable  we let $P$ and $Q$ communcate over two channels, each through a process called the communicator.
-The communicator behaves like a channel buffer that allows one party to send a message to another one that must poll the communicator for it.
-Its type is given is given.
+The communicator has the following polymorphic type:
 \begin{center}
 \parbox{0cm}{
 \begin{tabbing}
-$\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$\\
-\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{a} \product \down \m{comm[a]},$\\
-\>\>$\mb{no}: \down \m{comm[a]}}}$
+$\m{comm[\tau]} = \up \echoice{$\=$\mb{SEND}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
+\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},
+\mb{no}: \; \down \m{comm[\tau]}}}$
 \end{tabbing}}
 \end{center}
-This type introces new operators $\up$ and $\down$. These operators indicate that this is the type of a \emph{shared channel} that allows multiple clients to use the same channel to communicate with its provider. It is an extension to session types proposed by Balzer et al.~\cite{balzer2017manifest}, and it allows session types to capture programming scenariors where cycles naturally occur (ring networks, dining philosophers, etc.). 
+The communicator type relies on shared type constructors $\up$ and $\down$.
+The type initiates with an $\up$ indicating that the communicator channel must be \emph{acquired} to interact with it.
+Because the channel has two clients (the sender and the receiver), either of them can send this acquire request.
+Once acquired, the sender uses the $\mb{SEND}$ branch of the type while the receiver interacts with the $\mb{RECV}$ branch.
+In the former case, the communicator receives the $\mb{SEND}$ message from the sender followed by the actual
+message of type $\tau$ as indicated by the $\arrow$ constructor.
+Then, the type transitions to $\down$ meaning that the sender sends a \emph{release} request to the communicator effectively
+detaching from it so that the receiver can interact with the communicator.
+In the latter case, the communicator gets the $\mb{RECV}$ request from the receiver and checks whether the there is a message
+waiting for the receiver or not.
+If a message is found, the communicator replies with a $\mb{yes}$ message followed by the message of type $\tau$, and if not,
+the $\mb{no}$ message is sent.
+Finally, in either case, the communicator detaches from the receiver as indicated by the $\down$ constructor.
+
+Shared session types impose an \emph{acquire-release} discipline on processes; 
+a client must acquire the channel offered by a shared process to interact with it
+and must release this channel after the interaction.
+The corresponding typing rules are
+\begin{mathpar}
+  \infer[\up L]
+  {\Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
+  \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
+  {\Tokens \semi \Psi \semi \D, (y : A_L)
+  \entailpot{q}{q'} Q :: (z : C)}
+  %
+  \and
+  %
+  \infer[\up R]
+  {\Tokens \semi \Psi \semi \D \entailpot{q}{q'}
+  \eaccept{y}{x} \semi P :: (x : \up A_L)}
+  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
+\end{mathpar}
+The $\up L$ rule describes a client acquiring a shared channel $x$
+and obtaining a private linear channel $y$ along which it can communicate
+with the corresponding acquired process.
+Correspondingly, the $\up R$ rule describes the shared process
+accepting the acquire request and creating the fresh linear channel $y$.
+The release-detach rules corresponding to the $\down$ type constructor
+are exact dual of acquire-accept.
+
+An important caveat here is that shared channels can introduce non-determinism
+in the semantics since multiple clients can send the acquire request simultaneously.
+To address this problem, we require that the acquiring client \emph{possess
+the write token}.
+Since write tokens are treated as a linear quantity, only one of the client can
+possess it enabling only that process to acquire the shared channel.
+Remarkably, this write token can resolve both read and write non-determinism
+due to linearity of the channels.
+
+
+
+These operators indicate that this is the type of a \emph{shared channel} that allows multiple clients to use the same
+channel to communicate with its provider. It is an extension to session types proposed by Balzer et al.~\cite{balzer2017manifest},
+and it allows session types to capture programming scenariors where cycles naturally occur (ring networks, dining philosophers, etc.). 
 Communicators offer a session type but the parametric type \m{a} is restricted to functionally typed messages.
 
 Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, using communicators and some useful shell code.
@@ -317,111 +368,8 @@ Although the process code for terms $a$ and $b$ differ based on the session type
 	\caption{Two ITM configurations. One possible with ITMs (left) and one realized in NomosUC (right). Arrows indicate direction of messages and the dot indicates the provider of the channel.}
 \end{figure}
 
-In general, we reresent communication between any two ITMs as two communicators intermediated channels along with shell code. 
+In general, we represent communication between any two ITMs as two communicators intermediated channels along with shell code. 
 We further don't restrict the types of the two channels, and allow them to each be bidirectional as well.
 For example, communication betwen \Fcom and a protocol party need only make use of one of the channels (typed by \m{sender} if the party is the committer) and type the other one with $1$.
 In such cases, we omit the second channel from the diagram entirely (see Section~\ref{sec:execuc}.
 However, for simplicity, and to be as generalized as possible, when both channels are used we refer to them as being uni-directional.
-
-\paragraph*{\textbf{Shared Channels}}
-Until now, we have only described the linear fragment of session types
-in Nomos.
-Unfortunately, this fragment imposes a strong restriction on programs.
-The only provision to spawn new processes is when a parent process creates a new
-child process, and uses an exclusive linear channel to communicate with the child.
-Thus, any two processes connected by a channel inherently maintain this parent-child
-relationship.
-Intuitively, this leads to a linear tree-like hierarchy among the processes,
-thus preventing a cycle in the process graph.
-
-Unfortunately, this restriction precludes practical programming scenarios
-where process topologies indeed have a cyclic dependency (e.g. ring networks,
-dining philosophers, etc.).
-Recognizing this limitation, Balzer et al.~\cite{balzer2017manifest} proposed
-a \emph{shared} extension of session types that allows arbitrary process topologies.
-The types are extended as follows:
-\begin{center}
-\begin{minipage}{0cm}
-\begin{tabbing}
-$A_L ::= \down A_S \mid \ldots \text{(all linear types $A$ so far)}\ldots$\\
-$A_S ::= \up A_L$
-\end{tabbing}
-\end{minipage}
-\end{center}
-We have found this extension exceedingly helpful in the design and implementation
-of cryptographic protocols.
-
-Shared session types impose an \emph{acquire-release} discipline on processes; 
-a client must acquire the channel offered by a shared process to interact with it
-and must release this channel after the interaction.
-The corresponding typing rules are
-\begin{mathpar}
-  \footnotesize
-  \infer[\up L]
-  {k \semi \Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
-  \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
-  {k \semi \Tokens \semi \Psi \semi \D, (y : A_L)
-  \entailpot{q}{q'} Q :: (z : C)}
-  %
-  \and
-  %
-  \infer[\up R]
-  {k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'}
-  \eaccept{y}{x} \semi P :: (x : \up A_L)}
-  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
-\end{mathpar}
-The $\up L$ rule describes a client acquiring a shared channel $x$
-and obtaining a private linear channel $y$ along which it can communicate
-with the corresponding acquired process.
-Correspondingly, the $\up R$ rule describes the shared process
-accepting the acquire request and creating the fresh linear channel $y$.
-The release-detach rules corresponding to the $\down$ type constructor
-are exact dual of acquire-accept.
-
-An important caveat here is that shared channels can introduce non-determinism
-in the semantics.
-The only source of non-determinism is that a shared process can latch on to
-any of the acquiring clients.
-To address this problem, we require that the acquiring client \emph{possess
-the write token}.
-Since write tokens are treated as a linear quantity, only one of the client can
-possess it enabling only that process to acquire the shared channel.
-Remarkably, this write token can resolve both read and write non-determinism
-due to linearity of the channels.
-
-
-%\paragraph*{\textbf{Shared Channels}}
-%\todo{Here I'm not too sure on whether this is enoug information or if it's correct.}
-%Linear channels are exclusive to the parent and child that are at their endpoints.
-%Balzer et al.~\cite{balzer2017manifest} proposed a \emph{shared} extension of session types which allows them to capture more natural programming scenarios where cyles naturally occurrs (ring network, dining philosophers, etc.).
-%Shared channels are still restricted to one provider but can be used by multiple clients to communicate with the provider. 
-%They introduce non-determinism that isn't present in UC where many clients can be attempting to communciate with the same provider, however, NomosUC borrows the write token from ILC to ensure activation and control are always with only on process at a time.
-%
-%\paragraph*{\textbf{Communicators}}
-%Communicators act as channel buffers that two parties can use to communicate to each other.
-%The shared type of the communicators is given by 
-%\begin{center}
-%\parbox{0cm}{
-%\begin{tabbing}
-%$\m{comm[a]} = \up \echoice{$\=$\mb{SEND}: \m{a} \product \m \down \m{comm[a]},$\\
-%\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{a} \product \down \m{comm[a]},$\\
-%\>\>$\mb{no}: \down \m{comm[a]}}}$
-%\end{tabbing}}
-%\end{center}
-%The $\up$ and $\down$ operations around the session type indicate that it is \emph{shared}, and they denote a \emph{critical section} analogous to traditional concurrency controls like the mutex.
-%The type suggests that one party can send a message to the communicator, the communicator, buffers the message, and responds with it when asked to \m{RECV} is from a another process.
-%
-%Communicators are parametric in a messages type \inline{a}.
-%Only channels in Nomos can be session typed, and  allowing channels to be sent over communicators enables flawed non-UC behavior.
-%Therefore, communicators are limited to buffering functionally typed messages.
-%This places extra functionality in the two spawned processes inside $S_1$ in Figure~\ref{fig:new_p_and_q}: the process must read functionally typed message and then send one on its session-typed channel and vice versa.
-%
-%In general, mapping between functional and session-typed messages is achieved through a simple mapping between types and represents a systematic approach to intermediating communcation between $P$ and $Q$.
-%As we show in Section~\ref{sec:execuc}, we repeat this design pattern and rely on the creation of protocol-specific processes to conver functionally typed messages to session-typed messages.
-
-
-%\section{Syntax Sugar}
-%The machnery that we have introduced around NomosUC processes to achieve the expressiveness of ITMs is systematic in nature and can be statically defined given some protocol specification.
-%In this section we consider some syntatic sugar and automation around some parts of the NomosUC.
-%
-%The first, and arguably most important, part of the 
