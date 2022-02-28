@@ -377,22 +377,23 @@ Second, we add $k$ to reflect a more natural notion of import and modularity in 
 In NomosUC, we build import into the type system to be able to reason about ITMs being locally polynomial time given some polynomial $T$.
 Specifically, the system provides novel constructs to exchange import, generate potential from that import, and create virtual import for virtualization and cryptographic reductions.
 The language additionally encodes the computational cost of each operation performed by an ITM, and statically guarantees that the execution cost of each ITM is locally polynomial in the net import it has over its entire execution. 
-In this section show the soundness of our import definition by extending the local polynomial guarantee to show that the entire UC experiment is PPT in the security parameter $k$.
+Therefore, our type system subsumes the need to reason that our handling of polynomial time can judge local polynomial time.
+Instead, in this section, show the soundness of our import definition by extending the local polynomial guarantee to show that the entire UC experiment is PPT in the security parameter $k$.
 
-We first define what it means to be PPT for a process, or term, in NomosUC. 
-\todo{experimental addition of the $\leq$ in the definition below, unclear if that is a good decision}
+%We first define what it means to be PPT for a process, or term, in NomosUC. 
+%\todo{experimental addition of the $\leq$ in the definition below, unclear if that is a good decision}
 \begin{ddef}[PPT in $k$]\label{def:ppt}
-A term $e(k,r)$ is \emph{well-resource-typed} and PPT if, given some amount of initial import $n$, there exists a polynomial $T(n,k)$ such that $\forall k, r, e(r,k) \{n\}$ terminates in at most $T(n,k)$ steps.
-We use the notation $e(r,k) \leq T(n,k)$ to refer to a PPT process.
+A closed term $e(k,r)$ is  PPT in the $k$ if, given some amount of initial import $n$ polynomial in $k$, there exists a polynomial $T(n,k)$ such that $\forall k, r, e(r,k) \{n\}$ terminates in at most $T(n,k)$ steps.
+We use the notation $e(r,k) \leq T(n,k)$ to refer to such a PPT process.
 \end{ddef}
 Notice that our choice of polynomial representation, a function of both the import and security parameter $k$, only partially defines PPT in terms of the security parameter. It still remains to be shown that the system is polynomial \emph{only} in $k$.
 
-%\begin{proof}
-%The Nomos type system only type checks programs for which a satisfying assignment of polynomial $T$ is possible.
-%Given an $n \in poly(k)$, all programs that type check must be \textit{well-resource-typed.}
-%%The Nomos type system guarantees that a satisfying assignment of $n$ and $T$ will correctly type-check.
-%%Therefore, given an initial amount of import $n(k) \in poly(k)$, the existence of some $T$ ensures that any process, regardless of its randomized execution according to the bit sequence $r$, $e$ is guarantees to be upper-bounded by $poly(k)$ satisfying the definition of probabilistic polynomial time in $k$.
-%\end{proof}
+\begin{proof}
+The Nomos type system already guarantees us that open terms which type-check must be polynomial. 
+Here closed terms that receive some import $n$ polynomial in $k$ and bounded by a polynomial in $k$, $T(n,k)$, are also polynomial in $k$ in the traditional sense of UC.
+%The Nomos type system guarantees that a satisfying assignment of $n$ and $T$ will correctly type-check.
+%Therefore, given an initial amount of import $n(k) \in poly(k)$, the existence of some $T$ ensures that any process, regardless of its randomized execution according to the bit sequence $r$, $e$ is guarantees to be upper-bounded by $poly(k)$ satisfying the definition of probabilistic polynomial time in $k$.
+\end{proof}
 
 %We demonstrate that our local PPT definition implies a PPT UC execution by adapting Proposition 7 from the UC framework to the NomosUC setting.
 %Our sandboxing mechanism and \inline{withdrawTokens} procedure let us simulate the well-resource-typed ITMs, in the UC execution, within one ITM.
@@ -408,9 +409,12 @@ Given the initial input of import tokens into the machine ($poly(k)$ amount of i
 In NomosUC, we do not deal directly with ITMs, however, our type system allows us to judge whether a process, or collection of processes through the Preservation Theorem~\ref{thm:preservation}, is locally PPT given a particular polynomial. 
 We use this judgement as a foundation and adapt Proposition 7 from UC~\cite{uc} to NomosUC, and show that our notion of locally PPT leads to a UC execution that is PPT in the security parameter $k$.
 
-\todo{Define \F, \A, \Z, \m{PW}(\PI) as configurations that include the communicators to be used. Just need to create a standard for which direction communicator is part of which configuration.}
+In order to reason about configurations in Theorem~\ref{thm:soundness}, we define the UC execution as a series of configuations that capture the relevant processes--the \partywrapper, \Z, \F, and \A--and the channels that connect them.
+Without loss of generality, we define each relevant process in terms of the its own code and the channels outgoing from it. 
+For example the configuration we refer to as \Z in Theorem~\ref{thm:soundness}, we refer to the term for \Z as well as it's outgoing channels to the \partywrapper, \A, and the \inline{execUC} function itself. We define the other configurations in a similar way.
+
 \begin{theorem} \label{thm:soundness}
-Let \F, \A, \Z, and \m{PW}(\PI) be locally PPT configurations bounded by super additive polynomials $T_\F$, $T_\A$, $T_\Z$, $T_\PI$. Let \m{UC} be a configuration composed of a single process that runs \inline{execUC},. If \m{UC} receives $n \in poly(k)$ import initially, then the composed configuration $\m{UC} = \m{execUC} \; || \; \Z \; || \; \A \; || \; \m{PW}(\PI) \; || \; \F$ is PPT in $k$, where \m{PW} is the \partywrapper.
+Let \F, \A, \Z, and \m{PW}(\PI) be well-resource-typed configurations bounded by super additive polynomials $T_\F$, $T_\A$, $T_\Z$, $T_\PI$. Let \m{UC} be a configuration composed of a single process that runs \inline{execUC}. If \m{UC} receives $n \in poly(k)$ import initially, then any composed configuration $\m{UC} = \m{execUC} \; || \; \Z \; || \; \A \; || \; \m{MX}(\PI) \; || \; \F$ is PPT in $k$, where \m{MX} is the \partywrapper.
 \end{theorem}
 
 \begin{proof}
@@ -418,8 +422,8 @@ The resulting configuration \m{UC} has only one channel in it's context: the cha
 \inline{execUC}, therefore, is the intial process in the configuration and receives the intial import $n \in poly(k)$.
 
 By the \m{compose} rule, the work done by the resulting configuration is strictly the sum of the work done by the composed configurations. 
-The Preservation Theorem in conjunction with \m{compose} ensures type safety of \m{UC}, and allows us to concluce a sufficient bound on the total work done in \m{UC} by the polynomial $T'(n,k) = T_\A(n,k) + T_\Z(n,k) + T_\P(n,k) + T_\F(n,k) + O(1)$ where $n$ is the initial import into the system, and the addition $O(1)$ accounts for the constant bound on \inline{execUC}.
-If we take the intial import $n$ to be polynomial in the security parameter $k$, we conclude that \m{UC} is PPT in $k$.
+The Preservation Theorem, in conjunction with \m{compose}, ensures type safety of \m{UC}, and allows us to concluce a sufficient bound on the total work done in \m{UC} by the polynomial $T'(n,k) = T_\A(n,k) + T_\Z(n,k) + T_\P(n,k) + T_\F(n,k) + O(1)$ where $n$ is the initial import into the system, and the addition $O(1)$ accounts for the constant bound on \inline{execUC}.
+If we take the intial import $n$ to be polynomial in the security parameter $k$, then we conclude that any configuration \m{UC} which type checkes is PPT in $k$.
 \end{proof}
 
 %\paragraph{Sending/Receiving Import}
@@ -494,7 +498,7 @@ Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\ma
 
 UC emulation combines the UC exeution with indistinguishability resuting in the following NomosUC emulation definition.
 \begin{definition}[Emulation]\label{def:emulation}
-Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed, if $\forall \A$ well-matched with $(\pi, \F_1)$, $\exists \Sim$ s.t. $\forall \Z$ well-matched with \A and $(\pi, \F_1)$: \Sim is well-matched with $(\phi, \F_2)$, \Z is well-matched with $(\phi, \Sim)$, and $\msf{execUC}(\pi, \F_1, \Z, \A) \approx \msf{execUC}(\phi, \F_2, \Z, \Sim)$:
+Given two protocols $(\pi, \F_1), (\phi, \F_2)$, which we refer to only by \PI and $\phi$ in the theorem, that are well-resource-typed, if $\forall \A$ well-matched with \PI, $\exists \Sim$ well-matched with $\phi$ s.t. $\forall \Z$ : $\msf{execUC}(\pi, \F_1, \Z, \A) \approx \msf{execUC}(\phi, \F_2, \Z, \Sim)$:
 
 \begin{mathpar}
 \footnotesize
@@ -503,10 +507,10 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed, if
 		%. \models \msf{execUC}[\Tokentypes][\alpha] :: \Delta[\Tokentypes][\alpha] \\ \\ 
 		% Protocols that are well-matched with their functionalities
 		%\pi \rightarrow \Delta_1' \semi \phi \rightarrow \Delta_2' \semi \\
-		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \leq T(n,k) \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \leq T(n,k) \semi \\
+		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
 		%\langle \pi \leftrightarrow \F_2 \rangle, \langle \phi \leftrightarrow \F_1 \rangle \\
 		% Type of execUC[DELTA_pi] and execUC[DELTA_phi]
-		\forall \A \, | \, \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_4' \leq T(n,k), \langle \A \leftrightarrow \pi \rangle \\
+		\forall \A \, | \, \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle \\
 		%\Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \equiv_{\Z} \Delta_1\ 
 		%\semi \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \equiv_\Z \Delta_2 \\
 		% For all A if exists well-typed A that is well-matched with real world
@@ -514,11 +518,11 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed, if
 		%\forall \A | \Delta_4 \vdash \A :: \Delta_4', \langle \A \leftrightarrow \pi \rangle, \langle \A \leftrightarrow \F_1 \rangle \\
 		% implies simulator that is well-matched for ideal world
 		%\Rightarrow \exists (\Delta_3,\Delta_3') \, | \, \Delta_3 \vdash \Sim_\A :: \Delta_3', \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
-		\Rightarrow \exists \Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3' \leq T(n,k), \langle \Sim_\A \leftrightarrow \phi \rangle \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
+		\Rightarrow \exists \Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3', \langle \Sim_\A \leftrightarrow \phi \rangle \\ % \langle \Sim_\A \leftrightarrow \phi \rangle, \langle \Sim_\A \leftrightarrow \F_2 \rangle \\
 		% for all Z they that's well-matched for the real world => Z is well-matched with S and ideal world
 		%\forall \Z (\langle \Z \leftrightarrow \A \rangle, \langle \Z \leftrightarrow \pi \rangle \Rightarrow \langle \Z \leftrightarrow \Sim_\A \rangle, \langle \Z \leftrightarrow \phi \rangle \\
 		% and emulation has to hold
-		\Rightarrow \forall \Z \; (\msf{execUC} \ \pi\ \Z\ \F_1\ \A \leq T(k)) \approx\ (\msf{execUC} \ \phi\ \Z\ \F_2\ \Sim_\A \leq T(k))
+		\Rightarrow \forall \Z  \; \msf{execUC} \ \pi\ \Z\ \F_1\ \A \approx\ \msf{execUC} \ \phi\ \Z\ \F_2\ \Sim_\A
 	}
 	{
 		% EMULATION DEFINITION
@@ -527,8 +531,7 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$ that are well-resource-typed, if
 	}
 \end{mathpar}
 \end{definition}
-The emulation definition above is quite straightforward. It starts with defining the protocols in question and their type under the type parameters passed to \inline{execUC}.
-It then states that for all adversaries that are well-matched with $\pi$ and $\F_1$, there exists a simulator such that the two executions are indistinguishable. 
+The emulation definition requires only that the adverasries in question are well-matched with the protocols being emulated, because our type system ensures that they are well-resource-typed.
 The definition ensures that for emulation to hold, the constructed simulator must be well-matched everywhere \A is well-matched: for all environments \A is well-matched with the \Sim must also be well-matched with.
 
 With this emuluation definition we complete our definition of UC-realization in Definition~\ref{def:realize}.
