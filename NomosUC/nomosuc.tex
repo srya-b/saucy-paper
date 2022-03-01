@@ -20,6 +20,7 @@
 \usepackage{newunicodechar}
 \usepackage{multirow}
 \usepackage{booktabs}
+\usepackage{adjustbox}
 
 %% PL packages
 \usepackage{stmaryrd} 
@@ -42,7 +43,6 @@
   \draw[fill] (0,0)-- (90:#1) arc (90:270:#1) -- cycle ;
   \draw (0,0) circle (#1);
   \end{tikzpicture}}
-
 \newcommand*\halfcircright[1][1ex]{%
   \begin{tikzpicture}
   \draw[fill] (0,0)-- (0:#1) arc (0:90:#1) -- cycle ;
@@ -50,6 +50,13 @@
   \draw (0,0) circle (#1);
   \end{tikzpicture}}
 \newcommand*\fullcirc[1][1ex]{\tikz\fill (0,0) circle (#1);} 
+
+\newcolumntype{R}[2]{
+	>{\adjustbox{angle=#1, lap=\width-(#2)}\bgroup}
+	l
+	<{\egroup}
+}
+\newcommand*\rot{\multicolumn{1}{R{45}{1.5em}}}
 
 
 \definecolor{vert}{RGB}{0,181,0}

@@ -29,19 +29,19 @@ We summarize the imporant features, or lack thereof, of the most closely related
 \begin{figure}[H]
 \centering 
 \begin{table}[H]
-	\begin{tabular}{c | c | c | c | c | c |}
-	& \spheading{Dynamic \# of Parties} & \spheading{Polytime Notion} & \spheading{General Composition Operator} & \spheading{Channels \halfcircleft[0.5ex] or Procedures \halfcircright[0.5ex]} \\
+	\begin{tabular}{l | c  c  c  c | c  c}
+	& \rot{Dynamic \# Parties} & \rot{Polytime Notion} & \rot{General Composition} & \rot{Channels \halfcircleft[0.5ex]} & \rot{Procedures \halfcircright[0.5ex]} \\
 	\hline
-	IPDL~\cite{ipdl} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & \halfcircleft[0.75ex] \\
-	\hline
-	EasyUC~\cite{easyuc} & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \halfcircright[0.75ex]  \\
-	\hline
-	Barbosa et al.~\cite{barbarosa} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & \halfcircright[0.75ex] \\
-	\hline
-	ILC~\cite{ilc} & \emptycirc[0.75ex] & \halfcircleft[0.75ex] & \emptycirc[0.75ex]  & \halfcircleft[0.75ex]    \\
-	\hline
-	NomosUC (this work) & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \halfcircleft[0.75ex]  \\
-	\hline
+	IPDL~\cite{ipdl} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & \multicolumn{2}{c}{\halfcircleft[0.75ex]} \\
+	%\hline
+	EasyUC~\cite{easyuc} & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \multicolumn{2}{c}{\halfcircright[0.75ex]}  \\
+	%\hline
+	Barbosa et al.~\cite{barbarosa} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & \multicolumn{2}{c}{\halfcircright[0.75ex]} \\
+	%\hline
+	ILC~\cite{ilc} & \emptycirc[0.75ex] & \halfcircleft[0.75ex] & \emptycirc[0.75ex]  & \multicolumn{2}{c}{\halfcircleft[0.75ex]}    \\
+	%\hline
+	NomosUC (this work) & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \multicolumn{2}{c}{\halfcircleft[0.75ex]}  \\
+	%\hline
 	\end{tabular}
 \end{table}
 \caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support except in the last column where \halfcircleft[0.5ex] and \halfcircright[0.5ex] have specific meanings, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column. The first column refers to allowing environments to create an arbitrary number of parties and is criticl to expressing full UC. The second column is whether any reasoning exists about runtime guarantees or polynomial time. The third column refers to suppoting unbounded subsessions of protocols and functionalities to achieve full UC composition. Finally the last column is an design difference in whether the work uses channels or procedure-like calls to communication between processes.}
