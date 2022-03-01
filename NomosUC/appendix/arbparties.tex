@@ -1,0 +1,34 @@
+
+The example we've used throughout this paper, \Fcom, supports only a limited number of parties.
+We realize the functionality, in Section~\ref{sec:commitment}, with a protocol that uses random oracle \Fro--an idealize hash function.
+This functionality allows for an arbitrary number of parties to write to it, and is the first example so far that makes use of the arbitrary parties support.
+An environment that uses our arbitrary party mechanism is shown in Figure~\ref{fig:envarb}.
+
+\begin{figure}
+	\centering
+	\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+$\nproc$ env_ro[K] :
+  (k: Int), (rng: [Bit]), (sid: session[a]),
+  (#z_to_pw: comm[z2pmsg[rop2f]]), (#pw_to_z: comm[p2zmsg[rof2p]]),
+  (#z_to_a: comm[z2amsg[roa2f]]), (#a_to_a: comm[a2zmsg[roz2a]]) |- (#ch: EtoZ[a]) =
+{
+  ...
+  b <- $\yo{sample}$ rng 5 ;
+  i = 0 
+  $\nwhile$ i < b {
+    p <- $\tb{sample}$ rng k ;
+    #z_to_pw.SEND ;
+    $\tg{(* each call spawns a new party with pid=i *)}$
+    $\nsend$ #z_to_pw Z2P(i, QHash(p)) ;
+    ...
+  }
+  $\$$ch.output ;
+  $\nsend$ $\$$ch 1 ;
+}
+	\end{lstlisting}
+	\caption{An example of an environment that spawns an arbitrary number of parties. For the sake of clarity we present this example without the use of any import.}
+	\label{fig:envarb}
+\end{figure}
+
+The environment is well-matched with an execution where dummy parties are used, parties the forward messages from \Z (or \A if they are corrupt) to the functionality, and does the same to messages from \F to \Z.
+    	

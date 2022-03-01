@@ -89,6 +89,8 @@ It reflects that the environment must first determine the session id, or \inline
 Finally, it is told to start and eventually returns an output \inline{bit} indicating it's guess as to whether it's in the real world or the ideal world.
 This output bit, and the environment's decision function, go on to define emulation and indistinguishability later in this section. 
 
+The remainder of the main processes of \inline{execUC} are typed very similarly: accept channels relevant to them, accept all the other same paramters, and don't offer a channel.
+
 %The environment also accepts communicators, as parameters, for communication with the protocol parties and the adversaries (in both directions), and offer a channel \inline{$\$$z} of type \inline{EtoZ}.
 %The type (above) states \Z provides an \emph{sid} of some user-defined type \inline{a} and a list of the \emph{pid}s of corrupted parties. 
 %Finally, \inline{execUC} instructs it to \inline{start} (\emph{external choice}) and return a bit $b$ as its guess for which world it is in.
@@ -188,6 +190,8 @@ The shell code offers four channels, two from \F and two from \Z, that offer the
 For commitment, the processes for \Z offer channels with type \m{sender} or \m{receiver}, and processes for \F offer the type of the hybrid functionality \Fro which we examine later.
 However, because we run parties of \PI internal to the \partywrapper, it runs instances of the shell code for each new spawned party and created communicators around it that it can write/read pid-specific messages to/from.
 Figure~\ref{fig:singlemultiplex} illustrates how the shell code $\pi_{pid}$ is connected to communicators for each direction. This construction is repeated for every new paty spawned inside the \partywrapper.
+
+The examples provided in this work do not directly use protocols that allow for an arbitrary number of parties, so we give an environment in Appendix~\red{appendix:arbparties} that runs an execution with the random oracle \Fro presented in the next section.
 
 %\paragraph{Communicators}
 %One consequence of the \partywrapper and our construction of the UC experiment is that we intermediate communcation between the major processes in NomosUC, with communicators.
@@ -329,40 +333,6 @@ The \partywrapper alone does constant work per activation, therefore, in either 
 The adversary, much like the environment, is providing input to the protocol and functionalities. Specifically to corrupt parties and for special adversarial capabilities in the functionality.
 Unlike protocols and functionalities, for which enforcing messages ordering for protocols is important, the adverasary in NomosUC is not session typed and receives inputs from \Z in the form of functional messages.
 Furthermore, it communicates with functionalities and \pw through functional messages and relies on their types to enforce message ordering.
-
-\paragraph{Arbitrary Parties}
-The example we've used throughout this paper, \Fcom, supports only a limited number of parties.
-We realize the functionality, in Section~\ref{sec:commitment}, with a protocol that uses random oracle \Fro--an idealize hash function.
-This functionality allows for an arbitrary number of parties to write to it, and is the first example so far that makes use of the arbitrary parties support.
-An environment that uses our arbitrary party mechanism is shown in Figure~\ref{fig:envarb}.
-
-\begin{figure}
-	\centering
-	\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-$\nproc$ env_ro[K] :
-  (k: Int), (rng: [Bit]), (sid: session[a]),
-  (#z_to_pw: comm[z2pmsg[rop2f]]), (#pw_to_z: comm[p2zmsg[rof2p]]),
-  (#z_to_a: comm[z2amsg[roa2f]]), (#a_to_a: comm[a2zmsg[roz2a]]) |- (#ch: EtoZ[a]) =
-{
-  ...
-  b <- $\yo{sample}$ rng 5 ;
-  i = 0 
-  $\nwhile$ i < b {
-    p <- $\tb{sample}$ rng k ;
-    #z_to_pw.SEND ;
-    $\tg{(* each call spawns a new party with pid=i *)}$
-    $\nsend$ #z_to_pw Z2P(i, QHash(p)) ;
-    ...
-  }
-  $\$$ch.output ;
-  $\nsend$ $\$$ch 1 ;
-}
-	\end{lstlisting}
-	\caption{An example of an environment that spawns an arbitrary number of parties. For the sake of clarity we present this example without the use of any import.}
-	\label{fig:envarb}
-\end{figure}
-    	
-
 
 \subsection{Polynomial Bound}
 The security of the UC framework relies on computational constraints on adversaries, and, generally, on what all ITMs can do.
@@ -821,15 +791,15 @@ The multisession extension is mentioned in greater detail in the appendix.
 %Furthermore, similar to the functionality wrapper, the multisession operator constructs the processes around \F in the same way and spawns them on-demand.
 %The process definition for $!\F_\msf{com}$ is shown in Figure \ref{lst:bangf} accepting two token types: the real token type $K$ and the virtual token type $K_1$ for instances of $\F_\msf{com}$.
 %
-\begin{figure}
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\tb{proc}$ bangF[K,K1][p2f,...] :
-  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
-  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
-\end{lstlisting}
-\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
-\label{lst:bangf}
-\end{figure}
+%\begin{figure}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+%$\tb{proc}$ bangF[K,K1][p2f,...] :
+%  (k: $\tgr{Int}$), (rng: [Bit]), (sid: session[a]), 
+%  ($\$$p: P2MS[p2f][f2p]) |- ($\$$ch: 1) =
+%\end{lstlisting}
+%\caption{The type definition for the multisession operator for functionalities and the correspond message type and import parameters. The operator for protocol parties is identical in code but differens in that the parameters to the \texttt{P2MS} type are for \texttt{Z2P} interaction.}
+%\label{lst:bangf}
+%\end{figure}
 
 \begin{theorem}[PPT !]\label{thm:bangppt}
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
@@ -838,6 +808,7 @@ If a functionality $\F$ is well-resource-typed, then it's multisession extension
 It easy to see why the multisession extension, performing constant work and being activated a polynomial number of times, remains well-resource-typed and PPT given that \F is PPT.
 We formally treat this and the remaining theorems in this section in the Appendix.
 
+\todo{name this theorem~\ref{thm:functor} something meaningful}
 \begin{theorem}[Something About Functors]\label{thm:functor}
 	\begin{mathpar}
 		\inferrule*[right=somefunctor]
@@ -865,8 +836,6 @@ We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
 	\end{mathpar}
 \end{theorem}
 The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:functor}.
-It is a direct \todo{finish explaining and shove off to the Appendix.}
-
 
 %\begin{proof}
 %A \textit{well-resource-typed} \F guarantees a polynomial $T_{\F}$ bounding its execution.
@@ -903,7 +872,8 @@ It is a direct \todo{finish explaining and shove off to the Appendix.}
 
 \begin{proof} (Theorem~\ref{thm:squash})
 On examination the \msf{squash} theorem does constant work per activation and concantenates two \inline{ssid}s into one for messages going to the functionality and does the inverse for messages incoming from the functionality.
-We provide more detail for a proof of Theorem~\ref{thm:squash} in the Appendix, however, it is clear to see that the this theorem holds with a trivial simulator.
+In other words, it is a direct simulation and the same ideal functionality exists if both worlds.
+We provide more detail for a proof of Theorem~\ref{thm:squash} in Appendix~\ref{app:bangf}, however, it is clear to see that the this theorem holds with a trivial simulator.
 %First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
 %The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
 %
@@ -926,11 +896,11 @@ We provide more detail for a proof of Theorem~\ref{thm:squash} in the Appendix, 
 
 \subsection{UC Composition}
 Finally, we can conclude with full composition in Theorem~\ref{thm:compose}.
-The proof follows directly from Theorems~\ref{thm:singlecomp} and \ref{thm:squash}.
+The proof follows directly from Theorems~\ref{thm:singlecomp}, \ref{thm:squash}, and \ref{thm:functor}.
 
 \begin{proof}
-By Theorem~\ref{thm:singlecomp} we can construct a simulator \SIM{1} for $!!\F_1 \xrightarrow{\rho \, \circ \, !\pi} \F_3$.
-Theorem~\ref{thm:squash} then allows us to ``squash'' $!!\F_1$ and construct a simulator using \SIM{1} for $!\F_1 \xrightarrow{\rho \, \circ \, !\pi \, \circ \, \msf{squash}} \F_3$
+By Theorem~\ref{thm:singlecom} we have that $\F_1 \xrightarrow{\pi} \F_2$. If we combine this result with Theorem~\ref{thm:functor} we can conclude that $!!\F_1 \xrightarrow{\rho \circ !\pi} !\F_3$. 
+Finally we can squash one $!$ operator with Theorem~\ref{thm:squash} to get $!\F_1 \xrightarrow{\rho \circ !\pi \circ \m{squash}} \F_3$.
 \end{proof}
 
 
