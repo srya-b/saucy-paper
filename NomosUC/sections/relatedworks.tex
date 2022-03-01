@@ -23,7 +23,14 @@ This precludes constructs like the multisession operator, presented later in thi
 The operator allows creation of an arbitrary number of subsessions of a functionality and is critical to realizing the full UC composition theorem.
 IPDL further implements a unique communication mechanism that imposes a static dependency between channels ``firing''.
 
-We summarize the imporant features, or lack thereof, of the most closely related work to NomosUC in Figure~\ref{fig}
+We summarize the imporant features, or lack thereof, of the most closely related work to NomosUC in Figure~\ref{fig}.
+The columns are broken up accordinf to the features mentioned in the above discussion.
+The first discusses whether envionment can create an arbitrary number of parties at runtime. There is not partial-support in this category, either it is supported or it isn't.
+The second column broadly covers whether any runtime or polynomial-time analysis/tracking is performed by the project. Notice that there is partial support where ILC provides a restricted notion of polynomial time.
+The third column determines whether full UC-style composition is supported, i.e. replacement of an arbitrary number of functionalities with realizing protocols (the existence of a multisession operator is essential). 
+The last column highlights a design choice of using channel to communiate between machines or some programming-style procedure calls.
+A left half circle indicates the left option, channels, and thr right half circle the other. 
+In general this distinction plays an important role in how communication is captured each work, and whether arbitrary communication pattersn from UC are not fully supported.
 
 % Colums: blank | parties at runtime | notion of UC | polynomial time | generalized composition operator | channels | procedural 
 \begin{figure}[H]
@@ -44,7 +51,7 @@ We summarize the imporant features, or lack thereof, of the most closely related
 	%\hline
 	\end{tabular}
 \end{table}
-\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support except in the last column where \halfcircleft[0.5ex] and \halfcircright[0.5ex] have specific meanings, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column. The first column refers to allowing environments to create an arbitrary number of parties and is criticl to expressing full UC. The second column is whether any reasoning exists about runtime guarantees or polynomial time. The third column refers to suppoting unbounded subsessions of protocols and functionalities to achieve full UC composition. Finally the last column is an design difference in whether the work uses channels or procedure-like calls to communication between processes.}
+\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support except in the last column where \halfcircleft[0.5ex] and \halfcircright[0.5ex] have specific meanings, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column.}%The first column refers to allowing environments to create an arbitrary number of parties and is criticl to expressing full UC. The second column is whether any reasoning exists about runtime guarantees or polynomial time. The third column refers to suppoting unbounded subsessions of protocols and functionalities to achieve full UC composition. Finally the last column is an design difference in whether the work uses channels or procedure-like calls to communication between processes.}
 \label{fig:relatedworks}
 \end{figure}
 
