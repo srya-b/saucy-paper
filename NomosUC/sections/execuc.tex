@@ -41,7 +41,7 @@ Below, we introduce how the UC experiment is implemented in NomosUC, and then pr
 
 \subsection{The UC Experiment}
 The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
-The experiment, parameterized by a security parameter $k$ and source of randomness $r$,is created by an \inline{execUC} function  which spawns all the relevant processes: the environment, a \partywrapper, the adversary, the \fwrapper.
+The experiment, parameterized by a security parameter $k$ and source of randomness $r$,is created by an \inline{execUC} function  which spawns all the relevant processes: the environment, a \partywrapper, the adversary, and the functionality.
 The two wrappers encapsulate the protocol parties and the functionality, respectively, and are necessary to allow dynamic creation of parties. Furthermore, they are connected to each other, and \Z and \A, through communicators (Section~\ref{sec:communicators}).
 
 Virtualization and sandboxing of code is a common design pattern in UC, especially with adversaries and simulators.
