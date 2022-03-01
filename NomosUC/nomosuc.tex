@@ -15,6 +15,12 @@
 \usepackage{listings}
 \usepackage{tabularx}
 \usepackage{bbm}
+%\usepackage{unicode-math}
+\usepackage[utf8]{inputenc}
+\usepackage{newunicodechar}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{adjustbox}
 
 %% PL packages
 \usepackage{stmaryrd} 
@@ -30,6 +36,28 @@
 \begin{document}
 \usetikzlibrary{matrix, arrows.meta, calc, positioning}
 \tikzset{myarrow/.style={-Latex, rounded corners},}
+
+\newcommand*\emptycirc[1][1ex]{\tikz\draw (0,0) circle (#1);} 
+\newcommand*\halfcircleft[1][1ex]{%
+  \begin{tikzpicture}
+  \draw[fill] (0,0)-- (90:#1) arc (90:270:#1) -- cycle ;
+  \draw (0,0) circle (#1);
+  \end{tikzpicture}}
+\newcommand*\halfcircright[1][1ex]{%
+  \begin{tikzpicture}
+  \draw[fill] (0,0)-- (0:#1) arc (0:90:#1) -- cycle ;
+  \draw[fill] (0,0)-- (270:#1) arc (270:360:#1) -- cycle;
+  \draw (0,0) circle (#1);
+  \end{tikzpicture}}
+\newcommand*\fullcirc[1][1ex]{\tikz\fill (0,0) circle (#1);} 
+
+\newcolumntype{R}[2]{
+	>{\adjustbox{angle=#1, lap=\width-(#2)}\bgroup}
+	l
+	<{\egroup}
+}
+\newcommand*\rot{\multicolumn{1}{R{45}{1.5em}}}
+
 
 \definecolor{vert}{RGB}{0,181,0}
 \definecolor{oran}{RGB}{223,74,0}
@@ -114,9 +142,6 @@ To validate our design, we work through the standard theory of UC composition op
 \section{Related Works}
 \input{sections/relatedworks}
 
-%\section{Import}
-%\input{sections/import}
-
 \section{The UC Experiment} \label{sec:execuc}
 \input{sections/execuc}
 
@@ -144,8 +169,11 @@ To validate our design, we work through the standard theory of UC composition op
 \item code for composed simulator
 \end{itemize}}
 
-\section{The Functionality Wrapper} \label{app:fwrapper}
-\input{appendix/fwrapper}
+%\section{The Functionality Wrapper} \label{app:fwrapper}
+%\input{appendix/fwrapper}
+
+\section{Arbitrary Parties} \label{app:arbparties}
+\input{appendix/arbparties}
 
 \section{Dummy Lemma} \label{app:dummy}
 \input{appendix/dummylemma}
