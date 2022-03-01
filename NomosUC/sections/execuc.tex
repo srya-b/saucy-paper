@@ -52,7 +52,7 @@ Therefore, we are unable to pass in a variable number of virtual token types to 
 For example, an execution where the simulator sandboxes the real world adversary, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
 $\tm{import}$ PS 
-$\tb{proc}$ execUC[K][K1][z2p][p2z]...{z2pn}{p2zn}... :
+$\tb{proc}$ execUC[$\tp{K}$][$\tp{K1}$][$\tp{z2p}$][$\tp{p2z}$]...{$\tp{z2pn}$}{$\tp{p2zn}$}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
 \end{lstlisting}
 In general, as we will discuss when introducing the \partywrapper, an execution always requires at least one virtual token type.
@@ -78,13 +78,13 @@ The environment is the first machine that \inline{execUC} spawns and receives fr
 It can be considered the \emph{first} ITM in the execution.
 Its role in the execution is specified by the type \inline{EtoZ} of the channel it offers.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-$\Type$ EtoZ[a] = +{init: a ^ list[pid] -> exec} 
+$\Type$ EtoZ[$\tp{a}$] = +{init: a ^ list[$\tp{pid}$] -> exec} 
 $\Type$ exec = &{start : output_bit} ;
 $\Type$ output_bit = +{bit: Bit -> 1} ;
 
-$\tb{proc}$ PS.env[K][z2p,...]{p2zn,...} : 
-  (k: $\tgr{int}$), (r: [Bit]), (#ztop: comm[z2pmsg[z2p]]{z2pn}), 
-  (#ptoz: comm[p2zmsg[p2z]]{p2zn})...  |- ($\$$z : EtoZ) $\tg{(* <- offered channel *)}$
+$\tb{proc}$ PS.env[$\tp{K}$][$\tp{z2p,...}$]{$\tp{p2zn,...}$} : 
+  (k: $\tgr{int}$), (r: [Bit]), (#ztop: comm[$\tp{z2pmsg[z2p]]{z2pn}}$), 
+  (#ptoz: comm[$\tp{p2zmsg[p2z]]{p2zn}}$)...  |- ($\$$z : EtoZ) $\tg{(* <- offered channel *)}$
 \end{lstlisting}
 It reflects that the environment must first determine the session id, or \inline{sid}, of the execution as well as which parties it wants to statically corrupt in the form of a \inline{list} of \inline{pid}s.
 Finally, it is told to start and eventually returns an output \inline{bit} indicating it's guess as to whether it's in the real world or the ideal world.
