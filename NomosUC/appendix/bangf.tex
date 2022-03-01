@@ -115,4 +115,8 @@ We further require Theorem~\ref{thm:functor} in order to conclude full UC-style 
 	\end{mathpar}
 \end{theorem}
 
-We justify this theorem. \anote{TODO}
+The simulator for this theorem runs internal copies of $\Sim_\pi$ for each new \m{ssid} spawned.
+It is clear to see why simulating in isolation works given that the instances of the protocol and functionality don't share any state with each other.
+However, the proof of this theorem relies on the creating a reduction from an environment that can distinguish the two worlds in this theorem to an environment that can distinguish emulation of $pi$ realizing $\F$.
+
+The proof proeeeds in... \anote{TODO}

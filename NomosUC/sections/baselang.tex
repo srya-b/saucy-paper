@@ -246,14 +246,15 @@ Session types require it to be statically known which party will write next to a
 a communication pattern can not be realized by juts a single session type.
 
 If we try to resolve this by splitting communcation among two channels, we may type them as
-\begin{center}
- \parbox{0cm}{
- \begin{tabbing}
+%\begin{center}
+\vspace{2mm}
+
+{\centering
  $\m{PtoQ} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
  $\m{QtoP} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
- \end{tabbing}}
-\end{center}
-
+%\end{center}
+\par}
+\vspace{2mm}
 However, session types naturally impose a \emph{parent-child relationship} among processes by requiring
 every channel to have a provider and client endpoint.
 Moreover, these endpoints are fixed, i.e., a process cannot transition from being a client of
@@ -299,14 +300,20 @@ Communicators also break the parent-child relationship by offering a \emph{share
 (unlike linear channels that can have only one client) that is then used by both the sender and receiver processes.
 
 The communicator has the following polymorphic type:
-\begin{center}
+%\begin{center}
+
+{\centering
+\vspace{2mm}
 \parbox{0cm}{
 \begin{tabbing}
 $\m{comm[\tau]} = \up \echoice{$\=$\mb{SEND}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
 \>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},
 \mb{no}: \; \down \m{comm[\tau]}}}$
 \end{tabbing}}
-\end{center}
+%\end{center}
+\vspace{2mm}
+\par}
+
 The communicator type relies on shared type constructors $\up$ and $\down$.
 The type initiates with an $\up$ indicating that the communicator channel must be \emph{acquired} to interact with it.
 Because the channel has two clients (the sender and the receiver), either of them can send this acquire request.
