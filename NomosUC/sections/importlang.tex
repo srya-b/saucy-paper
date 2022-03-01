@@ -1,14 +1,23 @@
+A major contribution of NomosUC is its ability to ensure resource-bounded computation
+as dictated by UC guidelines.
+To this end, we introduce a notion of \emph{import tokens} that provide a static upper
+bound on the execution cost of NomosUC programs.
+
 \paragraph*{\textbf{Import Tokens}}
-A defining aspect of NomosUC is the representation of import tokens in the type system.
-This enables a static reasoning of the import mechanism in NomosUC.
-To this end, we introduce a novel token context $\Tokens$
-in the process typing judgment to denote the real and virtual tokens.
-This context contains the information on the total and current tokens
-of each type and the \emph{security parameter}.
-Before we explain the token context we first motivate the need for virtual tokens
-It is a common technique in UC, especially in simulators, to internally run, or simulate, 
-the code of other ITIs. In NomosUC, we wish to enable the same sandbox running of processes,
-but its channels may have import requirements. It doesn't make sense to
+The core aspect of NomosUC is the integration of import tokens with the type system
+enabling a static reasoning of the import mechanism in NomosUC.
+To this end, we introduce a novel token context $\Tokens$ in the typing judgment to
+represent the real and virtual tokens that a process possesses.
+
+Before we explain the token context further, we motivate the need for virtual tokens.
+A common scenario in UC is to simulate the execution of other ITMs within a \emph{sandbox},
+where one ITM executes the code of another ITM in a controlled and enclosed environment.
+We wish to support the same sandboxed execution in NomosUC.
+However, to ensure bounded computation, we need to bound the computational cost of a
+sandboxed execution as well.
+% TODO: explain this better
+Our approach here is to transfer import tokens to the sandboxed process before it starts execution.
+Note though that it does not make sense to
 send real import to such a process, because, intuitively the internal process should use the
 import and, therefore, potential available to the ``host'' process~\footnote{As far as resource-contraints go, simulating a process should be no different from natively executing its code.}. Therefore, in 
 order to satisfy the types of internally simulated processes we introduce a virtual 
