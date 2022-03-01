@@ -99,15 +99,15 @@
 \input{st-macros}
 
 \begin{abstract}
-The Universal Composability (UC) framework is the leading framework for proving compositional security of cryptographic protocols, however, is limited to on-paper proofs which can be cumbersome and difficult to analyze.
-There are a wealth of previous attempts at formalizing it with programming lanuage logic, but many of them still fall short in either expressiveness, capturing full compositional security, and reasoning about resource-bounded protocols and adversaries. 
+Universal Composability (UC) is a leading framework for modeling secure protocols in cryptography and in security more broadly.
+In this work we continue a recent line of work on bringing a formal semantics to the UC framework.
+Our approach is to investigate adding session types to UC, as a way of annotating ideal functionality definitions with with additional structure.
+We build a new language, Nomos-UC, by combining an existing session-type language Nomos with ILC, an encoding of UC as a process calculus.
+This requires solving a range of technical challenges, most notably combining the linear notion of session types with the inherently flexible communication model featured in UC.
+Additionally, we make use of the resource-aware typs in Nomos to enforce polynomial runtime guarantees.
+In contrast with prior work, we faithfully model the versatile ``import tokens,'' mechanism from UC, so we can represent polynomial time without having to take extra restrictions.
+To validate our design, we work through the standard theory of UC composition operators, and complete a modular application case study, building a coin tossing protocol in the random oracle model using commitments as an intermediate layer.
 
-In this work we propose a programming language called NomosUC that combines resource-aware session types~\cite{nomos} 	
-
-In this work we propose a programming language called NomosUC that combines resource-aware session types\cite{nomos} and existing process calculi for UC~\cite{ilc}.
-Session types provide a type system that can express and enforce ordering and the communication in a protocol.
-Resource-aware session types extend them further to to track the computational cost of processes, and we extend them in this work to implement the import mechanism~\cite{uc} for better polynomial time reasoning compared to existing works~\cite{easyuc, ipdl, ilc}.
-We introduce the new mechanisms, required for UC, that we add to Nomos, and provide a composition operator that achieves full UC composability.
 \end{abstract}
 
 \maketitle
