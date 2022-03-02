@@ -5,7 +5,6 @@ of intuitionistic linear logic~\cite{girard1987linear}.
 Under this correspondence, a process term $P$ is assigned to
 a logical judgment of the form $A_1, \ldots A_n \vdash C$ and each antecedent as well as the succedent is
 labeled with a \emph{channel} to obtain
-
 \[
 x_1 : A_1, \ldots, x_n : A_n \vdash P :: (z : C)
 \]
@@ -18,7 +17,8 @@ to be \emph{well-formed}.
 The linear antecedents are often abbreviated to $\D$.
 
 Formally, the typing judgment for processes in NomosUC is written as
-$\Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)$.
+\[ \Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A) \]
+
 $\Sg$ denotes the signature containing type and process definitions and $k$
 denotes the security parameter.
 Both these quantities are globally known and fixed, therefore we omit them from
@@ -29,7 +29,7 @@ $\Psi$ represents the functional data structures and $\D$ collects the
 session-typed channels along with an optional \emph{write token} $\wt$
 (to resolve non-determinism in the semantics) used by the process.
 Intuitively, the process sending a message \emph{must possess} the write
-token which is then transferred to the receiver along with the write token.
+token which is then transferred to the receiver along with the message.
 Globally, the process owning the write token is activated to take the
 next execution step.
 Finally, $P$ is the process expression that is currently being executed and
@@ -230,18 +230,16 @@ $M$ while $\Psi_2$ is passed on to the continuation $Q$.
 The $\product$ operator is dual to $\arrow$ reversing the roles of provider and client,
 and we omit those rules for brevity.
 
-\subsection{Expressing ITMs With Session Types}
+\subsection{Shared Session Types and ITM Channels}
 \label{subsec:communicators}
-Despite the seemingly structured nature of execution in UC, the framework is meant to
-capture arbitrary connections, communication patterns, or configurations of ITMs.
-However, linear session types can prove to be quite restrictive in terms of realizing
-arbitrary communication patterns in practical cryptographic protocols.
-In this section, we highlight a common communication pattern in UC that requires introducing
-the notion of shared session types~\cite{balzer2017manifest} to be expressible in NomosUC.
-\anote{redundant w/ next sentence}
+%Despite the seemingly structured nature of execution in UC, the framework is meant to
+%capture arbitrary connections, communication patterns, or configurations of ITMs.
+%However, linear session types can prove to be quite restrictive in terms of realizing
+%arbitrary communication patterns in practical cryptographic protocols.
+%In this section, we highlight a common communication pattern in UC that requires introducing
+%the notion of shared session types~\cite{balzer2017manifest} to be expressible in NomosUC.
+%\anote{redundant w/ next sentence}
 
-We motivate the use of shared session types through an example of an ITM communication pattern
-pattern common in UC, but difficult to capture with a single session type.
 Consider two ITMs $P$ and $Q$ that communicate in the following way. If $P$ is activated first,
 it sends a message to $Q$ and terminates, but if $Q$ is activate first it writes a message to $P$, 
 $P$ writes a message back, and communication terminates.
@@ -253,8 +251,8 @@ If we try to resolve this by splitting communcation among two channels, we may t
 \vspace{2mm}
 
 {\centering
- $\m{PtoQ} = \ichoice{\mb{``one''}: int \tensor 1}$ \\
- $\m{QtoP} = \echoice{\mb{``one''}: int \tensor \ichoice{\mb{``end''}: int \tensor 1}}$
+ $\m{PtoQ} = \ichoice{\mb{one}: int \tensor 1}$ \\
+ $\m{QtoP} = \echoice{\mb{one}: int \tensor \ichoice{\mb{end}: int \tensor 1}}$
 %\end{center}
 \par}
 \vspace{2mm}
@@ -296,7 +294,7 @@ dependency among channels, thus causing the program to be ill-typed.
 % Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
 % Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
 
-To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce 
+To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce \snote{include as future work}
 the concept of \emph{providerless channels} using \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
 Communicators act as a buffer between two processes allowing them to exchange messages via the communicator.
 Communicators also break the parent-child relationship by offering a \emph{shared channel that can have multiple clients}
@@ -305,17 +303,17 @@ Communicators also break the parent-child relationship by offering a \emph{share
 The communicator has the following polymorphic type:
 %\begin{center}
 
+\vspace{-1mm}
 {\centering
-\vspace{2mm}
 \parbox{0cm}{
 \begin{tabbing}
-$\m{comm[\tau]} = \up \echoice{$\=$\mb{SEND}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
-\>$\mb{RECV}: \ichoice{$\=$\mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},
+$\m{comm[\tau]} = \up \echoice{$\=$\mb{send}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
+\>$\mb{recv}: \ichoice{$\=$\mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},
 \mb{no}: \; \down \m{comm[\tau]}}}$
 \end{tabbing}}
 %\end{center}
-\vspace{2mm}
 \par}
+
 
 The communicator type relies on shared type constructors $\up$ and $\down$.
 The type initiates with an $\up$ indicating that the communicator channel must be \emph{acquired} to interact with it.
@@ -325,6 +323,7 @@ In the former case, the communicator receives the $\mb{SEND}$ message from the s
 message of type $\tau$ as indicated by the $\arrow$ constructor.
 Then the sender releases the channel so that the receiver can interact with the communicator and check, with $\mb{RECV}$ whether 
 there is a message waiting or not.
+We provide the full typing rule of shared session types in Appendix~\ref{app:sharedtypes}.
 %Then, the type transitions to $\down$ meaning that the sender sends a \emph{release} request to the communicator effectively
 %detaching from it so that the receiver can interact with the communicator.
 %In the latter case, the communicator gets the $\mb{RECV}$ request from the receiver and checks whether the there is a message
@@ -333,31 +332,31 @@ there is a message waiting or not.
 %the $\mb{no}$ message is sent.
 %Finally, in either case, the communicator detaches from the receiver as indicated by the $\down$ constructor.
 
-Shared session types impose an \emph{acquire-release} discipline on processes; 
-a client must acquire the channel offered by a shared process to interact with it
-and must release this channel after the interaction.
-The corresponding typing rules are
-\begin{mathpar}
-  \infer[\up L]
-  {\Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
-  \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
-  {\Tokens \semi \Psi \semi \D, (y : A_L)
-  \entailpot{q}{q'} Q :: (z : C)}
-  %
-  \and
-  %
-  \infer[\up R]
-  {\Tokens \semi \Psi \semi \D \entailpot{q}{q'}
-  \eaccept{y}{x} \semi P :: (x : \up A_L)}
-  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
-\end{mathpar}
-The $\up L$ rule describes a client acquiring a shared channel $x$
-and obtaining a private linear channel $y$ along which it can communicate
-with the corresponding acquired process.
-Correspondingly, the $\up R$ rule describes the shared process
-accepting the acquire request and creating the fresh linear channel $y$.
-The release-detach rules corresponding to the $\down$ type constructor
-are exact dual of acquire-accept.
+%Shared session types impose an \emph{acquire-release} discipline on processes; 
+%a client must acquire the channel offered by a shared process to interact with it
+%and must release this channel after the interaction.
+%The corresponding typing rules are
+%\begin{mathpar}
+%  \infer[\up L]
+%  {\Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
+%  \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
+%  {\Tokens \semi \Psi \semi \D, (y : A_L)
+%  \entailpot{q}{q'} Q :: (z : C)}
+%  %
+%  \and
+%  %
+%  \infer[\up R]
+%  {\Tokens \semi \Psi \semi \D \entailpot{q}{q'}
+%  \eaccept{y}{x} \semi P :: (x : \up A_L)}
+%  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
+%\end{mathpar}
+%The $\up L$ rule describes a client acquiring a shared channel $x$
+%and obtaining a private linear channel $y$ along which it can communicate
+%with the corresponding acquired process.
+%Correspondingly, the $\up R$ rule describes the shared process
+%accepting the acquire request and creating the fresh linear channel $y$.
+%The release-detach rules corresponding to the $\down$ type constructor
+%are exact dual of acquire-accept.
 
 An important caveat here is that shared channels can introduce non-determinism
 in the semantics since multiple clients can send the acquire request simultaneously.
@@ -365,11 +364,9 @@ To address this problem, we require that the acquiring client \emph{possess
 the write token}.
 Since write tokens are treated as a linear quantity, only one of the client can
 possess it enabling only that process to acquire the shared channel.
-Remarkably, this write token can resolve both read and write non-determinism
-due to linearity of the channels.
+This resolves both read and write non-determinism due to linearity of the channels.
 
-The communicator type is parametric in the message type sent over it, and it is restricted to sending 
-functionally typed messages only. 
+The communicator type is parametric in the message type sent over it, and it is restricted to sending functionally typed messages only. 
 Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
 We wrap each of $P$ and $Q$ in a shell code, call these $S_P$ and $S_Q$, which spawn two processes each.
 Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. \snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
@@ -379,22 +376,22 @@ Although the process code for terms $a$ and $b$ differ based on the session type
 \begin{figure}
 	\begin{subfigure}{0.3\textwidth}
 	\centering
-	\includegraphics[scale=0.4]{figures/p_and_q.png}
+	\includegraphics[scale=0.4]{figures/p_and_q.pdf}
 	\caption{$P$ and $Q$ connected by two logical channels which are actually implemented by the figure on the right.}
 	\label{fig:pandq}
 	\end{subfigure}
 	~ \ \ \ \ 
 	\begin{subfigure}{0.6\textwidth}
 	\centering
-	\includegraphics[scale=0.4]{figures/new_p_and_q.png}
+	\includegraphics[scale=0.4]{figures/new_p_and_q.pdf}
 	\caption{We can realize the left be intermediating communication with communicators. The direction of messages from $P$ to $Q$ still suggest a cycle but the communicator is provider (dot) to \emph{both} shell codes.}
 	\label{fig:newpandq}
 	\end{subfigure}
 	\caption{Two ITM configurations. One possible with ITMs (left) and one realized in NomosUC (right). Arrows indicate direction of messages and the dot indicates the provider of the channel.}
+	\vspace{-5mm}
 \end{figure}
 
 In general, we represent communication between any two ITMs as two providerless channels.
 We further don't restrict the types of the two channels, and allow them to each be bidirectional as well.
-For example, communication between \Fcom and a protocol party need only make use of one of the channels (typed by \m{sender} if the party is the committer) and type the other one with $1$.
-In such cases, we omit the second channel from the diagram entirely (see Section~\ref{sec:execuc}.
-However, for simplicity, and to be as generalized as possible, when both channels are used we refer to them as being uni-directional.
+However, for simplicity, and to be as generalized as possible, we stick to two uni-directonal channels as that directly resolves the internal vs external choice that arises from a single session type capturing $P$ and $Q$.
+

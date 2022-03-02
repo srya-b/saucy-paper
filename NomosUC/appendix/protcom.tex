@@ -1,0 +1,67 @@
+Here we present two code snippets from the sender and receiver.
+The first, Figure~\ref{lst:committer} shows the portion of the code where
+the sender isactivated with a bit by \Z, it generates a commitment with a nonce and sends the hash to the receiver.
+In the second code snippet, Figure~\ref{lst:receiver}, the receiver is activated by the functionality with an opening of the commitment. It checks the hash of the opening from \Fro with the hash received earlier and only outputs to \Z if the commitment is succesffully opened. 
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+$\tg{(* committer code after receiving a 'commit' message from the environment *)}$
+b = $\tm{recv}$ $\$$z2p ;
+$\nget$ $\$$z2p {1} ;
+bits = sample k rng ;
+$\$$p2f.hash ;
+$\npay$ $\$$p2f {2} ;
+$\tm{send}$ $\$$p2f pid ;
+$\tm{send}$ $\$$p2f b + bits ;
+$\tb{case}$ $\$$p2f (
+  shash => 
+    h = $\tm{recv}$ $\$$p2f ;
+    $\$$p2f.send ;
+    $\tm{send}$ $\$$p2f pid 2 hash;
+\end{lstlisting}
+\caption{The code for the committer in $\prot{com}$ when it receives a \msf{commit} message from \Z. It obtains a hash of the message from \Fropp over \msf{p2f} and sends it to the receiver (pid=2) through the same functionality.}
+\label{lst:committer}
+\vspace{-2mm}
+\end{figure}
+%$\$$p2f.recvmsg ;
+%$\tb{case}$ $\$$p2f (
+%  Yes(p, h)
+%  $\tm{recv}$ $\$$p2f ;
+%...
+%$\tm{send}$ $\$$p2f (b+h);
+%...
+\begin{figure}
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+$\tg{(* receiver waiting for the commitment opening from the random oracle channel *)}$
+sender = $\tm{recv}$ $\$$f2p ;
+(b,h) = recv $\tm{recv}$ $\$$f2p ;
+$\nget$ $\$$f2p {1} ; 
+$\tg{(* query the hash of b+h with 1 import *)}$
+h = $\tm{recv}$ $\$$p2f ;
+$\yo{if}$ h == hash
+$\yo{then}$
+  $\$$z2p.open
+$\yo{end}$
+\end{lstlisting}
+\caption{The code for the receiver checks for a new message and receives the bit and nonce from the committer. If the hash of the bit and nonce matches the commitment it received, it returns \msf{open} to \Z to confirm the commitment.}
+\label{lst:receiver}
+\vspace{-3mm}
+\end{figure}
+
+\subsection{Simulation}
+Finally, we present a simulator \simcom, for the dummy adversary, for which the \Fcom is realized by \prot{com} in the \Fropp-hybrid world.
+Recall that the import requirements for the ideal world, in this case for \Fcom. Therefore, the simulator is parameterized by import parameters required in the real world for the parties of $\pi_\m{com}$ and \Fro.
+The simulator is straightforward and internally maintains a table like \Fro and responds to the environments queries for hashes. 
+When the receiver is corrupt:
+\begin{itemize}
+\item \simcom responds with \inline{P2A2Z(2, no)} to all messages by \Z to get a message from the functionality
+\item On \inline{Committed} by the ideal receiver, \simcom generates a random $r$ and sends \inline{P2A2Z(2, RHash(h))} with no import.
+\item On \inline{Open(b)} from the ideal receiver, \simcom generates a random nonce $x$ and stores \inline{b+x : h} in its \Fro table, and sends \inline{Yes(1, (b,x))} to \Z when asked for messages for the corrupt receiver.
+\end{itemize}
+
+The corrupt committer is not much different from the above case. In this case
+the simulator stores the bit $b$, the none $x$, the corresponding hash $h$, and the import that \Z uses to create a commitment.
+When the simulator receives the message to send the commitment to the receiver, it tells the ideal world committer to commit to $b$ along with 2 import given by \Z, and when it's told to open the commitment it opens it in the ideal world. 
+
+It is immediately clear that this simulator satisfied $\Fro \xrightarrow{\prot{com}} \Fcom$ for the dummy adversary.
+

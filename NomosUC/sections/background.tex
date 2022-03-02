@@ -85,7 +85,7 @@ This discipline means that modeling inherently non-deterministic phenomena, like
 %% } 
 
 Even having established the message pattern, it is still not straightforward to define a notion of polynomial runtime for ITM systems.
-Looking at the order of quantifiers in the UC emulation definition from Relation~\ref{eqn:emulation}, we need a way to make local judgments about each $\A$, $\Z$, $\pi$, and $\F$ individual, and conclude that the entire $\msf{execUC} \Z \pi \A \F$ experiment overall is polynomial time as a result.
+Looking at the order of quantifiers in the UC emulation definition from Relation~\ref{eqn:emulation}, we need a way to make local judgments about each $\A$, $\Z$, $\pi$, and $\F$ individual, and conclude that the entire $\msf{execUC} \; \Z \; \pi \; \A \; \F$ experiment overall is polynomial time as a result.
 We follow Canetti's approach~\cite{canettiUC}, which is to keep track at runtime of quantity called ``import tokens'' and assign a runtime budget based on these.
 These tokens can be passed among the processes along with the messages sent on each tape, but the total amount of tokens must be conserved (neither created nor destroyed), and locally each process cannot take more steps than (a polynomial of) the amount of import tokens it has stored.
 Somewhat more formally, we say $P$ is a \emph{locally polynomial time process} if for \emph{any} evaluation context $e[\_]$, at any step $t$ during its execution,

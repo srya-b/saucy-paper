@@ -7,7 +7,7 @@ bound on the execution cost of NomosUC programs.
 The core aspect of NomosUC is the integration of import tokens with the type system
 enabling a static reasoning of the import mechanism in NomosUC.
 To this end, we introduce a novel token context $\Tokens$ in the typing judgment to
-represent the real and virtual tokens that a process possesses.
+represent the real and virtual tokens.
 
 Before we explain the token context further, we motivate the need for virtual tokens.
 A common scenario in UC is to simulate the execution of other ITMs within a \emph{sandbox},
@@ -22,14 +22,12 @@ simulate the execution of $Q$ within a sandbox in a way that $Q$ requires $t$
 import tokens.
 If $P$ transfers all its import to $Q$, $P$ will not be able to perform any execution of its own.
 
-To address this issue, we introduce the concept of \emph{virtual tokens} that can be
-created using the real import tokens that a process contains.
-In the aforementioned situation, $P$ will create $t$ virtual tokens from its real import
-which can then be used to simluate the execution of $Q$, while the $t$ real tokens are retained within $P$
+To address this issue, we introduce the concept of \emph{virtual tokens}.
+In the aforementioned situation, $P$ will create $t$ virtual tokens
+which can then be used to simluate the execution of $Q$, while $t$ real tokens are retained within $P$
 allowing it to have its own execution.
 In effect, the sandboxed execution is internal to a process and therefore must obey the resource (import token)
-constraints provided to it.~\footnote{As far as resource-contraints go, simulating a process should be no different
-from natively executing its code.}
+constraints provided to it.
 
 Formally, every process contains a unique real token type, which we call type $K_0$, by default.
 There is no mechanism to create a real token; when a process is spawned (whether in a sandbox or not),
@@ -65,7 +63,7 @@ between two successive tokens in the hierarchy.
 UC requires this function to be \emph{super-additive}, i.e.,
 $\GlobalF(x+y, k) \geq \GlobalF(x, k) + \GlobalF(y, k)$.
 Then, we require that if $\Tokens$ contains $m'$ current tokens of type
-$K_i$, it can only contain at most $\GlobalF(m,k)$ total tokens of type
+$K_i$, it can only contain at most $\GlobalF(m',k)$ total tokens of type
 $K_{i+1}$. We express this validity condition using the following inductive rules below.
 \begin{mathpar}
   \infer
@@ -263,9 +261,10 @@ Semantically, a process executing a $\etick{r}$ operation increments its work co
   $(\m{tick}) : \proc{c}{w, \etick{r} \semi P} \step \proc{c}{w+r, P}$
 \end{tabbing}
 Note that this is the only rule that increments the work counter of a process.
-And since this operation consumes $r$ units of potential, we can intuitively infer
+And since this operation consumes $r$ units of potential, we can infer
 that the total sum of potential and work of a closed set of processes will always be bounded.
 
+\snote{can or does?}
 The implementation of NomosUC can integrate a cost instrumentation engine that automatically
 inserts a $\etick{1}$ construct before each syntactic construct.
 This enables us to simulate the cost model that counts the total number of

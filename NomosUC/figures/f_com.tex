@@ -16,13 +16,13 @@ $\nproc$ $\tm{Fcom}$:
 (S: sender), (R: receiver)  |- (fc: 1) =
 {
   $\ncase$ S (
-    Commit => 
-      b = $\nrecv$ S ;
-      R.Committed ;
-      case S (
-        Open => 
-          R.Open ;
-          $\nsend$ R b ;
+    Commit => b = $\nrecv$ S ;
+              R.Committed ;
+              $\ncase$ S (
+                Open => R.Open ;
+                        $\nsend$ R b ;
+              )
+  )
 }
 \end{lstlisting}
 \end{minipage}

@@ -29,30 +29,30 @@ The columns are broken up accordinf to the features mentioned in the above discu
 The first discusses whether envionment can create an arbitrary number of parties at runtime. There is not partial-support in this category, either it is supported or it isn't.
 The second column broadly covers whether any runtime or polynomial-time analysis/tracking is performed by the project. Notice that there is partial support where ILC provides a restricted notion of polynomial time.
 The third column determines whether full UC-style composition is supported, i.e. replacement of an arbitrary number of functionalities with realizing protocols (the existence of a multisession operator is essential). 
-The last column highlights a design choice of using channel to communiate between machines or some programming-style procedure calls.
-A left half circle indicates the left option, channels, and thr right half circle the other. 
+The last column highlights a design choice in communication through channels or through programming-style procedure calls.
+Unlike the other columns, this column doesnot indicate a drawback or limitation.
 In general this distinction plays an important role in how communication is captured each work, and whether arbitrary communication pattersn from UC are not fully supported.
 
 % Colums: blank | parties at runtime | notion of UC | polynomial time | generalized composition operator | channels | procedural 
 \begin{figure}[H]
 \centering 
 \begin{table}[H]
-	\begin{tabular}{l | c  c  c  c | c  c}
-	& \rot{Dynamic \# Parties} & \rot{Polytime Notion} & \rot{General Composition} & \rot{Channels \halfcircleft[0.5ex]} & \rot{Procedures \halfcircright[0.5ex]} \\
+	\scalebox{0.7}{\begin{tabular}{l | c  c  c  c  c}
+	& \rot{Dynamic \# Parties} & \rot{Polytime Notion} & \rot{General Composition} & \rot{\parbox{3cm}{Channels/Procedures}} \\
 	\hline
-	IPDL~\cite{ipdl} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & \multicolumn{2}{c}{\halfcircleft[0.75ex]} \\
+	IPDL~\cite{ipdl} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & Channels \\
 	%\hline
-	EasyUC~\cite{easyuc} & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \multicolumn{2}{c}{\halfcircright[0.75ex]}  \\
+	EasyUC~\cite{easyuc} & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & Procedure Calls \\
 	%\hline
-	Barbosa et al.~\cite{barbarosa} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & \multicolumn{2}{c}{\halfcircright[0.75ex]} \\
+	Barbosa et al.~\cite{barbarosa} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & Procedure  Calls \\
 	%\hline
-	ILC~\cite{ilc} & \emptycirc[0.75ex] & \halfcircleft[0.75ex] & \emptycirc[0.75ex]  & \multicolumn{2}{c}{\halfcircleft[0.75ex]}    \\
+	ILC~\cite{ilc} & \emptycirc[0.75ex] & \halfcircleft[0.75ex] & \emptycirc[0.75ex]  & Channels    \\
 	%\hline
-	NomosUC (this work) & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \multicolumn{2}{c}{\halfcircleft[0.75ex]}  \\
+	NomosUC (this work) & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & Channels  \\
 	%\hline
-	\end{tabular}
+	\end{tabular}}
 \end{table}
-\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support except in the last column where \halfcircleft[0.5ex] and \halfcircright[0.5ex] have specific meanings, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column.}%The first column refers to allowing environments to create an arbitrary number of parties and is criticl to expressing full UC. The second column is whether any reasoning exists about runtime guarantees or polynomial time. The third column refers to suppoting unbounded subsessions of protocols and functionalities to achieve full UC composition. Finally the last column is an design difference in whether the work uses channels or procedure-like calls to communication between processes.}
+\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column. The last column states a design decision for how communiation is captured in each wor and is not necessarily a limitation or drawback.}
 \label{fig:relatedworks}
 \end{figure}
 

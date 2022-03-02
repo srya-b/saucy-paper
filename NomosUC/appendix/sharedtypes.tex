@@ -1,0 +1,26 @@
+
+Shared session types impose an \emph{acquire-release} discipline on processes; 
+a client must acquire the channel offered by a shared process to interact with it
+and must release this channel after the interaction.
+The corresponding typing rules are
+\begin{mathpar}
+  \infer[\up L]
+  {\Tokens \semi \Psi \semi \wt, \D, (x : \up A_L)
+  \entailpot{q}{q'} \eacquire{y}{x} \semi Q :: (z : C)}
+  {\Tokens \semi \Psi \semi \D, (y : A_L)
+  \entailpot{q}{q'} Q :: (z : C)}
+  %
+  \and
+  %
+  \infer[\up R]
+  {\Tokens \semi \Psi \semi \D \entailpot{q}{q'}
+  \eaccept{y}{x} \semi P :: (x : \up A_L)}
+  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (y : A_L)}
+\end{mathpar}
+The $\up L$ rule describes a client acquiring a shared channel $x$
+and obtaining a private linear channel $y$ along which it can communicate
+with the corresponding acquired process.
+Correspondingly, the $\up R$ rule describes the shared process
+accepting the acquire request and creating the fresh linear channel $y$.
+The release-detach rules corresponding to the $\down$ type constructor
+are exact dual of acquire-accept.

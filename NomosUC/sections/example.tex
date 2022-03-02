@@ -30,7 +30,7 @@ the processes, with the provider and client processes performing dual send/recei
 As an example, we start with the session type of the channel offered by $S$ that is used by
 $\Fcom$.
 \begin{mathpar}
-  \mi{type} \; \m{sender} = \ichoice{\mb{Commit} : \m{bit} \product \ichoice{\mb{Open} : \one}}
+  \mi{type} \; \m{sender} = \ichoice{\mb{commit} : \m{bit} \product \ichoice{\mb{open} : \one}}
 \end{mathpar}
 The type constructor $\ichoiceop$ denotes an \emph{internal choice}
 (here with only one choice) dictating that the provider $S$ must first send the
@@ -49,7 +49,7 @@ It also can does not directly capture either of \Fcom's security properties: the
 Similar to the sender, we define a channel provided by the receiver $R$ and
 used by $\Fcom$ with the following session type
 \begin{mathpar}
-	\mi{type} \; \m{receiver} = \echoice{\mb{Committed}: \echoice{\mb{Open} : \m{bit} \arrow \one}}
+	\mi{type} \; \m{receiver} = \echoice{\mb{committed}: \echoice{\mb{open} : \m{bit} \arrow \one}}
 \end{mathpar}
 Dual to internal choice, the $\echoiceop$ type constructor represents \emph{external choice}
 prescribing that the provider $R$ must receive a $\mb{Committed}$ message from $\Fcom$
@@ -69,12 +69,10 @@ The type checker guarantees that every process adheres to the protocol on every 
 the corresponding session type.
 
 
-As an illustration, consider the $\Fcom$ process implemented in Figure~\ref{fig:fcomideal}(b).
-The process is named as $\Fcom$, \emph{uses} channels $S$ and $R$ and \emph{provides} channel \inline{fc}.
+As an illustration, consider the $\Fcom$ process implemented in Figure~\ref{fig:fcomideal}(b)
+that \emph{uses} channels $S$ and $R$ and \emph{provides} channel \inline{fc}.
 The used channels with their types are written to the left of the turnstile
 ($\vdash$) while the offered channel and type are written on the right.
-This is analogous to function definitions where used channels correspond to
-arguments, while offered channel corresponds to the result.
 The process first case analyzes on channel $S$ branching on the
 message received.
 Since there is only one choice $\mb{Commit}$, we only have one
@@ -89,7 +87,8 @@ The reason we omit this code is a result of how we design functionalities in Nom
 which we explain later.
 But more importantly, it imposes no limitations on the expressiveness on our framework.
 
-A session type uniquely defines the protocol for only one role in an ideal functionality.
+A protocol may consist parties with different roles with different sets of inputs and messages in the protocol. 
+A session type defines the protocol for only one role in an ideal functionality and others may have their own types.
 The sender and receiver are different roles in the same protocol, and, therefore, must have their own channels to \Fcom rather than communicating over a common channel.
 
 %The protocol initiates with $S$ sending a $\mb{commit}$ message to $\Fcom$

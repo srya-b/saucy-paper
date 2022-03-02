@@ -1,9 +1,9 @@
-We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
+We want better tools for analyzing cryptographic applications, especially complex ones which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
 In cryptography, the leading framework for managing such compositions is Universal Composability (UC)~\cite{canettiUC}.
 UC has caught on not just in cryptography, increasingly other computer security protocols provide ideal functionalities as their primary security definition, and large amount of work attempts to build frameworks out of it~\cite{suc, gnuc, camenischuc}.
 Especially in blockchain applications such as payment channels.
 
-The central idea of the framework is in the ideal functionality: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
+The central idea of the framework is in the \emph{ideal functionality}: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
 This leads to a modular framework, where larger protocols can be designed using simple ideal functionalities, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
 Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others~\cite{ilc, easyuc, ipdl, sybolicuc, barbosa} . However, these have several shortcomings, which we address through the following questions:
 
@@ -39,9 +39,11 @@ Can we enforce polynomial running time without otherwise imposing restrictions o
 %are automatically enforced?
 \end{enumerate}
 
-We answer these questions by designing a new language, NomosUC, that combines ideas from
+We answer these questions positively by designing a new language, NomosUC, that combines ideas from
 Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc},
 a process calculus previously used for encoding the UC.
+We adapt potential in Nomos into import and polynomial constraints, and introduce a notion of vitual tokens to support 
+sandboxing, a critical tool for creating reductions in UC.
 %For instance, for the two-party bit commitment protocol~\cite{rocommitment}, session types guarantee
 %the interface and resource requirements that the protocol offers to the environment in the ideal world, and the specific protocol 
 %message and import exchange between the two parties in the real world.
@@ -70,7 +72,7 @@ We create typing rules around our sandboxing approach in Section~\ref{sec:import
 Furthermore, since import is ultimately connected to the security parameter, NomosUC
 therefore, not only guarantees termination, but also asserts polynomial bounds on
 the execution cost in terms of the security parameter.
-The soundness of our approach is achieved by proving a \emph{preservation theorem}
+A main contribution of our work, the soundness of our approach, is achieved by proving a \emph{preservation theorem}
 which states that well-typed processes in NomosUC are ``locally polynomial time"
 in the sense required by UC.
 

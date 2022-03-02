@@ -1,7 +1,6 @@
 In this section we work through the entire commitment example that has seen used throughout this paper, and we show composition by realizing a coin flipping ideal functionality \Fflip and a protocol realizing it in the \Fcom-hybrid world.
-We present the random oracle functionality \Fro, the real world protocol \prot{com}, and a simulator for the dummy adversary.
-Along the way we address the apparent import mismatch between \Fcom and \Fro, and we discuss how emulation and composition work around it.
-Finally, we give \Fflip, and a realizing protocol and sketch the composed simulator for $\Fro \xrightarrow{\prot{flip} \circ \prot{com}} \Fflip$.
+Along th way, we address a new communication pattern that enables session types to enforce communication ordering over multipe channels and identify to set import requiremets for functionalities for composition.
+We start by presenting the random oracle functionality~\Fro which is used to realized \Fcom.
 
 \subsection{The Random Oracle}
 The random oracle functionality captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
@@ -42,62 +41,22 @@ $\Type$ rof2p[a] = RHash of $\tgr{Int}$ | Yes of pid ^ a
                | No ;
 \end{lstlisting}
 
+The random oracle, along with \Fcom, use the standard construction of providerless channels but only make use of one of the channels. Recall that two uni-directional channels is a generalizable approach, however, we pace no restriction on the communication pattern over each channel.
+Here \Fcom and \Fro both use only one channel to the protocol parties instead of two.
+
 \subsection{Commitment Protocol}
 The real world commitment protocol is constructed in the random oracle model in the way of ~\cite{hofheinzcommitment}.
 Its incoming channel from \Z is typed identically to \Fcom to ensure that emulation and composition hold.
 
-We show a snippet of the sender code for computing the commitment for its input bit in Figure~\ref{lst:committer}, and the relevant code the the receiver checking the commitment in Figure~\ref{lst:receiver}.
-The sender accepts a bit from its \inline{z2p} channel and generates a nonce to blind the bit through a \inline{sample} of randomness~\footnote{Blinding is necessary otherwise \A knows the pre-image and can query \Fro for its hash value.}.
+%We show a snippet of the sender code for computing the commitment for its input bit in Figure~\ref{lst:committer}, and the relevant code the the receiver checking the commitment in Figure~\ref{lst:receiver}.
+The sender accepts a bit from \Z and generates a $k$-bit nonce to blind the bit through a \inline{sample} of randomness~\footnote{Blinding is necessary otherwise \A knows the pre-image and can query \Fro for its hash value.}. 
 It creates the commitment by sending \Fropp the blinded bit and receiving a hash value from \inline{p2f}.
 Finally it sends the hash to the receiver (which has pid=2).
-Conversely, the receiver must request the commitment \inline{h} message from \Fropp, notify \Z of the commitment, and, as shown in Figure~\ref{lst:receiver}, when it receives the bit and the nonce it checks that its hash with the commitment.
+Conversely, the receiver must poll \Fropp for the commitment \inline{h} message, notify \Z of the commitment, and when it receives the bit and the nonce it checks that its hash with the commitment.
+We provide snippets of code for the most interesting parts of the committer and the receiver, creating a commitment and checking a commitment respectively, in Figures~\ref{lst:committer} and \ref{lst:receiver} in Appendix~\ref{app:protcol}.
+In total the committer is given 2 units of import: 1 for receive a hash and 1 to give to the receiver so that it can compute a hash as well.
 %$\tb{case}$ $\$$z2p (
 %  commit => 
-\begin{figure}
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\tg{(* committer code after receiving a 'commit' message from the environment *)}$
-b = $\tm{recv}$ $\$$z2p ;
-$\nget$ $\$$z2p {1} ;
-bits = sample k rng ;
-$\$$p2f.hash ;
-$\npay$ $\$$p2f {2} ;
-$\tm{send}$ $\$$p2f pid ;
-$\tm{send}$ $\$$p2f b + bits ;
-$\tb{case}$ $\$$p2f (
-  shash => 
-    h = $\tm{recv}$ $\$$p2f ;
-    $\$$p2f.send ;
-    $\tm{send}$ $\$$p2f pid 2 hash;
-\end{lstlisting}
-\caption{The code for the committer in $\prot{com}$ when it receives a \msf{commit} message from \Z. It obtains a hash of the message from \Fropp over \msf{p2f} and sends it to the receiver (pid=2) through the same functionality.}
-\label{lst:committer}
-\vspace{-2mm}
-\end{figure}
-%$\$$p2f.recvmsg ;
-%$\tb{case}$ $\$$p2f (
-%  Yes(p, h)
-%  $\tm{recv}$ $\$$p2f ;
-%...
-%$\tm{send}$ $\$$p2f (b+h);
-%...
-\begin{figure}
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\tg{(* receiver waiting for the commitment opening from the random oracle channel *)}$
-sender = $\tm{recv}$ $\$$f2p ;
-(b,h) = recv $\tm{recv}$ $\$$f2p ;
-$\nget$ $\$$f2p {1} ; 
-$\tg{(* query the hash of b+h with 1 import *)}$
-h = $\tm{recv}$ $\$$p2f ;
-$\yo{if}$ h == hash
-$\yo{then}$
-  $\$$z2p.open
-$\yo{end}$
-\end{lstlisting}
-\caption{The code for the receiver checks for a new message and receives the bit and nonce from the committer. If the hash of the bit and nonce matches the commitment it received, it returns \msf{open} to \Z to confirm the commitment.}
-\label{lst:receiver}
-\vspace{-3mm}
-\end{figure}
-
 %The protocol works as follows:
 %\begin{enumerate}
 %\item When the committer receives a \inline{Commit(b)} message from \Z, it samples some random bits $r$ and generates a hash $h$ by sending \inline{SHash(b + r)} to \Fro.
@@ -105,22 +64,8 @@ $\yo{end}$
 %\item Finally, when \Z instructs the committer to \inline{Open} the commitment, it sends bit \inline{b} and randomness \inline{r} to the receiver. The receiver checks the commitment, with \inline{b} and \inline{r}, against \Fro and outputs \inline{Open(b)} to \Z if it checks out.
 %\end{enumerate}
 
-\subsection{Simulation}
-Finally, we present a simulator \simcom, for the dummy adversary, for which the \Fcom is realized by \prot{com} in the \Fropp-hybrid world.
-Recall that the import requirements for the ideal world, in this case for \Fcom. Therefore, the simulator is parameterized by import parameters required in the real world for the parties of $\pi_\m{com}$ and \Fro.
-The simulator is straightforward and internally maintains a table like \Fro and responds to the environments queries for hashes. 
-When the receiver is corrupt:
-\begin{itemize}
-\item \simcom responds with \inline{P2A2Z(2, no)} to all messages by \Z to get a message from the functionality
-\item On \inline{Committed} by the ideal receiver, \simcom generates a random $r$ and sends \inline{P2A2Z(2, RHash(h))} with no import.
-\item On \inline{Open(b)} from the ideal receiver, \simcom generates a random nonce $x$ and stores \inline{b+x : h} in its \Fro table, and sends \inline{Yes(1, (b,x))} to \Z when asked for messages for the corrupt receiver.
-\end{itemize}
+We elide presenting an overview of the simulator to realized $\Fro \xrightarrow{\pi_\m{com}} \Fcom$ in this section and focus, instead, on demonstrating our main result: composition.
 
-The corrupt committer is not much different from the above case. In this case
-the simulator stores the bit $b$, the none $x$, the corresponding hash $h$, and the import that \Z uses to create a commitment.
-When the simulator receives the message to send the commitment to the receiver, it tells the ideal world committer to commit to $b$ along with 2 import given by \Z, and when it's told to open the commitment it opens it in the ideal world. 
-
-It is immediately clear that this simulator satisfied $\Fro \xrightarrow{\prot{com}} \Fcom$ for the dummy adversary.
 
 \subsection{Coin Flipping}
 We present secure coin flipping here as another example and one that makes use of our composition operator. 
@@ -217,21 +162,23 @@ nl
 \end{itemize}
 
 \subsection{Composition}
-We describe a composition theorem in the previous section and a composition operator for protocols.
-Here we demonstrate how to compose the simulators from the two experiments to create a simulator to prove Theorem~\ref{thm:compose}.
-Two simulators being composed are: \SIM{com} for $\Fro \xrightarrow{\prot{com}} \Fcom$ and \SIM{flip} for $\Fcom \xrightarrow{\prot{flip}} \Fflip$. 
-The code for the composed is very similar to the simulator for the Dummy Lemma described in Section~\ref{sec:dummy} and expanded on in Appendix~\ref{app:dummy}.
-The exact connects are different but it follows identical virtualization and sandboxing.
-Therefore, we elide any code snippets from this section and, instead, present a high-level description of the simulator.
-
-For the sake of generality, we refer to protocols $\pi$, $\rho$, and functionalities $\F_1$, $\F_2$, and $\F_3$, where $\rho$ is \prot{flip}, $\pi$ is \prot{com}, $\F_1$ is \Fro, $\F_2$ is \Fcom, and $\F_3$ is \Fflip.
-The numbered steps in the description below correspond to the numbered arrows in Figure~\ref{fig:simcomp}.
-\begin{enumerate}
-\item Input from \Z: \inline{Z2A2P(p, msg)} for dummy parties of $\F_1$ and \inline{Z2A2F(msg)} for $\F_1$  are forwarded to \SIM{\pi}, and, Outputs from \SIM{\pi}: \inline{F2A2Z(msg)} and \inline{P2A2Z(p,msg)} are forwarded to \Z unaltered.
-\item Inputs from \SIM{\pi}: \inline{A2F(msg)} for $\F_2$ and \inline{A2P(msg)} for dummy parties of $\F_2$ are forwarded to \SIM{\rho} as \inline{Z2A2F(msg)} \inline{Z2A2P(p,msg)}, respectively.
-\item Outputs from \SIM{\rho}: \inline{P2A2Z(p,msg)} from simulated parties of $\rho$  and \inline{F2A2Z(msg)} from the simulated $\F_2$ are forwarded to \SIM{\pi} as \inline{P2A(p,m)} and \inline{F2A(m)}, respectively.
-\item Inputs from \SIM{\rho}: \inline{A2F(msg)} for $\F_3$ and \inline{A2P(p,msg)} for dummy parties of $\F_3$ are forwarded unaltered, and, Outputs from $\F_3$ and its ideal parties: \inline{F2A(msg)} from $\F_3$ and \inline{P2A(p,msg)} from its ideal parties is forwarded to \SIM{\rho} unaltered.
-\end{enumerate}
+We describe a composition theorem in the previous section, a composition operator for protocols, and a bried highlight of the composition operator for simulators.
+Composition of the coin flip with the commitment protocol is realized with simulator composition in exactly this way.
+We give a diagram of simulator composition in~\ref{fig:simcomp}.
+%Here we demonstrate how to compose the simulators from the two experiments to create a simulator to prove Theorem~\ref{thm:compose}.
+%Two simulators being composed are: \SIM{com} for $\Fro \xrightarrow{\prot{com}} \Fcom$ and \SIM{flip} for $\Fcom \xrightarrow{\prot{flip}} \Fflip$. 
+%The code for the composed is very similar to the simulator for the Dummy Lemma described in Section~\ref{sec:dummy} and expanded on in Appendix~\ref{app:dummy}.
+%The exact connects are different but it follows identical virtualization and sandboxing.
+%Therefore, we elide any code snippets from this section and, instead, present a high-level description of the simulator.
+%
+%For the sake of generality, we refer to protocols $\pi$, $\rho$, and functionalities $\F_1$, $\F_2$, and $\F_3$, where $\rho$ is \prot{flip}, $\pi$ is \prot{com}, $\F_1$ is \Fro, $\F_2$ is \Fcom, and $\F_3$ is \Fflip.
+%The numbered steps in the description below correspond to the numbered arrows in Figure~\ref{fig:simcomp}.
+%\begin{enumerate}
+%\item Input from \Z: \inline{Z2A2P(p, msg)} for dummy parties of $\F_1$ and \inline{Z2A2F(msg)} for $\F_1$  are forwarded to \SIM{\pi}, and, Outputs from \SIM{\pi}: \inline{F2A2Z(msg)} and \inline{P2A2Z(p,msg)} are forwarded to \Z unaltered.
+%\item Inputs from \SIM{\pi}: \inline{A2F(msg)} for $\F_2$ and \inline{A2P(msg)} for dummy parties of $\F_2$ are forwarded to \SIM{\rho} as \inline{Z2A2F(msg)} \inline{Z2A2P(p,msg)}, respectively.
+%\item Outputs from \SIM{\rho}: \inline{P2A2Z(p,msg)} from simulated parties of $\rho$  and \inline{F2A2Z(msg)} from the simulated $\F_2$ are forwarded to \SIM{\pi} as \inline{P2A(p,m)} and \inline{F2A(m)}, respectively.
+%\item Inputs from \SIM{\rho}: \inline{A2F(msg)} for $\F_3$ and \inline{A2P(p,msg)} for dummy parties of $\F_3$ are forwarded unaltered, and, Outputs from $\F_3$ and its ideal parties: \inline{F2A(msg)} from $\F_3$ and \inline{P2A(p,msg)} from its ideal parties is forwarded to \SIM{\rho} unaltered.
+%\end{enumerate}
 
 \begin{figure}
 \centering
