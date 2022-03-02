@@ -1,18 +1,19 @@
-We want better tools for analyzing cryptographic applications, especially complex ones which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
-In cryptography, the leading framework for managing such compositions is Universal Composability (UC)~\cite{canettiUC}.
-UC has caught on not just in cryptography, increasingly other computer security protocols provide ideal functionalities as their primary security definition, and large amount of work attempts to build frameworks out of it~\cite{suc, gnuc, camenischuc}.
-Especially in blockchain applications such as payment channels.
+%We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
+In cryptography, the leading framework for defining security is Universal Composability (UC)~\cite{canettiUC}.
+UC was initially developed within the cryptography theory, where it is considered the strongest definitional model since it guarantees a protocol even when multiple sessions of the protocol are run concurrently. UC has now become popular in secure protocols mre broadly, where an ideal functionality model often serves as the main formal security definition.
+One reason for UC's property versus traditional game-based cryptography definitions is that UC is based on the \emph{oideal functionality} paradigm, which can lead to more cohesive definitions. In short, rather than giving the security properties through a collection of separate attack games, in UC we define security through a single program for a trusted third party that exhibits all the desired behaviors of the protocol.
+UC also encourages a modular style  to a modular framework, where larger protocols can be designed using simple ideal functionalities, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
+%Several variations of UC have aimed to provide alternative explanations aiminig to be more formal~\cite{suc, gnuc, camenischuc}.
 
-The central idea of the framework is in the \emph{ideal functionality}: a security spec of a protocol given by a concrete instance of a simple program that, if run by a trusted third-party, would exhibit all of the desired behaviors of the protocol.
-This leads to a modular framework, where larger protocols can be designed using simple ideal functionalities, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
-Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others~\cite{ilc, easyuc, ipdl, sybolicuc, barbosa} . However, these have several shortcomings, which we address through the following questions:
+Protocols based on UC, support for programming tool support is further behind. Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others~\cite{ilc, easyuc, ipdl, sybolicuc, barbosa}. Our work goes further in this direction by asking several new questions:
 
 \begin{enumerate}
 \item 
-As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand. Can we use Session Types as a way of providing more structure and assisting in the analysis of the ideal world models?
-Session types have been employed in \snote{is there a citation here you meant to put here? maybe of ankush's smart contract work?}, however there are several reasons they are not an obvious fit.
-UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
-Is it possible to reconcile these, getting some value from session types without restricting the expressiveness of UC?
+As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand.
+Can we use Session Types as a way of providing more structure and assisting in the analysis of the ideal world models?
+Session types have been successfully employed in modeling distributed protocols~\cite{nomos}\anote{other best session types papers?}, however it is not obvious what help they provide within an adversarial model as strong as UC.
+Additionally UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
+Is it possible to reconcile these, getting some value from session types without restricting the  of UC?
 
 %\item RQ1: Cryptographic applications often involve several different parties communicating
 %with each other in a pre-defined protocol.
@@ -77,13 +78,12 @@ which states that well-typed processes in NomosUC are ``locally polynomial time"
 in the sense required by UC.
 
 We validate our approach to UC both through realizing traditional UC theorems and through examples which showcase our emulation definition and composition operators.
-In Section~\ref{sec:execuc} we are able to express a composition theorem that is parametric in the type of the protocol, and showcase its generalizability through an example 
+%In Section~\ref{sec:execuc} we are able to express a composition theorem that is parametric in the type of the protocol, and showcase its generalizability through an example 
 by applying it to coin flip functionality \Fflip in Section~\ref{sec:commitment}.
-Ww show how to systematically convert \Fflip to a functionality that can be expressed in NomosUC, realize it with a protocol relying in a bit commitment \Fcom, and demonstrate the generalizability of our composition theorem by composing $\pi_{\m{flip}}$ with a protocol $\pi_{\m{com}}$ that realizes \Fcom.  
+%Ww show how to systematically convert \Fflip to a functionality that can be expressed in NomosUC, realize it with a protocol relying in a bit commitment \Fcom, and demonstrate the generalizability of our composition theorem by composing $\pi_{\m{flip}}$ with a protocol $\pi_{\m{com}}$ that realizes \Fcom.  
 
 \anote{Explain more of the validation we accomplish by completing the standard composition operators in UC.}
 \anote{Explain more of the highlights from our \Fflip case study.}
-%=======
 %
 %   The challenge of “polynomial runtime” in UC is that individual processes must be judged as polynomial, but when eveluated in context with other concurrently running process it is difficult to assign blame.
 %       The current best way to define polynomial runtime, found in the 2019 and later version of UC, is based a concept of ``import tokens.''
@@ -93,7 +93,6 @@ Ww show how to systematically convert \Fflip to a functionality that can be expr
 %    The Preservation theorem we prove associated with our type system and operational semantics proves the following: 
 %  well-typed terms in Nomos UC are “locally polynomial time”, in the sense required of UC, meaning they do not take more steps that some polynomial function $T(N)$ of the net number of import tokens it has received.
 %  \anote{Explain better connection between Preservation theorem and what is needed in UC proofs}
-%>>>>>>> f83e42c (abstract and intro drafted)
 
 %In this work we attempt to improve on the state of the art by applying \textit{resource-aware session types} to realize the UC framework that we call Nomos UC.
 
