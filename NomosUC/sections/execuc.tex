@@ -8,7 +8,7 @@ Recall from Section~\ref{sec:background} that the UC security definition $\F_1 \
 More generally, we define UC realization in terms of an indistinguishability relation between two experiments, the real-world featuring the execution of $\pi$ with $\F_1$, and an ideal-world execution of $\F_2$ and an ideal protocol $\idealP$ that just relays inputs/outputs directly to/from $\F_2$.%
 \footnote{This ideal protocol $\idealP$ is also the identity, since we can easily show $\F \xrightarrow{\idealP} \F$ for any functionality $\F$.}
 \begin{definition}[UC-Realize] \label{def:realize}
-A protocol $\pi$ UC-realizes an ideal functionality $\F_1$ if $(\pi, \F_2) \sim (\idealP, \F_1)$ for some $\F_2$.
+A protocol $\pi$ UC-realizes an ideal functionality $\F_1$ if $(\pi, \F_2) \sim (\idealP, \F_1)$ for some $\F_2$ where $\sim$ indicates indistinguishability in the UC sense.
 \begin{mathpar}
 \footnotesize
 \inferrule*[right=UC-Realize]
@@ -16,29 +16,28 @@ A protocol $\pi$ UC-realizes an ideal functionality $\F_1$ if $(\pi, \F_2) \sim 
 { \F_1 \xrightarrow{\pi} \F_2 }
 \end{mathpar}
 \end{definition}
-%% The dummy protocol \idealP is a trivial protocol defined such that for all \F
-%% \begin{mathpar}
-%% \inferrule
-%% { }
-%% { \F \xrightarrow{\idealP} \F }
-%% \end{mathpar}
+We go on to realize the single composition Theorem~\ref{thm:singlecomp} in Section~\ref{sec:background}, a multisession composition operator, and, finally, a full UC composition theorem.
 
-A key property of the UC framework is proving security (by emulation) of protocol composition.
-Our UC-realize notation composes nicely given a composition operator between protocols and an operator between simulators.
-Given an $\F_1 \xrightarrow{\pi} \F_2$ and and $\F_2 \xrightarrow{\rho} \F_3$, the composition theorem in UC states
-\begin{theorem}[Composition]\label{thm:singlecomp}
-\begin{mathpar}
-\inferrule*[right=single-compose]
-{
-	\F_1 \xrightarrow{\pi} \F_2 \semi \F_2 \xrightarrow{\rho} \F_3 \\
-}
-{
-	\F_1 \xrightarrow{\rho \circ \pi} \F_3
-}
-\end{mathpar}
+%The dummy protocol \idealP is a trivial protocol defined such that for all \F
 
-\end{theorem}
-Below, we introduce how the UC experiment is implemented in NomosUC, and then provide a composition operator $\circ$ for protocols, and one for simulators, that satisfied Theorem~\ref{thm:singlecomp}.
+%A key property of the UC framework is proving security (by emulation) of protocol composition.
+%Our UC-realize notation composes nicely given a composition operator between protocols and an operator between simulators.
+%Given an $\F_1 \xrightarrow{\pi} \F_2$ and and $\F_2 \xrightarrow{\rho} \F_3$, the composition theorem in UC states
+%The first composition theorem of interest replaces a single instance of a functionality with a single instance of a realizing protocol. 
+%It is introduced in Section~\ref{sec:background} and we restate it here. 
+%\begin{theorem}[Composition]\label{thm:singlecomp}
+%\begin{mathpar}
+%\inferrule*[right=single-compose]
+%{
+%	\F_1 \xrightarrow{\pi} \F_2 \semi \F_2 \xrightarrow{\rho} \F_3 \\
+%}
+%{
+%	\F_1 \xrightarrow{\rho \circ \pi} \F_3
+%}
+%\end{mathpar}
+%
+%\end{theorem}
+Below, we introduce how the UC experiment is implemented in NomosUC, and then provide a composition operator $\circ$ for protocols, and one for simulators, that satisfies Theorem~\ref{thm:singlecomp}.
 
 \subsection{The UC Experiment}
 The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
@@ -476,7 +475,7 @@ UC emulation combines the UC exeution with indistinguishability resuting in the 
 Given two protocols $(\pi, \F_1), (\phi, \F_2)$, which we refer to only by \PI and $\phi$ in the theorem, that are well-resource-typed, if $\forall \A$ well-matched with \PI, $\exists \Sim$ well-matched with $\phi$ s.t. $\forall \Z$ : $\msf{execUC}(\pi, \F_1, \Z, \A) \approx \msf{execUC}(\phi, \F_2, \Z, \Sim)$:
 
 \begin{mathpar}
-\footnotesize
+	\footnotesize
 	\inferrule*[right=emulate]
 	{
 		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
@@ -819,10 +818,9 @@ If a functionality $\F$ is well-resource-typed, then it's multisession extension
 It easy to see why the multisession extension, performing constant work and being activated a polynomial number of times, remains well-resource-typed and PPT given that \F is PPT.
 We formally treat this and the remaining theorems in this section in the Appendix.
 
-\todo{name this theorem~\ref{thm:functor} something meaningful}
-\begin{theorem}[Something About Functors]\label{thm:functor}
+\begin{theorem}[Multisession Composition]\label{thm:functor}
 	\begin{mathpar}
-		\inferrule*[right=somefunctor]
+		\inferrule*[right=MultiComp]
 		{
 			\F_1 \xrightarrow{\pi} \F_2
 		}
