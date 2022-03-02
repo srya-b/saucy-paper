@@ -5,7 +5,7 @@ Finally, we give \Fflip, and a realizing protocol and sketch the composed simula
 
 \subsection{The Random Oracle}
 The random oracle functionality captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
-It allows both protocol parties and the adversary to request hashes from it.
+It allows both protocol parties and the adversary to send 1 import token and request hashes from it
 We augment \Fro with a single communication channel allowing it parties to send messages to each other. One caveat from traditional communication
 is that the protocol parties must poll \Fro for new messages. The augmented functionality is called \Fropp from now on.
 
@@ -43,7 +43,7 @@ $\Type$ rof2p[a] = RHash of $\tgr{Int}$ | Yes of pid ^ a
 \end{lstlisting}
 
 \subsection{Commitment Protocol}
-The real world commitment protocol is constructed in the random oracle model in the way of ~\cite{hofheinz}.
+The real world commitment protocol is constructed in the random oracle model in the way of ~\cite{hofheinzcommitment}.
 Its incoming channel from \Z is typed identically to \Fcom to ensure that emulation and composition hold.
 
 We show a snippet of the sender code for computing the commitment for its input bit in Figure~\ref{lst:committer}, and the relevant code the the receiver checking the commitment in Figure~\ref{lst:receiver}.

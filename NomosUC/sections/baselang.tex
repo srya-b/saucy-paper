@@ -5,9 +5,11 @@ of intuitionistic linear logic~\cite{girard1987linear}.
 Under this correspondence, a process term $P$ is assigned to
 a logical judgment of the form $A_1, \ldots A_n \vdash C$ and each antecedent as well as the succedent is
 labeled with a \emph{channel} to obtain
+
 \[
 x_1 : A_1, \ldots, x_n : A_n \vdash P :: (z : C)
 \]
+
 The resulting judgment states that process $P$ \emph{provides} a service
 of session type $C$ along channel $z$, \emph{using} the services of session
 types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$ respectively.

@@ -815,13 +815,14 @@ The multisession extension is mentioned in greater detail in the appendix.
 %\label{lst:bangf}
 %\end{figure}
 
+The first claim we make is that our multisession extension remains polynomial time.
 \begin{theorem}[PPT !]\label{thm:bangppt}
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
 \end{theorem}
-
 It easy to see why the multisession extension, performing constant work and being activated a polynomial number of times, remains well-resource-typed and PPT given that \F is PPT.
 We formally treat this and the remaining theorems in this section in the Appendix.
 
+The next theorem realizes multiple sessions of a functionality with multiple sessions of a realizing protocol and it's hybrid functionality.
 \begin{theorem}[Multisession Composition]\label{thm:functor}
 	\begin{mathpar}
 		\inferrule*[right=MultiComp]
@@ -837,6 +838,7 @@ Theorem~\ref{thm:functor} is intuitive in the sense that each session of the rea
 A UC proof for this is more involved that just providing a simulator but, instead, relies on a hybrid argument. 
 We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
 
+The final multisession theorem says that we can squash many subsessions into one session and still realize the same functionality~\cite{juc}.
 \begin{theorem}[Squash Theorem]\label{thm:squash}
 	\begin{mathpar}
 		\inferrule*[right=squash]
