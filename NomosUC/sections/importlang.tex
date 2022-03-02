@@ -62,6 +62,8 @@ For a process to be well-typed, an implicit side condition is
 that its token context must always be \emph{valid w.r.t. the security parameter $k$}.
 To this end, we introduce a fixed and globally known function $\GlobalF$ as the \emph{connection rate}
 between two successive tokens in the hierarchy.
+UC requires this function to be \emph{super-additive}, i.e.,
+$\GlobalF(x+y, k) \geq \GlobalF(x, k) + \GlobalF(y, k)$.
 Then, we require that if $\Tokens$ contains $m'$ current tokens of type
 $K_i$, it can only contain at most $\GlobalF(m,k)$ total tokens of type
 $K_{i+1}$. We express this validity condition using the following inductive rules below.
@@ -256,6 +258,14 @@ potential from the current stored process potential, as described below.
 Note how the process starts with $q'+r$ potential units, and executing $\etick{r}$
 consumes $r$ units leaving $q'$ potential for the continuation.
 
+Semantically, a process executing a $\etick{r}$ operation increments its work counter by $r$.
+\begin{tabbing}
+  $(\m{tick}) : \proc{c}{w, \etick{r} \semi P} \step \proc{c}{w+r, P}$
+\end{tabbing}
+Note that this is the only rule that increments the work counter of a process.
+And since this operation consumes $r$ units of potential, we can intuitively infer
+that the total sum of potential and work of a closed set of processes will always be bounded.
+
 The implementation of NomosUC can integrate a cost instrumentation engine that automatically
 inserts a $\etick{1}$ construct before each syntactic construct.
 This enables us to simulate the cost model that counts the total number of
@@ -269,232 +279,3 @@ execution steps.
 %   {\vars \vdash \D_1, (x : A) \equiv \D_2, (x : B)}
 %   {\vars \vdash \D_1 \equiv \D_2 \and \vars \vdash A \equiv B}
 % \end{mathpar}
-
-
-
-
-
-\subsection{Preservation and Progress}
-The main type safety theorems that exhibit the deep connection between our type
-system and the operational semantics are the usual \emph{type
-preservation} and \emph{progress}, sometimes called \emph{session
-fidelity} and \emph{deadlock freedom}, respectively.
-
-To exhibit these theorems, we first need to introduce semantic objects
-$\proc{c}{w, P}$ and $\msg{c}{w, M}$.
-The former (resp. latter) denotes a process (resp. message) executing
-expression $P$ (resp. $M$) offering channel $c$ and having performed
-work $w$ so far.
-The work counter keeps track of execution steps taken by a process,
-giving rise to the following semantics rule:
-\begin{tabbing}
-  $(\m{tick}) : \proc{c}{w, \etick{r} \semi P} \step \proc{c}{w+r, P}$
-\end{tabbing}
-A multiset of such semantic objects communicating with each other
-is known as a \emph{configuration}.
-A configuration is typed w.r.t. a signature providing the type declaration
-of each process.
-A signature $\Sg$ is \emph{well formed} if
-(a) every type definition $V = A_V$ is \emph{contractive},
-and (b) every process definition
-$\Psi \semi \D \vdash f \{\Tokens\} = P :: (x : A)$ in $\Sg$
-is well typed according to the process typing judgment, i.e.
-$\Tokens \semi \Psi \semi \D \vdash P :: (x : A)$.
- 
-A key question then is how to type these configurations.
-Since they consist of both processes and messages, they
-both \emph{use} and \emph{provide} a collection of channels.
-Another goal with the type safety theorems is to establish a connection
-between the statically determined import tokens of a process,
-its total potential, and the dynamically evolving work counters
-that account for the total number of execution steps.
-We use the following judgment to type a configuration.
-\[
-\D_1 \overset{(T, Q)}{\underset{W}{\vDash}} \config :: \D_2
-\]
-It states that the configuration $\config$
-uses the channels in the context $\D_1$ and provides the channels in
-the context $\D_2$.
-In addition, $T$ and $Q$denote the total number of real tokens
-potential contained in a configuration.
-Similarly, $W$ denotes the total work performed by a configuration.
-All these quantities are computed by adding the individual tokens,
-potential, and work of each semantic object.
-\begin{figure}[t]
-\begin{mathpar}
-\infer[\m{empty}]
-{\D \overset{(0, 0)}{\underset{0}{\vDash}} (\cdot) :: \D}
-{}
-\and
-\infer[\m{compose}]
-{\D_0 \overset{(T_1+T_2, Q_1+Q_2)}{\underset{W_1+W_2}{\vDash}} (\config_1 \; \config_2) :: \D_2}
-{\D_0 \overset{(T_1, Q_1)}{\underset{W_1}{\vDash}} \config_1 :: \D_1 \qquad
-\D_1 \overset{(T_2, Q_2)}{\underset{W_2}{\vDash}} \config_2 :: \D_2}
-\and
-\infer[\m{proc}]
-{\D, \D_1 \overset{(t, q)}{\underset{w}{\vDash}} \proc{c}{w, P} :: (\D, (c : A) )}
-{\Tokens, K_0 \hookrightarrow t \semi \cdot \semi \D_1 \entailpot{q} P :: (c : A)}
-\and
-\infer[\m{msg}]
-{\D, \D_1 \overset{(t, q)}{\underset{w}{\vDash}} \msg{c}{w, M} :: (\D, (c : A) )}
-{\Tokens, K_0 \hookrightarrow t \semi \cdot \semi \D_1 \entailpot{q} M :: (c : A)}
-\end{mathpar}
-\caption{Typing rules for a configuration}
-\label{fig:config_typing}
-\end{figure}
-
-The configuration typing judgment is defined using
-the rules presented in Figure~\ref{fig:config_typing}.
-%
-The rule $\m{empty}$ defines that an empty configuration
-is well-typed with $(T, Q, W) = (0, 0, 0)$ and uses and
-provides the same set of channels.
-The $\m{compose}$ rule combines two configurations by canceling out
-the common channels and adding the individual tokens, potential, and work.
-The $\m{proc}$ rule creates a configuration out of a single process
-and uses its tokens, potential, and work as the annotations for the
-configuration.
-Similarly, the $\m{msg}$ rule creates a configuration out of a single message.
-
-\begin{theorem}[Type Preservation]
-\label{thm:preservation}
-Suppose we have a well-typed configuration
-$\D \overset{(T_1, Q_1)}{\underset{W_1}{\vDash}} \config_1 :: \D'$ such
-that there exists a polynomial $\mathfrak{p}$ such that $\mathfrak{p}(T_1) \geq Q_1+W_1$.
-If $\config_1 \step \config_2$, then there exist $T_2$, $Q_2$, and $W_2$ such
-that $\D \overset{(T_2, Q_2)}{\underset{W_2}{\vDash}} \config_2 :: \D'$,
-and $\mathfrak{p}(T_2) \geq Q_2+W_2$.
-\end{theorem}
-\begin{proof}
-  By case analysis on the transition rule, applying inversion to the
-  given typing derivation, and then assembling a new derivation of
-  $\dc$.
-\end{proof}
-
-A process or message is said to be \emph{poised} if it is trying to
-communicate along the channel that it provides.  A poised process is
-comparable to a value in a sequential language. A configuration is
-poised if every process or message in the configuration is poised.
-Conceptually, this implies that the configuration is trying to communicate
-externally, i.e. along one of the channel it provides.
-The progress theorem then shows that either a configuration can take a
-step or it is poised.  To prove this I show first that the typing
-derivation can be rearranged to go strictly from right to left and
-then proceed by induction over this particular derivation.
-
-\begin{theorem}[Global Progress]
-\label{thm:progress}
-\mbox{}
-If $\cdot \overset{(T, Q)}{\underset{W}{\vDash}} \config :: \D$ then either
-\begin{enumerate}
-\item[(i)] $\config \mapsto \config'$ for some $\config'$, or
-\item[(ii)] $\config$ is poised.
-\end{enumerate}
-\end{theorem}
-\begin{proof}
-By induction on the right-to-left typing of $\config$ so that either
-$\config$ is empty (and therefore poised) or
-$\config = (\dc\; \proc{c}{w, P})$ or
-$\config = (\dc\; \msg{c}{w, M})$. By induction hypothesis, $\dc$ can
-either take a step (and then so can $\config$), or $\dc$ is poised.  In
-the latter case, I
-analyze the cases for $P$ and $M$, applying multiple steps of
-inversion to show that in each
-case either $\config$ can take a step or is poised.
-\end{proof}
-
-
-%\subsection{UC Communicators} \label{sec:communicators}
-%% all the processes conncted together leads to a cycle of linear channels ==> Z <--> P so here we use a communicator 
-%The UC execution connects the protocol to the environment in both directions of communication.
-%This poses a technical challenge where, if linear channels are used, the resulting topology contains a cycle of linear channels: the environmtne offers a channel to the wrapper and the wrapper to the environment.
-%Such cycles violate type preservation because a client is acquiring its client~\ref{dasnomos}.
-%Therefore, we use a message buffers called communicators which offered shared channels that both ends of the communication can use.
-%Communicators are used in the main UC execution in Section~\ref{sec:execuc} to connect the main processes together, as well as within the \partywrapper. 
-%
-%A communicator has a \emph{sender} and a \emph{receiver}. 
-%The shared channel offered by the communicator has the following polymorphic session type:
-%\begin{tabbing}
-%  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
-%  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{push} : \m{msg} \arrow
-%  \down \m{comm[msg]},$\\
-%  \>$\mb{pop} : \ichoice{$\=$\mb{yesmsg} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
-%  \>\>$\mb{nomsg} : \down \m{comm[msg]} }}$
-%\end{tabbing}
-%
-%One illustration of the use of shared session types is a \emph{communicator}.
-%We use communicators as message buffers between two arbitrary processes: a
-%\emph{sender} and a \emph{receiver}.
-%The communicator is connected to both the sender and the receiver using a shared
-%channel.
-%
-%Intuitively, the communicator receives \emph{push} requests from the sender followed
-%by receiving a message and stores them internally.
-%Analogously, the communicator receives \emph{pop} requests from the receiver,
-%and responds appropriately with the message if one is stored inside the communicator.
-%Formally, a communicator has the following polymorphic session type
-%\begin{tabbing}
-%  $\mi{stype} \; \m{comm[K][msg]\{n\}} =$\\
-%  \quad $\up \tgetpot{}{n+1: K} \echoice{$\=$\mb{SEND} : \m{msg} \arrow
-%  \down \m{comm[msg]},$\\
-%  \>$\mb{RECV} : \ichoice{$\=$\mb{yes} : \m{msg} \product \down \tpaypot{}{n: K} \m{comm[msg]},$\\
-%  \>\>$\mb{no} : \down \m{comm[msg]} }}$
-%\end{tabbing}
-%The $\up$ indicates that it is a shared channel that must be \emph{acquired} by a process in order to send something over it.
-%
-%The sender can $\mb{SEND}$ a message into the communicator, and the receiver can periodically try to $\mb{RECV}$ a message from it.
-%If there is a message, it responds with $\mb{yes}$, the message of the parameterized type $\m{msg}$, and the import sent with it.
-%Note that the communicator retains one unit of import from every message. 
-%It needs at least one because it may be activated a polynomial number of times, and, therefore a constant amount of potential is insufficient. 
-%At the end of activation, the channel is released with $\down$, and another process can acquire it.
-
-%%\subsection{Discussion on Realizing Import}
-%%In this section we present a generic way of using communicators and shared channel to realize arbitrary communication between two parties, avoid cycles, and, still, meaningfully use session types.
-%%A consequence of the approach is that communicators carry only functionally typed messages and, therefore, shell code needs to convert between them and session-typed messages.
-%%Now that we have introduced the import and potential mechanisms in NomosUC, we introduce a final consequence of our design.
-%%
-%%The communicator type, and the functional messages, restrict all messages in one direction between two parties to send a constant amount of import.
-%%This means that if a protocol requires sending different import with different messages, NomosUC realizes it be sending the maximal import with every message.
-%%As the intent of import is not to impose very right bounds on resource usage, we argue that this constraint only results in users defining types that give more import than absolutely necessary.
-
-
-%\begin{itemize}
-%\item Identify design decisions like concretizing potential, sandboxing and virtualizing with withdrawTokens, the valid token context rule, the type system in general
-%\item Identify polytime concerns that need to be discussed in the context of our polytime design
-%	\begin{itemize}
-%	\item is PPT efficiently recognizable?
-%	\item address the infinite runs problem and make sure it isn't allowed here with particular attention paid to withdrawTokens and infinite virtualizations
-%	\item the type system guarantees we don't have a case where, given some polynomial, a machine just halts mid execution so we avoid any additional information that an environment can use to distinguish based on execution timing in both word
-%	\end{itemize}
-%\item end with the virtualization point and tie that into proposition 7 and the universal turing machine that can simulate the UC execution. This goes a long way in assuring PPT notion in NomosUC, even thought we aren't dealing exactly with ITMs here.
-%\end{itemize}
-
-%The type $\m{comm}$ is parameterized by the type $\m{msg}$, i.e., the type of
-%messages in the buffer, and import type parameter, i.e. the amount of import tokens sent with
-%the message. 
-%The type initiates with an $\up$ denoting that $\m{comm}$ is a shared session type.
-%The type prescribes that the communicator needs to be acquired by the sender (or receiver)
-%for further interaction.
-%Such an acquire-release discipline is automatically enforced by the shared session type.
-%Once acquired, the communicator can either receive $\mb{push}$ (from sender) or
-%$\mb{pop}$ requests (from receiver).
-%In the former case, the communicator receives a message of type $\m{msg}$ and $n+1:K$ import tokens, and
-%then detaches from the client using the dual $\down$ operator.
-%In the latter case, the communicator checks if it internally contains a message
-%for the receiver.
-%If yes, the communicator replies with the $\mb{yesmsg}$ label followed by sending
-%the message (the $\product$ constructor) and $n:K$ import tokens.
-%Otherwise, the communicator replies with the $\mb{nomsg}$ label.
-%In either case, the communicator then detaches from the client matching the $\down$
-%operator.
-%Internally, the communicator stores these messages in a first-in-first-out order.
-
-%It is important to note that our communicators need at least 1 token of import 
-%to use themselves to handle a potentially polynomial number of activations. 
-%Therefore, it requires $n+1$ units of import from the sender and sends the intended
-%$n$ tokens to the receiver when requested.
-
-%The communicator is also the perfect opportunity to implement an unreliable
-%message buffer that can drop or reorder messages.
-%All we would need to do is change the internal implementation of the communicator
-%\emph{without} changing the offered session type.
