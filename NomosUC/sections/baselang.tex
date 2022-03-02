@@ -43,7 +43,7 @@ The operational semantics for session-typed programs are formalized as a
 system of \emph{multiset rewriting rules}~\cite{cervesato2009relating}.
 These rules consist of semantic objects $\proc{c}{P}$ and $\msg{c}{M}$ describing
 process $P$ (or message $M$) providing service along channel $c$.
-Remarkably, in this formulation, a message is just a particular form of process,
+Remarkably,\anote{Let's remove this, or else explain more why this matters?} in this formulation, a message is just a particular form of process,
 thereby not requiring any special rules for typing; it can be typed just as processes.
 Since we track computational cost as well in NomosUC, we extend the semantic objects
 to $\proc{c}{w, P}$ and $\msg{c}{w, P}$ where work counter $w$ stores the work performed
@@ -236,10 +236,11 @@ However, linear session types can prove to be quite restrictive in terms of real
 arbitrary communication patterns in practical cryptographic protocols.
 In this section, we highlight a common communication pattern in UC that requires introducing
 the notion of shared session types~\cite{balzer2017manifest} to be expressible in NomosUC.
+\anote{redundant w/ next sentence}
 
 We motivate the use of shared session types through an example of an ITM communication pattern
 pattern common in UC, but difficult to capture with a single session type.
-Imagine two ITMS $P$ and $Q$ which communicate in the following way. If $P$ is activated first,
+Consider two ITMs $P$ and $Q$ that communicate in the following way. If $P$ is activated first,
 it sends a message to $Q$ and terminates, but if $Q$ is activate first it writes a message to $P$, 
 $P$ writes a message back, and communication terminates.
 Session types require it to be statically known which party will write next to a channel so such
@@ -367,9 +368,9 @@ due to linearity of the channels.
 
 The communicator type is parametric in the message type sent over it, and it is restricted to sending 
 functionally typed messages only. 
-Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realized our desired \emph{providerless channels} using communicators and some useful shell code.
-We wrap each of $P$ and $Q$ in shell code, call them $S_P$ and $S_Q$, which spawn two dummy processes each.
-The processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.
+Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
+We wrap each of $P$ and $Q$ in a shell code, call these $S_P$ and $S_Q$, which spawn two processes each.
+The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}
 Second, $a$ and $b$ each communicate with one communicator and convert functionally typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
 Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.
 \begin{figure}

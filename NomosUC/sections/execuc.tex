@@ -1,11 +1,12 @@
-In this section, we introduce UC emulation and how protocol can realize ideal functionalities.
-UC realization states that given some assumed protocol/functionality $\F_1$ we can realize some desired application $\F_2$ with a protocol $\pi$ that uses $\F_1$.
-We express UC realization using
-\[
-	\F_1 \xrightarrow{\pi} \F_2
-\]
-which captures the protocol $\pi$ realizing $\F_2$ with $\F_1$.
-More generally, we define UC realization in terms of UC emulation: indistinguishability between a real-world execution of $\pi$ with $\F_1$ and an ideal-world execution of $\F_2$ in Definition~\ref{def:realize}.
+In this section, we explain in detail our encoding of the UC security definition into Nomos-UC.
+Recall from Section~\ref{sec:background} that the UC security definition $\F_1 \xrightarrow{\pi} \F_2$ says we can realize some desired application $\F_2$ with a protocol $\pi$ that uses $\F_1$.
+%We express UC realization using
+%\[
+%	
+%\]
+%which captures the protocol $\pi$ realizing $\F_2$ with $\F_1$.
+More generally, we define UC realization in terms of an indistinguishability relation between two experiments, the real-world featuring the execution of $\pi$ with $\F_1$, and an ideal-world execution of $\F_2$ and an ideal protocol $\idealP$ that just relays inputs/outputs directly to/from $\F_2$.%
+\footnote{This ideal protocol $\idealP$ is also the identity, since we can easily show $\F \xrightarrow{\idealP} \F$ for any functionality $\F$.}
 \begin{definition}[UC-Realize] \label{def:realize}
 A protocol $\pi$ UC-realizes an ideal functionality $\F_1$ if $(\pi, \F_2) \sim (\idealP, \F_1)$ for some $\F_2$.
 \begin{mathpar}
@@ -15,12 +16,12 @@ A protocol $\pi$ UC-realizes an ideal functionality $\F_1$ if $(\pi, \F_2) \sim 
 { \F_1 \xrightarrow{\pi} \F_2 }
 \end{mathpar}
 \end{definition}
-The dummy protocol \idealP is a trivial protocol defined such that for all \F
-\begin{mathpar}
-\inferrule
-{ }
-{ \F \xrightarrow{\idealP} \F }
-\end{mathpar}
+%% The dummy protocol \idealP is a trivial protocol defined such that for all \F
+%% \begin{mathpar}
+%% \inferrule
+%% { }
+%% { \F \xrightarrow{\idealP} \F }
+%% \end{mathpar}
 
 A key property of the UC framework is proving security (by emulation) of protocol composition.
 Our UC-realize notation composes nicely given a composition operator between protocols and an operator between simulators.
@@ -45,9 +46,9 @@ The experiment, parameterized by a security parameter $k$ and source of randomne
 The \partywrapper encapsulates the protocol parties and is necessary to allow dynamic creation of parties. 
 Furthermore, it is connect to \Z, \A, and \F through providerless channels.
 
-Virtualization and sandboxing of code is a common design pattern in UC, especially with adversaries and simulators.
-NomosUC support it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
-Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on simple code generation to declare \inline{execUC} with a sufficient number of type parameters.
+Virtualization and sandboxing\anote{are these two separate things?} of code is a common design pattern in UC, especially with adversaries and simulators.
+NomosUC supports it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
+Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on simple code generation\anote{what is simple code generation} to declare \inline{execUC} with a sufficient number of type parameters.
 
 For example, an execution where the simulator sandboxes the real world adversary, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
@@ -138,6 +139,7 @@ The remainder of the main processes of \inline{execUC} are typed very similarly:
 One of the core research questions that this work aims to study session types applied to the UC framework. 
 In this section, we discuss how resource-aware session types impact the design of functionalities in NomosUC.
 We use the two-way authenticated channel functionality \Fauth to throughout this discussion.
+\anote{This introduces \Fauth too out of the blue, it's a whole new example so it needs a clearer introduction, i.e. what is the functionality and what are the embodied security properties}
 
 In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
 In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionality involving $P_s$, $P_r$, \F, and \A. 
@@ -180,7 +182,7 @@ $\m{adv}[a] = \ichoice{\m{get}: \echoice{$\=$\mb{yes}: a \tensor \m{adv}[a]$ \\
 
 
 \subsection{The \partywrapper}
-NomosUC departs slightly from the standard UC framework by using a \partywrapper to encapsulate all protocol parties and run them internally.
+NomosUC departs\anote{why is this a departure? could just omit that} slightly from the standard UC framework by using a \partywrapper to encapsulate all protocol parties and run them internally.
 We use the notation \m{MX}(\PI) to denote the \partywrapper running parties of protocol \PI.
 
 The purpose of the \partywrapper is to support a dynamic set of parties without \Z, \A, or \F having to reat to new parties and managing a growing set of channels.
@@ -241,7 +243,7 @@ The \partywrapper alone does constant work per activation, therefore, in either 
 \begin{figure}
 	\centering
 	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
-	\caption{An instance of a single protocol party. The party $\pi_{pid}$ is the shell code around the actual protocol akin to Figure~\ref{fig:newpandq}, and it is given communicators for communication in both directions. The dotted box encapsulates all the code that the \partywrapper creates for each party.}
+	\caption{An instance of a single protocol party.\anote{confusing since this is a single instance, yet it has a ``multiplex'' subcomponent.''} The party $\pi_{pid}$ is the shell code around the actual protocol akin to Figure~\ref{fig:newpandq}, and it is given communicators for communication in both directions. The dotted box encapsulates all the code that the \partywrapper creates for each party.}
 	\label{fig:singlemultiplex}
 	\vspace{-3mm}
 \end{figure}
@@ -430,8 +432,8 @@ If we take the intial import $n$ to be polynomial in the security parameter $k$,
 %However, we also want to reason about terms that are well-typed when connected to another Nomos terms.
 
 \subsection{Emulation}
-Emulation underpins the UC security definition, and reasons about indistinguishability between two protocols over all adversaries against it and a simulator for all environments.
-In NomosUC, we must be more careful to only consider protocols and adverasaries whose types (both message and import) match over the channels they share. 
+The central security definition in UC is indistinguishability between the real and ideal world experiments.
+In NomosUC, we must be more careful to only consider protocols and adversaries whose types (both message and import) match over the channels they share. 
 Therefore, we introduce the term \textit{well-matched} to mean a PPT term $e$ is well-typed when connected to another term $e'$.
 Simply put, we want to capture terms $e$ and $e'$ that can be connected over the channels the share given their type.
 The resulting terms in Definition~\ref{def:wellmatched} are partionall closed after connection: the terms may only be connected on some subset of their channels.
