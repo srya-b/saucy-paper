@@ -93,10 +93,10 @@ Somewhat more formally, we say $P$ is a \emph{locally polynomial time process} i
 \#\textsf{stepsTaken}(e[P])_{t} \le T(n_{\textsf{in}} - n_{\textsf{out}})
 \]
 were $n_{\textsf{in}}$ is the total number of import tokens received by $P$ and $n_{\textsf{out}}$ is the total number of tokens $P$ has sent, and $T$ is an arbitrary polynomial.
-This is sufficient because it immediately ensures that if the system starts out with a total number of tokens bounded in the security parameter $k$, then the overall number of steps taken by any of the processes in the system is also bounded in $k$.
-The expressiveness comes from the arbitrary polynomial $T$, a slack parameter that allows, for example, the emulation of a universal turing machine (which potentially incurs quadratic overhead).
+This immediately ensures that if the system starts out with a total number of tokens bounded in the security parameter $k$, then the overall number of steps taken by any of the processes in the system is also bounded in $k$.
+The arbitrary polynomial $T$ serves as a slack parameter that allows, for example, the emulation of a universal turing machine program (which may incur up to quadratic overhead).
 %\footnote{The reason for the arbitrary polynomial $T$ is to allow enough slack to support universal simulation, for example a Universal Turing Machine simmulation may add quadratic overhead.}
-Our approach, described in Section~\ref{sec:basic}, is to encode this notion directly into the type system, by tracking import tokens and statically enforcing the local polynomial runtime constraint.
+Our approach, described in Section~\ref{sec:basic}, is to encode this notion directly into the type system, by tracking import tokens and statically enforcing this polynomial runtime constraint.
 
 %Existing definitions of polynomial-time usually center around the lengths of input and output messages. In GNUC~\cite{gnuc} considers a function of the sum of all inputs a machine receives as a bound on its runtime. Previous versions of the UC framework similarly rely on functions of the difference between the lengths of a machine's inputs and outputs
 %The latest iteration of UC overcomes some drawbacks in polytime notions around ```input lengths''~\footnote{Namely, the \emph{infinite runs} problem identified in \cite{uc}.} and introduces the import mechanism.
