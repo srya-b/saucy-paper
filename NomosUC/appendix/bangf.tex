@@ -120,3 +120,40 @@ It is clear to see why simulating in isolation works given that the instances of
 However, the proof of this theorem relies on the creating a reduction from an environment that can distinguish the two worlds in this theorem to an environment that can distinguish emulation of $pi$ realizing $\F$.
 
 The proof proeeeds in... \anote{TODO}
+
+\subsection{Squash Theorem}
+\begin{theorem}[Squash Theorem]\label{thm:squash}
+	\begin{mathpar}
+		\inferrule*[right=squash]
+		{
+			\textit{well-resource-typed} \; \F
+		}
+		{
+			!\F \xrightarrow{\msf{squash}} !!\F
+		}
+	\end{mathpar}
+\end{theorem}
+The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:functor}.
+
+\begin{proof} (Theorem~\ref{thm:squash})
+On examination the \msf{squash} theorem does constant work per activation and concantenates two \inline{ssid}s into one for messages going to the functionality and does the inverse for messages incoming from the functionality.
+In other words, it is a direct simulation and the same ideal functionality exists if both worlds, and it is clear to see that the this theorem holds with a trivial simulator.
+%First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
+%The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
+%
+%In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $\F[\msf{ssid}_1][\msf{ssid}_2]$).
+%The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$ into a single \msf{ssid}: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$.
+%If follows intuitively that the view for the environment remains the same. 
+%
+%We construct a simulator such that:
+%\[
+%\msf{execUC} \, \Z \, \idealP \, !!\F \, \SIM{\msf{squash}} \approx \msf{execUC} \, \Z \, \msf{squash} \, !\F \DA 
+%\]
+%The simulator is very simple. 
+%Inputs to/from parties/\Z for a corrupt party is forwarded unmodified.
+%Input intended for $!\F$ of the form $(\msf{ssid}_1 \cdot \msf{ssid}_2, msg)$ is sent as $(\msf{ssid}_1, (\msf{ssid}_2, msg))$ to $!!\F$. 
+%Output from $!!\F$ is modified inversely and sent to \Z.
+%
+%The proposed simulator is trivially analyzed to be \textit{well-resource-typed}.
+%It performs constant work per activation and does ``real'' simulation other than message modification to/from $!!\F$.
+\end{proof}

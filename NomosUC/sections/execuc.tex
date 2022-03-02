@@ -50,7 +50,7 @@ NomosUC supports it through the use of virtual tokens, however, the statically t
 Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on generating simple code \snote{not simple} to declare \inline{execUC} with a sufficient number of type parameters.
 
 For example, an execution where the simulator sandboxes the real world adversary, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
 $\tm{import}$ PS 
 $\tb{proc}$ execUC[$\tp{K}$][$\tp{K1}$][$\tp{z2p}$][$\tp{p2z}$]...{$\tp{z2pn}$}{$\tp{p2zn}$}... :
   (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
@@ -77,7 +77,7 @@ In general, as we will discuss when introducing the \partywrapper, an execution 
 The environment is the first machine that \inline{execUC} spawns and receives from it the session id and list of corrupted parties for this execution. 
 It can be considered the \emph{first} ITM in the execution.
 Its role in the execution is specified by the type \inline{EtoZ} of the channel it offers.
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single]
 $\Type$ EtoZ[$\tp{a}$] = +{init: a ^ list[$\tp{pid}$] -> exec} 
 $\Type$ exec = &{start : output_bit} ;
 $\Type$ output_bit = +{bit: Bit -> 1} ;
@@ -365,11 +365,13 @@ We do this for two reasons.
 First, it allows us to reason directly about processes being polynomia in $k$ without including the extra notion of ``paraeterized sytems'' in UC.
 Second, adding $k$ to the poynomial makes our definitions of import requirements for functionalities, like \Fro, more intuitive by requiring only 1 unit of import for one-time poynomial computations.
 
-In NomosUC, we build import into the type system.
-Specifically, the system provides novel constructs to exchange import, generate potential from that import, and create virtual import for virtualization and cryptographic reductions.
-The language additionally encodes the computational cost of each operation performed by an ITM, and statically guarantees that the execution cost of each ITM is locally polynomial in the net import it has over its entire execution. 
-Therefore, our type system subsumes the need to reason that our handling of polynomial time can judge local polynomial time.
-Instead, in this section, show the soundness of our import definition by extending the local polynomial guarantee to show that the entire UC experiment is PPT in the security parameter $k$.
+In Section~\ref{sec:import}, we described how the NomosUC type systems judges processes to be PPT in the security parameter $k$. 
+It still remains to show the soundness of our import definition by extending the local polynomial guarantee to show that the UC experiment is PPT in $k$.
+%In NomosUC, we build import into the type system.
+%Specifically, the system provides novel constructs to exchange import, generate potential from that import, and create virtual import for virtualization and cryptographic reductions.
+%The language additionally encodes the computational cost of each operation performed by an ITM, and statically guarantees that the execution cost of each ITM is locally polynomial in the net import it has over its entire execution. 
+%Therefore, our type system subsumes the need to reason that our handling of polynomial time can judge local polynomial time.
+%Instead, in this section, show the soundness of our import definition by extending the local polynomial guarantee to show that the entire UC experiment is PPT in the security parameter $k$.
 
 %We first define what it means to be PPT for a process, or term, in NomosUC. 
 %\todo{experimental addition of the $\leq$ in the definition below, unclear if that is a good decision}
@@ -398,23 +400,26 @@ The soundness of our polytime notion comes down to showing that our UC experimen
 The UC framework provides a simulation of a configuration of ITMs on a universal turing machine and proves that such a turing machine is also bounded by a polynomial $T$. 
 Given the initial input of import tokens into the machine ($poly(k)$ amount of import), it can conclude that their import mechanism falls in line with the standard notion length-of-input polynomial time and satisfied their ``PPT in $k$'' definition. 
 In NomosUC, we do not deal directly with ITMs, however, our type system allows us to judge whether a process, or collection of processes through the Preservation Theorem~\ref{thm:preservation}, is locally PPT given a particular polynomial. 
-We use this judgement as a foundation and adapt Proposition 7 from UC~\cite{uc} to NomosUC, and show that our notion of locally PPT leads to a UC execution that is PPT in the security parameter $k$.
+We rely on the Lemma~\ref{lem:local_ppt} and Theorem~\ref{thm:global_ppt} to adapt Proposition 7 from UC~\cite{uc} to NomosUC, and show that our notion of locally PPT leads to a UC execution that is PPT in the security parameter $k$.
 
 In order to reason about configurations in Theorem~\ref{thm:soundness}, we define the UC execution as a series of configuations that capture the relevant processes--the \partywrapper, \Z, \F, and \A--and the channels that connect them.
-Without loss of generality, we define each relevant process in terms of the its own code and the channels outgoing from it. 
-For example the configuration we refer to as \Z in Theorem~\ref{thm:soundness}, we refer to the term for \Z as well as it's outgoing channels to the \partywrapper, \A, and the \inline{execUC} function itself. We define the other configurations in a similar way.
+%Without loss of generality, we define each relevant process in terms of the its own code and the channels outgoing from it. 
+%For example the configuration we refer to as \Z in Theorem~\ref{thm:soundness}, we refer to the term for \Z as well as it's outgoing channels to the \partywrapper, \A, and the \inline{execUC} function itself. We define the other configurations in a similar way.
 
 \begin{theorem} \label{thm:soundness}
-Let \F, \A, \Z, and \m{MX}(\PI) be well-resource-typed configurations bounded by super additive polynomials $T_\F$, $T_\A$, $T_\Z$, $T_\PI$. Let \m{UC} be a configuration composed of a single process that runs \inline{execUC}. If \m{UC} receives $n \in poly(k)$ import initially, then any composed configuration $\m{UC} = \m{execUC} \; || \; \Z \; || \; \A \; || \; \m{MX}(\PI) \; || \; \F$ is PPT in $k$, where \m{MX} is the \partywrapper.
+Let \F, \A, \Z, and \m{MX}(\PI) be locally PPT configurations bounded by super additive polynomials $T_\F$, $T_\A$, $T_\Z$, $T_\PI$. Let \m{UC} be a configuration composed of a single process that runs \inline{execUC}. If \m{UC} receives $n \in poly(k)$ import initially, then any composed configuration $\m{UC} = \m{execUC} \; || \; \Z \; || \; \A \; || \; \m{MX}(\PI) \; || \; \F$ is PPT in $k$, where \m{MX} is the \partywrapper.
 \end{theorem}
 
 \begin{proof}
 The resulting configuration \m{UC} has only one channel in it's context: the channel offered by \inline{execUC} of type \inline{Bit}. 
 \inline{execUC}, therefore, is the intial process in the configuration and receives the intial import $n \in poly(k)$.
 
-By the \m{compose} rule, the work done by the resulting configuration is strictly the sum of the work done by the composed configurations. 
-The Preservation Theorem, in conjunction with \m{compose}, ensures type safety of \m{UC}, and allows us to concluce a sufficient bound on the total work done in \m{UC} by the polynomial $T'(n,k) = T_\A(n,k) + T_\Z(n,k) + T_\P(n,k) + T_\F(n,k) + O(1)$ where $n$ is the initial import into the system, and the addition $O(1)$ accounts for the constant bound on \inline{execUC}.
-If we take the intial import $n$ to be polynomial in the security parameter $k$, then we conclude that any configuration \m{UC} which type checkes is PPT in $k$.
+By the \m{compose} rule, the Preservation Theorem~\ref{thm:preservatin}, and Theorem~\ref{thm:global_ppt} the work done by the resulting configuration is strictly the sum of the work done by the composed configurations, and the resulting configuration \m{UC} must also be PPT with some polynmial $T(n,k)$.
+
+If we take the initial import $n$ to be polynomial in $k$, ten we cn conclude that \m{UC} is PPT in $k$ in the traditional length-of-input sense as well.
+
+%The Preservation Theorem, in conjunction with \m{compose}, ensures type safety of \m{UC}, and allows us to concluce a sufficient bound on the total work done in \m{UC} by the polynomial $T'(n,k) = T_\A(n,k) + T_\Z(n,k) + T_\P(n,k) + T_\F(n,k) + O(1)$ where $n$ is the initial import into the system, and the addition $O(1)$ accounts for the constant bound on \inline{execUC}.
+%If we take the intial import $n$ to be polynomial in the security parameter $k$, then we conclude that any configuration \m{UC} which type checkes is PPT in $k$.
 \end{proof}
 
 %\paragraph{Sending/Receiving Import}
@@ -691,7 +696,7 @@ An illustrative description of the ituition behind composition is shown by this 
 %The $\equiv$ operator is a result of moving around ITMs (some from within other ITMs into the main UC execution) and $\sim$ refers to indistinguishability.
 %In line (13) above, $\rho$ is moved into the execution environment with an unchanged simulator as no additional simulation is required: the simulator allows unfettered communication between parties of $\rho$ and \Z.
 
-\subsection{Multisession}
+\subsection{UC Composition}
 
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
@@ -710,15 +715,16 @@ An illustrative description of the ituition behind composition is shown by this 
 Full composition in the UC framework extends beyond the simpler composition in Theorem~\ref{thm:singlecomp} which only defines replacement of one functionality with a protocol that realizes it.
 Instead, UC composition allows for replacement of any number of instances of a functionality with instances of the realizing protocol.
 Theorem~\ref{thm:composition} illustrates the full composition theorem using our arrow notation, and highlights a theorem that we must prove before we can achieve full composition.
-We rely on two sub-theorems that make use of the multisession extension: Theorem~\ref{thm:squash} and Theorem~\ref{thm:functor}.
-Notice that Theorem~\ref{thm:compose} follows directly from Theorem~\ref{thm:singlecomp}, Theorem~\ref{thm:squash}, and Theorem~\ref{thm:functor}.
+%We rely on two sub-theorems that make use of the multisession extension: Theorem~\ref{thm:squash} and Theorem~\ref{thm:functor}.
+We rely on a sub-theorem that makes use of the multisession extension: Theorem~\ref{thm:functor}.
+%Notice that Theorem~\ref{thm:compose} follows directly from Theorem~\ref{thm:singlecomp}, Theorem~\ref{thm:squash}, and Theorem~\ref{thm:functor}.
 
 The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances of the protocol/functionality to be run within a sinlge ITM.
 An ITM simulates the instances and multiplexes input/output to/from them much like the \partywrapper.
 The multisession received functionally typed messages like all other functionalities, however, like the \partywrapper, does not have a session type to govern its communication with parties or the adversary.
 Its relies on the session type of the underlying functionalities it spawns to enforce protocol constraints.
 The type of messages it receives are given by 
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape]
 $\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
 $\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
 \end{lstlisting}
@@ -786,19 +792,6 @@ Theorem~\ref{thm:functor} is intuitive in the sense that each session of the rea
 A UC proof for this is more involved that just providing a simulator but, instead, relies on a hybrid argument. 
 We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
 
-The final multisession theorem says that we can squash many subsessions into one session and still realize the same functionality~\cite{juc}.
-\begin{theorem}[Squash Theorem]\label{thm:squash}
-	\begin{mathpar}
-		\inferrule*[right=squash]
-		{
-			\textit{well-resource-typed} \; \F
-		}
-		{
-			!\F \xrightarrow{\msf{squash}} !!\F
-		}
-	\end{mathpar}
-\end{theorem}
-The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:functor}.
 
 %\begin{proof}
 %A \textit{well-resource-typed} \F guarantees a polynomial $T_{\F}$ bounding its execution.
@@ -833,37 +826,12 @@ The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:funct
 %\label{fig:squash}
 %\end{figure}
 
-\begin{proof} (Theorem~\ref{thm:squash})
-On examination the \msf{squash} theorem does constant work per activation and concantenates two \inline{ssid}s into one for messages going to the functionality and does the inverse for messages incoming from the functionality.
-In other words, it is a direct simulation and the same ideal functionality exists if both worlds.
-We provide more detail for a proof of Theorem~\ref{thm:squash} in Appendix~\ref{app:bangf}, however, it is clear to see that the this theorem holds with a trivial simulator.
-%First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
-%The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
-%
-%In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $\F[\msf{ssid}_1][\msf{ssid}_2]$).
-%The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$ into a single \msf{ssid}: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$.
-%If follows intuitively that the view for the environment remains the same. 
-%
-%We construct a simulator such that:
-%\[
-%\msf{execUC} \, \Z \, \idealP \, !!\F \, \SIM{\msf{squash}} \approx \msf{execUC} \, \Z \, \msf{squash} \, !\F \DA 
-%\]
-%The simulator is very simple. 
-%Inputs to/from parties/\Z for a corrupt party is forwarded unmodified.
-%Input intended for $!\F$ of the form $(\msf{ssid}_1 \cdot \msf{ssid}_2, msg)$ is sent as $(\msf{ssid}_1, (\msf{ssid}_2, msg))$ to $!!\F$. 
-%Output from $!!\F$ is modified inversely and sent to \Z.
-%
-%The proposed simulator is trivially analyzed to be \textit{well-resource-typed}.
-%It performs constant work per activation and does ``real'' simulation other than message modification to/from $!!\F$.
-\end{proof}
-
-\subsection{UC Composition}
-Finally, we can conclude with full composition in Theorem~\ref{thm:compose}.
-The proof follows directly from Theorems~\ref{thm:singlecomp}, \ref{thm:squash}, and \ref{thm:functor}.
+We can conclude with full composition in Theorem~\ref{thm:compose}.
+The proof follows directly from Theorems~\ref{thm:singlecomp}, \ref{thm:functor}, and a squash protocol described in Appendix~\ref{app:bangf} which squashes multiple sessions of \F into one. 
 
 \begin{proof}
 By Theorem~\ref{thm:singlecom} we have that $\F_1 \xrightarrow{\pi} \F_2$. If we combine this result with Theorem~\ref{thm:functor} we can conclude that $!!\F_1 \xrightarrow{\rho \circ !\pi} !\F_3$. 
-Finally we can squash one $!$ operator with Theorem~\ref{thm:squash} to get $!\F_1 \xrightarrow{\rho \circ !\pi \circ \m{squash}} \F_3$.
+Finally we can squash one $!$ operator with Theorem~\ref{thm:squash} (in Appendix~\ref{app:bangf} to get $!\F_1 \xrightarrow{\rho \circ !\pi \circ \m{squash}} \F_3$.
 \end{proof}
 
 

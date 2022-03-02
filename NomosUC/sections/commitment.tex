@@ -34,7 +34,7 @@ Similarly, the functional types are given by:
 %One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
 %We cannot directly deliver messages to their receivers, because the committer's and receiver's \inline{p2f} channel would end up with different types and back to \inline{party[a]}.
 %The corresponding functional message type between the protocol wrapper and functionality is also updated with inputs for the channel:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape]
 $\Type$ rop2f[a] = QHash of $\tgr{Int}$ | Send of pid ^ a 
                | Recv ;
 $\Type$ rof2p[a] = RHash of $\tgr{Int}$ | Yes of pid ^ a 
@@ -110,7 +110,7 @@ We concretize \inline{K} with the unit type \inline{()} at the protocol level as
 This gives the type more power and allows the resulting functionality and protocol code to be simpler. 
 
 The code for \Fflip is quite simple and shown below:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ F_coinflip[K]{p2fn}{m} :
   (k: Int), (rng: [Bit]), (sid: session[1]),
   ($\$$F: flipper[$\tp{K}$]{$\tp{p2fn}$}{$\tp{f2pn}$}), ($\$$R: receiver[$\tp{K}$]{$\tp{p2fn}$}{$\tp{f2pn}$}),
