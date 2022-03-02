@@ -45,9 +45,9 @@ The experiment, parameterized by a security parameter $k$ and source of randomne
 The \partywrapper encapsulates the protocol parties and is necessary to allow dynamic creation of parties. 
 Furthermore, it is connect to \Z, \A, and \F through providerless channels.
 
-Virtualization and sandboxing\anote{are these two separate things?} of code is a common design pattern in UC, especially with adversaries and simulators.
+Sandboxing, or virtualizing, machines \snote{they're the same thing} is a common design pattern in UC, especially with adversaries and simulators.
 NomosUC supports it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
-Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on simple code generation\anote{what is simple code generation} to declare \inline{execUC} with a sufficient number of type parameters.
+Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on generating simple code \snote{not simple} to declare \inline{execUC} with a sufficient number of type parameters.
 
 For example, an execution where the simulator sandboxes the real world adversary, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
@@ -137,14 +137,18 @@ The remainder of the main processes of \inline{execUC} are typed very similarly:
 \subsection{Ideal Functionalities}
 One of the core research questions that this work aims to study session types applied to the UC framework. 
 In this section, we discuss how resource-aware session types impact the design of functionalities in NomosUC.
-We use the two-way authenticated channel functionality \Fauth to throughout this discussion.
-\anote{This introduces \Fauth too out of the blue, it's a whole new example so it needs a clearer introduction, i.e. what is the functionality and what are the embodied security properties}
 
 In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
 In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionality involving $P_s$, $P_r$, \F, and \A. 
-The simplest, and most common approach, to \Fauth is the following communication pattern: a party $P_s$ sends a message to \Fauth, and \Fauth sends the message to \A and waits for \A to say \inline{OK} before delivering the message to $P_r$.
+%The simplest, and most common approach, to \Fauth is the following communication pattern: a party $P_s$ sends a message to \Fauth, and \Fauth sends the message to \A and waits for \A to say \inline{OK} before delivering the message to $P_r$.
+\Fauth is an authenticated two-way channel between two parties that provides only the following guarantee: (\emph{integrity}) the adversary can not modify messages from the sender.
+In the most common UC design, \Fauth sends the message to \A when it receives one from the sender, and waits for the adversary to deliver the message.
+When \A writes back to \Fauth to deliver the message, \Fauth sends it to the receiver.\snote{gave some intro to \Fauth first}.
+%\anote{This introduces \Fauth too out of the blue, it's a whole new example so it needs a clearer introduction, i.e. what is the functionality and what are the embodied security properties}
+
 Since both parties can send and receive messages, it is unclear which process, \Fauth or $P$, will be active along their mutual channel at any given time.
 Session types require this information to be statically known when two processes are communicating over a single channel--making this communication pattern unexpressable over a single channel.
+We use the two-way authenticated channel functionality \Fauth throughout this discussion.
 
 There a few ways to overcome this constraint. 
 In general, even though the UC framework places few restrictions of communication patterns, most functionalities stick to a few.
@@ -181,7 +185,7 @@ $\m{adv}[a] = \ichoice{\m{get}: \echoice{$\=$\mb{yes}: a \tensor \m{adv}[a]$ \\
 
 
 \subsection{The \partywrapper}
-NomosUC departs\anote{why is this a departure? could just omit that} slightly from the standard UC framework by using a \partywrapper to encapsulate all protocol parties and run them internally.
+NomosUC overcomes the constraints of statically-typed session types by using a \partywrapper to encapsulate all protocol parties and run them internally.\snote{Removed departure and made it about the constraint being overcome}
 We use the notation \m{MX}(\PI) to denote the \partywrapper running parties of protocol \PI.
 
 The purpose of the \partywrapper is to support a dynamic set of parties without \Z, \A, or \F having to reat to new parties and managing a growing set of channels.
@@ -242,7 +246,7 @@ The \partywrapper alone does constant work per activation, therefore, in either 
 \begin{figure}
 	\centering
 	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
-	\caption{An instance of a single protocol party.\anote{confusing since this is a single instance, yet it has a ``multiplex'' subcomponent.''} The party $\pi_{pid}$ is the shell code around the actual protocol akin to Figure~\ref{fig:newpandq}, and it is given communicators for communication in both directions. The dotted box encapsulates all the code that the \partywrapper creates for each party.}
+	\caption{This is the party wrapper that multiplexes input from other processes. It creates an instance of a protocol party (the dotted box) and sends it the message received. The party $\pi_{pid}$ is shell code akin to Figure~\ref{fig:newpandq}.\snote{Updated caption to say it's multiplxer with one instance. The reason I don't want to include another instance is that I couldn't figure out a way to add it and expand the daigram horizontally. It will leave so much white space on the sides if I add a new party and will take up much more vertical space which weneed to cut down on anyway.}}% An instance of a single protocol party.\anote{confusing since this is a single instance, yet it has a ``multiplex'' subcomponent.''} The party $\pi_{pid}$ is the shell code around the actual protocol akin to Figure~\ref{fig:newpandq}, and it is given communicators for communication in both directions. The dotted box encapsulates all the code that the \partywrapper creates for each party.}
 	\label{fig:singlemultiplex}
 	\vspace{-3mm}
 \end{figure}
