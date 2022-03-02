@@ -10,7 +10,7 @@ Providing programming language support for this framework has been a focus of re
 \begin{enumerate}
 \item 
 As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand. Can we use Session Types as a way of providing more structure and assisting in the analysis of the ideal world models?
-Session types have been employed in, however there are several reasons they are not an obvious fit.
+Session types have been employed in \anote{is there a citation here? maybe of ankush's smart contract work?}, however there are several reasons they are not an obvious fit.
 UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
 Is it possible to reconcile these, getting some value from session types without restricting the expressiveness of UC?
 
@@ -24,7 +24,7 @@ Is it possible to reconcile these, getting some value from session types without
 %a deviation has occurred?
 \item Execution cost analysis plays a central role in UC, since we are only concerned with
 attackers possessing polynomial-time computational power.
-However, most prior UC formalization efforts like EasyUC and ILC forego the polynomial runtime analysis entirely, while others like IPDL and achieve can enforce polynomial runtime but at the expense of restricting the UC framework to a static number of protocols.
+However, most prior UC formalization efforts like EasyUC and ILC forego the polynomial runtime analysis entirely, while others like IPDL and \anote{Barbosa?} achieve can enforce polynomial runtime but at the expense of restricting the UC framework to a static number of protocols.
 Can we enforce polynomial running time without otherwise imposing restrictions on the UC framework?
 
 %\item Execution cost analysis plays a central role in UC, since we are only concerned with
@@ -50,8 +50,8 @@ We show how to resolve the static nature of session types in Nomos with the dyna
 ITMs in UC are flexible enough to allow for arbitrary communication between any two machines or an arbitrary configuration of machines.
 However, the static nature of session types poses new challenges for expressing arbitrary behavior.
 In NomosUC, we abstract the notion of a channel between two processes, into a generic construction, not limited by the constraint
-if linear times, that, as far as we know, can express any configuration of ITMs.
-Futhermore, we contend the the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
+of linear types, that, as far as we know, can express any configuration of ITMs.
+Futhermore, we contend with the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
 and arrive at a notion of compositional security that remains surprisingly expressive and generalizable.
 Finally, we provide a systematic approach to converting any UC functionality into one that can be implemented in NomosUC.
 \anote{finish explanation of the technical challenges in making session types while still supporting the dynamic nature of UC.}
@@ -62,7 +62,11 @@ on feasible computation and thus, crucially relies on the exact formulation of c
 In UC, computational cost is formally expressed through a mechanism of \emph{import tokens}, where runtime is related to tokens which can be passed around between processes.
 The \emph{run-time budget} $n$ of a process is then defined as the sum of import tokens received by a process \emph{minus} the sum of import of messages sent out by it.
 We find that the import tokens from UC are closely related to the \emph{potential} mechanism from Nomos.
-The main technical challenge is the need for \anote{explain why sandboxing requires us to introduce virtual tokens}.
+The main technical challenge is the need for running ITMs in sandbox, a critical tool for reductions of adversaries, and environments, to computationally hard problems.
+Reusing existing NomosUC programs requires satsifying the import requirements their types require.
+We introduce \emph{virtual tokens} that are created by the host and given to virtualized processes as ``real'' tokens. 
+We create typing rules around our sandboxing approach in Section~\ref{sec:importlang} to ensure it doesn't introduce non-polynomial behavior.
+\anote{explain why sandboxing requires us to introduce virtual tokens}.
 Furthermore, since import is ultimately connected to the security parameter, NomosUC
 therefore, not only guarantees termination, but also asserts polynomial bounds on
 the execution cost in terms of the security parameter.
