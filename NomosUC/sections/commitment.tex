@@ -74,7 +74,7 @@ This reason is articulated perfectly by the real world commitment protocol, wher
 \subsection{Coin Flipping}
 We present secure coin flipping here as another case study and one that makes use of our composition operator. 
 Additionally, this example makes use of a neat trick we can use to get more guarantees out of the NomosUC type system.
-Securely flipping a coin is a basic cryptographic primitive whose ideal functionality \Fflip is captured by the session types in Figure~\ref{fig:fflip}.
+Securely flipping a coin is a basic cryptographic primitive whose ideal functionality \Fflip is captured by the session types in Figure~\ref{fig:fliptype}.
 It's a 2-party protocol where one party is the initiator of the flip and the other is a receiver.
 The desired security property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
 Unlike \Fropp, \Fflip does not output directly to either of the parties unless polled with a \m{getflip} message.

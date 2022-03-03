@@ -9,7 +9,7 @@ The major limitation of EasyUC is that it does not encode any guarantees on the 
 For example it can not detect a functionality and the adversary can exchange messages \emph{indefinitely} in their key exchange example. It also can not capture full UC composition because it is limited to a statically determined number of parties in any execution.
 NomosUC, on the other hand, proposes the full UC composition theorem, a robust polynomial time notion that relies on the import mechanism introduced in UC, and a full expressive language that can support arbitrary UC executions.
 
-Barbarosa et al.~\cite{barbarosa} builds off EasyCrypt was well, but introduce a polynomial time notion to their handling of UC. 
+Barbosa et al.~\cite{barbosa} builds off EasyCrypt was well, but introduce a polynomial time notion to their handling of UC. 
 They're able to relate the guarantees provided by EasyCrypt to the execution time of an adversary that can break the security of the protocol. 
 Barbarosa also must contend with the procedure call communication of EasyCrypt limiting the expressiveness of the framework. 
 Furthermore it suffers similar drawbacks to EasyUC, and all works mentioned in this section, in that does not fully capture dynamic party creation in UC, and they realize only a simplified version of UC~\cite{suc}.
@@ -24,7 +24,7 @@ This precludes constructs like the multisession operator, presented later in thi
 The operator allows creation of an arbitrary number of subsessions of a functionality and is critical to realizing the full UC composition theorem.
 IPDL further implements a unique communication mechanism that imposes a static dependency between channels ``firing''.
 
-We summarize the imporant features, or lack thereof, of the most closely related work to NomosUC in Figure~\ref{fig}.
+We summarize the imporant features, or lack thereof, of the most closely related work to NomosUC in Figure~\ref{fig:relatedworks}.
 The columns are broken up according to the features mentioned in the above discussion.
 The first discusses whether environment can create an arbitrary number of parties at runtime. There is not partial-support in this category, either it is supported or it isn't.
 The second column broadly covers whether any runtime or polynomial-time analysis/tracking is performed by the project. Notice that there is partial support where ILC provides a restricted notion of polynomial time.
@@ -52,7 +52,7 @@ In general this distinction plays an important role in how communication is capt
 	%%\hline
 	%\end{tabular}}
 	\scalebox{0.7}{\begin{tabular}{l | c  c  c  c  c}
-	& \rot{IPDL~\cite{ipdl}} & \rot{EasyUC~\cite{easyuc}} & \rot{Barbosa et al.~\cite{barbosa}} & \rot{ILC~\cite{ilc}} & \rot{NomosUC (this work)}\\
+	& \rot{IPDL} & \rot{EasyUC} & \rot{Barbosa et al.} & \rot{ILC} & \rot{NomosUC (this work)}\\
 	\hline
 	Dynamic \# of Parties & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \fullcirc[0.75ex] \\
 	%\hline
