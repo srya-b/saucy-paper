@@ -375,13 +375,13 @@ The simulator performs constant overhead on \SIM{\pi} and \SIM{\rho}, and, there
 %This ensures that the composed simulator has enough import to sandbox the two existing simulators and send import out to the ideal world parties and ideal funfctionality.
 %Therefore it is trivial to see that the composed simulator is well-resource-typed.
 
-An illustrative description of the intuition behind composition is shown by this series of UC executions where the $\equiv$ operator denotes equivalent UC executions that result from moving ITMs in and out of a sandbox, and $\approx$ indicates emulation. It should be easy to conclude that emulation holds under replacement.
-\begin{align}
-& \msf{execUC} \: \Z \, (\rho \circ \pi) \, \F_1 \, \DA \\
-\equiv \; & \msf{execUC} \: (\Z \circ \rho) \, \pi \, \F_1 \, \DA \\
-\approx \; & \msf{execUC} \: (\Z \circ \rho) \, \idealP \, \F_2 \, \SIM{\pi} \\
-\equiv \; & \msf{execUC} \: \Z \, \rho \, \F_3 \, (\SIM{\pi} \circ \SIM{\rho})
-\end{align}
+%An illustrative description of the intuition behind composition is shown by this series of UC executions where the $\equiv$ operator denotes equivalent UC executions that result from moving ITMs in and out of a sandbox, and $\approx$ indicates emulation. It should be easy to conclude that emulation holds under replacement.
+%\begin{align}
+%& \msf{execUC} \: \Z \, (\rho \circ \pi) \, \F_1 \, \DA \\
+%\equiv \; & \msf{execUC} \: (\Z \circ \rho) \, \pi \, \F_1 \, \DA \\
+%\approx \; & \msf{execUC} \: (\Z \circ \rho) \, \idealP \, \F_2 \, \SIM{\pi} \\
+%\equiv \; & \msf{execUC} \: \Z \, \rho \, \F_3 \, (\SIM{\pi} \circ \SIM{\rho})
+%\end{align}
 
 %\item Inputs from \Z of \inline{Z2A2P(msg)} are passed to \SIM{\rho}, and inputs of \inline{Z2A2F(msg)} are passed to \SIM{\pi}.  
 %\item \inline{P2A2Z(pid, msg)} outputs from \SIM{\rho} are forwarded to \Z unaltered.
