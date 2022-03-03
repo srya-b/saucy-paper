@@ -17,7 +17,6 @@ $\yo{type}$ ms2a[b] = MS2A of ssid ^ b ;
 \end{lstlisting}
 both of which are parameterized by the functionality message types \inline{a} and \inline{b}.
 
-
 Recall that all functionalities are run inside some shell code, and their shell code communicates with communicators to other parities--we can call this a functionality wrapper as it wraps around the actual functionality code.
 The multisession operator runs each instance of the functionality inside the wrapper, and provides each with ``virtual'' communicators for \A and the \partywrapper.
 
@@ -66,7 +65,7 @@ The function accepts an integer at the end, in this example 0, which is the inde
 Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
 The real world that realizes it is comprised of a protocol that ``flattens'' the pair of ssids $(\m{ssid}_1, \m{ssid}_2)$ into a single ssid $\m{ssid}_3 = \m{ssid}_1 || \m{ssid}_2$, the concatenation (can be any other one-to-one and invertible function on the pair) of them.
 
-\begin{theorem}[Squash Theorem]
+\begin{theorem}[Squash Theorem] \label{thm:squash}
 	\begin{mathpar}
 		\inferrule*[right=squash]
 		{

@@ -37,22 +37,34 @@ In general this distinction plays an important role in how communication is capt
 \begin{figure}[H]
 \centering 
 \begin{table}[H]
+	%\scalebox{0.7}{\begin{tabular}{l | c  c  c  c  c}
+	%& \rot{Dynamic \# Parties} & \rot{Polytime Notion} & \rot{General Composition} & \rot{\parbox{3cm}{Channels/Procedures}} \\
+	%\hline
+	%IPDL~\cite{ipdl} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & Channels \\
+	%%\hline
+	%EasyUC~\cite{easyuc} & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & Procedure Calls \\
+	%%\hline
+	%Barbosa et al.~\cite{barbarosa} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & Procedure  Calls \\
+	%%\hline
+	%ILC~\cite{ilc} & \emptycirc[0.75ex] & \halfcircleft[0.75ex] & \emptycirc[0.75ex]  & Channels    \\
+	%%\hline
+	%NomosUC (this work) & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & Channels  \\
+	%%\hline
+	%\end{tabular}}
 	\scalebox{0.7}{\begin{tabular}{l | c  c  c  c  c}
-	& \rot{Dynamic \# Parties} & \rot{Polytime Notion} & \rot{General Composition} & \rot{\parbox{3cm}{Channels/Procedures}} \\
+	& \rot{IPDL~\cite{ipdl}} & \rot{EasyUC~\cite{easyuc}} & \rot{Barbosa et al.~\cite{barbosa}} & \rot{ILC~\cite{ilc}} & \rot{NomosUC (this work)}\\
 	\hline
-	IPDL~\cite{ipdl} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & Channels \\
+	Dynamic \# of Parties & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \fullcirc[0.75ex] \\
 	%\hline
-	EasyUC~\cite{easyuc} & \emptycirc[0.75ex] & \emptycirc[0.75ex] & \emptycirc[0.75ex] & Procedure Calls \\
+	Polytime Notion & \fullcirc[0.75ex] & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \halfcircleft[0.75ex] & \fullcirc[0.75ex] \\
 	%\hline
-	Barbosa et al.~\cite{barbarosa} & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \fullcirc[0.75ex] & Procedure  Calls \\
+	General Composition & \fullcirc[0.75ex] & \emptycirc[0.75ex] & \fullcirc[0.75ex] & \emptycirc[0.75ex] & \fullcirc[0.75ex] \\
 	%\hline
-	ILC~\cite{ilc} & \emptycirc[0.75ex] & \halfcircleft[0.75ex] & \emptycirc[0.75ex]  & Channels    \\
-	%\hline
-	NomosUC (this work) & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & \fullcirc[0.75ex]  & Channels  \\
+	Channels/Procedures & Channels & Procedure Calls & Procedure Calls  & Channels & Channels 
 	%\hline
 	\end{tabular}}
 \end{table}
-\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column. The last column states a design decision for how communication is captured in each wor and is not necessarily a limitation or drawback.}
+\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support, and the full circle \fullcirc[0.5ex] indicates full support. The last column distinguished on design decisions and not a limitation/drawback.}
 \label{fig:relatedworks}
 \end{figure}
 

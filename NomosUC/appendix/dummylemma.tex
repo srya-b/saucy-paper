@@ -61,7 +61,7 @@ case msg (
 It is worth noting that in NomosUC existing processes can be run directly in a sandbox just be using a virtual token.
 This is different from the UC notion of the universal turing machine where other ITMs are first encoded as data.
 
-Output from \A to the party wrapper or \F is passed as \inline{Z2A2P} or \inline{Z2A2F} input to \DS using the same token type \inline{K1}.
+Output from \A to the \partywrapper or \F is passed as \inline{Z2A2P} or \inline{Z2A2F} input to \DS using the same token type \inline{K1}.
 Output from \DS is forward along to the outside world as adversary input to the dummy parties and the ideal functionality:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 msg = $\nrecv$ $\$$ds_a2p ;

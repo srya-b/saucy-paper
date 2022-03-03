@@ -10,7 +10,7 @@ Despite the appeal of UC, support for programming language tools is further behi
 \item 
 As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand.
 Can we use Session Types as a way of providing more structure and assisting in the analysis of the ideal world models?
-Session types have been successfully employed in modeling distributed protocols~\cite{nomos}, however it is not obvious what help they provide within an adversarial model as strong as UC.
+Session types have been successfully employed in modeling distributed protocols~\cite{das2018work,dasnomos}, however it is not obvious what help they provide within an adversarial model as strong as UC.
 Additionally UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
 Is it possible to reconcile these, adding informative session types where they help without having to restrict the flexibility of UC?
 
@@ -42,4 +42,4 @@ The main technical challenge is that proofs in UC typically rely on \emph{local 
 %the execution cost in terms of the security parameter.
 Because the import tokens and running time are statically analyzed within in our type system, we are able to show that our preservation theorem ensures that any well-typed process is also polynomial time in the UC sense.
 
-We validate Nomos-UC by working through the standard UC theory of composition operators, as well as including a modular composition case study where we show a coinflipping application based on random oracles, using commitments as an intermediate layer.
+%We validate Nomos-UC by working through the standard UC theory of composition operators, as well as including a modular composition case study where we show a coinflipping application based on random oracles, using commitments as an intermediate layer.
