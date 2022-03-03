@@ -339,7 +339,7 @@ possess it enabling only that process to acquire the shared channel.
 This resolves both read and write non-determinism due to linearity of the channels.
 
 The communicator type is parametric in the message type sent over it, and it is restricted to sending functionally typed messages only. 
-Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
+Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{fig:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
 We wrap each of $P$ and $Q$ in a shell code, call these $S_P$ and $S_Q$, which spawn two processes each.
 Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. %\snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
 %The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}
