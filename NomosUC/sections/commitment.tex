@@ -2,7 +2,7 @@
 %Along th way, we address a new communication pattern that enables session types to enforce communication ordering over multipe channels and identify to set import requiremets for functionalities for composition.
 %We start by presenting the random oracle functionality~\Fro which is used to realized \Fcom.
 
-In this section we introduce a coin flip functionality \Fflip and discuss why it's type definition needs to be parameteric in import amounts to allow for composition, and we introduce a design pattern where session types can enforce message ordering accross multiple channels. 
+In this section we introduce a coin flip functionality \Fflip and discuss how composition affects its import requirements, and we introduce a design pattern where session types can enforce message ordering across multiple channels. 
 \Fflip is realized by protocol $\prot{flip}$ in the \Fcom-hybrid world, and \Fcom is realized by $\prot{com}$ in the \Fropp-hybrid world.
 We discuss applying composition to realize \Fflip with \prot{flip} composed with \prot{com}.
 We push the realizing protocols, simulators, and process code to Appendix~\ref{app:flip} and focus here on the \Fflip and \Fropp session types.
@@ -11,9 +11,8 @@ We push the realizing protocols, simulators, and process code to Appendix~\ref{a
 The random oracle functionality captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
 It allows both protocol parties and the adversary to request hashes from it, and we augment it with a single communication channel allowing parties to send messages to each other.
 We refer to the augmented functionality as \Fropp from now on.
-Like the type of \Fcom dictates, \Fropp activates the receiver on new messages instadof requiring it to poll for new messages.
 
-The type of \Fropp is described by two session types: one for each channel between \Fropp and a protocol party.
+The type of \Fropp is described by two session types in Figure~\ref{fig:rotype}: one for each channel between \Fropp and a protocol party.
 \begin{figure}
 \begin{center}
 \parbox{0cm}{
@@ -24,8 +23,8 @@ $\m{recv}[a] = \textcolor{red}{\getpot^2} \echoice{ \mb{msg}: \m{pid} \arrow \m{
 \end{tabbing}}
 \end{center}
 \caption{The session type for the random oracle. Two channels for each party to both query hashes and send/receive messages.}
+\label{fig:rotype}
 \end{figure}
-
 %The random oracle is different from \Fcom in that it has one channel to all parties to use. This is due to the fact that its function is the same for all parties.
 %Recall the session type and its structure discussed in Section~\ref{sec:execuc}. The augmented session type is given below:
 %The design of the random oracle is different from \Fcom in that it has only one channel for all parties to communicate over.
@@ -33,10 +32,9 @@ $\m{recv}[a] = \textcolor{red}{\getpot^2} \echoice{ \mb{msg}: \m{pid} \arrow \m{
 %This enables a dynamic set of parties to communicate with it by moving the \inline{pid} of the message sender/receiver into the type.
 %Our augmented functionality's type retains this feature, as described by its session type:
 %\begin{mathpar}
-The type of \Fropp requires 2 units of import to be given to it when querying a hash or sending a message.
-We justify two import because we want to ensure that one import is sent to the receiver, along with the import paid to \Fropp. For protocols where the receiver is activated directly, it 
-is important for messages to carry import to ensures the receiver has sufficient resources to perform polynomial work. 
-This reason is articulated perfectly by the real world commitment protocol, where the receiver must spend 1 import to query a hash and can only receive import from message from the sender.
+The type requires 2 units of import to be given to it when querying a hash or sending a message.
+We justify 2 import tokens because the receiver of the message may need to perform polynomial work on activation by \Fropp, but it is never activated by \Z.
+In this case, as shown by the commitment protocol in the appendix, it relies on the received message, alone, for runtime resources.
 
 %Similarly, the functional types are given by:
 %%One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
@@ -73,10 +71,11 @@ This reason is articulated perfectly by the real world commitment protocol, wher
 
 \subsection{Coin Flipping}
 We present secure coin flipping here as another case study and one that makes use of our composition operator. 
-Additionally, this example makes use of a neat trick we can use to get more guarantees out of the NomosUC type system.
+Additionally, this example makes use of a neat trick we use to get more guarantees out of the NomosUC type system.
+
 Securely flipping a coin is a basic cryptographic primitive whose ideal functionality \Fflip is captured by the session types in Figure~\ref{fig:fliptype}.
 It's a 2-party protocol where one party is the initiator of the flip and the other is a receiver.
-The desired security property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
+The desired security property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip code samples a bit from from its random tape and returns it as the coin flip.
 Unlike \Fropp, \Fflip does not output directly to either of the parties unless polled with a \m{getflip} message.
 
 \begin{figure}
@@ -97,17 +96,17 @@ Unlike \Fropp, \Fflip does not output directly to either of the parties unless p
 \end{figure}
 
 The session type for \Fflip additionally accepts a type parameter $K$, takes in a value of type $K$ from the flipper, and sends it to the receiver when outputting the flip.
-We use this $K$ as a means of controlling communication ordering across both the flipper's and receiver's channel to \Fflip.
-Recall that session type can normally only enforce message ordering on one channel, but the type system prevents \Fflip from sending a value of type $K$ to the receiver until the sender concretizes type $K$ by sending it to \Fflip.
-Using this design pattern, we are able to capture more the behavior of a functionality or protocol in the type system.
+We use this $K$ as a means of ordering communication across both the flipper's and receiver's channel to \Fflip.
+Recall that session types can normally only enforce message ordering on one channel, but the type system prevents \Fflip from sending a value of type $K$ to the receiver until the sender concretizes $K$ by sending it to \Fflip.
+Using this design pattern, we are able to capture more of the intended behavior of a functionality in the type system.
 
-\Fflip is also parametric in the amount of import it sends/receives unlike \Fropp. The reason is that even though \Fflip is one-shot and does constant work
-statically defining it with zero import imposes a constraint that only protocols which also do constant work (and rely on functionalities that take zero import) 
+\Fflip is also parametric in the amount of import it sends/receives unlike \Fropp. The reason is that even though \Fflip is one-shot and does constant work,
+statically defining it with zero import imposes the constraint that only protocols which also do constant work (and rely on functionalities that take zero import) 
 can realize it. 
 This negatively impacts the reusability of NomosUC ideal functionality definitions and limits the protocols that can be proven secure.
 
-This is best seen when composing \prot{flip} with \prot{com} in the \Fropp-hybrid to realized \Fflip. \Fropp requires 2 units of import on every input, and, therefore \prot{flip} (and \Fflip as they share the same type) also require at least 2 units of import in order for one to emulate the other.
-In the Appendix we describe realizing \Fflip using the composition theorem and replacing \Fcom in the real world with $\prot{com}$ in the \Fropp-hybrid world.
+This is best seen when composing \prot{flip} with \prot{com} in the \Fropp-hybrid to realize \Fflip. \Fropp requires 2 units of import on every input, and, therefore \prot{flip} (and \Fflip as they share the same type) also require at least 2 units of import in order for one to be indistinguishable from the other.
+In the Appendix we describe, in detail, realizing \Fflip using the composition theorem and replacing \Fcom in the real world with $\prot{com}$ in the \Fropp-hybrid world.
 We also provide a protocol for realizing both \Fflip and \Fcom (via simulators) and a simulator composition operator in Appendix~\ref{app:flip}.
 
 %\begin{figure}

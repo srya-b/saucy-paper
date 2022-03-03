@@ -6,13 +6,13 @@ Below, we introduce how the UC experiment is implemented in NomosUC, and then pr
 
 \subsection{The UC Experiment}
 The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
-The experiment, parameterized by a security parameter $k$ and source of randomness $r$,is created by an \inline{execUC} function  which spawns all the relevant processes: the environment, a \partywrapper, the adversary, and the functionality.
+The experiment, parameterized by a security parameter $k$ and source of randomness $r$, is created by an \inline{execUC} function  which spawns all the relevant processes: the environment, a \partywrapper, the adversary, and the functionality.
 The \partywrapper encapsulates the protocol parties and is necessary to allow dynamic creation of parties. 
 Furthermore, it is connected to \Z, \A, and \F through providerless channels.
 
 Sandboxing is a common design pattern in UC, especially for simulators.
 NomosUC supports it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
-Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on generating simple code to declare \inline{execUC} with a sufficient number of type parameters.
+Therefore, we are unable to pass in a variable number of virtual token types to \inline{execUC}, and must rely on generating simple code to declare \inline{execUC} with a sufficient number of type parameters.
 
 For example, an execution where the simulator sandboxes the real world adversary, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
@@ -35,61 +35,61 @@ $\tb{proc}$ PS.env[$\tp{K}$][$\tp{z2p,...}$]{$\tp{p2zn,...}$} :
   (k: $\tgr{int}$), (r: [Bit]), (#ztop: comm[$\tp{z2pmsg[z2p]]{z2pn}}$), 
   (#ptoz: comm[$\tp{p2zmsg[p2z]]{p2zn}}$)...  |- ($\$$z : EtoZ) $\tg{(* <- offered channel *)}$
 \end{lstlisting}
-It reflects that the environment must first determine the session id, or \inline{sid}, of the execution as well as which parties it wants to statically corrupt in the form of a \inline{list} of \inline{pid}s.
+\inline{EtoZ} reflects that the environment must first determine the session id, or \inline{sid}, of the execution as well as which parties it wants to statically corrupt in the form of a \inline{list} of \inline{pid}s.
 Finally, it is told to start and eventually returns an output \inline{bit} indicating it's guess as to whether it's in the real world or the ideal world.
 This output bit, and the environment's decision function, go on to define emulation and indistinguishability later in this section. 
 
-The remainder of the main processes of \inline{execUC} are typed very similarly: accept channels relevant to them, accept all the other same parameters, and don't offer a channel.
+The remainder of the main processes of \inline{execUC} are typed very similarly: they accept channels relevant to them, accept all the other same parameters, and don't offer a channel.
 
 \paragraph*{\textbf{Ideal Functionalities}}
 In this section, we discuss how resource-aware session types impact the design of functionalities in NomosUC.
 We discuss in Section~\ref{sec:basic} how we overcome a common pattern in UC with providerless channels.
-Here we introduce an authenticated channel ideal functionality, \Fauth, which exhibits this pattern and show
+Here we introduce an authenticated 2-way channel ideal functionality, \Fauth, which exhibits this pattern and show
 how it is expressed in NomosUC.
 
 In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
 In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionality involving $P_s$, $P_r$, \F, and \A. 
-\Fauth is an authenticated two-way channel between two parties that provides only the following guarantee: (\emph{integrity}) the adversary can not modify messages from the sender.
-\Fauth sends the message to \A when it receives one from the sender, and waits for the adversary to deliver the message.
-When \A writes back to \Fauth to deliver the message, \Fauth sends it to the receiver.%\snote{gave some intro to \Fauth first}.
+\Fauth provides only the following guarantee: (\emph{integrity}) the adversary can not modify messages from the sender.
+It sends the message to \A when it receives one from the sender, and waits for the adversary to instruct it to deliver the message.
+When \A writes back to \Fauth to deliver the message, \Fauth sends it to the receiver.
 The communication pattern in \Fauth exhibits the same problems with the communication in Figure~\ref{fig:newpandq}.
 
-We therefore, are confronted with two options: transition to a functionality where all parties and the adversary poll for new messages or split communication among two uni-directional providerless channels.
-The former buffers messages from $P_s$ until asked for by $A$, and then delivered to $P_r$ when polled and with the adversary's approval.
-It's type and mechanics are cumbersome and inconvenient, but it can be useful in some applications.
+We, therefore, are confronted with two options: transition to a functionality where all parties and the adversary poll for new messages or split communication among two uni-directional providerless channels.
+The former buffers messages from $P_s$ until asked for by $A$, and then delivers (with \A's approval) to $P_r$ when polled.
+The type and mechanics of this version require constant activations by \Z and are inconvenient.
 The latter is a more generalizable construction and can be typed as: 
 \begin{center}
 \parbox{0cm}{
 \begin{tabbing}
-$\m{sending}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{sendmsg}: \m{a} \tensor \m{sendmsg}}$ \\
-$\m{receive}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \tensor \m{receive}}$ \\
-$\m{adv}[a] = \echoice{\mb{leakmsg}: a \tensor \ichoice{ \mb{ok}: \m{leakmsg}}}$
+$\m{sending}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{sendmsg}: \m{a} \product \m{sendmsg}}$ \\
+$\m{receive}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \product \m{receive}}$ \\
+$\m{adv}[a] = \echoice{\mb{leakmsg}: a \product \ichoice{ \mb{ok}: \m{leakmsg}}}$
 \end{tabbing}}
 \end{center}
 where the channel to \Fauth is typed with \m{sending}, the channel from \Fauth as \m{receive}, and the single channel to \A as \m{adv}.
 
 \paragraph*{\textbf{The \partywrapper}}
 The environment must communicate with multiple parties and needs multiple channels to do so. 
-Furthermore, \Z having to handle creating new providerless channels to new parties is an inefficient design.
+Forcing \Z to handle creating new providerless channels to new parties is an inefficient design.
 If we simplify to a single channel and multiplex, the statically-typed nature of the session type means only a static number of parties can be specified. 
-NomosUC overcomes these constraints by using a \partywrapper to encapsulate all protocol parties and run them internally.%\snote{Removed departure and made it about the constraint being overcome}
+NomosUC overcomes these constraints by using a \partywrapper to encapsulate all protocol parties and run them internally.
 We use the notation \m{MX}(\PI) to denote the \partywrapper running parties of protocol \PI.
 
-The purpose of the \partywrapper is to support a dynamic set of parties without \Z, \A, or \F having to react to new parties and managing a growing set of channels.
+The purpose of the \partywrapper is to support a dynamic set of parties without \Z, \A, or \F having to react to new parties and manage a growing set of channels.
 Instead, the \partywrapper acts as singular endpoint for all communication with protocol parties, and it manages the creation of new parties and routing messages to/from them.
 
-Furthermore, they are connected to \Z, \A, and \F through communicators (Section~\ref{sec:basic}).
+Furthermore, it are connected to \Z, \A, and \F through providerless channels (Section~\ref{sec:basic}).
 From the point of view of parties running inside the \partywrapper, they are directly connected to \F and \Z in the way of Figure~\ref{fig:newpandq}.
-The shell code around each party offers four channels, two from \F and two from \Z, with the appropriate session types. 
-For commitment, the processes for \Z offer channels with type \m{sender} or \m{receiver}, and processes for \F offer the type of the hybrid functionality \Fro which we examine later~\footnote{\Fcom and \Fro make use of only one of their channels to parties instead of both.}.
-However, because we run parties of \PI internal to the \partywrapper, it runs instances of the shell code for each new spawned party and created communicators around it that it can write/read pid-specific messages to/from.
+The shell code around each party offers four channels, two for each providerless connection, with \F and with \Z, with the appropriate session types. 
+For commitment and communication with \Z, the shell code offers channels with type \m{sender} or \m{receiver}, and the type of \Fro, which we examine later, for communication with \F~\footnote{\Fcom and \Fro make use of only one of their channels to parties instead of both.}.
+However, because we run parties of \PI internal to the \partywrapper, it runs instances of the shell code for each new spawned party and creates communicators around it that it can write/read pid-specific messages to/from.
 Figure~\ref{fig:singlemultiplex} illustrates how the shell code $\pi_{pid}$ is connected to communicators for each direction. This construction is repeated for every new party spawned inside the \partywrapper.
 
 \paragraph{Import with the \partywrapper}
 Virtualizing protocol parties in the \partywrapper means that they all, effectively, share the same \emph{real} import and potential, even though they are given virtual potential.
 We reason that the \partywrapper does not change the import requirements of protocols or make some protocols unrealizable in NomosUC.
 Mainly, for any activation of a party, the party either retains some import or gives away all the import it receives. 
-The former case allows parties to do polynomial work or be activated a polynomial number of times, and the latter case allows for parties activated a constant number of times and doing constant work per activation.
+The former case allows parties to do polynomial work or be activated a polynomial number of times, and the latter case allows for parties activated a constant number of times, doing constant work per activation.
 The \partywrapper alone does constant work per activation, therefore, in either case both the protocol party and \partywrapper have enough import to perform their necessary computations.
 
 \begin{figure}
@@ -102,12 +102,12 @@ The \partywrapper alone does constant work per activation, therefore, in either 
 
 
 \paragraph*{\textbf{The Adversary}}
-Since the adversary is arbitrary unlike protocols and functionalities, it is not session-typed in NomosUC and receives inputs from \Z in the form of functional messages only.
+Since the adversary is arbitrary unlike protocols and functionalities, it is does not directly use session-types in NomosUC and receives inputs from \Z in the form of functional messages only.
 
 \subsection{Polynomial Bound}
 The UC framework introduces the concept of import tokens as a new way to reason about ITMs being polynomial in the security parameter $k$. 
 The import mechainsm as described in UC, and which we describe in Section~\ref{sec:background}, ensures that a single ITM's execution is upper-bounded by some poynomial $T(n,k)$ where $T$ is a polynomial, $n$ is its net import token balance (received - sent), and $k$ is the security parameter.
-Canetti et al. limit their discussion to parameterized systems where all machines do not do anything until they have received at least $k$ import.
+Canetti et al. limit their discussion to parameterized systems where no machine does anything until it's received at least $k$ import.
 We depart from this notion slightly and express ``interactive polynomial time'' by using a bounding polynomial in both import and $k$.
 We do this for two reasons.
 First, it allows us to reason directly about processes being polynomia in $k$ without including the extra notion of ``paraeterized sytems'' in UC.
@@ -131,7 +131,7 @@ Notice that our choice of polynomial representation, a function of both the impo
 
 The soundness of our polytime notion comes down to showing that our UC experiment is PPT in only the security parameter $k$. 
 The UC framework provides a simulation of a configuration of ITMs on a universal turing machine and proves that such a turing machine is also bounded by a polynomial $T$. 
-Given the initial input of import tokens into the machine ($poly(k)$ amount of import), it can conclude that their import mechanism falls in line with the standard notion length-of-input polynomial time and satisfied their ``PPT in $k$'' definition. 
+Given the initial input of import tokens into the machine ($poly(k)$ amount of import), it concludes that the import mechanism falls in line with the standard length-of-input notion of polynomial time and satisfied their ``PPT in $k$'' definition. 
 In NomosUC, we do not deal directly with ITMs, however, our type system allows us to judge whether a process, or collection of processes through the Preservation Theorem~\ref{thm:preservation}, is locally PPT given a particular polynomial. 
 We rely on the Lemma~\ref{lem:local_ppt} and Theorem~\ref{thm:global_ppt} to adapt Proposition 7 from UC~\cite{canettiUC} to NomosUC, and show that our notion of locally PPT leads to a UC execution that is PPT in the security parameter $k$.
 
@@ -156,7 +156,7 @@ If we take the initial import $n$ to be polynomial in $k$, ten we cn conclude th
 The central security definition in UC is indistinguishability between the real and ideal world experiments.
 In NomosUC, we must be more careful to only consider protocols and adversaries whose types (both message and import) match over the channels they share. 
 Therefore, we introduce the term \textit{well-matched} to mean a PPT term $e$ is well-typed when connected to another term $e'$.
-Simply put, we want to capture terms $e$ and $e'$ that can be connected over the channels the share given their type.
+Simply put, we want to capture terms $e$ and $e'$ that can be connected over the channels they share.
 The resulting terms in Definition~\ref{def:wellmatched} are partially closed after connection: the terms may only be connected on some subset of their channels.
 
 \begin{ddef}[Well-Matched]\label{def:wellmatched}
@@ -172,11 +172,10 @@ The resulting terms in Definition~\ref{def:wellmatched} are partially closed aft
 \end{ddef}
 
 In the UC security definition, we say that a protocol $\pi$ possesses the same security properties as another protocol $\phi$ if no environment can distinguish between them for any adversary.
-In most cases we compare a real protocol $\pi$ with an idealized protocol $(\idealP, \F)$ which is actually just an ideal functionality with dummy parties.
-The ideal functionality is known to achieve the desired security processes because it acts like a simple, trusted third party.
+In most cases we compare a real protocol $\pi$ with an ideal functionality \F running with ideal parties \idealP.
 %They are much simpler than protocols because they don't require any special code to handle mutually distrustful other processes, and they perform the given computation on behald of the ideal world parties.
 
-Given the random choices ITMs in UC can make, it is clear that the outputs of \inline{execUC} produces and ensemble of distributions over all possible random bitstrings and security parameters.
+We define the output of \inline{execUC} as an ensemble of distributions over all possible random bitstrings and security parameters.
 Emulation, then, is about the ensembles created by two UC environments being computationally indistinguishable from each other.
 We define indistinguishability between ensembles in a standard way using \textit{statistical distance} in Definition~\ref{def:distance}.
 
@@ -208,27 +207,26 @@ Given two protocols $(\pi, \F_1), (\phi, \F_2)$, which we refer to only by \PI a
 	}
 \end{mathpar}
 \end{definition}
-The emulation definition requires only that the adverasries in question are well-matched with the protocols being emulated, because our type system ensures that they are well-resource-typed.
-The definition ensures that for emulation to hold, the constructed simulator must be well-matched everywhere \A is well-matched: for all environments \A is well-matched with the \Sim must also be well-matched with.
+The emulation definition requires only that the adverasries in question are well-matched with the protocols being emulated, as our type system already ensures PPT in $k$.
 
-With this emuluation definition we complete our definition of UC-realization.
+With this emuluation definition we complete our description of UC-realization.
 If a simulator exists such that emulation holds for $(\pi, \F_1) \sim (\idealP, \F_2)$ then we say that the protocol $\pi$ UC-realized the functionality $\F_2$ in the $\F_1$-hybrid world:
 \[
 	\F_1 \xrightarrow{\pi} \F_2
 \]
 
-\paragraph{Import for Functionalities}
-The \Fcom example use throughout this work is realized by protocol that uses the random oracle. 
-A natural notion of import should define \Fcom as requiring 0 import because it is one-shot and halts after doing constant amount of work.
-\Fro on the other hand, requires at least 1 unit of import in order to be handle a potentially polynomial mumber of activations as well as reading/writing $k$-bit strings.
-This poses a problem that the ideal world requires 0 import however, the real world requires at least 1 unit of import.
-We resolve this dilemma by defining functionalities as parameteric in the amount of import they require.
-Parametric functionalities do not restrict UC-realization to only those protocols that are as computationally ``efficient'' as the them. In cryptography, it is common for real protocols to be computationally intensive while the ideal functionality they are realizing is trivial, and we want to be able to express such emulation.
-We modify the arrow notation, slightly, to capture that a functionality can realize itself while requiring more import, and use the notation $\F^m$ to denote a functionality parameterized to require $m$ import.
-\[
-	\F_1^m \xrightarrow{\idealP} \F_2^{n \geq m}
-\]
-For the remainder of this work we do not bother import annotations on functionalities and only concern ourselves with the minimum import they require because it is an implementation detail.
+%\paragraph{Import for Functionalities}
+%The \Fcom example use throughout this work is realized by protocol that uses the random oracle. 
+%A natural notion of import should define \Fcom as requiring 0 import because it is one-shot and halts after doing constant amount of work.
+%\Fro on the other hand, requires at least 1 unit of import in order to be handle a potentially polynomial mumber of activations as well as reading/writing $k$-bit strings.
+%This poses a problem that the ideal world requires 0 import however, the real world requires at least 1 unit of import.
+%We resolve this dilemma by defining functionalities as parameteric in the amount of import they require.
+%Parametric functionalities do not restrict UC-realization to only those protocols that are as computationally ``efficient'' as the them. In cryptography, it is common for real protocols to be computationally intensive while the ideal functionality they are realizing is trivial, and we want to be able to express such emulation.
+%We modify the arrow notation, slightly, to capture that a functionality can realize itself while requiring more import, and use the notation $\F^m$ to denote a functionality parameterized to require $m$ import.
+%\[
+%	\F_1^m \xrightarrow{\idealP} \F_2^{n \geq m}
+%\]
+%For the remainder of this work we do not bother import annotations on functionalities and only concern ourselves with the minimum import they require because it is an implementation detail.
 
 %When we talk about emulation, we particularly care about emulation with respect to an ideal protocol $\phi$ which is really just $(\idealP, \F)$ where \idealP is the protocol which forwards all messages to/from \Z and \F.
 %We say the protocol $\pi$ (potentially with a hybrid functionality $\F_1$) UC-realizes an ideal functionality $\F_2$ if Definition~\ref{def:emulation} holds for $(\pi, \F_1)$ and  $\phi = (\idealP, \F_2)$
@@ -246,12 +244,12 @@ For the remainder of this work we do not bother import annotations on functional
 
 \subsection{Dummy Lemma} \label{sec:dummy}
 The dummy lemma is a crucial result in UC that reduces the design space of simulators to just one: for the dummy adversary in the real world.
-The Lemma states that if a simulator exists for the dummy adversary, called the dummy simulator \DS, then there it is easy to construct a simulator for any other adversary \A. 
+The Lemma states that if a simulator exists for the dummy adversary, called the dummy simulator \DS, then there it easy to construct a simulator for any other adversary \A. 
 The simulator constructed in this lemma uses virtual tokens to internally run \DS and \A.
 
 The intuitiom behind this results rests in the fact that emulation must hold over $\forall \Z$ for a particular \A. 
 Particularly, in the case of \DS and \DummyAdv, emulation holds for a \Z that may be running any other possible \A internally and passing it's output to \DS and \DummyAdv.
-Therefore, moving \A out of the simulation and into the execution, as the real adversary and as providing input to \DS, should maintain emulation between the two worlds.
+Therefore, constructing a simulator for \A is equivalent to moving it out of the simulation and into the execution, as the adversary in the real world and as part of the simulator, providing input to \DS, in the ideal world.
 
 \begin{theorem}[Dummy Lemma]\label{thm:dummy}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
@@ -260,7 +258,7 @@ If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\fo
 We give the proof of this lemma in the appendix, however, we provide an intuition for understanding why it is true.
 Simulation w.r.t the dummy simulator works for all environments, even those that could run any potential real-world adversary internally. Such environments, pass input to the adversary, whose output is given to the dummy simulator. 
 The constructed simulator captures the idea of moving the adversary from the environment into the the execution, and the constructed simulator runs the real-world adversary and dummy simulator internally.
-Environment inputs are not passed to the adversary, and the adversary's outputs are passed to the dummy simulator.
+Environment inputs are now passed to the adversary, and the adversary's outputs are passed to the dummy simulator.
 
 %\begin{proof}
 %The constructed simulator $\Sim_\A$ internally simulates \DS and \A through a virtual token type $K'$. 
@@ -301,12 +299,13 @@ In this section we present a composition operator for protocols that completes t
 The composition operator allows replacement of a functioality with a protocol realizing it, and, potentially, any functionality that protocol uses.
 
 Say a protocol $\pi$, using hybrid functionality $\F_1$, realizes functionality $\F_2$. 
-For a protocol $\rho$ that uses $\F_2$, replacement of the functionality with $\pi$ means connected patries of $\rho$ to the corresponding party of $\pi$ within the \partywrapper.
+For a protocol $\rho$ that uses $\F_2$, replacement of the functionality with $\pi$ means connecting parties of $\rho$ to the corresponding party of $\pi$ within the \partywrapper.
 
-The basic composition operator replicates communication in Figure~\ref{fig:newpandq} and connects parties of \RHO and parties of \PI be means of a communicator. This communicator is not shown as we retain the abstract notion given in Fig~\ref{fig:newpandq}.
-Within the \partywrapper, both \RHO and \PI are connected by multiple session-typed channels to \Z and to \F, and those channels connected to generated processes which read communicator messages and ofrward them to/from the party.
-When we compose two protocols we connect them in the natural way, and the communicators reflect the appropriate type between the party and \Z and the party and \F. This replacement is seen in Figure~\ref{fig:replacement}.
-Recall that the shell codes are generated by the UC-executions of each of \RHO and \PI, and the composition operator duplicates their code here.
+The basic composition operator replicates communication in Figure~\ref{fig:newpandq} and connects parties of \RHO and parties of \PI be means of providerless channels. 
+The communicators created by the party wrapper (outside the dotted box in Figure~\ref{fig:replacement}) reflect the type of the new hybrid functionality of \PI.
+%This communicator is not shown as we retain the abstract notion given in Fig~\ref{fig:newpandq}.
+%Within the \partywrapper, both \RHO and \PI are connected by multiple session-typed channels to \Z and to \F, and those channels connected to generated processes which read communicator messages and ofrward them to/from the party.
+%Recall that the shell codes are generated by the UC-executions of each of \RHO and \PI, and the composition operator duplicates their code here.
 
 %In this section we present a simplified composition theorem and a second theorem we call the squash theorem.
 %These two theorems combine later in the section to prove the full UC composition theorem as it appears in the UC framework~\cite{uc}.
@@ -346,8 +345,8 @@ Recall that the shell codes are generated by the UC-executions of each of \RHO a
 %\end{figure}
 
 We further require a composition operator for simulators and we briefly describe, in writing, how to connect two sandboxed simulators \SIM{\rho} and \SIM{\pi} inside the construction simulator.
-At a high level we connect the simulators in the natural way.
-Inputs to the adversary are intended for $\F_1$ or dummy parties of $\F_1$ and are handled by \SIM{\pi}. Outputs from \SIM{\pi} are intended for $\F_2$ and dummy parties of $\F_2$, inputs that are simulated by \SIM{\rho}.
+At a high level we connect the simulators in the natural, intuitive way.
+Inputs to the adversary are intended for $\F_1$ or dummy parties of $\F_1$ and are handled by \SIM{\pi}. Outputs from \SIM{\pi} are intended for $\F_2$ and dummy parties of $\F_2$ which is simulated by \SIM{\rho}.
 Messages from the protocol/functionality to the simulator are similarly sent to \SIM{\rho} first, and its outputs go to \SIM{\pi}.
 You can find the full simulator composition operator in the appendix.
 %\begin{itemize}
@@ -369,7 +368,7 @@ You can find the full simulator composition operator in the appendix.
 %	\end{itemize}
 %\end{itemize}
 %The simulator relies on simulators for $\F_1 \xrightarrow{\pi} \F_3$ and $\F_2 \xrightarrow{\rho} \F_3$ to satisfy simulation for Theorem~\ref{thm:singlecomp}.
-The simulator performs constant overhead on \SIM{\pi} and \SIM{\rho}, and, therefore, we can conclude that it adheres to the polynomial time notion define by our type system and is well-resource-typed.
+%The simulator performs constant overhead on \SIM{\pi} and \SIM{\rho}, and, therefore, we can conclude that it adheres to the polynomial time notion define by our type system and is well-resource-typed.
 %The type in the ideal world gurantees that both the real and ideal world adversaries get at least as much impor as any of the protocol parties. 
 %This ensures that the composed simulator has enough import to sandbox the two existing simulators and send import out to the ideal world parties and ideal funfctionality.
 %Therefore it is trivial to see that the composed simulator is well-resource-typed.
@@ -426,7 +425,7 @@ $\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
 $\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
 \end{lstlisting}
 and a similar type for communication with \A.
-The multisession extension is mentioned in greater detail in the appendix.
+The multisession extension is mentioned in greater detail in Appendix~\ref{app:ms}.
 
 %\begin{center}
 %\parbox{0cm}{
@@ -471,7 +470,7 @@ The first claim we make is that our multisession extension remains polynomial ti
 If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
 \end{theorem}
 It easy to see why the multisession extension, performing constant work and being activated a polynomial number of times, remains well-resource-typed and PPT given that \F is PPT.
-We formally treat this and the remaining theorems in this section in the Appendix.
+We elaborate on the remaining theorems in this section in the Appendix.
 
 The next theorem realizes multiple sessions of a functionality with multiple sessions of a realizing protocol and it's hybrid functionality.
 \begin{theorem}[Multisession Composition]\label{thm:functor}
@@ -523,7 +522,7 @@ We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
 %\label{fig:squash}
 %\end{figure}
 
-We can conclude with full composition in Theorem~\ref{thm:composition}.
+We can now, finally, conclude with full composition in Theorem~\ref{thm:composition}.
 The proof follows directly from Theorems~\ref{thm:singlecomp}, \ref{thm:functor}, and a squash protocol described in Appendix~\ref{app:ms} which squashes multiple sessions of \F into one. 
 
 \begin{proof}

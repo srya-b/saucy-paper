@@ -55,7 +55,7 @@ The operational semantics for session-typed programs are formalized as a
 system of \emph{multiset rewriting rules}~\cite{cervesato2009relating}.
 These rules consist of semantic objects $\proc{c}{P}$ and $\msg{c}{M}$ describing
 process $P$ (or message $M$) providing service along channel $c$.
-Remarkably,\anote{Let's remove this, or else explain more why this matters?} in this formulation, a message is just a particular form of process,
+Remarkably, in this formulation, a message is just a particular form of process,
 thereby not requiring any special rules for typing; it can be typed just as processes.
 Since we track computational cost as well in NomosUC, we extend the semantic objects
 to $\proc{c}{w, P}$ and $\msg{c}{w, P}$ where work counter $w$ stores the work performed
@@ -210,7 +210,6 @@ and we omit its explanation for brevity.
 %arbitrary communication patterns in practical cryptographic protocols.
 %In this section, we highlight a common communication pattern in UC that requires introducing
 %the notion of shared session types~\cite{balzer2017manifest} to be expressible in NomosUC.
-%\anote{redundant w/ next sentence}
 
 Consider two ITMs $P$ and $Q$ that communicate in the following way. If $P$ is activated first,
 it sends a message to $Q$ and terminates, but if $Q$ is activated first it writes a message to $P$, 
