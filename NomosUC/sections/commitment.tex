@@ -1,78 +1,84 @@
-In this section we work through the entire commitment example that has seen used throughout this paper, and we show composition by realizing a coin flipping ideal functionality \Fflip and a protocol realizing it in the \Fcom-hybrid world.
-Along th way, we address a new communication pattern that enables session types to enforce communication ordering over multipe channels and identify to set import requiremets for functionalities for composition.
-We start by presenting the random oracle functionality~\Fro which is used to realized \Fcom.
+%In this section we work through the entire commitment example that has seen used throughout this paper, and we show composition by realizing a coin flipping ideal functionality \Fflip and a protocol realizing it in the \Fcom-hybrid world.
+%Along th way, we address a new communication pattern that enables session types to enforce communication ordering over multipe channels and identify to set import requiremets for functionalities for composition.
+%We start by presenting the random oracle functionality~\Fro which is used to realized \Fcom.
+
+In this section we introduce a coin flip functionality \Fflip and discuss why it's type definition needs to be parameteric in import amounts to allow for composition, and we introduce a design pattern where session types can enforce message ordering accross multiple channels. 
+\Fflip is realized by protocol $\prot{flip}$ in the \Fcom-hybrid world, and \Fcom is realized by $\prot{com}$ in the \Fropp-hybrid world.
+We discuss applying composition to realize \Fflip with \prot{flip} composed with \prot{com}.
+We push the realizing protocols, simulators, and process code to Appendix~\ref{app:flip} and focus here on the \Fflip and \Fropp session types.
 
 \subsection{The Random Oracle}
 The random oracle functionality captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
-It allows both protocol parties and the adversary to send 1 import token and request hashes from it
-We augment \Fro with a single communication channel allowing it parties to send messages to each other. One caveat from traditional communication
-is that the protocol parties must poll \Fro for new messages. The augmented functionality is called \Fropp from now on.
+It allows both protocol parties and the adversary to request hashes from it, and we augment it with a single communication channel allowing parties to send messages to each other.
+We refer to the augmented functionality as \Fropp from now on.
+Like the type of \Fcom dictates, \Fropp activates the receiver on new messages instadof requiring it to poll for new messages.
 
-The random oracle is different from \Fcom in that it has one channel to all parties to use. This is due to the fact that its function is the same for all parties.
-Recall the session type and its structure discussed in Section~\ref{sec:execuc}. The augmented session type is given below:
+The type of \Fropp is described by two session types: one for each channel between \Fropp and a protocol party.
+\begin{figure}
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{sandh}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{oracle}: \m{pid} \arrow \m{int} \tensor \echoice{$\=$\mb{hash}: \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{hands[a]}},$ \\
+\>$\mb{send}: \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{sandh}[a]}$ \\
+$\m{recv}[a] = \textcolor{red}{\getpot^2} \echoice{ \mb{msg}: \m{pid} \arrow \m{pid} \arrow \m{pid} \product \textcolor{red}{\paypot^1} \m{recv}[a]}$ \\
+\end{tabbing}}
+\end{center}
+\caption{The session type for the random oracle. Two channels for each party to both query hashes and send/receive messages.}
+\end{figure}
+
+%The random oracle is different from \Fcom in that it has one channel to all parties to use. This is due to the fact that its function is the same for all parties.
+%Recall the session type and its structure discussed in Section~\ref{sec:execuc}. The augmented session type is given below:
 %The design of the random oracle is different from \Fcom in that it has only one channel for all parties to communicate over.
 %We discussed the unique structure of the session type for \Fro in Section~\ref{sec:execuc}: its type before and after interaction with a party is the same.
 %This enables a dynamic set of parties to communicate with it by moving the \inline{pid} of the message sender/receiver into the type.
 %Our augmented functionality's type retains this feature, as described by its session type:
 %\begin{mathpar}
-\begin{center}
-\parbox{0cm}{
-\begin{tabbing}
-$\m{party}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{hash}: \m{pid} \arrow \m{int} \tensor \echoice{$\=$\mb{shash}: \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{party[a]}}$ \\
-\>$\mb{recv}: \m{pid} \tensor \echoice{$\=$\mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \textcolor{red}{\paypot^1} \m{party}[a],$\\
-\>\>$\mb{no}: \m{pid} \tensor \m{party[a]}},$ \\
-\>$\mb{send}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \m{party}[a]}$
-%$\m{party}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{hash} : \m{pid} \arrow \m{int} \tensor \m{hashing}[a],$\\
-%\>$\mb{send} : \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \m{party}[a],$ \\
-%\>$\mb{recv}: \m{pid} \tensor \m{newmsg[a]}}$ \\
-%$\m{hashing}[a] = \echoice{\mb{shash} : \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{party}[a]}$ \\
-%$\m{newmsg}[a] = \echoice{ \mb{yes}: \m{pid} \arrow \m{pid} \arrow \m{a} \tensor \textcolor{red}{\paypot^1} \m{party}[a], \mb{no}: \m{pid} \tensor \m{party[a]}}$
-%\end{mathpar}
-\end{tabbing}}
-\end{center}
-Similarly, the functional types are given by:
-%One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
-%We cannot directly deliver messages to their receivers, because the committer's and receiver's \inline{p2f} channel would end up with different types and back to \inline{party[a]}.
-%The corresponding functional message type between the protocol wrapper and functionality is also updated with inputs for the channel:
-\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape]
-$\Type$ rop2f[a] = QHash of $\tgr{Int}$ | Send of pid ^ a 
-               | Recv ;
-$\Type$ rof2p[a] = RHash of $\tgr{Int}$ | Yes of pid ^ a 
-               | No ;
-\end{lstlisting}
+The type of \Fropp requires 2 units of import to be given to it when querying a hash or sending a message.
+We justify two import because we want to ensure that one import is sent to the receiver, along with the import paid to \Fropp. For protocols where the receiver is activated directly, it 
+is important for messages to carry import to ensures the receiver has sufficient resources to perform polynomial work. 
+This reason is articulated perfectly by the real world commitment protocol, where the receiver must spend 1 import to query a hash and can only receive import from message from the sender.
 
-The random oracle, along with \Fcom, use the standard construction of providerless channels but only make use of one of the channels. Recall that two uni-directional channels is a generalizable approach, however, we pace no restriction on the communication pattern over each channel.
-Here \Fcom and \Fro both use only one channel to the protocol parties instead of two.
-
-\subsection{Commitment Protocol}
-The real world commitment protocol is constructed in the random oracle model in the way of ~\cite{hofheinzcommitment}.
-Its incoming channel from \Z is typed identically to \Fcom to ensure that emulation and composition hold.
-
-%We show a snippet of the sender code for computing the commitment for its input bit in Figure~\ref{lst:committer}, and the relevant code the the receiver checking the commitment in Figure~\ref{lst:receiver}.
-The sender accepts a bit from \Z and generates a $k$-bit nonce to blind the bit through a \inline{sample} of randomness~\footnote{Blinding is necessary otherwise \A knows the pre-image and can query \Fro for its hash value.}. 
-It creates the commitment by sending \Fropp the blinded bit and receiving a hash value from \inline{p2f}.
-Finally it sends the hash to the receiver (which has pid=2).
-Conversely, the receiver must poll \Fropp for the commitment \inline{h} message, notify \Z of the commitment, and when it receives the bit and the nonce it checks that its hash with the commitment.
-We provide snippets of code for the most interesting parts of the committer and the receiver, creating a commitment and checking a commitment respectively, in Figures~\ref{lst:committer} and \ref{lst:receiver} in Appendix~\ref{app:protcol}.
-In total the committer is given 2 units of import: 1 for receive a hash and 1 to give to the receiver so that it can compute a hash as well.
-%$\tb{case}$ $\$$z2p (
-%  commit => 
-%The protocol works as follows:
-%\begin{enumerate}
-%\item When the committer receives a \inline{Commit(b)} message from \Z, it samples some random bits $r$ and generates a hash $h$ by sending \inline{SHash(b + r)} to \Fro.
-%\item It then sends the commitment to the receiver who notifies \Z with a \inline{committed} message.
-%\item Finally, when \Z instructs the committer to \inline{Open} the commitment, it sends bit \inline{b} and randomness \inline{r} to the receiver. The receiver checks the commitment, with \inline{b} and \inline{r}, against \Fro and outputs \inline{Open(b)} to \Z if it checks out.
-%\end{enumerate}
-
-We elide presenting an overview of the simulator to realized $\Fro \xrightarrow{\pi_\m{com}} \Fcom$ in this section and focus, instead, on demonstrating our main result: composition.
+%Similarly, the functional types are given by:
+%%One side effect of the session types is that we modify the standard UC channel to require receivers to ask for new messages sent to them.
+%%We cannot directly deliver messages to their receivers, because the committer's and receiver's \inline{p2f} channel would end up with different types and back to \inline{party[a]}.
+%%The corresponding functional message type between the protocol wrapper and functionality is also updated with inputs for the channel:
+%\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape]
+%$\Type$ rop2f[a] = QHash of $\tgr{Int}$ | Send of pid ^ a 
+%               | Recv ;
+%$\Type$ rof2p[a] = RHash of $\tgr{Int}$ | Yes of pid ^ a 
+%               | No ;
+%\end{lstlisting}
+%\paragraph*{\textbf{Commitment Protocol}}
+%The real world commitment protocol is constructed in the random oracle model in the way of ~\cite{hofheinzcommitment}.
+%Its incoming channel from \Z is typed identically to \Fcom to ensure that emulation and composition hold.
+%
+%%We show a snippet of the sender code for computing the commitment for its input bit in Figure~\ref{lst:committer}, and the relevant code the the receiver checking the commitment in Figure~\ref{lst:receiver}.
+%The sender accepts a bit from \Z and generates a $k$-bit nonce to blind the bit through a \inline{sample} of randomness~\footnote{Blinding is necessary otherwise \A knows the pre-image and can query \Fro for its hash value.}. 
+%It creates the commitment by sending \Fropp the blinded bit and receiving a hash value from \inline{p2f}.
+%Finally it sends the hash to the receiver (which has pid=2).
+%Conversely, the receiver must poll \Fropp for the commitment \inline{h} message, notify \Z of the commitment, and when it receives the bit and the nonce it checks that its hash with the commitment.
+%We provide snippets of code for the most interesting parts of the committer and the receiver, creating a commitment and checking a commitment respectively, in Figures~\ref{lst:committer} and \ref{lst:receiver} in Appendix~\ref{app:protcol}.
+%In total the committer is given 2 units of import: 1 for receive a hash and 1 to give to the receiver so that it can compute a hash as well.
+%%$\tb{case}$ $\$$z2p (
+%%  commit => 
+%%The protocol works as follows:
+%%\begin{enumerate}
+%%\item When the committer receives a \inline{Commit(b)} message from \Z, it samples some random bits $r$ and generates a hash $h$ by sending \inline{SHash(b + r)} to \Fro.
+%%\item It then sends the commitment to the receiver who notifies \Z with a \inline{committed} message.
+%%\item Finally, when \Z instructs the committer to \inline{Open} the commitment, it sends bit \inline{b} and randomness \inline{r} to the receiver. The receiver checks the commitment, with \inline{b} and \inline{r}, against \Fro and outputs \inline{Open(b)} to \Z if it checks out.
+%%\end{enumerate}
+%
+%We elide presenting an overview of the simulator to realized $\Fro \xrightarrow{\pi_\m{com}} \Fcom$ in this section and focus, instead, on demonstrating our main result: composition.
 
 
 \subsection{Coin Flipping}
-We present secure coin flipping here as another example and one that makes use of our composition operator. 
-Additionally, this example makes use of a neat trick we use to get more guarantees out of the NomosUC type system.
-Securely flipping a coin is a basic cryptographic primitive whose ideal functilnalitt \Fflip is captured by the session types in Figure~\ref{fig:fflip}.
+We present secure coin flipping here as another case study and one that makes use of our composition operator. 
+Additionally, this example makes use of a neat trick we can use to get more guarantees out of the NomosUC type system.
+Securely flipping a coin is a basic cryptographic primitive whose ideal functilnality \Fflip is captured by the session types in Figure~\ref{fig:fflip}.
 It's a 2-party protocol where one party is the initiator of the flip and the other is a receiver.
-The desired property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
+The desired security property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
+Unlike \Fropp, \Fflip does not output directly to either of the parties unless polled with a \m{getflip} message.
+
 \begin{figure}
 \begin{center}
 \parbox{0cm}{
@@ -90,6 +96,20 @@ The desired property is that the coin flip is entirely unbiased by either of the
 \vspace{-4mm}
 \end{figure}
 
+The session type for \Fflip additionally accepts a type paraketer $K$, takes in a value of type $K$ from the flipper, and sends it to the receiver when outputting the flip.
+We use this $K$ as a means of controlling communication ordering accross both the flipper's and receiver's channel to \Fflip.
+Recall that session type can normally only enforce message ordering on one channel, but the type system prevents \Fflip from sending a value of type $K$ to the receiver until the sender concretizes type $K$ by sending it to \Fflip.
+Using this design pattern, we are able to capture more the behavior of a functionality or protocol in the type system.
+
+\Fflip is also parametric in the amount of import it sends/receives unlike \Fropp. The reason is that even though \Fflip is one-shot and does constant work
+statically defining it with zero import imposes a constraint that only protocols which also do constant work (and rely on functionalities that take zero import) 
+can realize it. 
+This negatively impacts the reusability of NomosUC ideal functionality definitions and limits the protocols that can be proven secure.
+
+This is best seen when composing \prot{flip} with \prot{com} in the \Fropp-hybrid to realized \Fflip. \Fropp requires 2 units of import on every input, and, therefore \prot{flip} (and \Fflip as they share the same type) also require at least 2 units of import in order for one to emulate the other.
+In the Appendix we describe realizing \Fflip using the composition theorem and replacing \Fcom in the real world with $\prot{com}$ in the \Fropp-hybrid world.
+We also provide a protcol for realizing both \Fflip and \Fcom (via simulators) and a simulator composition operator in Appendix~\ref{app:flip}.
+
 %\begin{figure}
 %\centering
 %\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
@@ -103,36 +123,6 @@ The desired property is that the coin flip is entirely unbiased by either of the
 %                                 no: deliver }}
 %\end{lstlisting}
 %\end{figure}
-
-\Fflip only sends messages to the receiver when asked for the outcome of the flip with a \inline{getflip}. 
-We augment the session type, and the corresponding ideal functionality, with a polymorphic \inline{K} to strengthen the type and ensure that the receiver can not receive anything from \inline{getflip} until the flipped sends something of type \inline{K} to \Fflip.
-We concretize \inline{K} with the unit type \inline{()} at the protocol level as we only care about ordering in the functionality. 
-This gives the type more power and allows the resulting functionality and protocol code to be simpler. 
-
-The code for \Fflip is quite simple and shown below:
-\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape]
-$\nproc$ F_coinflip[K]{p2fn}{m} :
-  (k: Int), (rng: [Bit]), (sid: session[1]),
-  ($\$$F: flipper[$\tp{K}$]{$\tp{p2fn}$}{$\tp{f2pn}$}), ($\$$R: receiver[$\tp{K}$]{$\tp{p2fn}$}{$\tp{f2pn}$}),
-  ($\$$A: adv[$\tp{K}$]) |- ($\$$c: 1) =
-{
-  $\ncase$ $\$$F (
-    init =>
-      x = $\nrecv$ $\$$F ;
-      $\nget$ $\$$F {p2fn}
-      b = sample 1 rng ;
-      $\$$A.flipped ;
-      $\nsend$ $\$$A x ;
-      $\tg{(* wait for getflips *)}$
-      $\$$f <- getflip_f{$\tp{p2fn}$}{$\tp{f2pn}$} <- b $\$$F ;
-      $\$$r <- getflip_r[$\tp{K}$]{$\tp{p2fn}$}{$\tp{f2pn}$} <- b x $\$$R ;
-  )
-}
-\end{lstlisting}
-We elide the code for \inline{getflip} although it is straightforward. 
-The adversary decides whether to deliver the output flip to a party asking for it.
-Much like the real-world case where the corrupt committer never opens its commitment, the simulator here can ensure that only the flipper receives the flip.
-As the session type indicates, the adversary responds with a \inline{yes} or \inline{no} to deliver the flip.
 
 %Upon a \inline{getflip} request, the adversary is activated and asked whether to deliver the outcome as shown in Figure~\ref{fig:optional}. 
 %\begin{figure}
@@ -152,19 +142,7 @@ As the session type indicates, the adversary responds with a \inline{yes} or \in
 %\caption{} \label{fig:optional}
 %\end{figure}
 
-The protocol for the coin flip uses \Fcom. 
-The flipper commits to a bit $b$, the receiver sends the flipper a random bit $r$ in return, the flipper opens its commitment, and both parties compute the flip as $r \oplus b$.
-The simulator for this protocol to realize \Fflip is straightforward:
-\begin{itemize}
-\item If the flipper is corrupt, the simulator tells the flipper to \inline{init} the flip when the environment sends it a \inline{Commit b} message. It gets the flip outcome $f$ from the flipper and simulates the receivers random bit $r = f \oplus b$ for the environment. It never delivers the flip outcome to the receiver unless the environment instructs it to open the flipper's commitment. By setting $r = f \oplus b$, when the environment receives $f$ it can check that $r \oplus b = f$.
-\item If the receiver is corrupt, the simulator waits for \Fflip to inform it that the flip was initiated. It simulates the \inline{Commit} message from \Fcom to the receiver, for \Z. When it receives the random bit that \Z wants the receiver to send, it gets the flip outcome from the receiver, computes $b = r \oplus f$ and sends \inline{Open b} to \Z. Again, \Z can verify $b \oplus r$ similar to the above case.
-nl
-\end{itemize}
 
-\subsection{Composition}
-We describe a composition theorem in the previous section, a composition operator for protocols, and a bried highlight of the composition operator for simulators.
-Composition of the coin flip with the commitment protocol is realized with simulator composition in exactly this way.
-We give a diagram of simulator composition in~\ref{fig:simcomp}.
 %Here we demonstrate how to compose the simulators from the two experiments to create a simulator to prove Theorem~\ref{thm:compose}.
 %Two simulators being composed are: \SIM{com} for $\Fro \xrightarrow{\prot{com}} \Fcom$ and \SIM{flip} for $\Fcom \xrightarrow{\prot{flip}} \Fflip$. 
 %The code for the composed is very similar to the simulator for the Dummy Lemma described in Section~\ref{sec:dummy} and expanded on in Appendix~\ref{app:dummy}.
@@ -179,16 +157,4 @@ We give a diagram of simulator composition in~\ref{fig:simcomp}.
 %\item Outputs from \SIM{\rho}: \inline{P2A2Z(p,msg)} from simulated parties of $\rho$  and \inline{F2A2Z(msg)} from the simulated $\F_2$ are forwarded to \SIM{\pi} as \inline{P2A(p,m)} and \inline{F2A(m)}, respectively.
 %\item Inputs from \SIM{\rho}: \inline{A2F(msg)} for $\F_3$ and \inline{A2P(p,msg)} for dummy parties of $\F_3$ are forwarded unaltered, and, Outputs from $\F_3$ and its ideal parties: \inline{F2A(msg)} from $\F_3$ and \inline{P2A(p,msg)} from its ideal parties is forwarded to \SIM{\rho} unaltered.
 %\end{enumerate}
-
-\begin{figure}
-\centering
-\includegraphics[scale=0.5]{figures/simcomp.pdf}
-\caption{The composed simulators for $\F_1 \xrightarrow{\rho \circ \pi} \F_3$. The real world consists of $(\rho \circ \pi, \F_1)$. Inputs from \Z are for $\F_1$ and dummy parties interacting with $\F_1$, which \SIM{\pi} is equipped to handle. Outputs from \SIM{\pi} are for $\F_2$ and dummy parties of $\F_2$ which \SIM{\rho} is equipped to handle. Finally, outputs from \SIM{\rho} are for $\F_3$ and dummy parties of $\F_3$, which is just the ideal world in Theorem~\ref{thm:composition}.}
-\label{fig:simcomp}
-\end{figure}
-
-
-The type system in NomosUC helps to identify when the amount of potential that a functionality requires isn't satisfied by the bounding polynomial given.
-We illustrate this point using the $\F_{\msf{map}}$. 
-The functionality maintains a list that parties can append to the end of or read from.
 
