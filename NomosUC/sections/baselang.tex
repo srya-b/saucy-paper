@@ -1,13 +1,17 @@
 
-The core calculus of NomosUC is based on \emph{binary session types}~\cite{caires2010session}:
+The core calculus of NomosUC relies on \emph{binary session types}~\cite{caires2010session}:
 a type discipline for communication-centric programming derived from a Curry-Howard interpretation
 of intuitionistic linear logic~\cite{girard1987linear}.
 Under this correspondence, a process term $P$ is assigned to
 a logical judgment of the form $A_1, \ldots A_n \vdash C$ and each antecedent as well as the succedent is
 labeled with a \emph{channel} to obtain
-\[
-x_1 : A_1, \ldots, x_n : A_n \vdash P :: (z : C)
-\]
+\begin{center}
+\begin{minipage}{0cm}
+\begin{tabbing}
+$(x_1 : A_1), (x_2 : A_2), \ldots, (x_n : A_n) \vdash P :: (z : C)$
+\end{tabbing}
+\end{minipage}
+\end{center}
 
 The resulting judgment states that process $P$ \emph{provides} a service
 of session type $C$ along channel $z$, \emph{using} the services of session
@@ -17,7 +21,13 @@ to be \emph{well-formed}.
 The linear antecedents are often abbreviated to $\D$.
 
 Formally, the typing judgment for processes in NomosUC is written as
-\[ \Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A) \]
+\begin{center}
+\begin{minipage}{0cm}
+\begin{tabbing}
+$\Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)$
+\end{tabbing}
+\end{minipage}
+\end{center}
 
 $\Sg$ denotes the signature containing type and process definitions and $k$
 denotes the security parameter.
@@ -98,7 +108,7 @@ The work counter of the process remains unaltered, and the new message
 is created with work $0$.
 \begin{tabbing}
 $(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step \proc{c'}{w, [c'/c]P},
-\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}}$
+\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}} \qquad \qquad \fresh{c'}$
 \end{tabbing}
 When the message $k$ is received along $c$, the client selects branch
 $k$ and also substitutes the continuation channel $c'$ for $c$, thereby
@@ -139,28 +149,17 @@ while the client sends one such label in $L$ using the expression $(\esendl{x}{k
 % \end{mathpar}
 Dual to internal choice, the client contains the write token which is
 sent to the provider along with the label.
-The operational semantics rules are also just the inverse of internal choice,
-and therefore skipped for brevity.
+The typing and semantics rules for external choice are just the inverse of internal choice,
+and presented in Appendix~\ref{app:typing_rules}.
 
 \paragraph*{\textbf{Termination}}
 The type $\one$, the multiplicative unit of linear logic, represents
-termination of a process, which (due to linearity) is not allowed to use
-any channels. A terminating process offering on $x : \one$ simply
-closes channel $x$ while the client waits for this close message to arrive.
-\begin{mathpar}
-  \infer[{\one}R]
-  {\B{k \semi \Tokens \semi \Psi} \semi \wt \entailpot{\B{q}}{\B{q'}} \eclose{x} :: (x : \one)}
-  {\B{q = 0}}
-  \and
-  \infer[{\one}L]
-  {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : \one) \entailpot{\B{q}}{\B{q'}} (\ewait{x} \semi Q) :: (z : C)}
-  {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
-\end{mathpar}
-Similar to internal choice, the closing process transfers the write
-token to its waiting client along with the close message.
-Additionally, the terminating process does not store
-any potential since it cannot take any further execution steps
-(explained more in Section~\ref{sec:import}).
+termination of a process, which is not allowed to use
+any linear channels. A terminating process offering on $x : \one$ simply
+closes channel $x$ using the expression $\eclose{x}$ while the client waits
+for this close message to arrive using the expression $\ewait{x} \semi Q$
+and then continues executing $Q$.
+The typing rules are presented in Appendix~\ref{app:typing_rules}.
 % Operationally, the provider converts into a closing message
 % with no continuation since the offered channel terminates.
 % \begin{tabbing}
@@ -199,36 +198,9 @@ Here, $\tau$ describes a functional type, e.g. $\m{int}, \m{bool}, \tau \; \m{li
 The type $\tau \arrow A$ prescribes receiving a value of type $\tau$
 with continuation type $A$, while its dual $\tau \product A$ prescribes
 sending a value of type $\tau$ with continuation $A$. The corresponding
-typing rules for arrow ($\arrow R, \arrow L$) are given below.
-\begin{mathpar}
-  \infer[\arrow R]
-  {\B{\Tokens} \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}}
-  \erecvch{x}{v} \semi P :: (x : \tau \arrow A)}
-  {\B{\Tokens} \semi \Psi, (v : \tau) \semi \wt, \D \entailpot{\B{q}}{\B{q'}}
-  P :: (x : A)}
-  %
-  \and
-  %
-  \inferrule*[right = $\arrow L$]
-  {\B{r' = p+q'} \qquad
-  \B{\Psi \share (\Psi_1, \Psi_2)} \qquad
-  \Psi_1 \exppot{\B{p}} M : \tau \\
-  \B{\Tokens} \semi \Psi_2 \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}}
-  Q :: (z_k : C)}
-  {\B{\Tokens} \semi \Psi \semi \wt, \D, (x : \tau \arrow A)
-  \entailpot{\B{q}}{\B{r'}} \esendch{x}{M} \semi Q :: (z : C)}
-\end{mathpar}
-As indicated in the $\arrow R$ rule, receiving a value $y : \tau$ on a channel
-$x : \tau \arrow A$ adds it to the functional context $\Psi$. On the
-other hand, sending (value of) expression $M$ on channel $x : \tau \arrow A$
-requires that $M$ has type $\tau$ (third premise).
-The premises indicated in blue describe how potential is divided across
-the functional and session-typed layers and will be described further in Section~\ref{sec:import}.
-Intuitively, the potential in functional context $\Psi$ is \emph{shared}
-between $\Psi_1$ and $\Psi_2$ (second premise); $\Psi_1$ is used to type
-$M$ while $\Psi_2$ is passed on to the continuation $Q$.
+typing rules for arrow ($\arrow R, \arrow L$) are given in Appendix~\ref{app:typing_rules}.
 The $\product$ operator is dual to $\arrow$ reversing the roles of provider and client,
-and we omit those rules for brevity.
+and we omit its explanation for brevity.
 
 \subsection{Shared Session Types and ITM Channels}
 \label{subsec:communicators}
@@ -367,7 +339,7 @@ possess it enabling only that process to acquire the shared channel.
 This resolves both read and write non-determinism due to linearity of the channels.
 
 The communicator type is parametric in the message type sent over it, and it is restricted to sending functionally typed messages only. 
-Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
+Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{fig:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
 We wrap each of $P$ and $Q$ in a shell code, call these $S_P$ and $S_Q$, which spawn two processes each.
 Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. %\snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
 %The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}

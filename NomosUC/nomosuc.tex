@@ -1,4 +1,5 @@
 \documentclass[acmsmall, screen, review, anonymous]{acmart}
+\settopmatter{printfolios=true,printccs=false,printacmref=false}
 %\IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 %\usepackage[dvipsnames]{xcolor}
@@ -31,8 +32,32 @@
 \usepackage{xspace}
 \usepackage{turnstile}
 
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+\setcopyright{none}
+
+
+%%
+%% These commands are for a JOURNAL article.
+\acmJournal{PACMPL}
+\acmVolume{1}
+\acmNumber{ICFP} 
+\acmArticle{1}
+\acmYear{2022}
+\acmMonth{9}
+\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+\startPage{1}
+
+\citestyle{acmauthoryear}
+
+
 \begin{document}
 \usetikzlibrary{matrix, arrows.meta, calc, positioning}
 \tikzset{myarrow/.style={-Latex, rounded corners},}
@@ -155,15 +180,17 @@ To validate our design, we work through the standard theory of UC composition op
 \section{Discussion and Future Work}
 \input{sections/future}
 
-\bibliographystyle{acm}
+\bibliographystyle{ACM-Reference-Format}
 \bibliography{nomosuc}
+
+\newpage
 
 %input{figures/asyncwrapper}
 
 \appendix
 
 
-\section{Shared Session Type} \label{app:sharedtypes}
+\section{Selected Typing Rules for NomosUC} \label{app:typing_rules}
 \input{appendix/sharedtypes}
 
 \section{Arbitrary Parties} \label{app:arbparties}
