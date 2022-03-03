@@ -1,9 +1,7 @@
-%We want better tools for analyzing cryptographic applications, especially complex ones like smart contracts which make use of varied cryptographic tools (like zero knowledge proofs and multiparty computation) and have modular, layered constructions.
 In cryptography, the leading framework for defining security is Universal Composability (UC)~\cite{canettiUC}.
-UC was initially developed within the cryptography theory, where it is considered the strongest definitional model since it guarantees a protocol even when multiple sessions of the protocol are run concurrently. UC has now become popular in secure protocols mre broadly, where an ideal functionality model often serves as the main formal security definition.
-One reason for UC's property versus traditional game-based cryptography definitions is that UC is based on the \emph{oideal functionality} paradigm, which can lead to more cohesive definitions. In short, rather than giving the security properties through a collection of separate attack games, in UC we define security through a single program for a trusted third party that exhibits all the desired behaviors of the protocol.
+UC was initially developed within the cryptography theory, where it is considered the strongest definitional model since it guarantees a protocol even when multiple sessions of the protocol are run concurrently. UC has now become popular in secure protocols more broadly, where an ideal functionality model often serves as the main formal security definition.
+One reason for UC's property versus traditional game-based cryptography definitions is that UC is based on the \emph{ideal functionality} paradigm, which can lead to more cohesive definitions. In short, rather than giving the security properties through a collection of separate attack games, in UC we define security through a single program for a trusted third party that exhibits all the desired behaviors of the protocol.
 UC also encourages a modular style  to a modular framework, where larger protocols can be designed using simple ideal functionalities, and UC guarantees protocols that realize them to be secure when composed with arbitrarily other protocols running concurrently.
-%Several variations of UC have aimed to provide alternative explanations aiminig to be more formal~\cite{suc, gnuc, camenischuc}.
 
 Protocols based on UC, support for programming tool support is further behind. Providing programming language support for this framework has been a focus of recent works like ILC, EasyUC, IPDL, and others~\cite{ilc, easyuc, ipdl, sybolicuc, barbosa}. Our work goes further in this direction by asking several new questions:
 
@@ -15,29 +13,11 @@ Session types have been successfully employed in modeling distributed protocols~
 Additionally UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
 Is it possible to reconcile these, getting some value from session types without restricting the  of UC?
 
-%\item RQ1: Cryptographic applications often involve several different parties communicating
-%with each other in a pre-defined protocol.
-%However, existing tools often do not provide a streamlined approach of expressing and enforcing
-%such protocols.
-%As cryptographic protocols become more and more complex, it is likely that the implementation
-%of such applications deviates from its intended behavior.
-%In such scenarios, can the programming language provide some feedback to its user that such
-%a deviation has occurred?
 \item Execution cost analysis plays a central role in UC, since we are only concerned with
 attackers possessing polynomial-time computational power.
 However, most prior UC formalization efforts like EasyUC and ILC forego the polynomial runtime analysis entirely, while others like IPDL and \snote{Barbosa?} achieve can enforce polynomial runtime but at the expense of restricting the UC framework to a static number of protocols.
 Can we enforce polynomial running time without otherwise imposing restrictions on the UC framework?
 
-%\item Execution cost analysis plays a central role in UC, since we are only concerned with
-%attackers possessing polynomial-time computational power.
-%However, existing tools provide almost no support in enforcing such restrictions on adversaries.
-%In addition, UC configurations contain several different components: simulator, environment,
-%adversary, ideal functionality, and honest and corrupt parties.
-%Thus, it is important to ensure that polynomial-time bounds are enforced on the correct
-%components, which again can become challenging as the complexity of the cryptographic protocol
-%increases.
-%Can we introduce resource-awareness into programming languages such that these restrictions
-%are automatically enforced?
 \end{enumerate}
 
 We answer these questions positively by designing a new language, NomosUC, that combines ideas from
@@ -54,7 +34,7 @@ ITMs in UC are flexible enough to allow for arbitrary communication between any 
 However, the static nature of session types poses new challenges for expressing arbitrary behavior.
 In NomosUC, we abstract the notion of a channel between two processes, into a generic construction, not limited by the constraint
 of linear types, that, as far as we know, can express any configuration of ITMs.
-Futhermore, we contend with the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
+Furthermore, we contend with the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
 and arrive at a notion of compositional security that remains surprisingly expressive and generalizable.
 Finally, we provide a systematic approach to converting any UC functionality into one that can be implemented in NomosUC.
 \snote{(attempt) finished explanation of the technical challenges in making session types while still supporting the dynamic nature of UC.}
@@ -66,7 +46,7 @@ In UC, computational cost is formally expressed through a mechanism of \emph{imp
 The \emph{run-time budget} $n$ of a process is then defined as the sum of import tokens received by a process \emph{minus} the sum of import of messages sent out by it.
 We find that the import tokens from UC are closely related to the \emph{potential} mechanism from Nomos.
 The main technical challenge is the need for running ITMs in sandbox, a critical tool for reductions of adversaries, and environments, to computationally hard problems.
-Reusing existing NomosUC programs requires satsifying the import requirements their types require.
+Reusing existing NomosUC programs requires satisfying the import requirements their types require.
 We introduce \emph{virtual tokens} that are created by the host and given to virtualized processes as ``real'' tokens. 
 We create typing rules around our sandboxing approach in Section~\ref{sec:importlang} to ensure it doesn't introduce non-polynomial behavior.
 \snote{(attempt) explained why sandboxing requires us to introduce virtual tokens}.
@@ -78,48 +58,7 @@ which states that well-typed processes in NomosUC are ``locally polynomial time"
 in the sense required by UC.
 
 We validate our approach to UC both through realizing traditional UC theorems and through examples which showcase our emulation definition and composition operators.
-%In Section~\ref{sec:execuc} we are able to express a composition theorem that is parametric in the type of the protocol, and showcase its generalizability through an example 
-by applying it to coin flip functionality \Fflip in Section~\ref{sec:commitment}.
-%Ww show how to systematically convert \Fflip to a functionality that can be expressed in NomosUC, realize it with a protocol relying in a bit commitment \Fcom, and demonstrate the generalizability of our composition theorem by composing $\pi_{\m{flip}}$ with a protocol $\pi_{\m{com}}$ that realizes \Fcom.  
+By applying it to coin flip functionality \Fflip in Section~\ref{sec:commitment}.
 
 \anote{Explain more of the validation we accomplish by completing the standard composition operators in UC.}
 \anote{Explain more of the highlights from our \Fflip case study.}
-%
-%   The challenge of “polynomial runtime” in UC is that individual processes must be judged as polynomial, but when eveluated in context with other concurrently running process it is difficult to assign blame.
-%       The current best way to define polynomial runtime, found in the 2019 and later version of UC, is based a concept of ``import tokens.''
-%       This turns out to be a good fit for the ``Potential'' from Nomos and Resource-Aware ML.
-%Our construction can reason about local polynomial time for open terms based only on the channel types and assert polynomial-bound in the security parameter by checking valid polynomial and import bounds, and it even guarnatees termination.
-%The result is a deep connection between session type semantics and the formal foundation of UC.
-%    The Preservation theorem we prove associated with our type system and operational semantics proves the following: 
-%  well-typed terms in Nomos UC are “locally polynomial time”, in the sense required of UC, meaning they do not take more steps that some polynomial function $T(N)$ of the net number of import tokens it has received.
-%  \anote{Explain better connection between Preservation theorem and what is needed in UC proofs}
-
-%In this work we attempt to improve on the state of the art by applying \textit{resource-aware session types} to realize the UC framework that we call Nomos UC.
-
-
-
-%\hrule 
-% Second, Nomos features a notion of Work-aware types. This is useful for capturing the notion of “locally polynomial runtime.” This allows us to model UC more faithfully than any prior work to date
-%As a starting point, we build a language that merges types rules from ILC into Nomos. The main design idea of ILC is that it is uses static typing rules to encode the requirements of the Interacting Turing Machines (ITMs) model, a model that is uniquely associated with UC. The ILC rules roughly ensure that simulations of the language can be carried out by probabilistic Turing machines, which is necessary for reduction to computationally hard problems, required for cryptographic security proofs. The rules from ILC are compatible with session types, so it turns out to be straightforward to merge these into nomos. The result provides benefits associated with session types, namely that it avoids potential errors from internally-inconsistent programs.
-%   Beyond just session types, the Work-aware component of Nomos allows us to tackle a fundamental challenge in defining a programming language for UC that ILC (and all other related work) left unfulfilled, which is to express the notion of polynomially runtime.
-   
-
-%In addition, our language has other benefits.
-% The Progress theorem is useful because it gives some evidence that ideal functionalities and protocols encoded in Nomos UC cannot get stuck. Together helps confirm that the process halts in polynomial time.
-% TODO: Give an example of a bad machine ruled out by progress guarantee.
-
-%% \ignore{
-%% Carries forward the same metatheory guarantees as ILC. Namely: if a process terminates, then it depends only on the random coins (unlike Pi calculus, including Session-type pi calculus). Thus simulating the execution of a Nomos UC experiment can be carried out by a probabilistic polynomial time Turing machine (PPT). This is essential in UC for reduction to computationally hard problems.
-%% }
-
-%% \ignore{
-%% The Universal Composability Framework~\cite{uc} is the popular and widely-used framework for modelling the security of cryptographic and distributed protocols.
-%% Its novel contribution compared to other frameworks is that it provides a very strong notion of security: a UC-secure protocol is proved to be secure even when composed with arbitrary other protocols running concurrently.
-%% This constrasts with other, property-based notions of security~\todo{need to get some citations here}.
-
-%Analyzing large and complex protocols is a difficult task made easier by UC's ideal functionality abstraction. 
-%However, despite this additional modularity, UC proofs and models still tend to be very complex, unwieldy, and difficult to understand.
-%These issues are exacerbated when new communication models are added on top of UC~\cite{katz, etc}.
-%Therefore, we propose a two-fold solution: a new construction for modelling different communication models that removes all model-specific code from protocols and functionalities, and an implementation of the UC framework in the Nomos language. 
-%}
-

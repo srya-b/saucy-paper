@@ -33,7 +33,7 @@ token which is then transferred to the receiver along with the message.
 Globally, the process owning the write token is activated to take the
 next execution step.
 Finally, $P$ is the process expression that is currently being executed and
-the process offers channe $x$ of type $A$.
+the process offers channel $x$ of type $A$.
 Similar to import tokens, the natural number annotations $q$ and $q'$ on the turnstile
 denote the total and current potential stored in the process.
 We will gradually explain each component of the language, initiating
@@ -241,12 +241,12 @@ and we omit those rules for brevity.
 %\anote{redundant w/ next sentence}
 
 Consider two ITMs $P$ and $Q$ that communicate in the following way. If $P$ is activated first,
-it sends a message to $Q$ and terminates, but if $Q$ is activate first it writes a message to $P$, 
+it sends a message to $Q$ and terminates, but if $Q$ is activated first it writes a message to $P$, 
 $P$ writes a message back, and communication terminates.
 Session types require it to be statically known which party will write next to a channel so such
 a communication pattern can not be realized by juts a single session type.
 
-If we try to resolve this by splitting communcation among two channels, we may type them as
+If we try to resolve this by splitting communication among two channels, we may type them as
 %\begin{center}
 \vspace{2mm}
 

@@ -5,33 +5,33 @@ Most prior work, however, is not able to completely capture the polynomial-time 
 EasyUC~\cite{easyuc} introduces a toolset built on top of the existing EasyCrypt~\cite{easycrypt} toolset to model UC protocols and generate proofs of security.
 It moves past the game-based security limitation of EasyCrypt and achieves the broader simulation-based definitions of UC.
 %EasyUC mechanizes UC's notion of simulation-based security and formally verifies UC realization--something Nomos doesn't attempt to do.
-The major limtiation of EasyUC is that it does not encode any guarantees on the runtime of any process.
+The major limitation of EasyUC is that it does not encode any guarantees on the runtime of any process.
 For example it can not detect a functionality and the adversary can exchange messages \emph{indefinitely} in their key exchange example. It also can not capture full UC composition because it is limited to a statically determined number of parties in any execution.
-NomosUC, on the other hand, proposes the full UC composition theorem, a robust poynomial time notion that relies on the import mechanism introduced in UC, and a full expressive language that can support arbitrary UC executions.
+NomosUC, on the other hand, proposes the full UC composition theorem, a robust polynomial time notion that relies on the import mechanism introduced in UC, and a full expressive language that can support arbitrary UC executions.
 
 Barbarosa et al.~\cite{barbarosa} builds off EasyCrypt was well, but introduce a polynomial time notion to their handling of UC. 
 They're able to relate the guarantees provided by EasyCrypt to the execution time of an adversary that can break the security of the protocol. 
 Barbarosa also must contend with the procedure call communication of EasyCrypt limiting the expressiveness of the framework. 
-Futhermore it suffers similar drawbacks to EasyUC, and all works mentioned in this section, in that does not fully capture dynamic party creation in UC, and they realize only a simplified version of UC~\cite{suc}.
+Furthermore it suffers similar drawbacks to EasyUC, and all works mentioned in this section, in that does not fully capture dynamic party creation in UC, and they realize only a simplified version of UC~\cite{suc}.
 
-ILC by Liao et al.~\cite{ilc} is another work closely related to our own, and suffers some of the same drawbacks as EesyUC. 
+ILC by Liao et al.~\cite{ilc} is another work closely related to our own, and suffers some of the same drawbacks as EasyUC. 
 This work also does not support full composition and is also limited to a static number of parties in its UC definition.
 It improves on EasyUC and provides a polynomial time notion, but ends up requiring simulation in both directions to prove emulation. This means that even simple protocols and functionalities can't be judged secure.
 
 We finish with IPDL~\cite{ipdl} by Morrisett et al. which improves upon EasyUC by providing a better notion of emulation, more akin to the UC framework.
-It symbolically tracks the run time of programs but can only do so for straigt-line programs or those with statically upper-bounded loops.
+It symbolically tracks the run time of programs but can only do so for straight-line programs or those with statically upper-bounded loops.
 This precludes constructs like the multisession operator, presented later in this work, from being expressible. 
 The operator allows creation of an arbitrary number of subsessions of a functionality and is critical to realizing the full UC composition theorem.
 IPDL further implements a unique communication mechanism that imposes a static dependency between channels ``firing''.
 
 We summarize the imporant features, or lack thereof, of the most closely related work to NomosUC in Figure~\ref{fig}.
-The columns are broken up accordinf to the features mentioned in the above discussion.
-The first discusses whether envionment can create an arbitrary number of parties at runtime. There is not partial-support in this category, either it is supported or it isn't.
+The columns are broken up according to the features mentioned in the above discussion.
+The first discusses whether environment can create an arbitrary number of parties at runtime. There is not partial-support in this category, either it is supported or it isn't.
 The second column broadly covers whether any runtime or polynomial-time analysis/tracking is performed by the project. Notice that there is partial support where ILC provides a restricted notion of polynomial time.
 The third column determines whether full UC-style composition is supported, i.e. replacement of an arbitrary number of functionalities with realizing protocols (the existence of a multisession operator is essential). 
 The last column highlights a design choice in communication through channels or through programming-style procedure calls.
-Unlike the other columns, this column doesnot indicate a drawback or limitation.
-In general this distinction plays an important role in how communication is captured each work, and whether arbitrary communication pattersn from UC are not fully supported.
+Unlike the other columns, this column does not indicate a drawback or limitation.
+In general this distinction plays an important role in how communication is captured each work, and whether arbitrary communication patterns from UC are not fully supported.
 
 % Colums: blank | parties at runtime | notion of UC | polynomial time | generalized composition operator | channels | procedural 
 \begin{figure}[H]
@@ -52,7 +52,7 @@ In general this distinction plays an important role in how communication is capt
 	%\hline
 	\end{tabular}}
 \end{table}
-\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column. The last column states a design decision for how communiation is captured in each wor and is not necessarily a limitation or drawback.}
+\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support, and the full circle \fullcirc[0.5ex] indicates full support in all but the last column. The last column states a design decision for how communication is captured in each wor and is not necessarily a limitation or drawback.}
 \label{fig:relatedworks}
 \end{figure}
 

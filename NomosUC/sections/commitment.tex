@@ -74,7 +74,7 @@ This reason is articulated perfectly by the real world commitment protocol, wher
 \subsection{Coin Flipping}
 We present secure coin flipping here as another case study and one that makes use of our composition operator. 
 Additionally, this example makes use of a neat trick we can use to get more guarantees out of the NomosUC type system.
-Securely flipping a coin is a basic cryptographic primitive whose ideal functilnality \Fflip is captured by the session types in Figure~\ref{fig:fflip}.
+Securely flipping a coin is a basic cryptographic primitive whose ideal functionality \Fflip is captured by the session types in Figure~\ref{fig:fflip}.
 It's a 2-party protocol where one party is the initiator of the flip and the other is a receiver.
 The desired security property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip samples a bit from from its random tape and returns it as the coin flip.
 Unlike \Fropp, \Fflip does not output directly to either of the parties unless polled with a \m{getflip} message.
@@ -96,8 +96,8 @@ Unlike \Fropp, \Fflip does not output directly to either of the parties unless p
 \vspace{-4mm}
 \end{figure}
 
-The session type for \Fflip additionally accepts a type paraketer $K$, takes in a value of type $K$ from the flipper, and sends it to the receiver when outputting the flip.
-We use this $K$ as a means of controlling communication ordering accross both the flipper's and receiver's channel to \Fflip.
+The session type for \Fflip additionally accepts a type parameter $K$, takes in a value of type $K$ from the flipper, and sends it to the receiver when outputting the flip.
+We use this $K$ as a means of controlling communication ordering across both the flipper's and receiver's channel to \Fflip.
 Recall that session type can normally only enforce message ordering on one channel, but the type system prevents \Fflip from sending a value of type $K$ to the receiver until the sender concretizes type $K$ by sending it to \Fflip.
 Using this design pattern, we are able to capture more the behavior of a functionality or protocol in the type system.
 
@@ -108,7 +108,7 @@ This negatively impacts the reusability of NomosUC ideal functionality definitio
 
 This is best seen when composing \prot{flip} with \prot{com} in the \Fropp-hybrid to realized \Fflip. \Fropp requires 2 units of import on every input, and, therefore \prot{flip} (and \Fflip as they share the same type) also require at least 2 units of import in order for one to emulate the other.
 In the Appendix we describe realizing \Fflip using the composition theorem and replacing \Fcom in the real world with $\prot{com}$ in the \Fropp-hybrid world.
-We also provide a protcol for realizing both \Fflip and \Fcom (via simulators) and a simulator composition operator in Appendix~\ref{app:flip}.
+We also provide a protocol for realizing both \Fflip and \Fcom (via simulators) and a simulator composition operator in Appendix~\ref{app:flip}.
 
 %\begin{figure}
 %\centering
