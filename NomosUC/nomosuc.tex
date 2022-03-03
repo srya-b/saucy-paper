@@ -108,15 +108,14 @@
 \input{st-macros}
 
 \begin{abstract}
-Universal Composability (UC) is a leading framework for modeling secure protocols in cryptography and in security more broadly.
-In this work we continue a recent line of work on bringing a formal semantics to the UC framework.
-Our approach is to investigate adding session types to UC, as a way of annotating ideal functionality definitions with with additional structure.
-We build a new language, Nomos-UC, by combining an existing session-type language Nomos with ILC, an encoding of UC as a process calculus.
-This requires solving a range of technical challenges, most notably combining the linear notion of session types with the inherently flexible communication model featured in UC.
-Additionally, we make use of the resource-aware types in Nomos to enforce polynomial runtime guarantees.
-In contrast with prior work, we faithfully model the versatile ``import tokens,'' mechanism from UC, so we can represent polynomial time without having to take extra restrictions.
-To validate our design, we work through the standard theory of UC composition operators, and complete a modular application case study, building a coin tossing protocol in the random oracle model using commitments as an intermediate layer.
-
+  Universal Composability (UC) is a leading framework for modeling secure protocols, in cryptography but increasingly.
+  Less well understood than traditional game-based definitions, feature communication patterns.
+  In this work we continue a recent line of work on bringing a formal semantics to the UC framework.
+  Our approach is to investigate adding session types to UC, as a way of annotating ideal functionality definitions with additional structure.
+  We build a new language, Nomos-UC, by combining an existing session-typed language (Nomos) with a process-based core calculus for UC (ILC). This integration required solving a range of technical challenges, especially since session types impose a linear discipline while we wanted to preserve the UC lets the adversary dynamically steer the communication patterns at runtime.
+  Polynomial runtime is an essential component of the security definition, yet encoding it in other formal frameworks has required placing significant restrictions on the execution modeled considered in UC.
+Since we show how to faithfully encode the dynamic ``import tokens'' mechanism from UC into the resource-aware types in Nomos, we retain the best of both worlds.
+To validate our design, we work through the standard theory of UC composition operators, and complete a modular application case study: a coin tossing protocol in the random oracle model using commitments as the intermediate primitive.
 \end{abstract}
 
 \maketitle

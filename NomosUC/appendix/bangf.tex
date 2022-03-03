@@ -116,10 +116,21 @@ We further require Theorem~\ref{thm:functor} in order to conclude full UC-style 
 \end{theorem}
 
 The simulator for this theorem runs internal copies of $\Sim_\pi$ for each new \m{ssid} spawned.
-It is clear to see why simulating in isolation works given that the instances of the protocol and functionality don't share any state with each other.
-However, the proof of this theorem relies on the creating a reduction from an environment that can distinguish the two worlds in this theorem to an environment that can distinguish emulation of $pi$ realizing $\F$.
+It is easy to see why simulating each isolated instance should be feasible, given that the protocol instances and functionality do not share any state with each other.
+However, to complete the proof we need to show a reduction that translates an environment $\Z$ that can distinguish the multi-session experiment into an environment $\Z^*$ that can distinguish real from ideal in the single session experiment.
 
-The proof proeeeds in... \anote{TODO}
+The high level approach is as follows: $\Z^*$ can only interact with only a single instance of $\F_1$ in the real world, but it must present a view of multiple sessions $!\F_1$ to its sandbox execution of $\Z$.
+To do this, $\Z^*$ will create local simulations of subsessions of $\F_1$ for all but one subsession, which it forwards to its external channel.
+
+To complete the precise statement of this proof, we have to resort to (a variable number of) hybrid worlds~\cite{canettiUC,variablehybrids}. We sketch the proof below.
+We define a family of environments $\Z^*_i$, indexed by a polynomial $i$,
+\begin{itemize}
+\item the first $i(k)-1$ subsessions shown to $\Z$ are a local simulation of $\F_1$.
+\item the $i(k)$'th subsession is forwarded to the external channel,
+\item the $i(k)+1$'th and later subsessions are a simulation of $\pi$.
+\end{itemize}
+Notice that $\Z^*_0$ presents a simulation of exactly the multi-session real world, while $\Z^*_q$ presents a simulation of exactly the multi-session ideal world where $q$ is a polynomial bound on the runtime resulting from $\Z$.
+What we can show is that by triangle rule, if $\Z$ is a distinguisher for the multi-session experiment, there must exist some polynomial $i$ such that the real world with $\Z^*_i$ is distinguishable from the real world with $\Z^*_{i+1}$. Since the real world with $\Z^*_{i+1}$ is exactly the same as the ideal world with $\Z^*_i$, this gives us that $\Z^*_i$ is a distinguisher for real and ideal in the single-session experiment.
 
 \subsection{Squash Theorem}
 \begin{theorem}[Squash Theorem]\label{thm:squash}
