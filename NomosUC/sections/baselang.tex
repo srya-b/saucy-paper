@@ -108,7 +108,7 @@ The work counter of the process remains unaltered, and the new message
 is created with work $0$.
 \begin{tabbing}
 $(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step \proc{c'}{w, [c'/c]P},
-\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}}$
+\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}} \qquad \qquad \fresh{c'}$
 \end{tabbing}
 When the message $k$ is received along $c$, the client selects branch
 $k$ and also substitutes the continuation channel $c'$ for $c$, thereby

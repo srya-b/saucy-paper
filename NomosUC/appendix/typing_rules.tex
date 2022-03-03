@@ -37,7 +37,7 @@ The work counter of the process remains unaltered, and the new message
 is created with work $0$.
 \begin{tabbing}
 $(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step \proc{c'}{w, [c'/c]P},
-\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}}$
+\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}} \qquad \qquad \fresh{c'}$
 \end{tabbing}
 When the message $k$ is received along $c$, the client selects branch
 $k$ and also substitutes the continuation channel $c'$ for $c$, thereby
@@ -59,27 +59,33 @@ the role of the provider and client. The provider process of
 $x : \echoice{\ell : A_\ell}_{\ell \in L}$ branches on receiving a label
 using the expression $\ecase{x}{\ell}{Q_\ell}_{\ell \in L}$,
 while the client sends one such label in $L$ using the expression $(\esendl{x}{k} \semi P)$.
-% $k \in L$ (described in $\with R$), while the client sends this label
-% (described in $\with L$).
-% \begin{mathpar}
-%   \footnotesize
-%   \infer[\with R]
-%   {\B{k \semi \Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
-%     (x : \echoice{\ell : A_\ell}_{\ell \in L})}
-%   {(\forall \ell \in L) \qquad \B{k \semi \Tokens \semi \Psi} \semi \wt, \D
-%     \entailpot{\B{q}}{\B{q'}} P_\ell :: (x : A_\ell)}
-% \end{mathpar}
-% \begin{mathpar}
-%   \footnotesize
-%   \infer[\with L]
-%   {\B{k \semi \Tokens \semi \Psi} \semi \wt, \D, (x : \echoice{\ell : A_\ell}_{\ell \in L})
-%     \entailpot{\B{q}}{\B{q'}} \esendl{x}{k} \semi Q :: (z : C)}
-%   {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : A_k) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
-% \end{mathpar}
+
+\begin{mathpar}
+  \infer[\with R]
+  {\B{\Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{P_\ell}_{\ell \in L} ::
+    (x : \echoice{\ell : A_\ell}_{\ell \in L})}
+  {(\forall \ell \in L) \qquad \B{\Tokens \semi \Psi} \semi \wt, \D
+    \entailpot{\B{q}}{\B{q'}} P_\ell :: (x : A_\ell)}
+\and
+  \infer[\with L]
+  {\B{\Tokens \semi \Psi} \semi \wt, \D, (x : \echoice{\ell : A_\ell}_{\ell \in L})
+    \entailpot{\B{q}}{\B{q'}} \esendl{x}{k} \semi Q :: (z : C)}
+  {\B{\Tokens \semi \Psi} \semi \D, (x : A_k) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
+\end{mathpar}
 Dual to internal choice, the client contains the write token which is
 sent to the provider along with the label.
-The operational semantics rules are also just the inverse of internal choice,
-and therefore skipped for brevity.
+
+The provider receives the branching label $k$ sent by the provider. Both
+processes perform appropriate substitutions to ensure the order of messages
+sent and received is preserved.
+\[
+\begin{array}{lll}
+(\with S) & \proc{d}{w, \esendl{c}{k} \semi Q} \step \msg{c'}{0, \esendl{c}{k}
+\semi \fwd{c'}{c}}, \proc{d}{w, [c'/c]Q} \qquad \fresh{c'} \\
+(\with C) & \proc{c}{w, \ecase{c}{\ell}{Q_\ell}_{\ell \in L}},
+\msg{c'}{w', \esendl{c}{k} \semi \fwd{c'}{c}} \step \proc{c'}{w+w', [c'/c]Q_k}
+\end{array}
+\]
 
 \paragraph*{\textbf{Termination}}
 The type $\one$, the multiplicative unit of linear logic, represents
@@ -102,25 +108,16 @@ token to its waiting client along with the close message.
 Additionally, the terminating process does not store
 any potential since it cannot take any further execution steps
 (explained more in Section~\ref{sec:import}).
-% Operationally, the provider converts into a closing message
-% with no continuation since the offered channel terminates.
-% \begin{tabbing}
-% $(\one S) : \proc{c}{\eclose{c}} \step \msg{c}{\eclose{c}}$ \\
-% $(\one C) : \msg{c}{\eclose{c}}, \proc{d}{\ewait{c} \semi Q} \step
-% \proc{d}{Q}$
-% \end{tabbing}
 
-% The provider receives the branching label $k$ sent by the provider. Both
-% processes perform appropriate substitutions to ensure the order of messages
-% sent and received is preserved.
-% \[
-% \begin{array}{lll}
-% (\with S) & \proc{d}{\esendl{c}{k} \semi Q} \step \msg{c'}{\esendl{c}{k}
-% \semi \fwd{c'}{c}}, \proc{d}{[c'/c]Q} & \fresh{c'} \\
-% (\with C) & \proc{c}{\ecase{c}{\ell}{Q_\ell}_{\ell \in L}},
-% \msg{c'}{\esendl{c}{k} \semi \fwd{c'}{c}} \step \proc{c'}{[c'/c]Q_k}
-% \end{array}
-% \]
+Operationally, the provider converts into a closing message
+with no continuation since the offered channel terminates.
+\begin{tabbing}
+$(\one S) : \proc{c}{w, \eclose{c}} \step \msg{c}{w, \eclose{c}}$ \\
+$(\one C) : \msg{c}{w, \eclose{c}}, \proc{d}{w'\ewait{c} \semi Q} \step
+\proc{d}{w+w', Q}$
+\end{tabbing}
+
+
 
 \paragraph*{\textbf{Exchanging Functional Data}}
 So far, we have discussed the channels in $\D$ in the typing judgment for NomosUC.
