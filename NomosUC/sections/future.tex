@@ -1,0 +1,10 @@
+One of the challenges we had to overcome in using the existing Nomos type system was working the provider-client relationship for linear processes, and the constraints it imposes, into the providerless channels construction.
+We are forces to intermediate communication between two processes with multiple channels and communicators. 
+One of our main aims for future work is to attempt to do remove this requirement and greatly simplify the UC execution construction.
+
+We also point out that we build NomosUC off the type system define by Nomos, however do not yet implement a type checker for NomosUC. We rely on the typing rules and theorems to validate our approach.
+We did, however, write a substantial amount of code for the functionalities, protocols, and simulators in this paper and manually type check it.
+Another avenue future work would attempt to implement a the type checker for NomosUC.
+
+Some related works to our own attempt to mechanize proof generation for UC security and other definitions of computational security.
+A major direction of research for NomosUC is to add automation that allows for fuzz testing even mechanizing proof generation for our UC definitions.
