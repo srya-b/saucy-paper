@@ -12,7 +12,7 @@ Furthermore, it is connected to \Z, \A, and \F through providerless channels.
 
 Sandboxing is a common design pattern in UC, especially for simulators.
 NomosUC supports it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
-Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on generating simple code \snote{not simple} to declare \inline{execUC} with a sufficient number of type parameters.
+Therefore, we are unable to pass in a variable number of virtual token types to the \inline{execUC}, and must rely on generating simple code to declare \inline{execUC} with a sufficient number of type parameters.
 
 For example, an execution where the simulator sandboxes the real world adversary, \inline{execUC} will require at least one virtual token type referenced by \inline{K1} in the following definition:
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
@@ -51,7 +51,7 @@ In plain session types, communication between two parties $P_s$ and $P_r$ occurs
 In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionality involving $P_s$, $P_r$, \F, and \A. 
 \Fauth is an authenticated two-way channel between two parties that provides only the following guarantee: (\emph{integrity}) the adversary can not modify messages from the sender.
 \Fauth sends the message to \A when it receives one from the sender, and waits for the adversary to deliver the message.
-When \A writes back to \Fauth to deliver the message, \Fauth sends it to the receiver.\snote{gave some intro to \Fauth first}.
+When \A writes back to \Fauth to deliver the message, \Fauth sends it to the receiver.%\snote{gave some intro to \Fauth first}.
 The communication pattern in \Fauth exhibits the same problems with the communication in Figure~\ref{newpandq}.
 
 We therefore, are confronted with two options: transition to a functionality where all parties and the adversary poll for new messages or split communication among two uni-directional providerless channels.
@@ -72,7 +72,7 @@ where the channel to \Fauth is typed with \m{sending}, the channel from \Fauth a
 The environment must communicate with multiple parties and needs multiple channels to do so. 
 Furthermore, \Z having to handle creating new providerless channels to new parties is an inefficient design.
 If we simplify to a single channel and multiplex, the statically-typed nature of the session type means only a static number of parties can be specified. 
-NomosUC overcomes these constraints by using a \partywrapper to encapsulate all protocol parties and run them internally.\snote{Removed departure and made it about the constraint being overcome}
+NomosUC overcomes these constraints by using a \partywrapper to encapsulate all protocol parties and run them internally.%\snote{Removed departure and made it about the constraint being overcome}
 We use the notation \m{MX}(\PI) to denote the \partywrapper running parties of protocol \PI.
 
 The purpose of the \partywrapper is to support a dynamic set of parties without \Z, \A, or \F having to reat to new parties and managing a growing set of channels.
@@ -96,7 +96,7 @@ The \partywrapper alone does constant work per activation, therefore, in either 
 \begin{figure}
 	\centering
 	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
-	\caption{This is the party wrapper that multiplexes input from other processes. It creates an instance of a protocol party (the dotted box) and sends it the message received. The party $\pi_{pid}$ is shell code akin to Figure~\ref{fig:newpandq}.\snote{Updated caption to say it's multiplexer with one instance. The reason I don't want to include another instance is that I couldn't figure out a way to add it and expand the diagram horizontally. It will leave so much white space on the sides if I add a new party and will take up much more vertical space which we need to cut down on anyway.}}
+	\caption{This is the \partywrapper that routes messages to the correct internally runnint protocol party. This figure shows how one protoco party (dotted box) is instantiated within it. The party $\pi_{pid}$ is shell code akin to Figure~\ref{fig:newpandq}.}%\snote{Updated caption to say it's multiplexer with one instance. The reason I don't want to include another instance is that I couldn't figure out a way to add it and expand the diagram horizontally. It will leave so much white space on the sides if I add a new party and will take up much more vertical space which we need to cut down on anyway.}}
 	\label{fig:singlemultiplex}
 	\vspace{-3mm}
 \end{figure}

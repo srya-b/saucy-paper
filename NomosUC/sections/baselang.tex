@@ -294,7 +294,7 @@ dependency among channels, thus causing the program to be ill-typed.
 % Each of them becomes both a provider and a client to the other, and provider/client ambiguity is not allowed in Nomos. 
 % Logically, one process must have spawned the other, and such a cycle would be impossible to realize.
 
-To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce \snote{include as future work}
+To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce
 the concept of \emph{providerless channels} using \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
 Communicators act as a buffer between two processes allowing them to exchange messages via the communicator.
 Communicators also break the parent-child relationship by offering a \emph{shared channel that can have multiple clients}
@@ -369,7 +369,7 @@ This resolves both read and write non-determinism due to linearity of the channe
 The communicator type is parametric in the message type sent over it, and it is restricted to sending functionally typed messages only. 
 Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{ref:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
 We wrap each of $P$ and $Q$ in a shell code, call these $S_P$ and $S_Q$, which spawn two processes each.
-Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. \snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
+Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. %\snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
 %The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}
 %Second, $a$ and $b$ each communicate with one communicator and convert functionally typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
 Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.

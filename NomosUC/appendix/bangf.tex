@@ -22,7 +22,7 @@ Recall that all functionalities are run inside some shell code, and their shell 
 The multisession operator runs each instance of the functionality inside the wrapper, and provides each with ``virtual'' communicators for \A and the \partywrapper.
 
 The !\F, on input from the \partywrapper, reads a message from the communicator and then does the following:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape, numbers=left]
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ f_multisession_p2f_input[K][K1]{p2fn,f2pn} : 
   (k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
   (#p2f: comm[p2fmsg[p2ms]][K]), (#f2p: comm[f2pmsg[ms2p]][K]), 
@@ -63,8 +63,22 @@ It then grabs the \inline{#p2f} channel for $\F_{\m{ssid}}$, creates the appropr
 Finally, after handling the incoming message, it moves to the next step of checking for outgoing messages, to the \partywrapper, from each \F by calling \inline{f_multisession_f2p_i}.
 The function accepts an integer at the end, in this example 0, which is the index to check in the communicator list. Eventually all communicators in the list are checked.
 
-Recall that the Theorem~\ref{sec:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
+Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
 The real world that realizes it is comprised of a protocol that ``flattens'' the pair of ssids $(\m{ssid}_1, \m{ssid}_2)$ into a single ssid $\m{ssid}_3 = \m{ssid}_1 || \m{ssid}_2$, the concatenation (can be any other one-to-one and invertible function on the pair) of them.
+
+\begin{theorem}[Squash Theorem]
+	\begin{mathpar}
+		\inferrule*[right=squash]
+		{
+			\textit{well-resource-typed} \; \F
+		}
+		{
+			!\F \xrightarrow{\msf{squash}} !!\F
+		}
+	\end{mathpar}
+\end{theorem}
+
+\begin{proof}
 The simulator for this construction is a direct simulation where $\Sim{\m{squash}}$ takes as input one of 
 \begin{itemize}
 	\item \inline{Z2A2P(pid, P2MS(ssid, msg))}: $\SIM{\m{squash}}$ un-concatenates \inline{ssid} into a pair (\inline{ssid1}, \inline{ssid2}) and forward the message \inline{A2P(pid, P2MS(ssid1, P2MS(ssid2, msg)))}.
@@ -94,18 +108,12 @@ proc sim_squash[K][p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn} :
   ...
 }	  
 \end{lstlisting}
-
-We revisit Theorem~\ref{thm:squash} and argue that we satisfy this theorem. 
-It is clear that from a direct simulation, it is clear that emulation holds, and we have that 
-\[
-	!\F \xrightarrow{\m{squash}} !!\F
-\] 
-It remains to argue that $\SIM{\m{squash}}$ is PPT in it's construction. We refer to the trivial nature of \SIM{\m{squash}} that does constant work on any activation by \F, \Z, or by the \partywrapper. Therefore, we conclude that \SIM{\m{squash}} is obviously PPT.
+\end{proof}
 
 We further require Theorem~\ref{thm:functor} in order to conclude full UC-style composition. We restate it here
-\begin{theorem}[Something About Functors]
+\begin{theorem}[Multisession Composition]
 	\begin{mathpar}
-		\inferrule*[right=somefunctor]
+		\inferrule*[right=MultiComp]
 		{
 			\F_1 \xrightarrow{\pi} \F_2
 		}
@@ -132,23 +140,23 @@ We define a family of environments $\Z^*_i$, indexed by a polynomial $i$,
 Notice that $\Z^*_0$ presents a simulation of exactly the multi-session real world, while $\Z^*_q$ presents a simulation of exactly the multi-session ideal world where $q$ is a polynomial bound on the runtime resulting from $\Z$.
 What we can show is that by triangle rule, if $\Z$ is a distinguisher for the multi-session experiment, there must exist some polynomial $i$ such that the real world with $\Z^*_i$ is distinguishable from the real world with $\Z^*_{i+1}$. Since the real world with $\Z^*_{i+1}$ is exactly the same as the ideal world with $\Z^*_i$, this gives us that $\Z^*_i$ is a distinguisher for real and ideal in the single-session experiment.
 
-\subsection{Squash Theorem}
-\begin{theorem}[Squash Theorem]\label{thm:squash}
-	\begin{mathpar}
-		\inferrule*[right=squash]
-		{
-			\textit{well-resource-typed} \; \F
-		}
-		{
-			!\F \xrightarrow{\msf{squash}} !!\F
-		}
-	\end{mathpar}
-\end{theorem}
-The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:functor}.
-
-\begin{proof} (Theorem~\ref{thm:squash})
-On examination the \msf{squash} theorem does constant work per activation and concantenates two \inline{ssid}s into one for messages going to the functionality and does the inverse for messages incoming from the functionality.
-In other words, it is a direct simulation and the same ideal functionality exists if both worlds, and it is clear to see that the this theorem holds with a trivial simulator.
+%\subsection{Squash Theorem}
+%\begin{theorem}[Squash Theorem]\label{thm:squash}
+%	\begin{mathpar}
+%		\inferrule*[right=squash]
+%		{
+%			\textit{well-resource-typed} \; \F
+%		}
+%		{
+%			!\F \xrightarrow{\msf{squash}} !!\F
+%		}
+%	\end{mathpar}
+%\end{theorem}
+%The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:functor}.
+%
+%\begin{proof} (Theorem~\ref{thm:squash})
+%On examination the \msf{squash} theorem does constant work per activation and concantenates two \inline{ssid}s into one for messages going to the functionality and does the inverse for messages incoming from the functionality.
+%In other words, it is a direct simulation and the same ideal functionality exists if both worlds, and it is clear to see that the this theorem holds with a trivial simulator.
 %First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
 %The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
 %
@@ -167,4 +175,4 @@ In other words, it is a direct simulation and the same ideal functionality exist
 %
 %The proposed simulator is trivially analyzed to be \textit{well-resource-typed}.
 %It performs constant work per activation and does ``real'' simulation other than message modification to/from $!!\F$.
-\end{proof}
+%\end{proof}
