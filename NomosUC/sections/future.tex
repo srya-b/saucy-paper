@@ -1,10 +1,12 @@
-One of the challenges we had to overcome in using the existing Nomos type system was working the provider-client relationship for linear processes, and the constraints it imposes, into the providerless channels construction.
-We are forces to intermediate communication between two processes with multiple channels and communicators. 
-One of our main aims for future work is to attempt to do remove this requirement and greatly simplify the UC execution construction.
+This area of research presents several next steps and possibility for futurework building on NomosUC.
 
-We also point out that we build NomosUC off the type system define by Nomos, however do not yet implement a type checker for NomosUC. We rely on the typing rules and theorems to validate our approach.
-We did, however, write a substantial amount of code for the functionalities, protocols, and simulators in this paper and manually type check it.
-Another avenue future work would attempt to implement a the type checker for NomosUC.
+On of the most immediate next steps is to overcome the existing Nomos provider-client constraints. 
+Currently we introduce a several channels and a couple of commuicators to generalize communication between two processes. 
+This is due in large part to linear channels being unique to a specific provider and client.
+To this end an immediate next step to NomosUC is relaxing this constraint from the Nomos type system and greatly simplifying our construction.
 
-Some related works to our own attempt to mechanize proof generation for UC security and other definitions of computational security.
-A major direction of research for NomosUC is to add automation that allows for fuzz testing even mechanizing proof generation for our UC definitions.
+We also point out that we build NomosUC on top of the type system define by Nomos, however, we do not yet implement a type checker for NomosUC. We rely on the typing rules and theorems to validate our approach, and manually typed checked the functionalities, protocols, and simulator code we implemented.
+A next step in this direction is attempting to implement the type checker for NomosUC or evaluate the feasibility of doing so.
+
+A few works related to our own, described in Section~\ref{sec:related}, attempt to automate proof generation for composable security. Our work provides tooling to specify and analyze UC definitions, however, a goal of future work is to introduce fuzz testing of protocols, functionalities, and emulation in NomosUC.
+
