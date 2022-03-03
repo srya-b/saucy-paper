@@ -47,7 +47,6 @@ Here is a central aspect of UC's flexibility, that the environment gets to deter
 The Universal Composition theorem says that composition even holds in this setting, which we state as
 $!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$.
 This theorem is essential to the appeal of UC as a framework because it encourages simple analysis of a single protocol in isolation (the proof that $\pi$ realizes one instance of $\F_2$), which is then safe to use in protocols like $\phi$ that rely on multiple concurrently-running subsessions of it.
-%Since this proof requires adapting a distinguisher for the multiple-sessions experiment to a distinguisher for the single session experiment, the reduction involves a variable sequence of hybrid games. Our encoding of these intermediate steps in our framework shows that our framework is useful for the  but also for hybrid-game constructions that form part of the proof.
 
 \paragraph{Universal Composability and ITMs}
 The UC framework is defined on top of a communication model called interactive turing machines (ITMs), in which multiple Turing-complete processes run concurrently in a system and communicate by passing messages over channels~\cite{canettiUC}.
@@ -62,28 +61,6 @@ Specifically whenever a process writes to one of its outgoing channels, the uniq
 In this way the message scheduling is essentially deterministic so it can be easily simulated by a sequential computation.
 This discipline means that modeling inherently non-deterministic phenomena, like network schedulers, requires us to explicitly offer choices to an adversary process defined in our model.
 
-%\paragraph{GUC-Framework}
-%A limitation of the standard UC framework is that it fails to capture scenarios where multiple protocol sessions share state through some ideal functionality.
-%The cannonical example used to insipire a more unconstrained environments is the signing of certificates. 
-%In the real world, a protocol party $p_i$ controlling some private key may sign messages that an adverasry could replay in other protocols $p_i$ takes part in.
-%The standard UC formulation, however, is incapable of modelling such an adversarial strategy as protocol sessions are completely distinct and can not share any state with each other---namely, an ideal functionality that stores signed certificates is bound only to the current protocol session.
-%\todo{Is is worth motivting the GUC framework rather than just introducing what it is and that the environment can also interact with a shared functionality?}
-
-%% There have been recent work in formalizing UC. is channel based or based.
-%% A short summary is this:
-%% {\small
-  
-%% \begin{tabular}{ccccccc}
-%%   & Channel/Process & Static \# of parties & Polynomial time & Formal verification & Session types \\
-%%   \hline
-%%   Symbolic UC \\
-%%   IPDL \\
-%%   ILC \\
-%%   EasyUC \\
-%%   Barbosa et al. \\
-%% \end{tabular}
-%% } 
-
 Even having established the message pattern, it is still not straightforward to define a notion of polynomial runtime for ITM systems.
 Looking at the order of quantifiers in the UC emulation definition from Relation~\ref{eqn:emulation}, we need a way to make local judgments about each $\A$, $\Z$, $\pi$, and $\F$ individual, and conclude that the entire $\msf{execUC} \; \Z \; \pi \; \A \; \F$ experiment overall is polynomial time as a result.
 We follow Canetti's approach~\cite{canettiUC}, which is to keep track at runtime of quantity called ``import tokens'' and assign a runtime budget based on these.
@@ -92,79 +69,9 @@ Somewhat more formally, we say $P$ is a \emph{locally polynomial time process} i
 \[
 \#\textsf{stepsTaken}(e[P])_{t} \le T(n_{\textsf{in}} - n_{\textsf{out}})
 \]
-were $n_{\textsf{in}}$ is the total number of import tokens received by $P$ and $n_{\textsf{out}}$ is the total number of tokens $P$ has sent, and $T$ is an arbitrary polynomial.
+where $n_{\textsf{in}}$ is the total number of import tokens received by $P$ and $n_{\textsf{out}}$ is the total number of tokens $P$ has sent, and $T$ is an arbitrary polynomial.
 This immediately ensures that if the system starts out with a total number of tokens bounded in the security parameter $k$, then the overall number of steps taken by any of the processes in the system is also bounded in $k$.
 The arbitrary polynomial $T$ serves as a slack parameter that allows, for example, the emulation of a universal turing machine program (which may incur up to quadratic overhead).
-%\footnote{The reason for the arbitrary polynomial $T$ is to allow enough slack to support universal simulation, for example a Universal Turing Machine simmulation may add quadratic overhead.}
 Our approach, described in Section~\ref{sec:basic}, is to encode this notion directly into the type system, by tracking import tokens and statically enforcing this polynomial runtime constraint.
 
-%Existing definitions of polynomial-time usually center around the lengths of input and output messages. In GNUC~\cite{gnuc} considers a function of the sum of all inputs a machine receives as a bound on its runtime. Previous versions of the UC framework similarly rely on functions of the difference between the lengths of a machine's inputs and outputs
-%The latest iteration of UC overcomes some drawbacks in polytime notions around ```input lengths''~\footnote{Namely, the \emph{infinite runs} problem identified in \cite{uc}.} and introduces the import mechanism.
 
-%The import mechanism allocates the first ITI, the environment with a number of import ``tokens'', that is poynomial in the the security parameter $k$. 
-%This makes up the runtime budget of the entire UC execution, and the environment can give import tokens along with inputs to other machines in the execution. Any ITM in the execution can pass import to another if it possesses enough.
-%The polynomial time definition in the import mechanism takes the following form:
-%The UC paper defines an import mechanism where the first ITI, the environment, is spawned with a polynomial amount of import which can be thought of as tokens or coins.
-%The environment can then activate other ITIs with some import tokens allowing them to run for as long as their import token balance permits. 
-%In this new definition, an ITI that is $T$-bounded takes at most $T(n')$ steps where $n'$ is the difference between the import it has received from incoming messages and outgoing import it's given to other machines.
-%Any ITI can write to any other ITI in it's communication set and send it import tokens until the balance of import is exhausted.
-%Eventually, the system of ITMs must halt when it runs out of import until it receives more from the environment.
-
-%\paragraph{Realizing Import in saUCy} \label{sec:realizeimport}
-%\todo{Need to add potentia in Nomos here}
-%The import mechanism in the UC framework describes at a high level how to reason about resource bounded computation in the import model.
-%However, for our purposes it is necessary to instantiate it concretely and make explicit the conditions under which a machine halts as we care about an implementation the UC framework in our proposed Nomos language. 
-%
-%In order to do this we must introduce a new concept called \textit{potential}. 
-%Potential is the basic unit of computation and machines must explicitly \textit{consume} their available import balance and convert it into usable potential through a bounding polynomial $T$.
-%
-%Concretely, every ITM $\mu$ is spawned with a set of variables:
-%\begin{itemize}
-%\item $\msf{in}_t$: the total amount of import received as input by $\mu$.
-%\item $\msf{out}_t$: the total amount of import sent by $\mu$ to other machines.
-%\item $\msf{marked}_t$: the number of import tokens that have been consumed and used to generate potential through an input polynoial $T$.
-%\item $\msf{generate\_pot}(T, n)$: a function that marks $n$ available import tokens and creates $T(n)$ units of potential.
-%\end{itemize}
-%
-%Over the lifetime of $\mu$ it will need to generate potential multiple times as it needs to perform more computation.
-%Eventually, thought, we can guarantee that every machine $\mu$ will \textit{halt} when it can no longer generate more potential, i.e.  $\msf{in}_t - \msf{out}_t - \msf{marked}_t > n$.
-
-
-
-
-%% \subsection{Overview of our Solution}
-%% Overview of the main parts of our design.
-
-%%     \subsubsection{Adding Session types to ITMs.}
-
-%%     Characteristic goal of UC is the dynamic execution pattern afforded by ITMs. The environment is able to interleave interactions with honest parties in between its interactions with the adversary.
-%%     Need generality, since the theory of UC is built around highly-general composition operators.
-%%     Thus our design goals are most closely related to ILC, in that the goal is to preserve the expressiveness of UC.
-
-%%     Session types are useful for expressing the control flow structure created in a program. The session type is a partial specification of a process. We start by envisioning session types as complements to the ideal functionality definition.
-
-%%        \anote{Insert here UC Pseudocode for FCom}
-%%        \anote{Insert here our session type for FCom}
-    
-%%     are meaningful to apply to a single channel between a pair of parties at a time.
-%%     \anote{why not use global session types or alternatives?}
-    
-%%     Session type is centered around a judgment that says that channel $c$ carries the session type $Sess$, which is provided by process $P$.
-%%     \[
-%%        c_1:A_1,c_2:A_2,... \vdash P :: \{c : Sess\}
-%%        \]
-%%        Each channel is associated with a single process that is its provider.
-%%        No cycles are allowed.
-
-%%        Encoding the exec UC experiment to support functionalities written like this.
-%%        A typical interaction in two party protocols (like Commitment, for example) allows Z to choose between two next actions.
-%%        One involves activating the honest party first, in which case.
-
-%%        Our approach is this: we'll use session types like in Nomos, and make use of the shared channels feature of Nomos  in order to avoid cycles.
-%%        Furthermore, 
-%%        for communication between a pair of processes. We need to make use of shared channels.
-
-
-%%        One of the characteristic qualities is that the number of parties and their identities are not statically determined, instead they can be determined adaptively at runtime by the arbitrary environment.
-%%        Achieves this through multiplexing between parties, called the protocol wrapper. This mechanism is also used when defining the multisession operator.
-%% }

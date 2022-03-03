@@ -2,8 +2,8 @@ The real world commitment protocol is constructed in the random oracle model in 
 Its incoming channel from \Z is typed identically to \Fcom to ensure that emulation and composition hold.
 Here we present two code snippets from the sender and receiver.
 The first, Figure~\ref{lst:committer} shows the portion of the code where
-the sender isactivated with a bit by \Z, it generates a commitment with a nonce and sends the hash to the receiver.
-In the second code snippet, Figure~\ref{lst:receiver}, the receiver is activated by the functionality with an opening of the commitment. It checks the hash of the opening from \Fro with the hash received earlier and only outputs to \Z if the commitment is succesffully opened. 
+the sender is activated with a bit by \Z, it generates a commitment with a nonce and sends the hash to the receiver.
+In the second code snippet, Figure~\ref{lst:receiver}, the receiver is activated by the functionality with an opening of the commitment. It checks the hash of the opening from \Fro with the hash received earlier and only outputs to \Z if the commitment is successfully opened. 
 
 \begin{figure}
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]

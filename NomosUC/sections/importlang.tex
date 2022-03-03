@@ -15,7 +15,7 @@ where one ITM executes the code of another ITM in a controlled and enclosed envi
 We wish to support the same sandboxed execution in NomosUC.
 However, to ensure bounded computation, we need to bound the computational cost of a
 sandboxed execution as well.
-And the only mechanism to bound the cost of an exection is via import tokens.
+And the only mechanism to bound the cost of an execution is via import tokens.
 However, virtual execution within a sandbox must not cost real import tokens.
 For instance, consider a process $P$ storing $t$ real import tokens that wishes to
 simulate the execution of $Q$ within a sandbox in a way that $Q$ requires $t$
@@ -24,7 +24,7 @@ If $P$ transfers all its import to $Q$, $P$ will not be able to perform any exec
 
 To address this issue, we introduce the concept of \emph{virtual tokens}.
 In the aforementioned situation, $P$ will create $t$ virtual tokens
-which can then be used to simluate the execution of $Q$, while $t$ real tokens are retained within $P$
+which can then be used to simulate the execution of $Q$, while $t$ real tokens are retained within $P$
 allowing it to have its own execution.
 In effect, the sandboxed execution is internal to a process and therefore must obey the resource (import token)
 constraints provided to it.
@@ -44,7 +44,7 @@ For instance, to define the above hierarchy, the programmer writes
 \end{lstlisting}
 and then the programmer can only use one of these $m$ token types in their process definitions.
 We call $m$ the \emph{simulation depth} of the program, allowing sandboxed processes to execute their
-own sandboxes upto a depth of $m$.
+own sandboxes up to a depth of $m$.
 
 The token context of a process, written as $\Tokens$ in its typing judgment, maintains the number
 of tokens of each type stored in it.
