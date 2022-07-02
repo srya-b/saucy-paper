@@ -45,38 +45,22 @@
     #1,% For possible options
 }
 
-\title{Nomos-UC: a programming framework for cryptography based on resource-aware session types\\
-\thanks{Identify applicable funding agency here. If none, delete this.}
-}
+\title{Eventually Delivering Liveness and Composability}
 
 \input{macros}
 \input{st-macros}
 
-\author{\IEEEauthorblockN{Surya Bakshi}
-\IEEEauthorblockA{\textit{University of Illinois at Urbana-Champaign}}
-\and
-\IEEEauthorblockN{Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-\and
-\IEEEauthorblockN{Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-\and
-\IEEEauthorblockN{Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-\and
-\IEEEauthorblockN{Fiven Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
-\and
-\IEEEauthorblockN{Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)}}
+\author{\IEEEauthorblockN{Anon}
+\IEEEauthorblockA{\textit{Nowhere}}
 }
 
 \maketitle
 
 \begin{abstract}
-This document is a model and instructions for \LaTeX.
-This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, 
-or Math in Paper Title or Abstract.
+The goals of this work are to introduce liveness and eventual delivery into the asynchronous communication model of UC that takes advantage of its polynomial time notion.
+Our construction wraps around individual ITMs and provides a common interface for protocols and functioalities to execute code ``eventually''.
+The design allows global access to the scheduler without the cumbersome GUC model. Instead we use a simplified version of GUC that fits within the standard UC definition (either we rely on the global subroutines or we design our own?).
+Finally we showcase our modelling through an case study of a common-coin binary agreement protocol in an implementation of UC and our model using the Haskell Type system. 
 \end{abstract}
 
 \begin{IEEEkeywords}
