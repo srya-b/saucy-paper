@@ -1,0 +1,53 @@
+\begin{bbox}[title={\textbf{Wrapper} $\Wasync$} ] 
+
+Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{delay} := 0$
+
+\vspace{2mm} \hrule \vspace{2mm}
+
+\OnInput \inmsg{\Schedule}{\msf{func}}{\msf{args}} \color{red} $1 \token$ \color{black} from $\mathcal{F}/P_i$:
+	\begin{enumerate}
+		\item Append ($\mathcal{F}/P_i$, \msf{func}, \msf{args}) to \msf{run\_queue}
+		\item Append ($\mathcal{F}/P_i$, \msf{func}, \msf{args}) to \msf{leak\_buffer}
+		\item $\msf{delay} = \msf{delay} + 1$
+		\item \Send $\msf{OK} \rightarrow \mathcal{F}/P_i$
+	\end{enumerate}
+
+
+\OnInput \inmsg{\Exec}{\msf{idx}} \color{red} $1 \token$ \color{black} from \Adversary:
+	\begin{enumerate}
+		\item \F/\Partyi, \msf{func}, \msf{args} $\leftarrow$ pop \msf{run\_queue}
+		\item \Send (\Exec, \msf{func}, \msf{args}) $\rightarrow$ \F/\Partyi
+	\end{enumerate}
+
+\OnInput \inmsg{\textsc{Advance}} \color{red} $1 \token$ \color{black} from $\mathcal{Z}$:
+	\begin{enumerate}
+		\item If $\msf{delay} > 0$:
+
+			\quad  $\msf{delay} = \msf{delay} - 1$
+
+			\quad  \Send \textsc{Advance} $\rightarrow \mathcal{A}$
+		\item Else:
+			
+			\quad $(\mathcal{F}/P_i, \msf{func}, \msf{args}) \leftarrow$ pop $\msf{run\_queue}$
+
+			\quad \Send $(\Exec, \msf{func}, \msf{args}) \rightarrow \mathcal{F}/P_i$
+	\end{enumerate}
+
+\OnInput \inmsg{\textsc{Delay}}{$d$} \color{red} $d \token$ \color{black} from \Adversary:
+	\begin{enumerate}
+		\item If $\msf{rounds} > 0:$
+
+			\quad $\msf{delay} = \msf{delay} + \msf{rounds}$
+	\end{enumerate}
+
+%\OnInput \inmsg{\textsc{Leak}}{\msf{msg}} from \F:
+%	\begin{enumerate}
+%		\item Append (\F, \msf{msg}) to \msf{leak\_buffer}
+%	\end{enumerate}
+%
+%\OnInput \inmsg{\textsc{Get-Leaks}} from \Adversary:
+%	\begin{enumerate}
+%		\item \msf{leaks} $\leftarrow$ pop all from \msf{leak\_buffer}
+%		\item \Send \msf{leaks} to \Adversary
+%	\end{enumerate}
+\end{bbox}

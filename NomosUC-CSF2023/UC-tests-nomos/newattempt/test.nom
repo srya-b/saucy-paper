@@ -1,0 +1,11 @@
+(* p2f type *)
+stype send_auth[a] = +{ sendmsg: a x send_auth[a] }
+
+(* f2p type *)
+stype receive_auth[a] = &{ receive: a x receive_auth[a] }
+
+
+(* f2a and a2f *)
+stype auth_adv[a] = &{ leakmsg: a x +{ deliver: auth_adv[a] } }
+											
+

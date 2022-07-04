@@ -1,0 +1,16 @@
+
+
+proc sim_squash[K][K1] :
+	(k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
+	(#z_to_a : comm[...]), (#a_to_z: comm[...]), (#a_to_f: comm[...]),
+	(#f_to_a : comm[...]), (#a_to_pw: comm[...]), (#pw_to_a : comm[...]) |- ($ch: 1) =
+{
+	case #z_to_a (
+		Z2A2P(pid, Z2MS(ssid1, P2MS(ssid2, msg))) =>
+			#a_to_p.SEND ;
+			pay #a_to_p {a2pn} ;
+			send #a_to_p A2P(pid, P2MS( ssid2 * ssid2, msg )) ;
+			$sim_squash_2[K][K1] <- ... ;
+		Z2A2F(A2MS(ssid, msg)) =>
+			(* 	
+}

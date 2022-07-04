@@ -1,0 +1,214 @@
+stype sender[a] = +{ commit: Bit * scommitted[a],
+									   sendmsg: a * sender[a]  }
+stype scommitted[a] = +{ open: sopened,
+											   sendmsg: a * scommitter[a] }
+stype sopened = 1 
+
+stype receiver[a] = &{ commit: rcommitted[a],
+											 sendmsg[a]: a * receiver[a] }
+stype rcommitted[a] = &{ open: Bit x ropened,
+											sendmsg[a]: a * rcommitted[a] }
+stype ropened = 1 
+
+type comp2f = Commit of Bit | Open ;
+type comf2p = Commit | Open of Bit ;
+
+proc F_com[K][a] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	($S: sender[a]), ($R: receiver[a]), ($A: 1)  |- ($ch: 1) =
+{
+	case $S (
+		commit => b = recv $S ;
+							get $S {0} ;
+							$R.commit ;
+							case $S (
+								open =>	$R.open ;
+												send $R b ;
+							)
+		sendmsg => m = recv $S ;
+							 get $S {1} ;
+							 $R.
+	)
+	
+}
+
+proc func_f2p_r1[K][f2p][p2f]:
+	(#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: sender) =
+{
+	$p2f <- acquire #p2f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes =>
+			P2F(pid, msg) = recv $p2f ;
+			#p2f <- release $p2f ;
+			case msg (
+				Commit(b) =>
+					$p.commit ;
+					send $p b ;
+					$p <- func_f2p_r1_2[K][f2p][p2f] <- #f2p #p2f 
+			)
+	| no =>
+		$p <- func_f2p_r1[K][f2p][p2f] <- #p2f #f2p 
+	)
+}
+
+proc func_f2p_r1_2[K][f2p][p2f]:
+	(#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: scommitted) =
+{
+	$p2f <- acquire #p2f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes =>
+			P2F(pid, msg) = recv $p2f ;
+			#p2f <- release $p2f ;
+			case msg (
+				Open =>
+					$p.open ;
+					$p <- func_f2p_r1_3[K][f2p][p2f] <- #f2p #p2f 
+			)
+	| no =>
+			$p <- func_f2p_r1_2[K][f2p][p2f] <- #f2p #p2f 
+	)
+}
+
+proc func_f2p_r1_3[K][f2p][p2f]:
+	(#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: sopened) =
+{
+}	
+
+
+stype sender = +{ commit: Bit x scommitted }
+stype scommitted = +{ open: sopened }
+stype sopened = 1 
+
+stype receiver = &{ commit: rcommitted }
+stype rcommitted = &{ open: Bit x ropened }
+stype ropened = 1 
+
+type comp2f = Commit of Bit | Open ;
+type comf2p = Commit | Open of Bit ;
+
+proc func_f2p_r2[K][f2p][p2f]:
+	(pid: Int), (#p2f: comm[p2fmsg[p2f][K]]), (#f2p: comm[f2pmsg[f2p]][K]), |- ($p: receiver) =
+{
+	case $p (
+		commit =>
+			$f2p <- acquire #f2p ;
+			$f2p.SEND ;
+			send $f2p F2P(pid, Commit) ;
+			#f2p <- release $f2p ;
+			$p <- func_f2p_r2_2[K][f2p][p2f] <- #f2p #p2f 
+	)
+}
+
+proc func_f2p_r2_2[K][f2p][p2f]:
+	(pid: Int), (#p2f: comm[p2fmsg[p2f][K]]), (#f2p: comm[f2pmsg[f2p]][K]), |- ($p: rcommitted) =
+{
+	case $p (
+		open =>
+			b = recv $p ;
+			$f2p <- acquire #f2p ;
+			$f2p.SEND ;
+			send $f2p F2P(pid, Open(b))
+			#f2p <- release $f2p ;
+			$p <- func_f2p_r2_3[K][f2p][p2f] <- #f2p #p2f 
+	)
+}
+
+proc func_f2p_r2_2[K][f2p][p2f]:
+	(pid: Int), (#p2f: comm[p2fmsg[p2f][K]]), (#f2p: comm[f2pmsg[f2p]][K]), |- ($p: opened) =
+{
+}
+
+proc f_wrapper[K][K1][f2p][p2f]:
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[p2f]][K]), (#f_to_pw: comm[f2pmsg[f2p]][K]),
+	(#a_to_f: comm[a2fmsg[a2f]][K]), (#f_to_a: comm[f2amsg[f2a]][K]) |- ($ch: 1) =
+{
+	$lp2fcomm <- pnil[comm[p2fmsg[p2f]][K1]] <- ;
+	$lf2pcomm <- pnil[comm[f2pmsg[f2p]][K1]] <- ;
+	
+	#p2fcommp1 <- communicator_init[comm[p2fmsg[p2f]][K1]] <- ;
+	#p2fcommp2 <- communicator_init[comm[p2fmsg[p2f]][K1]] <- ;
+	
+	#f2pcommp1 <- communicator_init[comm[f2pmsg[f2p]][K1]] <- ;
+	#f2pcommp2 <- communicator_init[comm[f2pmsg[f2p]][K1]] <- ;
+
+	$p1 <- func_f2p_r1[K][f2p][p2f] <- 1 #f2pcommp1 #p2fcommp1 ;
+	$p2 <- func_f2p_r2[K][f2p][p2f] <- 2 #f2pcommp2 #p2fcommp2 ;
+	
+	$lp2fcomm' <- append $lp2fcomm #p2fcommp1 #p2fcommp2 ;
+	$lf2pcomm' <- append $lf2pcomm #f2pcommp1 #f2pcommp2 ;
+
+	$ch <- f_wrapper_p2f[K][f2p][p2f] <- k rng sid #pw_to_f #f_to_pw #a_to_f #f_to_q $lp2fcomm $lf2pcomm
+
+}
+
+proc f_wrapper_p2f[K][K1][K2][f2p][p2f]: 
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[p2f]][K]), (#f_to_pw: comm[f2pmsg[f2p]][K]),
+	(#a_to_f: comm[a2fmsg[a2f]][K]), (#f_to_a: comm[f2amsg[f2a]][K]),
+	($lp2fcomm: list[comm[p2fmsg[p2f]][K1]), ($lf2pcomm: list[comm[f2pmsg[f2p]][K1]]) |- ($ch: 1) =
+{
+(*
+	$p2f <- acquire #pw_to_f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes =>
+			P2F(pid, msg) = recv # $p2f ;
+			#ch <- getbypid $lp2fcomm pid ;
+			$ch <- acquire #ch ;
+			$ch.SEND ;
+			send $ch P2F(pid, msg) ;
+			(* TODO: send virtual tokens *)
+	| no =>
+		$ch <- f_wrapper_lf2pcomm[K][K1][f2p][p2f] <- k rn sid #pw_to_f #f_to_pw #a_to_f #f_to_a $lp2fcomm $lf2pcomm 0
+	)
+*)
+	read $p2f f_wrapper_lf2pcomm (
+		P2F(pid,msg) =>
+			$ch <- getbypid $lp2fcomm pid ;
+			$ch.SEND ; send $ch P2F(pid,msg) ;
+			withdrawtoken K1 f2pn ;
+			pay $ch {f2pn : K1} ;
+	)
+}
+
+
+(* 
+
+read #pw_to_f f_wrapper_lf2pcomm[K][K1][f2p][p2f] (
+	$p2f <- acquire #pw_to_f ;
+	$p2f.RECV ;
+	case $p2f 
+	
+*)
+proc f_wrapper_lf2pcomm[K][K1][f2p][p2f]:
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[p2f]][K]), (#f_to_pw: comm[f2pmsg[f2p]][K]),
+	(#a_to_f: comm[a2fmsg[a2f]][K]), (#f_to_a: comm[f2amsg[f2a]][K]),
+	($lp2fcomm: list[comm[p2fmsg[p2f]][K1]), ($lf2pcomm: list[comm[f2pmsg[f2p]][K1]]),
+	(i: Int) |- ($ch: 1) =
+{
+	if i == $lf2pcomm.length
+	then 
+		$ch <- f_wrapper_p2f[K][K1][f2p][p2f] <- k rng sid #pw_to_f #f_to_pw #a_to_f #f_to_a $lp2fcomm $lf2pcomm 
+	else
+		#ch <- $lf2pcomm[i] ;
+		$ch <- acquire #ch ;
+		$ch.RECV ;
+		case $ch (
+			yes =>
+				F2P(pid, msg) = recv $ch ;
+				(* TODO receve virtual tokes *)
+				#ch <- release $ch ;
+				$f2p <- acquire #f2p ;
+				$f2p.SEND ;
+				send $f2p F2P(pid, msg) ;
+				(* TODO send real tokens now *)
+				$ch <- f_wrapper_f2p[K][K1][f2p][p2f] <- k rng sid #pw_to_f #f_to_pw #a_to_f #f_to_a $lp2fcomm $lf2pcomm i+1
+		| no =>
+				$ch <- f_wrapper_p2f[K][K1][f2p][p2f] <- k rng sid #pw_to_f #f_to_pw #a_to_f #f_to_a $lp2fcomm $lf2pcomm
+		)
+	end		
+}

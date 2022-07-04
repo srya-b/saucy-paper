@@ -1,0 +1,188 @@
+type p2f = Commit of pid ^ int | Open of pid ^ ?? ;
+type SenderMSG[smsg] = ssid ^ smsg ;
+type ReceiverMSG[rmsg] = ssid ^ rmsg ;
+type f2rMSG[f2rmsg] = f2rmsg ;
+type f2sMSG[f2smsg] = f2smsg ;
+type PID = int ^ int ;
+
+(* For importa accross processes, each list element is a process and assign some potential to each process nd consume it when a read happens with 0 import *)
+
+proc banF_init[f][p2f][f2p][a2f][f2a][K][K1]{p2fn}{f2pn}{a2fn}{f2an} :
+	(#pw_to_f: comm[pid ^ ssid p2f]), (#f_to_pw: comm[pid ^ ssid ^ f2p]),
+	(#a_to_f: comm[ ssid ^ a2f]), (#f_to_a: comm[ ssid ^ f2a ])  |- ($ms: 1) =
+{
+	$lf2ps <- list[ comm[pid ^ f2p] ] ;
+  $lf2as <- list[ comm[f2a] ] ;
+	$la2fs <- list[ comm[a2f] ] ;
+	$lf2as <- list[ commd[f2a] ] ;
+	$ssids <- list[ SID ] ;
+	$ms <- bangF_1[f][p2f][f2p][a2f][f2a][K][K1]{p2fn}{f2pn}{f2an} <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps $lp2fs $lf2as $la2fs $ssids
+}
+
+(* proc asset multi_session[f]: (#p_to_f: comm[MSG]) ... ($lf : list[f]) |- ($ms: ...) = *)
+proc bangF_1[f][p2f][f2p][a2f][f2a][K][K1]{p2fn}{f2pn} : 
+	(#pw_to_f: comm[pid ^ ssid ^ p2f]), (#f_to_pw: comm[ssid ^ pid ^ f2p]),
+	(#a_to_f: comm[ssid ^ a2f]), (#f_to_a: comm[ssd ^ f2a]), 
+	($lf2ps: list[ comm[pid ^ f2p] ]), ($lp2fs: list[ comm[ pid ^ p2f]]), 
+	($lf2as: list[ commd[f2as]]), ($la2fs: list[ comm[a2f]]), ($ssids: list[ssid]  |- ($ms: 1) =
+{
+	$p2f <- acquire: #pw_to_f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes => pid = recv $p2f ;
+					 ssid = recv $p2f ;
+					 msg = recv $p2f ;
+					 get $p2f {p2fn : K} ;				% K -> (0, p2fn), pot = (0,0) -> (p2fn, p2fn)
+					 #pw_to_f <- release $p2f ;
+					 genpot K {x} ;								% K -> (0, p2fn), pot = (x,x) | x <= f(p2fn)
+					 (* can genpot generate 0 potential if I already have enough? *)
+					
+					 exists = find_f ssid $lf ;
+
+					 withdrawtoken K (p2fn-1) K1 ; 	% K -> (0, p2fn), K1 -> (p2fn-1,p2fn-1), pot = (x,x) | p2fn-1 <= f(p2fn)
+
+					 if not exists
+					 then
+					   #toP <- communicator_init[pid ^ f2p][K1]{f2pn} <- ... ... ;
+						 $lf2ps <- pappend #toP ;
+						 (* <- translate <- ssid #toP #f_to_pw ; *)
+						 #fromP <- communicator_init[pid ^ p2f][K1]{p2fn} <- ... ... ;
+						 $lp2fs <- pappend #fromP ;
+						 #toA <- communicator_init[f2a][K1]{f2an} <- ... ... ;	
+						 $lf2as <- pappend #toA ;
+						 (* <- translate <- ssid #toA #f_to_a ; *)
+					 	 #fromA <- communicator_init[a2f][K1]{a2fn} <- ... ... ;
+						 $la2fs <- pappend #fromA ;
+						 $fnew <- PS.F_code[K1] <- ssid #toP #fromP #toA #fromA ;
+						 $lf' <- pcons <- $fnew $lf ;
+				   end
+					 #bang_to_f <- get_chan <- ssid $lf ;
+					 $b2f <- acquire #bang_to_f ;
+					 $b2f.SEND ;
+					 send $b2f pid^msg ;
+					 pay $b2f {p2fn-1 : K1}  ;		% K -> (0, p2fn), K1 -> (p2fn-1,0), pot = (x,0) | x <= f(p2fn)
+					 (*simulate $b2f ;*)
+					 #bang_to_f <- release $b2f ;
+					 $ms <- bangF_2[f][p2f][f2p][a2f][f2a][K][K1]{p2fn}{f2pn}{a2fn}{f2an} <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps $lp2fs $lf2as $la2fs $ssids
+		no =>  
+	)
+}
+
+proc bangF_2[f][p2f][f2p][a2f][f2a][K][K1]{p2fn}{f2pn}{a2fn}{f2an} :
+	(#pw_to_f: comm[pid ^ ssid ^ p2f]), (#f_to_pw: comm[pid ^ ssid ^ f2p]),
+	(#a_to_f: comm[ssid ^ a2f]), (#f_to_a: comm[ssd ^ f2a]),
+	($lf2ps: list[ comm[pid ^ f2p] ]), ($lp2fs: list[ comm[ pid ^ p2f]]), 
+	($lf2as: list[ commd[f2as]]), ($la2fs: list[ comm[a2f]]), ($ssids: list[ssid]  |- ($ms: 1) =
+{
+	$a2f <- acquire #a_to_f ;
+	$a2f.RECV ;
+	case $a2f (
+		yes => ssid = recv $a2f ;
+					 msg = recv $a2f ;
+					 get K $a2f {a2fn} ; % K -> (0, p2fn+a2fn), K1 -> (p2fn-1,0), pot = (x,0)
+					 #a_to_f <- release $a2f ;
+					 genpot K {y} ;		% K -> (0, p2fn+a2fn), K1 -> (p2fn-1,0), pot = (x+y,y) | x+y <= f(p2fn+a2fn)
+		
+					 exists = find_f ssid $lf ;
+					 
+					 withdrawtoken K (a2fn-1) K1 ;	% K -> (0, p2fn+a2fn), K1 -> (p2fn-1+a2fn-1,a2fn-1), pot = (x+y,y) | p2fn-1+a2fn-1 <= f(p2fn+a2fn)
+					 
+ 					 if not exists
+					 then
+					   #toP <- communicator_init[pid ^ f2p][K1]{f2pn} <- ... ... ;
+						 (*<- bangF_translate[K][K1] <- ssid #toP #f_to_pw ;*)
+						 #fromP <- communicator_init[pid ^ p2f][K1]{p2fn} <- ... ... ;
+						 #toA <- communicator_init[f2a][K1]{f2an} <- ... ... ;
+						 (*<- bangF_translate <- ssid #toA #f_to_a ;*)
+					 	 #fromA <- communicator_init[a2f][K1]{a2fn} <- ... ... ;
+						 $fnew <- PS.F_code[K1] <- ssid #toP #fromP #toA #fromA ;
+						 $lf' <- pcons <- $fnew $lf ;
+				   end
+					 #bang_to_fa <- get_chan <- ssid $lf ; (* TODO get the right channel *)
+					 $b2fa <- acquire #bang_to_fa ;
+					 $b2fa.SEND ;
+					 send $b2fa msg ;
+					 pay $b2fa {a2fn-1 : K1};  % K -> (0, p2fn+a2fn), K1 -> (p2fn-1+a2fn-1,0), pot = (x+y,0) | p2fn-1+a2fn-1 <= f(p2fn+a2fn)
+					 (*simulate $b2fa ;*)
+					 #bang_to_fa <- release $b2fa ;
+					 $ms <- bandFf2p_loop[f][p2f][f2p][a2f][f2a][K][K1]{p2fn}{f2pn}{a2fn}{f2an} <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps $lp2fs $lf2as $la2fs $ssids 0 
+	)
+}
+
+proc bangFf2p_loop[f][p2f][pf2p][a2f][f2a][K][K1]{p2fn}{f2pn}{a2fn}{f2an} :
+	(#pw_to_f: comm[pid ^ ssid ^ p2f]), (#f_to_pw: comm[pid ^ ssid ^ f2p]),
+	(#a_to_f: comm[ssid ^ a2f]), (#f_to_a: comm[ssd ^ f2a]),
+	($lf2ps: list[ comm[pid ^ f2p] ]), ($lp2fs: list[ comm[ pid ^ p2f]]), 
+	($lf2as: list[ commd[f2as]]), ($la2fs: list[ comm[a2f]]), ($ssids: list[ssid]), (i: int)  |- ($ms: 1) =
+{
+	if (i < $lf2ps.length)
+	then
+		bangF_translate_f2p[K][K1] <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps i $ssids 
+	else
+		bangFa2p_loop[K][K1] <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps $lf2as 
+}
+
+proc bangFa2p_loop[f][p2f][f2p][a2f][f2a][K]{p2fn}{f2pn}{a2fn}{f2an} :
+	(#pw_to_f: comm[pid ^ ssid ^ p2f]), (#f_to_pw: comm[pid ^ ssid ^ f2p]),
+	(#a_to_f: comm[ssid ^ a2f]), (#f_to_a: comm[ssd ^ f2a]),
+	($lf2ps: list[ comm[ pid ^ f2p]), ($lf2as : list[ comm[f2a] ]), (i: int), ($ssids: list[ssid])  |- ($ms: 1) =
+{
+	if (i < $la2ps.length)
+	then
+		bangF_translate_a2p <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps i $ssids 
+	else
+		bangFa2p_loop <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps $lf2as 
+		bangF_1 <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps $lf2as 
+}	
+
+
+proc bangF_translate_f2p[a][K, K1]{an}[f][p2f][f2p][a2f][f2a]{p2fn}{f2pn}{a2fn}{f2an} :
+	(#pw_to_f: comm[pid ^ ssid ^ p2f]), (#f_to_pw: comm[ pid ^ ssid ^ f2p]),
+	(#a_to_f: comm[ssid ^ a2f]), (#f_to_a: comm[ssd ^ f2a]),
+	($lf2ps: list[ comm[ pid ^ f2p] ]), (i: int),	($ssids : list[SID])  |- ($t : 1) = 
+{
+	#to_inner <- $lf2ps[i] ;
+	$ti <- acquire #to_inner ;
+	$ti.RECV ;
+	case $ti (
+		yes => pid = recv $ti ;
+					 msg = recv $ti ;
+					 get K1 {f2pn} $ti ;  (* TODO: sim get? *)  % K -> (0, p2fn+a2fn), K1 -> (p2fn-1+a2fn-1,f2pn), pot = (x+y,0) | p2fn-1+a2fn-1 <= f(p2fn+a2fn)
+					 genpot K {a} ;															% K -> (0, p2fn+a2fn), K1 -> (p2fn-1+a2fn-1,f2pn), pot = (x+y+a,a) | x+y+a <= f(p2fn+a2fn)
+					 #to_inner <- release $ti ;
+					 #to_outter <- #f_to_pw ;
+					 $to <- acquire #to_outter ;
+					 send $to pid ^ $ssids[i] ^ msg ;
+					 pay K {f2pn} $to ;													% K -> (0, p2fn+a2fn-f2pn), K1 -> (p2fn-1+a2fn-1,f2pn), pot = (x+y+a,0) | x+y+a <= f(p2fn+a2fn-f2pn) | p2fn-1+a2fn-1:K1 <= f(p2fn+a2fn:K)
+					 #to_outter <- release $to ;
+					 $t <- bangFf2p_loop <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps i+1 $ssids ; 
+	 | no => #to_inner <- release $ti ;
+					 $t <- bangFf2p_loop <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps i+1 $ssids ; 
+	)
+
+}
+	
+proc bangF_translate_a2p[a][K, K1]{an}[f][p2f][f2p][a2f][f2a]{p2fn}{f2pn}{a2fn}{f2an} :
+	(#pw_to_f: comm[pid ^ ssid ^ p2f]), (#f_to_pw: comm[ pid ^ ssid ^ f2p]),
+	(#a_to_f: comm[ssid ^ a2f]), (#f_to_a: comm[ssd ^ f2a]),
+	($lf2ps: list[ comm[ pid ^ f2p] ]), (i: int),	($ssids : list[SID])  |- ($t : 1) = 
+{
+	#to_inner <- $la2ps[i] ;
+	$ti <- acquire #to_inner ;
+	$ti.RECV ;
+	case $ti (
+		yes => msg = recv $ti ;
+					 get K1 {a2pn} $ti ;  (* TODO: sim get? *)	% K -> (0, p2fn+a2fn-f2pn), K1 -> (p2fn-1+a2fn-1,f2pn+a2pn), pot = (x+y+a,0) | p2fn-1+a2fn-1:K1 <= f(p2fn+a2fn:K)
+					 genpot K {b} ;															% K -> (0, p2fn+a2fn-f2pn), K1 -> (p2fn-1+a2fn-1,f2pn+a2pn), pot = (x+y+a+b,b) | x+y+a+b <= f(p2fn+a2fn-f2pn) 
+					 #to_inner <- release $ti ;
+					 $to <- acquire #a_to_pw ;
+					 send $to $ssids[i] ^ msg ;
+					 pay K {a2pn} $to ;													% K -> (0, p2fn+a2fn-f2pn-a2pn), K1 -> (p2fn-1+a2fn-1,f2pn+a2pn), pot = (x+y+a+b,0) | x+y+a+b <= f(p2fn+a2fn-f2pn-a2pn) 	
+					 #to_outter <- release $to ;
+					 $t <- bangFa2p_loop <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps i+1 $ssids ; 
+	 | no => #to_inner <- release $ti ;
+					 $t <- bangFa2p_loop <- #pw_to_f #f_to_pw #a_to_f #f_to_a $lf2ps i+1 $ssids ; 
+	)
+
+}
+

@@ -1,0 +1,177 @@
+In this section we give more extensive code on how the multisession extension work. We also explore Theorems \ref{thm:squash} and \ref{thm:functor} in greater detail, and, specifically address the proof obligation for both.
+
+\subsection{!\F}
+The multisession operator presents the same interface to \inline{execUC} as any other functionality.
+However, the shell code that we run it inside operates directly on functional messages from its communicators with \F and the \partywrapper instead of performing any conversion to session-types.
+The reason for this choice is that a session type for the operator is not very meaningful as it only provides an interface of ``input'' and ``ouput'' to/from underlying instances of the functionality.
+
+!\F communicates with the \partywrapper through the type
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+$\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
+$\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
+\end{lstlisting}
+and with \A through the type
+\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+$\yo{type}$ a2ms[a] = A2MS of ssid ^ a ;
+$\yo{type}$ ms2a[b] = MS2A of ssid ^ b ;
+\end{lstlisting}
+both of which are parameterized by the functionality message types \inline{a} and \inline{b}.
+
+Recall that all functionalities are run inside some shell code, and their shell code communicates with communicators to other parities--we can call this a functionality wrapper as it wraps around the actual functionality code.
+The multisession operator runs each instance of the functionality inside the wrapper, and provides each with ``virtual'' communicators for \A and the \partywrapper.
+
+The !\F, on input from the \partywrapper, reads a message from the communicator and then does the following:
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+$\nproc$ f_multisession_p2f_input[K][K1]{p2fn,f2pn} : 
+  (k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
+  (#p2f: comm[p2fmsg[p2ms]][K]), (#f2p: comm[f2pmsg[ms2p]][K]), 
+  (#a2f: comm[a2fmsg[a2ms]][K]), (#f2a: comm[f2amsg[ms2a]][K]) |- ($\$$ch: 1) =
+{
+  ...
+  msg = $\nrecv$ #p2f ;
+  $\ncase$ msg (
+    P2F(pid, P2MS(ssid, msg)) =>
+      $\nif$ not ssid in $\$$p2ssid
+      $\nthen$
+      	#new_p2ssid <- communicator_init[K1][p2f] <- ;
+      	#new_ssid2p <- communicator_init[K1][f2p] <- ;
+      	#new_a2ssid <- communicator_init[K1][a2f] <- ;
+      	#new_ssid2a <- communicator_init[K1][f2a] <- ;
+      
+      	$\$$p2ssidnew <- pappend $\$$p2ssid #new_p2ssid ;
+      	$\$$ssid2pnew <- pappend $\$$ssid2p #new_ssid2p ;
+      	$\$$a2ssidnew <- pappend $\$$a2ssid #new_a2ssid ;
+      	$\$$ssid2anew <- pappend $\$$ssid2a #new_ssid2a ;
+      
+      	$\$$chprime <- f_wrapper[K1][f2p,p2f][f2a,a2f] <- 
+                           k rng sid clist $\#$p2ssid $\#$ssid2p $\#$a2ssid $\#$ssid2a $\#$z ;
+      $\nend$
+  
+      #ch <- get_channel #p2ssid ssid ;
+      $\nwithdraw$ K K1 {p2fn} ;
+      $\$$ch.SEND ;
+      $\nsend$ $\$$ch P2F(pid, msg) ;
+      $\npay$ $\$$ch {p2fn : K1} ;
+  	
+    $\$$ch <- f_multisession_f2p_i[K][K1] <- .... $\$$p2ssidnew $\$$ssid2pnew $\$$a2ssidnew $\$$ssid2anew 0;	
+}
+\end{lstlisting}
+
+First it checks whether the \m{ssid} exists. It not it spawns new communicators for the instance \F: two for the \partywrapper and two for \A.
+It then grabs the \inline{#p2f} channel for $\F_{\m{ssid}}$, creates the appropriate virtual tokens and sends the message along that channel.
+Finally, after handling the incoming message, it moves to the next step of checking for outgoing messages, to the \partywrapper, from each \F by calling \inline{f_multisession_f2p_i}.
+The function accepts an integer at the end, in this example 0, which is the index to check in the communicator list. Eventually all communicators in the list are checked.
+
+Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
+The real world that realizes it is comprised of a protocol that ``flattens'' the pair of ssids $(\m{ssid}_1, \m{ssid}_2)$ into a single ssid $\m{ssid}_3 = \m{ssid}_1 || \m{ssid}_2$, the concatenation (can be any other one-to-one and invertible function on the pair) of them.
+
+\begin{theorem}[Squash Theorem] \label{thm:squash}
+	\begin{mathpar}
+		\inferrule*[right=squash]
+		{
+			\textit{well-resource-typed} \; \F
+		}
+		{
+			!\F \xrightarrow{\msf{squash}} !!\F
+		}
+	\end{mathpar}
+\end{theorem}
+
+\begin{proof}
+The simulator for this construction is a direct simulation where $\Sim{\m{squash}}$ takes as input one of 
+\begin{itemize}
+	\item \inline{Z2A2P(pid, P2MS(ssid, msg))}: $\SIM{\m{squash}}$ un-concatenates \inline{ssid} into a pair (\inline{ssid1}, \inline{ssid2}) and forward the message \inline{A2P(pid, P2MS(ssid1, P2MS(ssid2, msg)))}.
+	\item \inline{Z2A2F(A2MS(ssid, msg))}: Similar to above, $\SIM{\m{squash}}$ splits the given \inline{ssid} and sends \\ \inline{A2F(A2MS(ssid1, A2MS(ssid2, msg)))}. 
+\end{itemize}
+
+\SIM{\m{squash}} also keeps one import for every message it ges and forwards the remainder to either of \F or the \partywrapper.
+On input from \Z, \SIM{\m{squash}} does the following; 
+
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+proc sim_squash[K][p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn} :
+  (k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
+  (#z_to_a: comm[z2amsg]), (#a_to_z: comm[a2zmsg]) ... |- ($\$$ch: 1) =
+{
+  ...
+  $\ncase$ #z_to_a (
+    Z2A2P(pid, P2MS(ssid, msg))) =>
+      ssid1, ssid2 <- split ssid
+      #a_to_p.SEND ;
+      $\npay$ #a_to_p {a2pn-1} ;
+      $\nsend$ #a_to_p A2P(pid, P2MS(ssid2, P2MS(ssid2, msg)) ;
+    Z2A2F(A2MS(ssid, msg)) =>
+      ssid1,ssid2 <- split ssid
+      #a_to_f.SEND ; 
+      $\npay$ #a_to_f {a2fn-1} ;
+	  $\nsend$ #a_to_f A2P(A2MS(ssid1, A2MS(ssid2, msg))) ;
+  ...
+}	  
+\end{lstlisting}
+\end{proof}
+
+We further require Theorem~\ref{thm:functor} in order to conclude full UC-style composition. We restate it here
+\begin{theorem}[Multisession Composition]
+	\begin{mathpar}
+		\inferrule*[right=MultiComp]
+		{
+			\F_1 \xrightarrow{\pi} \F_2
+		}
+		{
+			!\F_1 \xrightarrow{!\pi} !\F_2
+		}
+	\end{mathpar}
+\end{theorem}
+
+The simulator for this theorem runs internal copies of $\Sim_\pi$ for each new \m{ssid} spawned.
+It is easy to see why simulating each isolated instance should be feasible, given that the protocol instances and functionality do not share any state with each other.
+However, to complete the proof we need to show a reduction that translates an environment $\Z$ that can distinguish the multi-session experiment into an environment $\Z^*$ that can distinguish real from ideal in the single session experiment.
+
+The high level approach is as follows: $\Z^*$ can only interact with only a single instance of $\F_1$ in the real world, but it must present a view of multiple sessions $!\F_1$ to its sandbox execution of $\Z$.
+To do this, $\Z^*$ will create local simulations of subsessions of $\F_1$ for all but one subsession, which it forwards to its external channel.
+
+To complete the precise statement of this proof, we have to resort to (a variable number of) hybrid worlds~\cite{canettiUC,variablehybrids}. We sketch the proof below.
+We define a family of environments $\Z^*_i$, indexed by a polynomial $i$,
+\begin{itemize}
+\item the first $i(k)-1$ subsessions shown to $\Z$ are a local simulation of $\F_1$.
+\item the $i(k)$'th subsession is forwarded to the external channel,
+\item the $i(k)+1$'th and later subsessions are a simulation of $\pi$.
+\end{itemize}
+Notice that $\Z^*_0$ presents a simulation of exactly the multi-session real world, while $\Z^*_q$ presents a simulation of exactly the multi-session ideal world where $q$ is a polynomial bound on the runtime resulting from $\Z$.
+What we can show is that by triangle rule, if $\Z$ is a distinguisher for the multi-session experiment, there must exist some polynomial $i$ such that the real world with $\Z^*_i$ is distinguishable from the real world with $\Z^*_{i+1}$. Since the real world with $\Z^*_{i+1}$ is exactly the same as the ideal world with $\Z^*_i$, this gives us that $\Z^*_i$ is a distinguisher for real and ideal in the single-session experiment.
+
+%\subsection{Squash Theorem}
+%\begin{theorem}[Squash Theorem]\label{thm:squash}
+%	\begin{mathpar}
+%		\inferrule*[right=squash]
+%		{
+%			\textit{well-resource-typed} \; \F
+%		}
+%		{
+%			!\F \xrightarrow{\msf{squash}} !!\F
+%		}
+%	\end{mathpar}
+%\end{theorem}
+%The Squash theorem, is more straightforward to prove than Theorem~\ref{thm:functor}.
+%
+%\begin{proof} (Theorem~\ref{thm:squash})
+%On examination the \msf{squash} theorem does constant work per activation and concantenates two \inline{ssid}s into one for messages going to the functionality and does the inverse for messages incoming from the functionality.
+%In other words, it is a direct simulation and the same ideal functionality exists if both worlds, and it is clear to see that the this theorem holds with a trivial simulator.
+%First we describe the \msf{squash} protocol where $!!\F$ are nested $!$ operators.
+%The protocol accepts messages intended for $!!\F$ of type \inline{P2MS[p2ms[a]][ms2p[b]]}, i.e. of the form $(\msf{ssid}_1, (\msf{ssid}_2, msg))$, and ``flattens'' them into a single message of type $\inline{P2MS[a][b]}$, i.e. of the form $(\msf{ssid}_3, msg)$.
+%
+%In $(\idealP, !!\F)$, \idealP~expects to receive messages of the form $(\msf{ssid}_1, (\msf{ssid}_2, m))$ where $\msf{ssid_2}$ is a sub-session of $\F$ (i.e. instance) inside some $!\F$ with sub-session id $\msf{ssid}_1$ inside of $!!\F$ (the message accesses functionality $\F[\msf{ssid}_1][\msf{ssid}_2]$).
+%The \msf{squash} protocol flattens the indexing of instances of \F and combines session ids $\msf{ssid}_1$ and $\msf{ssid}_2$ into a single \msf{ssid}: $\msf{ssid}_3 := \msf{ssid}_1 \cdot \msf{ssid}_2$.
+%If follows intuitively that the view for the environment remains the same. 
+%
+%We construct a simulator such that:
+%\[
+%\msf{execUC} \, \Z \, \idealP \, !!\F \, \SIM{\msf{squash}} \approx \msf{execUC} \, \Z \, \msf{squash} \, !\F \DA 
+%\]
+%The simulator is very simple. 
+%Inputs to/from parties/\Z for a corrupt party is forwarded unmodified.
+%Input intended for $!\F$ of the form $(\msf{ssid}_1 \cdot \msf{ssid}_2, msg)$ is sent as $(\msf{ssid}_1, (\msf{ssid}_2, msg))$ to $!!\F$. 
+%Output from $!!\F$ is modified inversely and sent to \Z.
+%
+%The proposed simulator is trivially analyzed to be \textit{well-resource-typed}.
+%It performs constant work per activation and does ``real'' simulation other than message modification to/from $!!\F$.
+%\end{proof}

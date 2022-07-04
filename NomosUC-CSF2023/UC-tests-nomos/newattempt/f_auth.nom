@@ -1,0 +1,50 @@
+stype flist[a] = <{1}| +{ append: a ^ flist[a],
+                          read: Int ^ &{ data: a ^ flist[a]} }
+
+proc F_list_init[a] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	($P1: Flist[a]), ($P2: Flist[a]), ($A: 1)  |- ($ch: 1) =
+{
+	$l <- pnil[a] <- ;
+	$ch <- F_list <- k rng sid $P1 $P2 $l $A 	
+}
+		
+
+proc F_list[a] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	($P1: flist[a]), ($P2: flist[a]), ($l: list[a]), 
+	($A: 1), (#z: pump)  |- ($ch: 1) =
+{
+	match $P1 $P2 (
+		*,append => 
+			d = recv $P2 ;
+			get $P2 {1} ;
+			genpot {$l.length} ;
+			$l' <- pappend[a] <- $l d ;
+			#z.dump ;	
+			$ch <- F_list[a] <- k rng sid $P1 $P2 $l' $A #z 
+		append,* => 
+			d = recv $P1 ;
+			get $P2 {1} ;
+			genpot {$l.length} ;
+			$l' <- pappend[a] <- $l d ;
+			#z.dump ;	
+			$ch <- F_list[a] <- k rng sid $P1 $P2 $l' $A #z 
+		*, read =>
+			idx = recv $P2 ;
+			get $P2 {1} ;
+			genpot {$l.length} ;
+			d <- pget <- $l idx ;
+			$P2.data ;
+			send $P2 d ;
+			$ch <- F_list[a] <- k rng sid $P1 $P2 $l $A #z 
+		read, * =>
+			idx = recv $P1 ;
+			get $P1 {1} ;
+			genpot {$l.length} ;
+			d <- pget <- $l idx ;
+			$P1.data ;
+			send $P1 d ;
+			$ch <- F_list[a] <- k rng sid $P1 $P2 $l $A #z 
+	)
+}

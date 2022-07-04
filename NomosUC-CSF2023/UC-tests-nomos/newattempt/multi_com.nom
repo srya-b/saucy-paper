@@ -1,0 +1,84 @@
+stype input[a][b] = +{ inp: pid -> ssid -> a &{ ok: input[a][b],
+                                     	  	 			output: pid -> ssid -> a x input[a][b]}}
+
+
+proc f_ms[K][K1][f2p][p2f]:
+	(k: Int), (rng: [Bit]), (#f_to_pw: comm[p2fmsg[p2f]]),
+	(#pw_to_f: comm[f2pmsg[f2p]]),. .... |- ($ch: 1) = 
+{
+	(* create lists containing the communicators for each ssid *)
+	$p2ssid <- pnil[comm[p2fmsg[p2f]][K1]] <- ;
+	$ssid2p <- pnil[comm[f2pmsg[f2p]][K1]] <- ;
+
+	$a2ssid <- pnil[comm[a2fmsg[a2f]][K1]] <- ;
+	$ssid2a <- pnil[comm[f2amsg[f2a]][K1]] <- ;
+
+	(* only two communicators for each process, basically replicated
+		the work the f_wrapper does here and forward messages to it.  *)
+	
+	$ch <- f_ms_p2f <- k rnf #f_to_pw #pw_to_f $p2ssid $ssid2p $a2ssid $ssid2a
+}
+
+proc f_ms_p2f[K][K1][p2f][f2p]:
+	... ($p2ssid: list[comm[p2fmsg[p2f]][K1]]),
+			($ssid2p: list[comm[f2pmsg[f2p]][K1]]),
+			($a2ssid: list[comm[a2fmsg[a2f]][K1]]),
+			($ssid2a: list[comm[f2amsg[f2a]][K1]])  |- ($ch: 1) =
+{
+	case #pw_to_f (
+		yes =>
+			P2F(pid, P2MS(ssid, msg)) = recv $p2f ;
+			if not ssid in $p2ssid
+			then
+				#new_p2ssid <- communicator_init[K1][p2f] <- ;
+				#new_ssid2p <- communicator_init[K1][f2p] <- ;
+				#new_a2ssid <- communicator_init[K1][a2f] <- ;
+				#new_ssid2a <- communicator_init[K1][f2a] <- ;
+
+				$p2ssidnew <- pappend $p2ssid #new_p2ssid ;
+				$ssid2pnew <- pappend $ssid2p #new_ssid2p ;
+				$a2ssidnew <- pappend $a2ssid #new_a2ssid ;
+				$ssid2anew <- pappend $ssid2a #new_ssid2a ;
+
+				$chprime <- f_wrapper[K1][f2p,p2f][f2a,a2f] <- 
+											k rng sid clist #p2ssid #ssid2p #a2ssid #ssid2a #z ;
+			end
+			#ch <- get_channel #p2ssid ssid ;
+			withdrawtoken K K1 {p2fn} ;
+			$ch.SEND ;
+			send $ch P2F(pid, msg) ;
+			pay $ch {p2fn : K1} ;
+				
+			$ch <- f_ms_p2f_i[K][K1] <- .... $p2ssidnew $ssid2pnew $a2ssidnew $ssid2anew 0;	
+	| no =>
+			$ch <- f_ms_p2f_i[K][K1] <- .... $p2ssidnew $ssid2pnew $a2ssidnew $ssid2anew 0 ;	
+}
+
+proc f_ms_f2p_i[K][K1] :
+	... ($p2ssid: list[comm[p2fmsg[p2f]][K1]]),
+			($ssid2p: list[comm[f2pmsg[f2p]][K1]]),
+			($a2ssid: list[comm[a2fmsg[a2f]][K1]]),
+			($ssid2a: list[comm[f2amsg[f2a]][K1]])  |- ($ch: 1) =
+{
+	(* attempt to read from the ith p2f communicator in thelist *)
+	if i <= $pssid2p.length
+	then
+		ssid, #f2p <- $ssid2p[i] ;
+		#f2p.RECV ;
+		case #f2p (
+			yes =>	
+				msg = recv #f2p ;
+				get $f2p {f2pn : K1} ;
+				case msg (
+					F2P(pid, msg) =>
+						#f_to_pw.SEND ;
+						send #f_to_pw F2P(pid, MS2P(ssid, msg)) ;
+						pay #f_to_pw {f2pn : K1} ;
+				)
+		)
+		$ch <- f_ms_f2p_i[K][K1] <- ... $p2ssid $ssid2p $a2ssid $ssid2a 1 ;
+	else
+		$ch <- f_ms_a2f[K][K1] <- ... $p2ssid $ssid2p $a2ssid $ssid2a ;	
+	end
+}
+		

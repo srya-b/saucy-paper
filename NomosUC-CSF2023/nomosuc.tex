@@ -1,0 +1,267 @@
+%\documentclass[acmsmall, screen, review, anonymous]{acmart}
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+%\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%\usepackage[dvipsnames]{xcolor}
+%\usepackage{cite}
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{textcomp}
+\usepackage{mathtools}
+\usepackage[shortlabels]{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{bbm}
+%\usepackage{unicode-math}
+\usepackage[utf8]{inputenc}
+\usepackage{newunicodechar}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{float}
+\usepackage{hyperref}
+
+%% PL packages
+\usepackage{stmaryrd} 
+\usepackage{proof}
+\usepackage{mathpartir}
+%\usepackage{color}
+\usepackage{xstring}
+\usepackage{xspace}
+\usepackage{turnstile}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+%\setcopyright{none}
+
+
+%%
+%% These commands are for a JOURNAL article.
+%\acmJournal{PACMPL}
+%\acmVolume{1}
+%\acmNumber{ICFP} 
+%\acmArticle{1}
+%\acmYear{2022}
+%\acmMonth{9}
+%\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+%\startPage{1}
+
+%\citestyle{acmauthoryear}
+
+
+\begin{document}
+\usetikzlibrary{matrix, arrows.meta, calc, positioning}
+\tikzset{myarrow/.style={-Latex, rounded corners},}
+
+\newcommand*\emptycirc[1][1ex]{\tikz\draw (0,0) circle (#1);} 
+\newcommand*\halfcircleft[1][1ex]{%
+  \begin{tikzpicture}
+  \draw[fill] (0,0)-- (90:#1) arc (90:270:#1) -- cycle ;
+  \draw (0,0) circle (#1);
+  \end{tikzpicture}}
+\newcommand*\halfcircright[1][1ex]{%
+  \begin{tikzpicture}
+  \draw[fill] (0,0)-- (0:#1) arc (0:90:#1) -- cycle ;
+  \draw[fill] (0,0)-- (270:#1) arc (270:360:#1) -- cycle;
+  \draw (0,0) circle (#1);
+  \end{tikzpicture}}
+\newcommand*\fullcirc[1][1ex]{\tikz\fill (0,0) circle (#1);} 
+
+\newcolumntype{R}[2]{
+	>{\adjustbox{angle=#1, lap=\width-(#2)}\bgroup}
+	c
+	<{\egroup}
+}
+\newcommand*\rot{\multicolumn{1}{R{30}{1.5em}}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+
+\definecolor{vert}{RGB}{0,181,0}
+\definecolor{oran}{RGB}{223,74,0}
+\definecolor{viol}{RGB}{134,0,175}
+\definecolor{roug}{RGB}{215,15,0}
+\definecolor{bb}{RGB}{0,0,0}
+\definecolor{gg}{RGB}{220,220,220}
+\definecolor{royalblue}{rgb}{0.25, 0.41, 0.88}
+\definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
+\definecolor{YellowOrange}{rgb}{0.98, 0.6, 0.01}
+\definecolor{Red}{rgb}{0.89, 0.0, 0.13}
+\definecolor{Black}{rgb}{0.0, 0.0, 0.0}
+\definecolor{Purple}{rgb}{0.63, 0.36, 0.94}
+\definecolor{purp}{rgb}{0.59, 0.48, 0.71}
+
+\newcommand{\anote}[1]{{\color{magenta}{AM: {{#1}}}}}
+\newcommand{\snote}[1]{{\color{green}{SB: {{#1}}}}}
+
+\newtcolorbox[auto counter]{bbox}[2][]{%
+    colback=white,
+    colframe=bb,
+    %colbacktitle=white!90!roug,
+	colbacktitle=white!40!gg,
+    coltitle=black,
+    fonttitle=\small\bfseries, 
+	fontupper=\small,
+	fontlower=\small,
+    enhanced,
+    attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
+    #1,% For possible options
+}
+
+\mathchardef\hyp="2D
+\mathchardef\car="5E
+
+\makeatletter
+\newcommand\BeraMonottFamily{%
+	\def\fvm@scale{0.85}%
+	\fontfamily{fvm}\selectfont
+}
+\makeatother
+
+\title{Nomos-UC: a programming framework for cryptography based on resource-aware session types\\
+%\thanks{Identify applicable funding agency here. If none, delete this.}
+}
+
+\input{macros}
+\input{st-macros}
+
+\maketitle
+
+\begin{abstract}
+  Universal Composability (UC) is a leading definitional framework for secure protocols, used in cryptography and increasingly in computer security more broadly.
+However, compared with traditional game-based definitions, UC has been less well studied from the viewpoint of programming language semantics and formal methods.
+  In this work we build on recent efforts to bring formal semantics to UC. Specifically, we investigate adding session types as a way of annotating UC definitions with additional structure.
+  We build a new language, Nomos-UC, by combining an existing session-typed language (Nomos) with a process-based core calculus for UC (ILC). This integration required solving a range of technical challenges, especially since session types impose a linear discipline while we wanted to preserve the UC lets the adversary dynamically steer the communication patterns at runtime.
+  Polynomial runtime is an essential component of the security definition, yet encoding it in other formal frameworks has required placing significant restrictions on the execution modeled considered in UC.
+Since we show how to faithfully encode the dynamic ``import tokens'' mechanism from UC into the resource-aware types in Nomos, we retain the best of both worlds.
+To validate our design, we work through the standard theory of UC composition operators, and complete a modular application case study: a coin tossing protocol in the random oracle model using commitments as the intermediate primitive.
+\end{abstract}
+
+
+
+%\begin{IEEEkeywords}
+%component, formatting, style, styling, insert
+%\end{IEEEkeywords}
+
+\section{Introduction}
+\input{sections/intro}
+
+\section{Background} \label{sec:background}
+\input{sections/background}
+
+\section{A Commitment Protocol in NomosUC} \label{sec:example}
+\input{sections/example}
+
+\section{Base System of Session Types in NomosUC} \label{sec:basic}
+\input{sections/baselang}
+
+\section{Import and Potential in NomosUC} \label{sec:import}
+\input{sections/importlang}
+
+\section{Type Safety of NomosUC} \label{sec:safety}
+\input{sections/safety}
+
+\section{The UC Experiment} \label{sec:execuc}
+\input{sections/execuc}
+
+\section{Coin Flipping and Commitment} \label{sec:commitment}
+\input{sections/commitment}
+
+
+\section{Related Works} \label{sec:related}
+\input{sections/relatedworks}
+
+\section{Discussion and Future Work}
+\input{sections/future}
+
+%\bibliographystyle{ACM-Reference-Format}
+\bibliography{nomosuc}
+
+\newpage
+
+%input{figures/asyncwrapper}
+
+\appendix
+
+
+\section{Selected Typing Rules for NomosUC} \label{app:typing_rules}
+\input{appendix/typing_rules}
+
+\section{Arbitrary Parties} \label{app:arbparties}
+\input{appendix/arbparties}
+
+\section{Dummy Lemma} \label{app:dummy}
+\input{appendix/dummylemma}
+
+\section{Multisession Theorems} \label{app:ms}
+\input{appendix/bangf}
+
+\section{Import} \label{app:import}
+\input{appendix/import}
+
+\section{Commitment Protocol} \label{app:protcom}
+\input{appendix/protcom}
+
+\section{Coin Flipping} \label{app:flip}
+\input{appendix/coinflip}
+
+\section{ITM Completeness} \label{app:itm}
+\input{appendix/itmiffnomosuc}
+
+%\section{Simulator Composition} \label{app:simcomp}
+%\input{appendix/simcomp}
+
+%\section{Proofs}
+%\input{sections/brachaproof}
+
+%\input{sections/enoughimport}
+
+\pagebreak
+
+%\begin{figure}
+%\input{figures/fasync}
+%\end{figure}
+
+%\begin{figure}
+%\input{figures/frbc}
+%\end{figure}
+
+%\begin{figure}
+%\input{figures/protbracha}
+%\end{figure}
+%
+%\begin{figure}
+%\input{figures/simbrachaasync}
+%\end{figure}
+%
+%\begin{figure}
+%\begin{subfigure}{\columnwidth}
+%\input{figures/algopoll}
+%\end{subfigure}
+%%\begin{subfigure}{\columnwidth}
+%%\input{figures/algosimgetleaks}
+%%\end{subfigure}
+%\begin{subfigure}{\columnwidth}
+%\input{figures/algosimpartyout}
+%\end{subfigure}
+%\end{figure}
+%
+%
+%\input{figures/F_state}
+
+
+\end{document}

@@ -1,0 +1,55 @@
+stype comm[a] =	&{ SEND: a * comm[a],
+									 PEEK: Int * peek[a],
+									 RECV: newmsg[a] }
+stype peek[a] = +{ no: comm[a],
+									 yes: a * comm[a] }
+stype newmsg[a] = +{ no: comm[a],
+										 yes: a * comm[a] }
+
+proc contract p2f_communicator_init[a] : |- (#dc: comm[a]) =
+{
+	$l <- pnil[a] <- ;
+	#dc <- communicator <- $l 
+}
+
+proc contract p2f_communicator[K][a] : ($l: list[a])  |- (#dc: comm[a]) = 
+{
+	$ldc <- acquire #dc ;
+	case $ldc (
+		SEND => msg <- recv $ldc ;
+						#dc <- release $ldc ;
+						$lnew <- pappend[a] <- msg $l ;
+						#dc <- communicator[K][a] <- $lnew 
+	| PEEK =>	pid = recv $ldc ;
+						case $l (
+							cons => P2F(p, m) <- recv $l ;
+											if p == pid
+											then	
+												$ldc.yes ;
+												send $ldc msg ;
+											else
+												$ldc.no ;
+												$lnew <- pappend[a] <- msg $l ;
+											end
+											#dc <- release $ldc ;
+											#dc <- communicator[a] <- $lnew 
+							| nil => wait $l ;
+											 $ldc.no ;
+											 $lnew <- pnil[a] <- ;
+											 #dc <- release $ldc ;
+											 #dc <- communicator[a] <- $lnew 
+						)
+	| RECV =>	case $l ( 
+							cons => msg <- recv $l ;
+											$ldc.yes ;
+											send $ldc msg ;
+											#dc <- detah $ldc ;
+											#dc <- communicator[a] <- $lnew 
+							| nil => wait $l ;
+											 $ldc.no ;
+											 $lnew <- pnil[a] <- ;
+											 #dc <- release $ldc ;
+											 #dc <- communicator[a] <- $lnew 
+						)
+	)
+}				

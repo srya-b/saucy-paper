@@ -1,0 +1,88 @@
+stype party[a] = +{ hash: pid ^ int -> hashing[a],
+									  sendmsg: pid ^ pid ^ a -> sending[a] }
+stype hashing[a] = &{ shash: pid ^ int -> party[a] }
+stype sending[a] = &{ msg: pid ^ pid ^ a -> party[a] }
+
+stype advhash = +{ hash: int -> &{ ahash: int -> advhash }} 
+
+proc F_ro[K]:
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	($P: party[a]), ($A: advhash)  |- ($ch: 1) =
+(* TODO: how to table? *)
+{
+	case $P (
+		hash =>
+			p, i = recv $p2f;
+			if exists i table 
+			then
+				h <- gethash table i ;
+			else
+				h <- sample k r ;
+				$table' <- append table i h ;
+			end
+			$p2f.shash ;
+			send $p2f p h ;
+			$ch <- F_ro_a2f <- k rng sid $P $A table'
+		sendmsg =>
+			sp, rp, m  = recv	$p2f ;
+			$p2f.msg ;
+			send $p2f rp sp m ;
+			$ch <- F_ro_a2f <- k rng sid $P $A table 
+	)
+}
+
+proc F_ro_a2f[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	($P: party[a]), ($A: advhash), ($table: ??)  |- ($ch: 1) =
+{
+	case $A (
+		hash =>
+			p, i = recv $p2f;
+			if exists i table 
+			then
+				h <- gethash table i ;
+			else
+				h <- sample k r ;
+				$table' <- append table i h ;
+			end
+			$a2f.ahash ;
+			send $a2f h ;
+			$ch <- F_to_p2f <- k rng sid $P $A $table' <- ;
+	)
+}
+
+stype party[a] = +{ hash: pid ^ int -> hashing[a],
+									  sendmsg: pid ^ pid ^ a -> sending[a] }
+stype hashing[a] = &{ shash: pid ^ int -> party[a] }
+stype sending[a] = &{ msg: pid ^ pid ^ a -> party[a] }
+
+
+type rop2f[a] = QHash of Int | Send of pid ^ a ;
+type rof2p[a] = RHash of Int | Recv of pid ^ a ;
+
+proc party1[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[rop2f]][K]), (#f_to_pw: comm[f2pmsg[rof2p]][K])  |- ($P: party[a]) =
+{
+	$p2f <- acquire #pw_to_f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes =>
+			P2F(p, msg) = recv $p2f ;
+			#pw_to_f <- release $p2f ;
+			case m (	
+				QHash(i) =>
+					$P.hash ;
+					send $P p i ;
+					$P <- party2[K] <- ... ;
+	| no =>
+			$P <- party1[K] <- ... ;
+	)					
+}
+
+proc party2[K] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	(#pw_to_f: comm[p2fmsg[rop2f]][K]), (#f_to_pw: comm[f2pmsg[rof2p]][K])  |- ($P: party[a]) =
+{
+	
+}

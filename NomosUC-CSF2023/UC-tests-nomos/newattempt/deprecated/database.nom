@@ -1,0 +1,40 @@
+type ktype = Key of String ;
+type vtype = Value of String ;
+
+stype database[k][v] = /\ <{1}| &{ store: pid -> k -> v ^ |{0}> \/ pmsg,
+																	retreive: pid -> k ^ |{1}> \/ retrieval}
+stype retrieval = /\ <{1}| +{ result: pid -> v ^ |{0}> pmsg,
+															none: 1 ^ |{0}> pmsg };
+
+
+proc f_database[K] :
+	(k: Int), (sid: session[1]), (rng: [Bit]),
+	($p2f: database[ktype][vtype]), ($db: list[Key ^ Value])  |- ($ch: 1) =
+{
+	case $p2f (
+			 store =>	get {1} $p2f ;
+							  genpot {*} ;				(* <-- need to iterate over list *)
+						    key = recv $p2f
+							  value = recv $p2f
+							  (* a linear operation in the size *)
+							  db' <- append key value db ;
+							  $ch <- f_database[K] <- k sid rng p2f db' ;
+		retreive =>	get {1} $p2f ;
+								genpot {*} ;			(* <-- need to iterate over list twice *)
+								key = recv $p2f ;
+								b <- key_in_db key db ;
+								if b
+								then
+									v <- search key db ;
+									$p2f.result ;
+									pay {0} $p2f ;
+									send v $p2f ;
+									$ch <- f_database[K] <- k sid rng p2f db ;
+								else
+									$p2f.none ;
+									pay {0} $p2f ; 
+									$ch <- f_database[K] <- k sid rnd p2f db ;	
+								end
+	)
+
+}

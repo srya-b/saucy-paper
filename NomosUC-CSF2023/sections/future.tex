@@ -1,0 +1,12 @@
+This area of research presents several next steps and possibility for futurework building on NomosUC.
+
+On of the immediate next steps is to overcome the existing Nomos provider-client constraints. 
+Currently, we introduce a several channels and a couple of commuicators to generalize communication between two processes. 
+This is due in large part to linear channels being unique to a specific provider and client.
+We would like to do away withthis requirement in subsequent works and grealy simplify our construction.
+
+We also point out that we build NomosUC on top of the type system defined by Nomos, however, we do not yet implement a type checker for NomosUC. We rely on the typing rules and theorems to validate our approach and manually typed checked the functionalities, protocols, and simulator code we implemented.
+A next step in this direction is attempting to implement the type checker for NomosUC or evaluating the feasibility of doing so.
+
+A few works related to our own, described in Section~\ref{sec:related}, attempt to automate proof generation for composable security. Our work provides tooling to specify and analyze UC definitions, however, a goal of future work is to introduce fuzz testing of protocols, functionalities, and emulation in NomosUC.
+
