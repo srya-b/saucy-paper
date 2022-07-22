@@ -9,68 +9,208 @@
 %A configuration $C$ of ITMs has an equivalent NomosUC configuration $\D \overset{T}{\underset{W}{\vDash}} C' :: \D'$ where channels $\msf{ch} \in \D$ correspond to the communication set of ITM configuration $C$.
 %The NomosUC typing rules account for all possible steps an ITM can take: writing with the external/internal choice rules, spawning a new ITM with new channels and composing with the current configuration, etc. \todo{ make more precise but at a high level this argument is pretty clear to see }.
 
-We want to show that our NomosUC definition entirely captures ITM behavior. Specifically, any ITM configuration $M$, and the steps it takes, can be compiled into an equivalent NomosUC configuration $C$.
-The other direction is also shown: given a NomosUC configuration $C'$ with an analogous ITM configuration $M'$, steps taken by $C'$ always result in a valid ITM configurations. 
+We want to show a bisimulation between NomosUC terms and ITMs.
+An ITM $M$ is defined by a unique identity \ID{M} and its code $\mu_M$. 
+A system of ITMs is defined by a single initial ITM $I$ with some \ID{I} and a control function \cf.
+The control function is applied to every message an ITM sends and defines which ITMs are able to communincate with each other.
+In UC, for example, \cf enforces rules such as prohibiting ITMs of different sessions from communicating and stopping \Z from writing input to a corrupt protocol party. 
+The control function also serves the imporant purpose that it spwans ITMs when a message is sent to a receiver that doesn't exist yet. It only spawns a machine $M' = (\ID{M'}, \mu_{M'})$ if the message sent to it by some $M$ is \emph{allowed}.
 
-An ITM configuration $M'$ consists of a set of ITMs and a control function that determines the communicating set of each ITM in $M'$. 
-The communicating set of ITM $M_1$ is the set of other ITMs that $M_1$ can write to and that $M_1$ can accept messages from. 
-In NomosUC, we use the concept of channels to represent communication rather than tapes as in the ITM model. 
-A consequence of this design is that the communicating set and the control function are represented explicitly through channels.
-
-Two ITMs $M_1$ and $M_2$, where $M_2$ is in the communicating set of $M_1$, are connected by a channel in NomosUC.
-The dynamic nature of the control function and communicating set is captured by providerless channels that processes can accept on the fly as new processes are spawned. 
-
-\subsection{ITMs $M' \Rightarrow$ NomosUC $C'$}
-Proving this direction is straihtforward. The proof proceeds by describing how to compile an ITM configuration into a NomosUC configuration and ever ITM action into a process action.
-
-\paragraph{Compiling an ITM Configuration to NomosUC}
-As described above an ITM configuration consits of ITMs and a control function which defines the communication set for each ITM.
-The operations available to an ITM are to take a computation step, write something to another ITM's tape, or read some input on on of its tapes. 
-In NomosUC, our external $\with$ and internal $\ichoiceop$ and the typing rules $\oplus R$ and $\oplus L$ capture sending and receiving messages between a pair of ITMs. 
-\todo{ some transition text here }
-
-
-% need to show up to translate and existing configuration from ITM to NomosUC
-% need to show how to translate every possible action that an ITM takes to a NomosUC action --> show how that preserves the same properties of import as in ITMs
-% need to show how to spawn new ITMs/processes 
-Given a configuration $C$ of ITMs:
+NomosUC differs from this approach to communication in two crucial ways:
 \begin{itemize}
-\item For every ITM $M \in F$ with communication set $C_M$: for every $M' \in C_M$ we spawn processes $M$ and all $M'$ and connect them with a providerless channel of type specified by the code of machines $M'$ and the definition of the process code.
-\item The basic computation step in an ITM is different from the fundamental computation step of a NomosUC process. 
-However, by manipulating the bouding polynomial, we can equate multiple computation steps in an ITM to a single step of a process and vice versa.
-Modulo the conversation rate between computation steps in ITMs vs NomosUC processes, the token context validity rules in Section~\ref{sec:basic} ensure that ITMs and their corresponding processes halt after the same number of computationsl steps, i.e. $T(n)$ steps where $n$ is the net import held.
-\item The same reasoning applies to write operations where the token validty rule ensures that for security parameter $k$ write operations succeed only if there is available import \todo{tis sounds so hand wavy and imprecise I hate it}
-\item When an ITM $M \in F$ spawns a new ITM $M'$ such that $M' \in C_M$: the Nomos process creates the providerless channels for ITM $M'$ and stores them to communicate with $M'$ in the future.
+	% \item Unlke the single entity that is the ITM, representations of ITMs in NomosUC may span several processes that \emph{become} each other (we define one process \emph{becoming} another later on). We group such processes into a term that represents one ``ITM''. 
+	\item NomosUC represents ITMs through multiple processes that act as one. The type system esuresthese processes share import, potential, and work done. For the remainder of this section we will refer to a process or term to be all of the processes that make up one ITM. 
+	\item In NomosUC identity mechanism and control function are replaced by channels that directly connect parties that are allowed to communicate. Channels distinguish processes and make an identity mechanism useless. 
+		In some cases where shared channels are used, a process might expect multiple others to write to it. In this case, we can assume that protocols implement a mechanism to identify themselves.
+	\item In UC, \cf spawns new ITMs went messages are sent to a non-existent ID. A process $P$ spawning $Q$ first creates its channels, then spawns $Q$, and then may send it a message.
 \end{itemize}
 
+We show how to convert from an ITM system to a NomosUC configuration, and how to conver a NomosUC term into an ITM. 
+In general, the control function can be arbitrary but here we discuss ITM systems specifically with the UC control function.
+
+% %
 \subsection{NomosUC $C' \Rightarrow$ ITMs $M'$}
-We provide a compiler from a NomosUC configuration to an ITM system. 
-More specifically, we show how to convert a term $e$ into an ITM. 
-Terms in NomosUC can be made up of multiple process terms and are the logical equivalent of an ITM in NomosUC. 
+%In NomosUC a process can \emph{step} into a another process and become it. The new process can have different paraeters of different types but retains the same import, potential, state and work done as the previous process. In this sense, it \emph{becomes} another process. 
+%For example, an ideal functionality may be captured by three processes $P_1$, $P_2$, and $P_3$ where $P_1$ reads and message from either channels $c_1$ and $c_2$ and steps into $P_2$. 
+%$P_2$ may read only from $c_2$ and then step to $P_3$. 
+%Finally, $P_3$ waits for another messages from $c_2$ and steps back to $P_1$. 
 
-Take a simple process configuration:
+%Compiling a term or configuration of terms in NomosUC requires two parts: defining a control function, ITM identities, and determing how actions in NomosUC translate to ITM actions.
+%ITMs communicate by sending messages that contain the unique identity of the receiver, the code of the receiving ITM, and some amount of import.
+%A control function \cf is applied to each message and determines whether the message is \emph{allowed}.
+%If a message is \emph{allowed}, \cf delivers the message. If the receiver doesn't exist yet, \cf spawns it with the given identity and code and then delivers the message.
+%NomosUC terms carry no name or identifier. We describe below how ITMs are assigned random $k$-bit strings as identities. 
+We begin with an initial NomosUC term $e$ and create the initial ITM $M_e$ with a \sid and \pid that are both $k$-bit strings. As no other processes exist, $e$ does not hold any channels to any other processes and must spawn new processes itself.
+In UC, this initial ITM is \Z whose code determines the session ID for the rest of the ITMs in the execution.
+Notation: from now we call $M_P$ the ITM form of process $P$ (or $P_P$). 
+
 \begin{itemize}
-	\item Tree processes P1, P2, and P3. 
-	\item Processes P1 becomes process P2 at some point.
-	\item Processes P1 and P2 are connected to P3 through a providerless channels A and B.
-	\item Process p1 waits on both channels A and B with the choice operator.
-	\item P3 flips a coin and chooses to write on one of channels A or B.
-	\item Once P1 reads one of the channels it becomes P2.
-	\item P2 only attemps reads on channel A.
+%	\item {\bf Computation Steps.} 
+%		Computation is handled differently in NomosUC and ITMs. For example, one computation step in NomosUC may translate to several computation steps in ITMs. Therefore, for the purposes of bisimulation it is important to note that a sufficient bounding polynomial for the resulting ITMs can always be determined that ensures that write operations both fail and succeed in the ITM system if and only if they do in NomosUC.
+	\item {\bf Invoking a New Process.} 
+		%Terms in NomosUC are frequently run inside of a shell process $shell(\cdot)$ that connects to other shells via communicators but presents a session-typed interface to the process within.~\footnote{This is done for several reasons as explained previously and shown in Figure~\ref{fig:newpandq} as a part of ``providerless channels''}
+		All processes in NomosUC derive from some process with an \sid and \pid, and, in the way of UC, when process $P$ spawns process $Q$ we consider the $Q$ to be a subsidiary of $P$.
+		Subsidiary processes may not have any explicit ID passed to them in NomosUC so for such processes we follow the UC convention.
+		$M_P = (\ID{M_P} = (\sid_P, \pid_P, \mu_{M_P})$ spawns $M_Q$ with the $\ID{M_Q} = (\sid_P, k \xleftarrow{\$} \{0,1\}^k)$.
+		Notice that $P$ doesn't need to be the process that spawns $Q$, it just needs to be the first to send it a message.
+		%Terms in NomosUC are run in a shell process $shell(\cdot)$ that connects to other shells with communicators, and the shell internally spawns dummy processes that offer linearly typed channels to the actual process. 
+		%We dub thiis configuration a ``providerless channel''. 
+		%When a term $P$ spawns a new process $Q$ it first creates the communicators that $shell(Q)$ will use and passes their offered channels, the set $\D_Q$, as parameters to $shell(Q)$. 
+		%ITM $M_P$ generates a random $k$-bit string as \ID{M_Q} and creates an external write message to ITM $(\ID{M_Q}, \mu_Q)$ with an empty message (recall when processes are spawned in NomosUC no message is sent to them).  \todo{i think you need to give import to spawn the machine, but maybe not because the control function does not use import}
+		%When $Q$ is spawned, $P$ holds the endpoints for all of $Q$'s channels so we update \cf to allow communication between \ID{M_P} and \ID{M_Q}.
+	\item {\bf Giving a New Process an Existing Channel.} 
+		When a process $P$ spawns a process $X$ and gives it a linear channel (with $Q$) endpoint as a paremeter, $P$ relinquishes the endpoint and can no longer communicate on it. 
+		%When a shared channel is passed to $X$ both $P$ and $X$ can send/receive on the channel.
+		The change from $P$ to $X$ is hidden from $Q$, but in the ITM system without channels we need to define a zero-input message, \msf{commUpdate}, that updates the code of $M_Q$. 
+		$M_P$ sends \msf{commUpdate(\ID{M_P}, \ID{M_X})} to $M_Q$ which replaces all message reads/writes to/from $M_P$ with $\ID{M_X}$ if $P$.
+	\item {\bf Sending a Message.} 
+		Sending messages requires no special treatment when translating from NomosUC to ITMs. The identities of the recipients are known to the sending ITMs, and the NomosUC construction ensures that sending channels to other processes never results in a violation of the UC control function.
+		In UC it is important to specify what tape a message is being written on but the UC \cf enforces such rules.
+	\item {\bf Reading a Message.} 
+		NomosUC terms are explicit about which channels they read on, and, in general attempt to read on all channels at once. This corresponds nicely to the ITM setting where an ITM $M_P$ can mimic the behavior of $P$ by only accepting messages from ITMS $M_X$ where $X$ is connected to $P$ by a channel. 
 \end{itemize}
 
-We collected processes like $P_1$, $P_2$ into a single terms as they share the same state, channels, import, potential, and work done.
-Our compilation step converts terms into ITMs rather than individual processes. 
+% %
+\subsection{ITMs $M' \Rightarrow$ NomosUC $C'$}
+We first point out that coverting ITMs to NomosUC terms requires defining the types for communication between different pairs of ITMs.
+In fact, for an ITM $M_P$ all possible message types that $P$ may communicate with must be defined at compiled time. 
+
+\paragraph{Naming and Defining Types.}
+We provide a minimal structure for the types defined for the resulting NomosUC terms.
+Namely, we can simplify the construction by capturing all communication using communiators and the shared channels that they offer. 
+Recall that with providerless channels we only care about interaction between the shell processes. 
+%For the purposes of this argument this greatly simplified the construction~\footnote{Providerless channels are an abstraction created specifically to capture the UC framework in a way that session types are meaningful and useful to the programmer.}
+Along with communicators, we make use of the existing addressin scheme in the ITM model, and ensure all messages sent by some $P$ carries \ID{M_P} alogside it.
+
+%For example, say an ITM $M_1$ may communicate with $M_2$ and $M_3$, and the reslting types between $P_1$ \& $P_2$ and $P_1$ \& $P_3$ are different.
+%Then the resulting $P_1$ is parameterized by at least two shared channes of type $\msf{comm}[(ID, a)]$ and $\msf{comm}[(ID, b)]$ where \inline{type ID = Int}, a $k$-bit number.
+We start with a system with the initial ITM $I$ and the UC control function \cf.
+The NomosUC process for $I$ has no channels as input parameters as no other processes exist yet.
+\cf is easily captures by NomosUC as \msf{execUC} spawns all the main parties of the execution and the type system prevents sending channels to other ITMs over channels and enabling communication between, say, the environment and a corrupt party.
+
+\begin{itemize}
+	\item {\bf Invoking a New ITM.} 
+		When a process $P_M$ spawns a new $P_N$ it first creates the channels $P_N$ communicates over. 
+		For each message type $t$ that $P_N$ may communicate through, $P_M$ spawns a communicator parameterizes with $t$.
+		At a bare minimum at least one channel is required per message type that $P_N$ accepts as defined by \cf. 
+		This ensures a generic way to handle an arbitrary number of connections (for each message type) where messages include the $\ID{sender}$.
+		Much like an ITM, $P_N$ attempts to read from all of its channels and uses \ID{sender} to perform some computation.
+		%When spawned, $P_N$ then reads the message sent by $P_M$ (corresponds to the message $M_M$ sends $M_N$ causing the ITM to be spawned).
+	\item {\bf Sending a message.} 
+		All messages from some $P_m$ in the resulting configuration are sent with \ID{M_m} because we rely on shared channels to realize the ITM system (as opposed to one channel per ITM/term). 
+		A key departure from the ITM model is that the static nature of types requires that the same amount of import be sent with every message, however sending more import than necessary doesn't pose any trouble. We discussed, briefly, how to handle import in NomosUC in a previous section.   
+		%This requirement can be overcome by defining the type for communication between some $P$ and $Q$ to be the maximum ever sent between $M_P$ and $M_Q$. 
+		% Propoagating this approach to defining import requirements to all types in the system, we ensure we arrive at a satisfying assignment of import. 
+	\item {\bf Reading a message.} 
+		Reading messages is more explicit in NomosUC than in ITMs. 
+		In NomosUC individual processes must be explicit with  what channels to read on. 
+		For the sake of simplicity every resulting process waits to read on all channels (unless their type sugests otherwise) and executes the ITM code in response to messages.
+\end{itemize}
 
 
-\subsection{Control Function}
-The control function in UC enforces communication rules between ITMs and their identities.
-NomosUC has no inherent naming scheme for processes because it directly connects processes with channels. 
-We propose the following nameing scheme and control function. Suppose an initial process $PI$ that is not connected by channels to any other process.
-The initial ITM corresponding to $PI$ is $MI = (ID, \mu)$ where $ID$ is a random $k$-bit string and $\mu$ is its code.
 
-When $PI$ spawns a new processi $P_1$, it creates channels for the process to use and passes them as parameters to $P_1$. 
-Machine $MI$ 
+%The challenge here is that the channels of a NomosUC process are are defined at the time that the process is invoked. This fixes the set of machines that $P$ can communicate with static.
+%$P$ can spawn its own processes and communicate with more processes that way. 
+%This poses a problem because an arbitrary ITM system may randomly decide any comunication structure that NomosUC may not be able to capture. 
+%The real question comes down to: can NomosUC capture every control function? I think with provider-less channels that is possible.
+%
+%An example that shows this off is the following:
+%\begin{itemize}
+%	\item An initial ITM $M_1$ spawns ITMs $M_2, M_3, M_4$. $M_3$ flips a coin and spawns either only $M_31$ or both 
+%	\item The control function states that $M_1$ can communicate with all other ITMs and that $M_2$ and $M_3$ an communicate and $M_4$ can communicate with $M_31$ and $M_32$.
+%\end{itemize}
+%
+%NomosUC version
+%\begin{itemize}
+%	\item Initial process $P_1$. 
+%	\item $P_1$ creates the communicators for the providerless channels of $P_2, P_3$ and $P_4$. \todo{ What is the type of the linear channels that the processes see?}.
+%	\item $P_2$ and $P_3$ are given the communicator channel for their connection. $P_3$ is given the communicator channel connecting for $P_4$.
+%	\item $P_3$ flips a coin and spawns one of $P_31$ or $P_32$ and gives it the channel for the communicator with $P_4$.
+%\end{itemize}
+%In this setting because the communicator channel is a shared resource each of the processes that has ever obtained it can acquire the channel and communicate using it. 
+%In the above example it means that $M_1$, $M_3$ and $M_4$ can all communicate with $M_31$, $M_32$. If the control function prohibits such communication we must rely on the code the process to not communicate
+%over the channels. 
+%The providerless channels are virtually running the process and giving it linear channels for its communication. The type of the communicator between $P_31$/$P_32$ and $P_4$ means that it remains abstract in $P_3$ and is concretized in $P_31$/$P_32$.
+%
+%Proving this direction is straihtforward. The proof proceeds by describing how to compile an ITM configuration into a NomosUC configuration and ever ITM action into a process action.
+%
+%\paragraph{Compiling an ITM Configuration to NomosUC}
+%As described above an ITM configuration consits of ITMs and a control function which defines the communication set for each ITM.
+%The operations available to an ITM are to take a computation step, write something to another ITM's tape, or read some input on on of its tapes. 
+%In NomosUC, our external $\with$ and internal $\ichoiceop$ and the typing rules $\oplus R$ and $\oplus L$ capture sending and receiving messages between a pair of ITMs. 
+%\todo{ some transition text here }
+%
+%
+%% need to show up to translate and existing configuration from ITM to NomosUC
+%% need to show how to translate every possible action that an ITM takes to a NomosUC action --> show how that preserves the same properties of import as in ITMs
+%% need to show how to spawn new ITMs/processes 
+%Given a configuration $C$ of ITMs:
+%\begin{itemize}
+%\item For every ITM $M \in F$ with communication set $C_M$: for every $M' \in C_M$ we spawn processes $M$ and all $M'$ and connect them with a providerless channel of type specified by the code of machines $M'$ and the definition of the process code.
+%\item The basic computation step in an ITM is different from the fundamental computation step of a NomosUC process. 
+%However, by manipulating the bouding polynomial, we can equate multiple computation steps in an ITM to a single step of a process and vice versa.
+%Modulo the conversation rate between computation steps in ITMs vs NomosUC processes, the token context validity rules in Section~\ref{sec:basic} ensure that ITMs and their corresponding processes halt after the same number of computationsl steps, i.e. $T(n)$ steps where $n$ is the net import held.
+%\item The same reasoning applies to write operations where the token validty rule ensures that for security parameter $k$ write operations succeed only if there is available import \todo{tis sounds so hand wavy and imprecise I hate it}
+%\item When an ITM $M \in F$ spawns a new ITM $M'$ such that $M' \in C_M$: the Nomos process creates the providerless channels for ITM $M'$ and stores them to communicate with $M'$ in the future.
+%\end{itemize}
+
+
+%\begin{itemize}
+%	\item When a term $P$ spawns a new process $Q$ it creates the channels that $Q$ will use and passes them as parameters to $Q$. ITM $M_P$ creates an external write message with the code for term with a randomly generated $k$-bit string as the ID for new ITM $M_Q$, and the ITM code for process $Q$ (including its initial state). The control function is updated $\forall X$ s.t. $X$ shares and endpoint of a channel of $Q$, we update the control function $C$ to allow $M_Q$, $M_X$ to write to each other.
+%	\item When a term $P$ spawns a new process $Q$ and gives it an exisitng channel $c$ connecting $P$ and some $X$, we update $C$ to allow communication between $M_X$ and $M_Q$ and disallow communication between $M_P$ and $M_X$. We require that all ITMs accept special messages informing them of the ITM change. In this example, $M_P$ sends a zero import message to $M_X$ informing it of the identity of $M_Q$ and telling it to replace $ID(M_P)$ with $ID(M_Q)$ for the remainder of its code. $M_X$ accepts the message and activates $M_P$ again that then spawns $M_X$.
+%	\item \todo{actually when spawning a channel with no other endpoint, the spawning process is the endpoint so we can set control function to do that then use the above defined message when the endpoint is actually given to someone else.}
+%\end{itemize}
+%The fundamental unit of computation in ITMs and Nomos process is different so by manipulation of the bounding polynomial our type system ensures that messages sent with import succeed if and only if they do so in the corresponding ITM system.
+%
+%\paragraph{Compiling NomosUC Terms into ITMs.}
+%Like ITMs, terms in NomosUC can do one of three things: execute a computation step, wait to read a message, and send a message.
+%We describe how these operations in NomosUC are captured by ITMs.
+%\begin{itemize}
+%	\item {\bf Computation Steps.} The fundamental computation unit that NomosUC potential is able to track is not the same as the ITM. Therefore, we need to ensure that operations in an ITM fail or succeed the same way as the corresponding NomosUC process. If the bounding polynomial of a NomosUC term is $T(x)$ then this is trivially achieved by relaxing the corresponding bounding polyomial for ITMs to account for the greater number of computation steps per NomosUC instruction. 
+%	\item {\bf Write Operations.} From the previous discussion, the ITM $M_P$ is updated to reflect which processes hold the endpoints of the channels of $P$. On write operations, there is nothing special that needs to be done to accomodate this. By definition, $M_P$ will never attempt to write to an ITM that doesn't exist as the NomosUC channel always has processes at each endpoint. The import is handled similar to the above case.
+%	\item {\bf Reading a Message.} NomosUC process an read on any number of channels at a given time. For example a Nomos term may be composed of two processes $P_1$ and $P_2$ where $P_1$ waits on a channels with $Q$ and $Q'$ then step to process $P_2$ that waits only on a channel with $Q$. In such cases, the ITM code is simply modeled to reflect this decision and any ``unexpected'' writes from ITMs that the code is not explicitly expecting messages from are ignored and the receiving ITM never relinquishes activation. Like the NomosUC code, the program is locked and can no longer make any progress. 
+%\end{itemize}
+%
+%\paragraph{Handling Import.}
+%We emphasize again that the fundamental unit of computation for ITMs is not the same as that of NomosUC terms. 
+%However, this is easily dealt with selecting a larger bounding polynomial for the ITM system than for the NomosUC term. 
+%This takes care of differences in amount of computation while ensuring messages can carry/deliver the same import and succeed if and only if they succeed in the ITM system.
+
+
+
+
+%\paragraph{Modelling processes as ITMs.}
+%Read operations in NomosUC are blocking and must specify which channels are being read from. In the toy example above, and ITM that captures $P_2$ would only react to messages written to its tape by an ITM for the protocol party and ignore messages from the adversary.
+%
+%
+%
+%We provide a compiler from a NomosUC configuration to an ITM system. 
+%More specifically, we show how to convert a term $e$ into an ITM. 
+%Terms in NomosUC can be made up of multiple process terms and are the logical equivalent of an ITM in NomosUC. 
+%
+%Take a simple process configuration:
+%\begin{itemize}
+%	\item Tree processes P1, P2, and P3. 
+%	\item Processes P1 becomes process P2 at some point.
+%	\item Processes P1 and P2 are connected to P3 through a providerless channels A and B.
+%	\item Process p1 waits on both channels A and B with the choice operator.
+%	\item P3 flips a coin and chooses to write on one of channels A or B.
+%	\item Once P1 reads one of the channels it becomes P2.
+%	\item P2 only attemps reads on channel A.
+%\end{itemize}
+%
+%We collected processes like $P_1$, $P_2$ into a single terms as they share the same state, channels, import, potential, and work done.
+%Our compilation step converts terms into ITMs rather than individual processes. 
+%
+%
+%\subsection{Control Function}
+%The control function in UC enforces communication rules between ITMs and their identities.
+%NomosUC has no inherent naming scheme for processes because it directly connects processes with channels. 
+%We propose the following nameing scheme and control function. Suppose an initial process $PI$ that is not connected by channels to any other process.
+%The initial ITM corresponding to $PI$ is $MI = (ID, \mu)$ where $ID$ is a random $k$-bit string and $\mu$ is its code.
+%
+%When $PI$ spawns a new processi $P_1$, it creates channels for the process to use and passes them as parameters to $P_1$. 
+%Machine $MI$  
 
 %This direction is more complicated than the previous subsection. Here, we must show that NomosUC configurations can be represented as an ITM system and that NomosUC does not allow non-ITM behavior.
 %NomosUC must capture the activation rules of ITMs, ensure an ITM never performs more computation than its import provides, and never performs super-polynomial computation. 

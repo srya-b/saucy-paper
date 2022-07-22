@@ -79,7 +79,7 @@ $P$ is the continuation that provides $A_k$.
 On the other end of the channel, the client branches on the label received along $x$.
 The provider and client are typed according to the following $\oplus R$ and $\oplus L$
 rules respectively.
-\begin{mathpar}
+\begin{mathpar} \small
   \infer[{\oplus}R]
   {\B{\Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
     (x : \ichoice{\ell : A_\ell}_{\ell \in L})}
@@ -279,8 +279,8 @@ The communicator has the following polymorphic type:
 \parbox{0cm}{
 \begin{tabbing}
 $\m{comm[\tau]} = \up \echoice{$\=$\mb{send}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
-\>$\mb{recv}: \ichoice{$\=$\mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},
-\mb{no}: \; \down \m{comm[\tau]}}}$
+\>$\mb{recv}: \ichoice{$\=$\mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},$\\
+\>\>$\mb{no}: \; \down \m{comm[\tau]}}}$
 \end{tabbing}}
 %\end{center}
 \par}

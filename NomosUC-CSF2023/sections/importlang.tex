@@ -86,7 +86,7 @@ We now present the process typing rules that impact the token context $\Tokens$.
 As a first step in introducing program notation for import tokens, we need 
 syntax for creating new tokens of a given token type.
 We call this construct $\m{withdrawToken} \; K_i \; n \; K_{i+1}$.
-\begin{mathpar}
+\begin{mathpar} \small
   \inferrule*[right=$\m{tok}$]
   {\Tokens, K_{i+1} \hookrightarrow (t_{i+1} + n, t_{i+1}' + n) \semi
   \Psi \semi\wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
@@ -115,7 +115,7 @@ $r$ import tokens of type $K$ from the client using the construct
 $\eget{x}{r : K}$. Dually, the client needs to pay this import
 using the construct $\epay{x}{r : K}$.
 The corresponding typing rules are
-\begin{mathpar}
+\begin{mathpar} \small
   \infer[\getpot R]
   {\Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}} \eget{x}{r : K_i} \semi P ::
   (x : \tgetpot{A}{r : K_i})}
@@ -124,7 +124,7 @@ The corresponding typing rules are
   \and
   %
   \infer[\getpot L]
-  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : K_i}) \entailpot{\B{q}}{\B{q'}}
+  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : K_i})  \entailpot{\B{q}}{\B{q'}} 
   \epay{x}{r : K_i} \semi P :: (z : C)}
   {\Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
 \end{mathpar}
