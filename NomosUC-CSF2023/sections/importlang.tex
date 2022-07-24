@@ -123,10 +123,10 @@ The corresponding typing rules are
   %
   \and
   %
-  \infer[\getpot L]
-  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : K_i})  \entailpot{\B{q}}{\B{q'}} 
-  \epay{x}{r : K_i} \semi P :: (z : C)}
+  \inferrule*[Right=$\getpot L$]
   {\Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
+  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : K_i}) \\\ \entailpot{\B{q}}{\B{q'}} 
+  \epay{x}{r : K_i} \semi P :: (z : C)}
 \end{mathpar}
 In the rule $\getpot R$, process $P$ storing $(t_i, t_i')$ import tokens of type $K_i$
 receives $r$ additional $K_i$ tokens adding it to the current token counter, thus
@@ -188,10 +188,10 @@ A process spawn is typed as follows.
 \begin{mathpar}
 \inferrule*[right = $\m{spawn}$]
   {\Psi_1 \semi \D_1 \vdash f\{r : K\} :: (x : A) = P \in \Sg \and
-  (\Psi_1 \semi \D_1) = \overline{y} \and
+  \\\ (\Psi_1 \semi \D_1) = \overline{y} \and
   \B{\Psi \share (\Psi_1, \Psi_2)} \\
   \Tokens, K \hookrightarrow (t, t') \semi \Psi_2 \semi \D_2, (x : A) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
-  {\Tokens, K \hookrightarrow (t, t'+r) \semi \Psi \semi \D_1, \D_2 \entailpot{\B{q}}{\B{q'}} \procdef{f\{r : K\}}{\overline{y}}{x} \semi Q ::
+  {\Tokens, K \hookrightarrow (t, t'+r) \semi \Psi \semi \D_1, \D_2 \\\ \entailpot{\B{q}}{\B{q'}} \procdef{f\{r : K\}}{\overline{y}}{x} \semi Q ::
   (z : C)}
 \end{mathpar}
 We first look up the definition of $f$ in the signature $\Sg$
@@ -230,7 +230,7 @@ To this end, we introduce a novel construct $\m{genPot} \; r$ to generate potent
 based on how much import is stored in the process.
 \begin{mathpar}
   \inferrule*[right=$\m{pot}$]
-  {q+r \leq \GlobalF(t_{m}',k) \and K_{m} \hookrightarrow (t_{m}, t_{m}') \in \Tokens \and
+  {q+r \leq \GlobalF(t_{m}',k) \and K_{m} \hookrightarrow (t_{m}, t_{m}') \in \Tokens \\\
   k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q+r}{q'+r} P :: (x : A)}
   {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} \m{genPot} \; r \semi P :: (x : A)}
 \end{mathpar}

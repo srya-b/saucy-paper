@@ -13,18 +13,51 @@ It allows both protocol parties and the adversary to request hashes from it, and
 We refer to the augmented functionality as \Fropp from now on.
 
 The type of \Fropp is described by two session types in Figure~\ref{fig:rotype}: one for each channel between \Fropp and a protocol party.
-\begin{figure}
-\begin{center}
-\parbox{0cm}{
-\begin{tabbing}
-$\m{sandh}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{oracle}: \m{pid} \arrow \m{int} \tensor \echoice{$\=$\mb{hash}: \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{hands[a]}},$ \\
-\>$\mb{send}: \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{sandh}[a]}$ \\
-$\m{recv}[a] = \textcolor{red}{\getpot^2} \echoice{ \mb{msg}: \m{pid} \arrow \m{pid} \arrow \m{pid} \product \textcolor{red}{\paypot^1} \m{recv}[a]}$ \\
-\end{tabbing}}
-\end{center}
-\caption{The session type for the random oracle. Two channels for each party to both query hashes and send/receive messages.}
-\label{fig:rotype}
-\end{figure}
+%\begin{figure}
+%\begin{center}
+%\parbox{0cm}{
+%\begin{tabbing}
+%$\m{sandh}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{oracle}: \m{pid} \arrow \m{int} \tensor \echoice{$\=$\mb{hash}: \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{hands[a]}},$ \\
+%\>$\mb{send}: \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{sandh}[a]}$ \\
+%$\m{recv}[a] = \textcolor{red}{\getpot^2} \echoice{ \mb{msg}: \m{pid} \arrow \m{pid} \arrow \m{pid} \product \textcolor{red}{\paypot^1} \m{recv}[a]}$ \\
+%\end{tabbing}}
+%\end{center}
+%\caption{The session type for the random oracle. Two channels for each party to both query hashes and send/receive messages.}
+%\label{fig:rotype}
+%\end{figure}
+
+\begin{figure*}
+	\begin{subfigure}[t]{\textwidth}
+		\begin{center}
+			\parbox{0cm}{
+			\begin{tabbing}
+				$\m{sandh}[a] = \textcolor{red}{\getpot^2} \ichoice{$\=$\mb{oracle}: \m{pid} \arrow \m{int} \tensor \echoice{$\=$\mb{hash}: \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{hands[a]}},$ \\
+				\>$\mb{send}: \m{pid} \arrow \m{pid} \arrow \m{a} \product \m{sandh}[a]}$ \\
+				$\m{recv}[a] = \textcolor{red}{\getpot^2} \echoice{ \mb{msg}: \m{pid} \arrow \m{pid} \arrow \m{pid} \product \textcolor{red}{\paypot^1} \m{recv}[a]}$ \\
+			\end{tabbing}}
+		\end{center}
+		\vspace{-7mm}
+		\caption{The session type for the random oracle. Two channels for each party to both query hashes and send/receive messages.}
+		\label{fig:rotype}
+	\end{subfigure}
+	\begin{subfigure}[t]{\textwidth}
+		\begin{center}
+		\parbox{0cm}{
+		\begin{tabbing}
+			$\m{flip[K]\{n\}\{m\}} = \textcolor{red}{\getpot^n} \; \ichoice{\mb{init}: K \arrow \ichoice{\mb{getflip}:  \echoice{ $\=$\textcolor{red}{\getpot^m}\mb{yes}: Bit \product 1,$ 
+			$\textcolor{red}{\getpot^m} \mb{no}: \m{flipped}[K]}}}$ \\
+			$\m{receiver[K]\{n\}\{m\}} = \textcolor{red}{\paypot^n} \ichoice{\mb{getflip}: \echoice{$\=$ \textcolor{red}{\getpot^m}\mb{yes}: Bit \product 1,$
+			$\textcolor{red}{\paypot^m} \mb{no}: \m{receiver[K]}}}$ \\
+			$\m{adv[K]\{n\}} = \textcolor{red}{\getpot^n}\echoice{\mb{flip}: K \arrow \echoice{\mb{flipok}: \ichoice{$\=$\mb{yes}: 1,$
+			$\mb{no}: 1}}}$
+		\end{tabbing}}
+		\end{center}
+		\vspace{-5mm}
+		\caption{The session types describing \Fflip's channels with the flipper, receiver, and the adversary.}
+		\label{fig:fliptype}
+	\end{subfigure}
+\end{figure*}
+
 %The random oracle is different from \Fcom in that it has one channel to all parties to use. This is due to the fact that its function is the same for all parties.
 %Recall the session type and its structure discussed in Section~\ref{sec:execuc}. The augmented session type is given below:
 %The design of the random oracle is different from \Fcom in that it has only one channel for all parties to communicate over.
@@ -78,22 +111,22 @@ It's a 2-party protocol where one party is the initiator of the flip and the oth
 The desired security property is that the coin flip is entirely unbiased by either of the two parties. The corresponding ideal functionality \Fflip code samples a bit from from its random tape and returns it as the coin flip.
 Unlike \Fropp, \Fflip does not output directly to either of the parties unless polled with a \m{getflip} message.
 
-\begin{figure}
-\begin{center}
-\parbox{0cm}{
-\begin{tabbing}
-	$\m{flip[K]\{n\}\{m\}} = \textcolor{red}{\getpot^n} \; \ichoice{\mb{init}: K \arrow \ichoice{\mb{getflip}:  \echoice{ $\=$\textcolor{red}{\getpot^m}\mb{yes}: Bit \product 1,$ \\
-	\>$\textcolor{red}{\getpot^m} \mb{no}: \m{flipped}[K]}}}$ \\
-	$\m{receiver[K]\{n\}\{m\}} = \textcolor{red}{\paypot^n} \ichoice{\mb{getflip}: \echoice{$\=$ \textcolor{red}{\getpot^m}\mb{yes}: Bit \product 1,$\\
-	\>$\textcolor{red}{\paypot^m} \mb{no}: \m{receiver[K]}}}$ \\
-	$\m{adv[K]\{n\}} = \textcolor{red}{\getpot^n}\echoice{\mb{flip}: K \arrow \echoice{\mb{flipok}: \ichoice{$\=$\mb{yes}: 1,$\\
-	\>$\mb{no}: 1}}}$
-\end{tabbing}}
-\end{center}
-\caption{The session types describing \Fflip's channels with the flipper, receiver, and the adversary.}
-\label{fig:fliptype}
-\vspace{-4mm}
-\end{figure}
+%\begin{figure}
+%\begin{center}
+%\parbox{0cm}{
+%\begin{tabbing}
+%	$\m{flip[K]\{n\}\{m\}} = \textcolor{red}{\getpot^n} \; \ichoice{\mb{init}: K \arrow \ichoice{\mb{getflip}:  \echoice{ $\=$\textcolor{red}{\getpot^m}\mb{yes}: Bit \product 1,$ \\
+%	\>$\textcolor{red}{\getpot^m} \mb{no}: \m{flipped}[K]}}}$ \\
+%	$\m{receiver[K]\{n\}\{m\}} = \textcolor{red}{\paypot^n} \ichoice{\mb{getflip}: \echoice{$\=$ \textcolor{red}{\getpot^m}\mb{yes}: Bit \product 1,$\\
+%	\>$\textcolor{red}{\paypot^m} \mb{no}: \m{receiver[K]}}}$ \\
+%	$\m{adv[K]\{n\}} = \textcolor{red}{\getpot^n}\echoice{\mb{flip}: K \arrow \echoice{\mb{flipok}: \ichoice{$\=$\mb{yes}: 1,$\\
+%	\>$\mb{no}: 1}}}$
+%\end{tabbing}}
+%\end{center}
+%\caption{The session types describing \Fflip's channels with the flipper, receiver, and the adversary.}
+%\label{fig:fliptype}
+%\vspace{-4mm}
+%\end{figure}
 
 The session type for \Fflip additionally accepts a type parameter $K$, takes in a value of type $K$ from the flipper, and sends it to the receiver when outputting the flip.
 We use this $K$ as a means of ordering communication across both the flipper's and receiver's channel to \Fflip.

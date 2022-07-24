@@ -79,6 +79,7 @@ $P$ is the continuation that provides $A_k$.
 On the other end of the channel, the client branches on the label received along $x$.
 The provider and client are typed according to the following $\oplus R$ and $\oplus L$
 rules respectively.
+\parbox{\linewidth}{
 \begin{mathpar} \small
   \infer[{\oplus}R]
   {\B{\Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
@@ -90,7 +91,8 @@ rules respectively.
     \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{Q_\ell}_{\ell \in L} :: (z : C)}
   {(\forall \ell \in L) \qquad \B{\Tokens \semi \Psi} \semi \wt, \D, (x : A_\ell)
     \entailpot{\B{q}}{\B{q'}} Q_\ell :: (z : C)}
-\end{mathpar}
+\end{mathpar}}
+
 Additionally, the provider should possess the write token to be able to send the
 label $k$. Dually, the client receives the write token with the label to continue
 execution.
@@ -107,8 +109,9 @@ that the next message is sent on $c'$.
 The work counter of the process remains unaltered, and the new message
 is created with work $0$.
 \begin{tabbing}
-$(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step \proc{c'}{w, [c'/c]P},$ \\
-\quad \qquad $\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}} \qquad \qquad \qquad \qquad \quad \fresh{c'}$
+$(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step$ \\
+\qquad \qquad $\proc{c'}{w, [c'/c]P}, \qquad \qquad \qquad \qquad \quad \fresh{c'}$ \\
+\qquad \qquad $\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}} $
 \end{tabbing}
 When the message $k$ is received along $c$, the client selects branch
 $k$ and also substitutes the continuation channel $c'$ for $c$, thereby

@@ -1,16 +1,16 @@
 \begin{figure}
+\centering
 \begin{minipage}{0.38\textwidth}
 \begin{bbox}[title={Functionality $\F_{\m{com}}(S, R)$}]\\
 \textbf{on input} \inmsg{\m{Commit}}{$b$} from $S$:\\
-\hspace*{1em} store $b$;\\
-\hspace*{1em} output (\m{Committed}) to $R$.\\ \\
-Then, \textbf{on input} \inmsg{\m{Open}} from $S$:\\
-\hspace*{1em} send $(\m{Open}, b)$ to $R$.
+\hspace*{1em} store $b$ and output (\m{Committed}) to $R$.\\
+ Then, \textbf{on input} \inmsg{\m{Open}} from $S$:\\
+ \hspace*{1em} send $(\m{Open}, b)$ to $R$.
 \end{bbox}
 \end{minipage}
 \hspace{3em}
 \begin{minipage}{0.5\textwidth}
-\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left]
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
 $\nproc$ $\tm{Fcom}$: 
 (k: $\tgr{int}$), (rng: [Bit]), (sid: SID),
 (S: sender), (R: receiver)  |- (fc: 1) =
