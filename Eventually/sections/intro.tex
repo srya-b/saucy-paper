@@ -1,0 +1,14 @@
+\todo{A starting paragraph about UC and why it's great. Specifically mention the modularity of protocols when working within the framework.}
+
+Unlike a software implementation or a test suite, security proofs in UC exist only on paper and can be difficult to understand and verify.
+Not only does this relegate UC to obscurity in protocol design, but at makes existing definitions hard to reuse or realize with a software implementation.
+In this paper we a software based approach to writing real protocols as ITMs, new constructions for defining communication and coputation models, tooling for testing UC definitions, and case studies of modern distributed protocols.
+
+\begin{itemize}
+\item theoretical contributions in the form of the runqueue and how import interacts with it
+\item haskell tooling for implementing ITMs. Benefits are with a strongly typed language you can write software as in the UC style get modularity from it
+\item Python implementation also possible with same tooling
+\item software implementations of this as a context applied to protocol, usefulness of this technique and it's applications to other ``contexts'' like MPC. realizing them with Monads 
+\item case studies of realizing an ABA with this 
+\item Fuzz testing tooling \todo{slightly unclear on this}
+\end{itemize}
