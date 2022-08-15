@@ -62,6 +62,44 @@ It then grabs the \inline{#p2f} channel for $\F_{\m{ssid}}$, creates the appropr
 Finally, after handling the incoming message, it moves to the next step of checking for outgoing messages, to the \partywrapper, from each \F by calling \inline{f_multisession_f2p_i}.
 The function accepts an integer at the end, in this example 0, which is the index to check in the communicator list. Eventually all communicators in the list are checked.
 
+\todo{this is copied from the main body and still references the appendix, make this appenfix referenced.}
+The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances of the protocol/functionality to be run within a single ITM.
+An ITM simulates the instances and multiplexes input/output to/from them much like the \partywrapper.
+The multisession received functionally typed messages like all other functionalities, however, like the \partywrapper, does not have a session type to govern its communication with parties or the adversary.
+Its relies on the session type of the underlying functionalities it spawns to enforce protocol constraints.
+The type of messages it receives are given by 
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape]
+$\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
+$\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
+\end{lstlisting}
+and a similar type for communication with \A.
+The multisession extension is mentioned in greater detail in Appendix~\ref{app:ms}.
+
+The first claim we make is that our multisession extension remains polynomial time.
+\begin{theorem}[PPT !]\label{thm:bangppt}
+If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
+\end{theorem}
+It easy to see why the multisession extension, performing constant work and being activated a polynomial number of times, remains well-resource-typed and PPT given that \F is PPT.
+We elaborate on the remaining theorems in this section in the Appendix.
+
+The next theorem realizes multiple sessions of a functionality with multiple sessions of a realizing protocol and it's hybrid functionality.
+\begin{theorem}[Multisession Composition]\label{thm:functor}
+	\begin{mathpar}
+		\inferrule*[right=MultiComp]
+		{
+			\F_1 \xrightarrow{\pi} \F_2
+		}
+		{
+			!\F_1 \xrightarrow{!\pi} !\F_2
+		}
+	\end{mathpar}
+\end{theorem}
+Theorem~\ref{thm:functor} is intuitive in the sense that each session of the real world protocol $\pi$ communicates with an analogous session of $\F_1$ in isolation to realize the corresponding instance of $\F_2$. 
+A UC proof for this is more involved that just providing a simulator but, instead, relies on a hybrid argument. 
+We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
+
+
+
 Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
 The real world that realizes it is comprised of a protocol that ``flattens'' the pair of ssids $(\m{ssid}_1, \m{ssid}_2)$ into a single ssid $\m{ssid}_3 = \m{ssid}_1 || \m{ssid}_2$, the concatenation (can be any other one-to-one and invertible function on the pair) of them.
 
