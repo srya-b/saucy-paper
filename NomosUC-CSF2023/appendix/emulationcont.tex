@@ -1,0 +1,13 @@
+
+\begin{ddef}[Well-Matched]\label{def:wellmatched}
+\begin{mathpar}
+\footnotesize
+\inferrule*[right=Well-matched]
+{\Tokens_1, K \semi \Delta_1 \vdash e :: \Delta_1' \semi 
+\Tokens_2, K \semi \Delta_2 \vdash e' :: \Delta_2' \\ \\
+ S \equiv \Delta_1 \bigcap \Delta_2 \neq \emptyset}
+%{\Delta_1 \leftrightarrow \Delta_2}
+{\Delta_1 \equiv_{S} \Delta_2 \semi e \leftrightarrow e'} 
+\end{mathpar}
+\end{ddef}
+

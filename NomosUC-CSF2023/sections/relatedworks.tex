@@ -1,37 +1,42 @@
-There is a large volume of work that introduce tools for modeling UC protocols and reasoning about UC security with some mechanizing UC proof-generation.
-Particularly, many tools attempt to encode some kind of computational security~\cite{certicrypt, easycrypt, cryptoverif, cryptol, fstar}, however, unlike your work, only do so in the standalone setting without any compositional guarantees.
-Most prior work, however, is not able to completely capture the polynomial-time notion that underpins UC security or generalized UC composition. 
+There is a large volume of work that introduces tools for modeling UC protocols and reasoning about UC security with some mechanizing UC proof-generation~cite{certicrypt, easycrypt, cryptoverif, cryptol, fstar}, however, unlike our work, many of them only do so in the standlong setting without any composition guarantees. They also may not completely capture a robust polynomial-time notion or realize generalized composition. 
 
-EasyUC~\cite{easyuc} introduces a toolset built on top of the existing EasyCrypt~\cite{easycrypt} toolset to model UC protocols and generate proofs of security.
-It moves past the game-based security limitation of EasyCrypt and achieves the broader simulation-based definitions of UC.
-%EasyUC mechanizes UC's notion of simulation-based security and formally verifies UC realization--something Nomos doesn't attempt to do.
-The major limitation of EasyUC is that it does not encode any guarantees on the runtime of any process.
-For example it can not detect a functionality and the adversary can exchange messages \emph{indefinitely} in their key exchange example. It also can not capture full UC composition because it is limited to a statically determined number of parties in any execution.
-NomosUC, on the other hand, proposes the full UC composition theorem, a robust polynomial time notion that relies on the import mechanism introduced in UC, and a full expressive language that can support arbitrary UC executions.
+Canetti et al.~\cite{easyuc} and Barbosa et al.~\cite{barbosa} both build off EasyCrypt's game-based security definitions to reach UC-like simulation based definitions.
+They both incorporate security proof generation but differ in a critial way.
+Barbosa introduces a limited polynomial time notion, whereas EasyUC~\cite{easyuc} does not encode any runtime guarantees in its programs. 
+For example, it cannot detect indefinite message passing between \A and \F. Neither, however, capture full UC composition.
+Barbosa realizes simplified UC~\cite{suc}, and, like EasyUC, doesn't capture dynamic party creation or the multisession operator.
 
-Barbosa et al.~\cite{barbosa} builds off EasyCrypt was well, but introduce a polynomial time notion to their handling of UC. 
-They're able to relate the guarantees provided by EasyCrypt to the execution time of an adversary that can break the security of the protocol. 
-Barbarosa also must contend with the procedure call communication of EasyCrypt limiting the expressiveness of the framework. 
-Furthermore it suffers similar drawbacks to EasyUC, and all works mentioned in this section, in that does not fully capture dynamic party creation in UC, and they realize only a simplified version of UC~\cite{suc}.
+%EasyUC~\cite{easyuc} introduces a toolset built on top of the existing EasyCrypt~\cite{easycrypt} toolset to model UC protocols and generate proofs of security.
+%It moves past the game-based security limitation of EasyCrypt and achieves the broader simulation-based definitions of UC, but does not encode any runtime guarantees.
+%%EasyUC mechanizes UC's notion of simulation-based security and formally verifies UC realization--something Nomos doesn't attempt to do.
+%%The major limitation of EasyUC is that it does not encode any guarantees on the runtime of any process.
+%For example it can not detect a functionality and the adversary can exchange messages \emph{indefinitely} in their key exchange example. It also can not capture full UC composition because it is limited to a statically determined number of parties in any execution.
+%%NomosUC, on the other hand, proposes the full UC composition theorem, a robust polynomial time notion that relies on the import mechanism introduced in UC, and a full expressive language that can support arbitrary UC executions.
+%
+%Barbosa et al.~\cite{barbosa} builds off EasyCrypt as well, but introduce a polynomial time notion to their handling of UC. 
+%However, it is limited by the procedure call commnication method of EasyCrypt, limiting expressiveness, and only realizes the simplidied SUC~\cite{suc} without dynamic party creation.
+%%They're able to relate the guarantees provided by EasyCrypt to the execution time of an adversary that can break the security of the protocol. 
+%%Barbarosa also must contend with the procedure call communication of EasyCrypt limiting the expressiveness of the framework. 
+%%Furthermore it suffers similar drawbacks to EasyUC, and all works mentioned in this section, in that does not fully capture dynamic party creation in UC, and they realize only a simplified version of UC~\cite{suc}.
 
-ILC by Liao et al.~\cite{ilc} is another work closely related to our own, and suffers some of the same drawbacks as EasyUC. 
+ILC by Liao et al.~\cite{ilc} is another work closely related to our own, and suffers some of the same drawbacks as EasyUC and the work of Barbosa. 
 This work also does not support full composition and is also limited to a static number of parties in its UC definition.
 It improves on EasyUC and provides a polynomial time notion, but ends up requiring simulation in both directions to prove emulation. This means that even simple protocols and functionalities can't be judged secure.
 
-We finish with IPDL~\cite{ipdl} by Morrisett et al. which improves upon EasyUC by providing a better notion of emulation, more akin to the UC framework.
-It symbolically tracks the run time of programs but can only do so for straight-line programs or those with statically upper-bounded loops.
-This precludes constructs like the multisession operator, presented later in this work, from being expressible. 
-The operator allows creation of an arbitrary number of subsessions of a functionality and is critical to realizing the full UC composition theorem.
+We finish with IPDL~\cite{ipdl} by Morrisett et al. which improves upon EasyUC by providing a better notion of emulation, more akin to the UC framework, and symbolically tracks the run time of straight-line programs or those with statically upper-bounded loops.
 IPDL further implements a unique communication mechanism that imposes a static dependency between channels ``firing''.
+%It symbolically tracks the run time of programs but can only do so for straight-line programs or those with statically upper-bounded loops.
+This former precludes expressing constructs like the multisession operator, presented later in this work. 
+%The operator allows creation of an arbitrary number of subsessions of a functionality and is critical to realizing the full UC composition theorem.
 
-We summarize the imporant features, or lack thereof, of the most closely related work to NomosUC in Figure~\ref{fig:relatedworks}.
-The columns are broken up according to the features mentioned in the above discussion.
-The first discusses whether environment can create an arbitrary number of parties at runtime. There is not partial-support in this category, either it is supported or it isn't.
-The second column broadly covers whether any runtime or polynomial-time analysis/tracking is performed by the project. Notice that there is partial support where ILC provides a restricted notion of polynomial time.
+We summarize the imporant features of the most closely related work to NomosUC in Figure~\ref{fig:relatedworks}.
+%The columns are broken up according to the features mentioned in the above discussion.
+The first column discusses whether environment can create an arbitrary number of parties at runtime. %There is no partial-support in this category, either it is supported or it isn't.
+The second column broadly covers whether any runtime or polynomial-time analysis/tracking is supported, partiall supported like ILC's restricted notion, or no supported at all %restricted poly time (partiais performed by the project
+%Notice that there is partial support where ILC provides a restricted notion of polynomial time.
 The third column determines whether full UC-style composition is supported, i.e. replacement of an arbitrary number of functionalities with realizing protocols (the existence of a multisession operator is essential). 
 The last column highlights a design choice in communication through channels or through programming-style procedure calls.
-Unlike the other columns, this column does not indicate a drawback or limitation.
-In general this distinction plays an important role in how communication is captured each work, and whether arbitrary communication patterns from UC are not fully supported.
+The distinction plays an important role in how communication is captured each work, and whether arbitrary communication patterns from UC are not fully supported.
 
 % Colums: blank | parties at runtime | notion of UC | polynomial time | generalized composition operator | channels | procedural 
 \begin{figure}[H]

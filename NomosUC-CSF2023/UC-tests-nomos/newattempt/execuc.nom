@@ -21,9 +21,6 @@ Syntax sugar for
 }
 
 
-
-
-
 proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
 	(k: Int), (rng: [Bit]) |- ($d: execout) =
 {
