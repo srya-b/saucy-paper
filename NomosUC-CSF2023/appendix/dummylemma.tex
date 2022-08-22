@@ -1,3 +1,9 @@
+\subsection{Dummy Lemma} \label{sec:dummy}
+The dummy lemma is a crucial result in UC that reduces the design space of simulators to just one: the one for the dummy adversary in the real world.
+The Lemma presents the construction of a simulator from the \DS for any adversary \A. Our constructed Dummy Lemma simulator uses virtual tokens to simulate \DS and \A internall and route messages between them.
+At a high level the Lemma asserts that an execution with \DS and the dummy adversary must work for all environments even those running some \A internally.
+If the \A moves from \Z into the real world execution as th real adverasry and the ideal world connected to \DS then the emulation must still hold.
+
 A proof of the dummy lemma relies on creating a simulator \Sim for an arbitrary adversary given \DS.
 Recall from the original discussion in Section~\ref{sec:dummy} that the intuition behind the Dummy Lemma can be seen from the basic definition of emulation.
 

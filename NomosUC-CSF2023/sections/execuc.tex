@@ -18,11 +18,11 @@ For example, the channel between \Z and \A is instantiated as
 #a_to_z $\leftarrow$ communicator_init[$\tp{K}$][$\tp{a2z}$]{$\tp{a2zn}$}
 \end{lstlisting}
 where the type of \inline{#z_to_a} is given in Section~\ref{subsec:communicators}.
-Ultimately the shell processes will attempt to read messages from the shared channels and shuttle them to their internal processes which makes use of session types.
+%imately the shell processes will attempt to read messages from the shared channels and shuttle them to their internal processes which makes use of session types.
 
-The environment \Z must be the first processes that is spawned because it determines the currptiion set \inline{clist : [PID]} and the session ID (type defined by the user) for the execution (see session type \msg{EtoZ} below).
-It accepts its communicators to the \partywrapper and \A and type parameters for the token types it expects to use. 
-The session type of \Z forms the basis of the indistinguishability definition later in this section.
+The environment \Z is the first processes spawned, and it determines the currupt parties \inline{clist : [PID]} and the SID (a user-defined type) for the execution (see session type \msf{EtoZ} below).
+%It accepts its communicators to the \partywrapper and \A and type parameters for the token types it expects to use. 
+%The session type of \Z below forms the basis of the indistinguishability definition later in this section.
 {\centering
 \parbox{0cm}{
 \begin{tabbing}
@@ -30,8 +30,9 @@ The session type of \Z forms the basis of the indistinguishability definition la
 \>$\echoice{\mb{start} \arrow \ichoice{\mb{bit}: Bit \arrow 1}}}$
  \end{tabbing}}
 }
-The environment concludes the execution by outputting a bit as its guess of whether it's in the real or ideal world. 
-When we define indistinguishability, we want the distribution of output bits to be as close to coin tossing as possible (different with negligible probability).
+The type concludes when \Z outputs a bit as its guess of whether it's in the real or ideal world. 
+We define indistinguishability between the worls if the distribution of the output bits is computationally indistinguishable from a coin flip.
+%When we define indistinguishability, we want the distribution of output bits to be as close to coin tossing as possible (different with negligible probability).
 %Sandboxing is a common design pattern in UC, especially for simulators.
 %NomosUC supports it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
 %Therefore, we are unable to pass in a variable number of virtual token types to \inline{execUC}, and must rely on generating simple code to declare \inline{execUC} with a sufficient number of type parameters.
@@ -70,13 +71,17 @@ When we define indistinguishability, we want the distribution of output bits to 
 
 \paragraph*{\textbf{Ideal Functionalities}}
 \todo{the point here is to highlight what ideal functionalities look like in NomosUC not just an example that is a tradeoff.}
-The core of the UC framework is the ideal functionality: it captures all of the desired security properties in a simple trusted third party.
-We use the 2-way channel ideal functionality, \Fauth, as an illustration of some of the limits of session types and design tradeoffs that need to be considered.
-The functionality allows two parties to send messages to each other with \A determining when messages are delievered.
-From the point of view of either part $P_i$, it can write to \Fauth or receive a message from it---a communication pattern that can't be expressed by a single session type.
-Most functionalities that exhibit ambiguity in which end point can send a message must fallback on two competing approaches: split communication over two uni-directional channels or switch communication to polling where the party or \A asks \Fauth for new messages.
-Both cases can be captured by session types but lose some of the power of the session type mediating the order of messages in the protocol. 
-For example int he former approach the session types for \Fauth look something like this
+The core of the UC framework is the ideal functionality: it captures all of the desired security properties in a simple trusted third party. Its type conveys information about protocol messages and the computational resources required. 
+We use the 2-way channel functionality, \Fauth, to illustrate some limits of session types and the design tradeoffs to be considered.
+\Fauth accepts messages from either party and allows \A to decide when the message is delivered to the other.
+A protocol party can give input to, or expect output from, \Fauth at a given moment, and from our discussion of providerless channels this is a communication pattern that a single session type can not capture.
+In general, such cases require us to sacrifice some of the expressiveness of session types by splitting communication into uni-directional channels.
+We show this type for \Fauth below. 
+
+%From the point of view of either part $P_i$, it can write to \Fauth or receive a message from it---a communication pattern that can't be expressed by a single session type.
+%Most functionalities that exhibit ambiguity in which end point can send a message must fallback on two competing approaches: split communication over two uni-directional channels or switch communication to polling where the party or \A asks \Fauth for new messages.
+%Both cases can be captured by session types but lose some of the power of the session type mediating the order of messages in the protocol. 
+%For example int he former approach the session types for \Fauth look something like this
 
 %We use providerless channels, in part, to allow functionalities in NomosUC to use meaningful session types with a dynamic number of parties.
 %The 2-way channel ideal functionality, \Fauth, is a simple and clear illustration of design choices and tradeoffs when writing functionalities in NomosUC.
@@ -102,9 +107,10 @@ $\m{recvmsg}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \product 
 $\m{adv}[a] = \echoice{\mb{leakmsg}: a \product \ichoice{ \mb{ok}: \m{adv}}}$
 \end{tabbing}}
 \end{center}
-where each party has one channel typed as $\m{sending}$ and the other as $\m{recvmsg}$.
-Despite this limitation we note that the type parameter $a$ for the message type ensures that no party can receice a message from \Fauth before a message is sent which concretizes $a$ to some type.
-Therefore, although some of the power of session types is lost when dealing with such functionalities, they are still capable of enforcing protocol message ordering and providing resource analysis through import.
+We can mitiate the loss of expressiveness somewhat because the type paramter $a$ is concretized only when a message of type $a$ is sent. This enforces protocol ordering between two session types. In general, this trick can be used in many places when writing functionalities.
+%where each party has one channel typed as $\m{sending}$ and the other as $\m{recvmsg}$.
+%Despite this limitation we note that the type parameter $a$ for the message type ensures that no party can receice a message from \Fauth before a message is sent which concretizes $a$ to some type.
+%Therefore, although some of the power of session types is lost when dealing with such functionalities, they are still capable of enforcing protocol message ordering and providing resource analysis through import.
 
 \subsection{The \partywrapper}
 \begin{figure}
@@ -114,15 +120,19 @@ Therefore, although some of the power of session types is lost when dealing with
 	\label{fig:singlemultiplex}
 	\vspace{-3mm}
 \end{figure}
-The \partywrapper is a programming construct created to make it easy to manage a dynamic set of protocol parties. 
+The \partywrapper spawns protocol parties, runs them in a sandbos, and routes messages to/from them and \Z, \F, and \A.
+Its purpose is to simplify the UC experiment construction, because using channels requies some process to spawn them for new parties. 
 %Without the \partywrapper, NomosUC may have to rely on \Z to create the channels for new parties and route messages to them.
 %Similarly, \F and \A would have to all handle new channels from the creation of new parties.
-The \partywrapper runs all of the protocol parties internally in a sandbox, has one providerless channel to \Z, one to \A, and one with \F, and it multiplexes messages to and from them to its internal parties. 
-The \partywrapper is not a requirement specific to the session-typed setting of NomosUC, but motivated by the use of channels for communication.
+%The \partywrapper runs all of the protocol parties internally in a sandbox, has one providerless channel to \Z, one to \A, and one with \F, and it multiplexes messages to and from them to its internal parties. 
+%The \partywrapper is not a requirement specific to the session-typed setting of NomosUC, but motivated by the use of channels for communication.
 
-The \partywrapper spawns parties internally with virtual providerless channels so that some party $\pi_i$ sees an interface for communicating with \F and \Z as if it were a real process.
-In actuality, the \partywrapper is connected to \Z via communicator whose type includes the $\m{PID}$ with every message, and it routes messages to the appropriate virtual instance.
-An example of a party $\pi_i$ running within the \partywrapper is shown in Figure~\ref{fig:singlemultiplex}. The process $\pi_{pid}$ is the shell process mentioned previously and is connected to communicators as expected from providerless channels. The endpoint of the communicators is the \partywrapper.  
+The sandboxed parties communicate over virtual providerless channels with a virtual token type, but some party $\pi_i$ sees an interface connected directly to \F or \Z. 
+The \partywrapper connects to \F, \A, and \Z through communicators and multiplexes incoming and outgoing essages by the $\m{PID}$ sent with them. 
+We depict a single, sandboxed party running inside the \partywrapper in Figure ~\ref{fig:singlemultiplex}.
+
+%In actuality, the \partywrapper is connected to \Z via communicator whose type includes the $\m{PID}$ with every message, and it routes messages to the appropriate virtual instance.
+%An example of a party $\pi_i$ running within the \partywrapper is shown in Figure~\ref{fig:singlemultiplex}. The process $\pi_{pid}$ is the shell process mentioned previously and is connected to communicators as expected from providerless channels. The endpoint of the communicators is the \partywrapper.  
 
 This construction affects the import sent from \Z to a protocol party. With distinct, real parties \Z sends differing amounts of import to each party depending on its session type.
 Now, the single communicator forces \Z to always send the same import with every message to $\pi$ and receive some constrant amount on incoming messages.
@@ -260,6 +270,9 @@ If a simulator exists such that emulation holds for $(\pi, \F_1) \sim (\idealP, 
 	\F_1 \xrightarrow{\pi} \F_2
 \]
 
+An important preliminary result is the Dummy Lemma~\ref{thm:dummythicclemma} which shows that as simulator for the dummy adversary satisfies the emulation definition for all adversaries. 
+We present the Lemma in appendix Sectio \ref{sec:dummy}, but state the theorem here. 
+
 %\paragraph{Import for Functionalities}
 %The \Fcom example use throughout this work is realized by protocol that uses the random oracle. 
 %A natural notion of import should define \Fcom as requiring 0 import because it is one-shot and halts after doing constant amount of work.
@@ -287,12 +300,12 @@ If a simulator exists such that emulation holds for $(\pi, \F_1) \sim (\idealP, 
 %\end{mathpar}
 %\end{definition}
 
-\subsection{Dummy Lemma} \label{sec:dummy}
-The dummy lemma is a crucial result in UC that reduces the design space of simulators to just one: the one for the dummy adversary in the real world.
-The Lemma presents the construction of a simulator from the \DS for any adversary \A. Our constructed Dummy Lemma simulator uses virtual tokens to simulate \DS and \A internall and route messages between them.
-At a high level the Lemma asserts that an execution with \DS and the dummy adversary must work for all environments even those running some \A internally.
-If the \A moves from \Z into the real world execution as th real adverasry and the ideal world connected to \DS then the emulation must still hold.
-We provide a diagram presenting this construction in the Appendix as well.
+%\subsection{Dummy Lemma} \label{sec:dummy}
+%The dummy lemma is a crucial result in UC that reduces the design space of simulators to just one: the one for the dummy adversary in the real world.
+%The Lemma presents the construction of a simulator from the \DS for any adversary \A. Our constructed Dummy Lemma simulator uses virtual tokens to simulate \DS and \A internall and route messages between them.
+%At a high level the Lemma asserts that an execution with \DS and the dummy adversary must work for all environments even those running some \A internally.
+%If the \A moves from \Z into the real world execution as th real adverasry and the ideal world connected to \DS then the emulation must still hold.
+%We provide a diagram presenting this construction in the Appendix as well.
 %The Lemma states that if a simulator exists for the dummy adversary, called the dummy simulator \DS, then there it easy to construct a simulator for any other adversary \A. 
 %The simulator constructed in this lemma uses virtual tokens to internally run \DS and \A.
 %
@@ -300,7 +313,7 @@ We provide a diagram presenting this construction in the Appendix as well.
 %Particularly, in the case of \DS and \DummyAdv, emulation holds for a \Z that may be running any other possible \A internally and passing it's output to \DS and \DummyAdv.
 %Therefore, constructing a simulator for \A is equivalent to moving it out of the simulation and into the execution, as the adversary in the real world and as part of the simulator, providing input to \DS, in the ideal world.
 
-\begin{theorem}[Dummy Lemma]\label{thm:dummy}
+\begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
 

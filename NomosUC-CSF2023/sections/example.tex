@@ -6,27 +6,26 @@
 % Might make sense to talk about extending session types with dependencies for commitment
 
 %Just like distributed protocols, cryptographic protocols follow a predefined communication pattern.
-The central focus of our work is to explore the role that \emph{session types} can play in formally defining the UC framework.
-Our view is that session types are especially useful as ways of annotating or analyzing the ideal functionality.
-To illustrate, we use cryptographic commitment as our main running example.
+The central focus of our work is to explore the role that \emph{session types} can play in defining and analyzing ideal functionalities.
+We illustrate the usefulness of session types, for annontating them, through our running example: the commitment ideal functionality.
+%Our view is that session types are especially useful as ways of annotating or analyzing the ideal functionality.
+%To illustrate, we use cryptographic commitment as our main running example.
 %The commitment functionality \Fcom encapsulates the security properties of a two-phase, two-party commitment,
 %which, given its simplicity is an ideal learning example.
-The ideal functionality of the two-phase commitment protocol consists of a \emph{sender} $S$
-and \emph{receiver} $R$ connected to a trusted third-party, named as
-name $\Fcom$.
+It consists of a \emph{sender} $S$ and \emph{receiver} $R$ connected to $\Fcom$.
 Figure~\ref{fig:fcomideal}(a) provides the implementation of $\Fcom$ in pseudocode.
-\Fcom encapsulates the security properties of a two-phase, two-party commitment: (\emph{binding}) committer can't change what they committed to, and (hiding) the receiver can't open the commitment itself. 
+It captures two security properties: (\emph{binding}) committer can't change what they committed to, and (hiding) the receiver can't open the commitment itself. 
+%\Fcom encapsulates the security properties of a two-phase, two-party commitment: (\emph{binding}) committer can't change what they committed to, and (hiding) the receiver can't open the commitment itself. 
 
 This pattern of communication between the sender $S$ and $\Fcom$ (and also the receiver $R$
 and $\Fcom$) is enforced via \emph{binary session types}.
 Session types are a type system for statically expressing bi-directional communication protocols
 in message-passing process systems.
 The key insight here is that we assign a session type to the communication channel connecting
-two processes.
+two processes.\todo{I'm commenting out stuff on providers and clients for now.} 
 As notation, every channel has a unique \emph{provider} process that offers the channel and a
-\emph{client} process that uses the offered channel.
-And the session type governs the type and direction of message that is exchanged between
-the processes, with the provider and client processes performing dual send/receive actions.
+\emph{client} process that uses it, and the session type governs the type and direction of messages exchanged between them. 
+%the processes, with the provider and client processes performing dual send/receive actions.
 As an example, we start with the session type of the channel offered by $S$ that is used by
 $\Fcom$.
 \begin{mathpar}
@@ -37,11 +36,11 @@ The type constructor $\ichoiceop$ denotes an \emph{internal choice}
 $\mb{Commit}$ message to $\Fcom$.
 Next, the type constructor $\product$ denotes that $S$
 sends a value of type $\m{bit}$ ($\m{bit} \product \ldots$).
-Finally, the $\ichoiceop$ constructor (again with one choice)
+Finally, the $\ichoiceop$ constructor
 \footnote{Although $\ichoiceop$ with only one choice is redundant, we still use
 it here for the purpose of exposition}
 enforces that $S$ sends $\mb{Open}$ to $\Fcom$ followed by type $\one$
-that indicates termination meaning that $S$ must close the channel and terminate.
+that indicates $S$ terminates and closes its channel.
 It is important to point out that session types capture communication over one channel.
 For example, the session type of the sender doesn't capture what, if any, information is leaked to the adversary when \Fcom is activated.
 It also does not directly capture either of \Fcom's security properties: the type can not enforce the same bit that was committed is the one that is opened.
@@ -55,8 +54,8 @@ Dual to internal choice, the $\echoiceop$ type constructor represents \emph{exte
 prescribing that the provider $R$ must receive a $\mb{Committed}$ message from $\Fcom$
 followed by an $\mb{Open}$ message (using another $\echoiceop$ constructor) from $\Fcom$.
 Then, $R$ must receive a bit from $\Fcom$ as depicted by the $\arrow$ constructor (dual to $\product$).
-Finally, the type $\one$ indicates that the session terminates after a $\m{close}$ message
-has been sent from $R$ to $\Fcom$.
+Finally, the type $\one$ indicates that the session terminates.% after a $\m{close}$ message
+%has been sent from $R$ to $\Fcom$.
 
 \input{figures/f_com}
 

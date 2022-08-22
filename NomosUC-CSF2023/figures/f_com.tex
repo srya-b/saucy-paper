@@ -11,10 +11,8 @@
 \hspace{3em}
 \begin{minipage}{0.5\textwidth}
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
-$\nproc$ $\tm{Fcom}$: 
-(k: $\tgr{int}$), (rng: [Bit]), (sid: SID),
-(S: sender), (R: receiver)  |- (fc: 1) =
-{
+$\nproc$ $\tm{Fcom}$: (k: $\tgr{int}$), (rng: [Bit]), (sid: SID),
+(S: sender), (R: receiver)  |- (fc: 1) = {
   $\ncase$ S (
     Commit => b = $\nrecv$ S ;
               R.Committed ;
