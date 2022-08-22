@@ -142,13 +142,32 @@
 \maketitle
 
 \begin{abstract}
-  Universal Composability (UC) is a leading definitional framework for secure protocols, used in cryptography and increasingly in computer security more broadly.
-However, compared with traditional game-based definitions, UC has been less well studied from the viewpoint of programming language semantics and formal methods.
-  In this work we build on recent efforts to bring formal semantics to UC. Specifically, we investigate adding session types as a way of annotating UC definitions with additional structure.
-  We build a new language, Nomos-UC, by combining an existing session-typed language (Nomos) with a process-based core calculus for UC (ILC). This integration required solving a range of technical challenges, especially since session types impose a linear discipline while we wanted to preserve the UC lets the adversary dynamically steer the communication patterns at runtime.
-  Polynomial runtime is an essential component of the security definition, yet encoding it in other formal frameworks has required placing significant restrictions on the execution modeled considered in UC.
-Since we show how to faithfully encode the dynamic ``import tokens'' mechanism from UC into the resource-aware types in Nomos, we retain the best of both worlds.
-To validate our design, we work through the standard theory of UC composition operators, and complete a modular application case study: a coin tossing protocol in the random oracle model using commitments as the intermediate primitive.
+  Universal Composability (UC) is a leading definitional framework for secure protocols, used in cryptography
+  and increasingly in computer security more broadly.
+  However, compared with traditional game-based definitions, UC has been relatively less studied from the viewpoint
+  of programming language semantics and formal methods.
+  This work complements the existing formalizations of UC by introducing a novel abstraction to express UC
+  functionalities and protocols.
+  This new abstraction has been inspired from \emph{resource-aware session types} (Rast), a recently designed type system
+  for concurrent message-passing systems.
+  Session types are a typed framework for prescribing bi-directional communication protocols in a distributed system
+  that are statically enforced via type-checking.
+  Rast enhances this framework by adding \emph{potential annotations} to these communication protocols
+  that modularly describe the execution cost of message-passing systems.
+  We observe the close correspondence between Rast and UC where session types are used
+  to describe the interaction protocol of Interactive Turing Machines involved in a cryptographic protocol.
+  Moreover, resource-aware types can be used to statically encode the \emph{import mechanism} in UC used to
+  ensure polynomial-time computation.
+  We therefore combine Nomos, an existing language based on Rast with a process-based core calculus for UC (ILC)
+  to build a new language called NomosUC to implement executable UC protocols.
+  This combination, however, required solving a range of technical challenges,
+  as session types are naturally linear that prevent cyclic topologies and adversaries in UC should be able
+  to dynamically steer the communication patterns preventing a static encoding via session types.
+  Even encoding \emph{import tokens} into potential annotations required introduction of virtual tokens that
+  establish a \emph{token hierarchy} and eventually translate to the potential mechanism in Rast.
+  To validate our design, we work through the standard theory of UC composition operators,
+  and complete a modular application case study: a coin tossing protocol in the random oracle model
+  using commitments as the intermediate primitive.
 \end{abstract}
 
 

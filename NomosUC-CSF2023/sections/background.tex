@@ -1,8 +1,10 @@
-%\subsection{Universal Composability}
-The Universal Composability (UC) framework~\cite{canettiUC} is a leading framework for defining security in cryptographic protocols.
-UC is based on the real/ideal paradigm, where security is defined as a relation between two systems: the real world, which features the protocol $\pi$ under analysis and an arbitrary adversary \A that controls corrupt parties; and the ideal world, comprised of the ideal functionality \F, a trusted third party that carries out the desired task directly, and an ideal protocol \idealP that forwards inputs between \Z and \F. 
-The ideal functionalities in UC are popular because security definitions consist of a single program for a trusted party rather than a distributed protocol among mutually distrustful parties.
-%Figure~\ref{fig:}
+\subsection{Universal Composability}
+Universal Composability (UC) is a framework~\cite{canettiUC} used to define security in cryptographic protocols based on
+a real world / ideal world paradigm.
+Security is defined as a relation between these two worlds:
+the real world features a protocol $\pi$ and an arbitrary adversary \A that controls corrupt parties;
+the ideal world comprises of an ideal functionality \F and a trusted third party that carries out the desired task directly.
+A reason ideal functionalities have become a popular alternative to traditional game-based definitions is that a security definition consists of a single program for one trusted party, rather than a collection of properties pertaining to several (potentially faulty) parties.
 
 To summarize the ideal/real security relation, roughly we need to show ``any attack in the real world is also exhibited by the ideal functionality.'' This means constructing a simulator \Sim that plays the role of adversary in the ideal world.
 What makes UC the strongest among ideal/real frameworks is that the inputs and number of honest parties are chosen adaptively, and dynamically, by the distinguishing environment \Z, which can also communicate with the adversary and interleave its interactions with honest parties.
