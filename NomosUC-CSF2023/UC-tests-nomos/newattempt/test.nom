@@ -1,11 +1,123 @@
-(* p2f type *)
-stype send_auth[a] = +{ sendmsg: a x send_auth[a] }
+stype role1[a][b] = +{ do1: a * &{ do2: b -> 1}}
+stype role2[c][d][e] = +{ do3: c * &{ do4: d -> +{ do5: e * 1}}}
 
-(* f2p type *)
-stype receive_auth[a] = &{ receive: a x receive_auth[a] }
+type p2f = Do1 of a | Do3 of c | Do5 of e ;
+type f2p = Do2 of b | Do3 of d ;
 
 
-(* f2a and a2f *)
-stype auth_adv[a] = &{ leakmsg: a x +{ deliver: auth_adv[a] } }
-											
+(* OLD WAY *)
+stype role1p2f[a] = +{ do1: pid * a * role1p2f }
+stype role1f2p[a][b] = &{ do2: pid -> a -> b -> 1}
 
+stype role2p2f[c][d][e] = +{ do3: pid * c * role2p2f,
+										         do5: pid * d * e * 1 }
+stype role2f2p[c][d][e] = &{ do4: pid -> c -> d -> role2f2p} ;
+
+type p2f = Do1 of a | Do3 of c | Do5 of e ;
+type f2p = Do2 of b | Do3 of d ;
+
+proc r1_p2f : 
+	(sid: SID[a]), (#p_to_f: comm[p2f]), (#f_to_p: comm[f2p]) |- ($ch: role1p2f) =
+{
+	#p_to_f.RECV ;
+	case #p_to_f (
+		yes => pid = recv #p_to_f ; msg = recv #p_to_f ;
+					 case msg (
+							Do1(x) => $ch.do1 ;
+												send $ch pid ;
+											 	send $ch x ;
+						  Do3(x) => $ch.do3 ;
+												send $ch pid ;
+												send $ch x ;
+						  (* etc any other cases *)
+					 )
+		no => $ch <- r1_p2f (* recurse with parameters *)
+	)
+}
+
+proc functionality : 
+		(sid: SID[a]), ($f2p1: role1f2p), ($f2p2: role2f2p), ($p2f1: role1p2f), ($p2f2: role2p2f), ($A: adv) (* some other state variables *) |- ($ch: 1) =
+{
+	match $p2f1, $p2f2 (
+		*,do3 => (* do something *)
+						 $f2p2.do4 ;
+						 send $f2p2 x ;
+		*,do5 => (* do something *)
+						 $A.leak1 ;
+						 send $A XYZ ;
+		do1,* => (* do something *)
+						 $f2p1.do2 ;
+						 send $f2p1 ABC ;
+		(* etc for all the case *)
+}
+			
+
+
+	
+(* NEW WAY *)
+
+type state = Data of dict Int Bool [PID] ;
+
+type role1 = +{ do1: a * &{ do2: b -> state -> 1}}
+stype role2 = +{ do3: c * &{ do4: d -> state -> +{ do5: e * 1}}}
+
+type p2f = Do1 of a | Do3 of c | Do5 of e ;
+type f2p = Do2 of b | Do3 of d ;
+
+proc shell : 
+	(#p_to_f: comm[p2f]), (#f_to_p: comm[f2p]),
+	(d1: dictionary[comm[role1]]), (d2: dictionary[comm[role2]])
+	(* some other information *) |- ($ch: 1) =
+{
+	$p2f <- acquire #p_to_f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes => pid = recv $p2f ; msg = recv $p2f ;
+					 #p2ch <- findPID d1 d2 pid ;
+					 #p2ch.SEND ;
+					 send #p2ch msg				 
+
+
+proc p2f_r2 : (pid: PID), (#p2f: p2f), (*...*) |- ($ch : role2) = {
+	$p2f <- acquire #p2f ;
+	$p2f.RECV ;
+	case $p2f (
+		yes => pid = recv $p2f ; msg = recv $p2f ;
+					 case msg (
+							Do3(x) => $ch.do3 ;
+												send $ch x ;
+											  (* etc *)
+						  Do5(x) => $ch.do5 ;
+											  send $ch x ;
+												(* etc *)
+					 )
+	)	
+	
+	case $f2p (
+		do4 => x = recv $f2p ; state' = recv $f2p ;
+			     
+
+}	
+
+
+(*
+	for each role (type) for the functionality we need process code. For role1 and role2 there would b an f1 and f2. We show f2 below.
+*)
+
+
+proc f2 : 
+	(pid: PID), ($ch: role2), ($A: adv),
+(* other state variables like dictionaries, lists, numbers, etc *) |- ($d: role2) =
+{
+	msg <- recv $ch
+	case msg (
+		do3 => (* do something, either write something to A*)
+					 $A.someleak ;		
+				   send $A X ;
+					 (* or send something back to the part *)
+					 $ch.do4 ; 
+					 send $ch Z ;
+		do5 => (* do something else *)
+}
+		
+		

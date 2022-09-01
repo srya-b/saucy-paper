@@ -1,7 +1,7 @@
 (* TODO: need some kind of functor here, but we can't give processes as parameters *)
 
-proc compose[z][r][p]:
-	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
+proc compose[z][p][s]:
+	(k: Int), (rng: [Bit]), (sid: SID[s]), (pid: Int),
 	($z2p: z) |- ($p2f: p) =
 {
 	$ch <- PS.rho <- k rng sid pid $z2p ;
