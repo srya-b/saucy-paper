@@ -1,10 +1,26 @@
-In cryptography, the leading framework for defining security is Universal Composability (UC)~\cite{canettiUC}.
-UC was initially developed within cryptography, where it is considered the strongest definitional model since it guarantees a protocol even when multiple sessions of the protocol are run concurrently with each other.
-UC has increasingly become popular in secure protocols more broadly, where an ideal functionality model often serves as the main formal security definition.
-One reason for UC's popularity as an alternative to traditional game-based cryptography definitions is that in UC, security properties are defined by writing a single program called an \emph{ideal functionality}, rather than defining a collection of separate attack games. The ideal functionality is a program that if run by a trusted third party exhibits all the desired behaviors of the real world protocol.
-UC also encourages a modular style, where protocols are analyzed by considering only a single session, but can then be composed into larger applications by applying generic composition operators and their associated theorems.
+Universal Composability (UC)~\cite{canettiUC} is the leading framework for defining security properties of cryptographic protocols.
+It is considered the strongest definitional model since it guarantees the security properties even when the protocol is arbitrarily composed with
+multiple concurrently-executing sessions of the same (or another) protocol.
+UC has recently gained popularity for analysis of cryptographic protocols due to its \emph{ideal world/real world} simulation mechanism.
+In contrast to game-based cryptography where security properties are defined via attack games,
+UC defines an \emph{ideal functionality} for a protocol, i.e., a program that serves as the protocol \emph{specification}.
+When executed by a trusted third party that communicates over secure channels, the ideal functionality exhibits all possible behaviors of the protocol.
+Thus, a protocol without access to a trusted third-party \emph{emulates} its functionality (with access to a trusted third-party),
+being completely indistinguishable to an external environment.
+When analyzing \emph{composition} of protocols, we only need analyze the composition of their ideal functionalities, thus greatly
+simplifying the analysis!
+UC also encourages a modular design of protocols which can then be composed into larger applications by applying generic composition operators
+provided by UC and their associated theorems.
 
-Despite the appeal of UC, support for programming language tools is further behind compared to game-based definitions, with recent efforts posing partial support UC~\cite{ilc,easyuc,ipdl,symbolicuc,barbosa}. Our work goes further in this direction by asking several new questions:
+Despite UC's appeal, programming language tools and techniques for establishing UC emulation is fairly limited with some recent efforts providing
+partial support UC~\cite{ilc,easyuc,ipdl,symbolicuc,barbosa}. This is a result of two key challenges.
+First, at the core of UC lies establishing emulation which corresponds to proving program equivalence and is undecidable in general
+and tends to be complicated even for simple programs.
+Furthermore, UC protocols and functionalities today are becoming increasingly complex with dynamic components,
+such as variable number of protocol parties determined at runtime, \ankush{more challenges}.
+The second major challenge is \emph{execution cost} which plays a central role in UC since the security properties
+guaranteed by UC only hold 
+
 
 \begin{enumerate}
 \item 
