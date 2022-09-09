@@ -43,40 +43,40 @@ consumed to perform an execution step, thus bounding their execution cost.
 The key idea here was that messages carry potential to share and amortize the execution cost of a concurrent computation.
 This closely corresponds to the import mechanism in UC where messages carry import which is then used to bound the number of execution steps.
 
-\begin{enumerate}
-\item 
-As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand.
-Can we use Session Types as a way of providing more structure and assisting in the analysis of the ideal world models?
-Session types have been successfully employed in modeling distributed protocols~\cite{das2018work,dasnomos}, however it is not obvious what help they provide within an adversarial model as strong as UC.
-Additionally UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
-Is it possible to reconcile these, adding informative session types where they help without having to restrict the flexibility of UC?
+% \begin{enumerate}
+% \item 
+% As UC is used for increasingly complex protocols and applications, even the ideal functionalities become difficult to read and understand.
+% Can we use Session Types as a way of providing more structure and assisting in the analysis of the ideal world models?
+% Session types have been successfully employed in modeling distributed protocols~\cite{das2018work,dasnomos}, however it is not obvious what help they provide within an adversarial model as strong as UC.
+% Additionally UC is very dynamic, supporting a variable number of protocol parties determined by the environment at runtime, while session types provide static guarantees for a session involving only two parties at a time.
+% Is it possible to reconcile these, adding informative session types where they help without having to restrict the flexibility of UC?
 
-\item Execution cost analysis plays a central role in UC, since we are only concerned with
-attackers possessing polynomial-time computational power.
-However, 
-Can we enforce polynomial running time without otherwise imposing restrictions on the UC framework?
+% \item Execution cost analysis plays a central role in UC, since we are only concerned with
+% attackers possessing polynomial-time computational power.
+% However, 
+% Can we enforce polynomial running time without otherwise imposing restrictions on the UC framework?
 
-\end{enumerate}
+% \end{enumerate}
 
-We answer these questions positively by designing a new language, NomosUC, that combines ideas from
-Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc},
-a process calculus previously used for encoding (a subset of) UC.
-Our treatment of UC is closet in spirit to ILC in that we aim to faithfully encode the original UC model as closely as possible, without imposing additional restrictions on what's expressible in that model.
-While it turns out to be quite natural to add session type annotations to ideal functionalities, the main technical challenge we faced is in ensuring that the UC security definition and generic composition operators can be expressed in their full generality.
-The main challenge is that while UC inherently allows for an arbitrary communication pattern, where the order in which honest parties are activated is determined at runtime by the environment, session types in Nomos impose an essentially acyclic communication pattern in which each channel is provided by a single process and the next process to send on a channel can be statically determined.
-%In NomosUC, we abstract the notion of a channel between two processes, into a generic construction, not limited by the constraint
-%of linear types, that, as far as we know, can express any configuration of ITMs.
-%Furthermore, we contend with the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
-%and arrive at a notion of compositional security that remains surprisingly expressive and generalizable.
-We show how to resolve this by systematically compiling (possibly cyclic) channel networks from ILC into Nomos-UC by making use of adaptors based on shared (rather than linear) channel types.
+% We answer these questions positively by designing a new language, NomosUC, that combines ideas from
+% Nomos~\cite{dasnomos}, a resource aware session-typed language, and ILC~\cite{ilc},
+% a process calculus previously used for encoding (a subset of) UC.
+% Our treatment of UC is closet in spirit to ILC in that we aim to faithfully encode the original UC model as closely as possible, without imposing additional restrictions on what's expressible in that model.
+% While it turns out to be quite natural to add session type annotations to ideal functionalities, the main technical challenge we faced is in ensuring that the UC security definition and generic composition operators can be expressed in their full generality.
+% The main challenge is that while UC inherently allows for an arbitrary communication pattern, where the order in which honest parties are activated is determined at runtime by the environment, session types in Nomos impose an essentially acyclic communication pattern in which each channel is provided by a single process and the next process to send on a channel can be statically determined.
+% %In NomosUC, we abstract the notion of a channel between two processes, into a generic construction, not limited by the constraint
+% %of linear types, that, as far as we know, can express any configuration of ITMs.
+% %Furthermore, we contend with the static nature of the type system in several places, namely Section~\ref{sec:execuc}, when designing ideal functionalities and adversaries,
+% %and arrive at a notion of compositional security that remains surprisingly expressive and generalizable.
+% We show how to resolve this by systematically compiling (possibly cyclic) channel networks from ILC into Nomos-UC by making use of adaptors based on shared (rather than linear) channel types.
 
-We also show how the resource-aware ``potential'' mechanism in Nomos can be adapted to model the ``import'' mechanism that UC uses to express computational runtime bounds.
-UC expresses polynomial runtime constraints for interactive procesess by keeping track of a conserved quantity of \emph{import tokens}, which can be passed between processes but not created or destroyed. At any given time, the runtime of the currently running process must be bounded by (some polynomial function of) the net amount of import it has received so far.
-In Nomos, runtime bounds are expressed using a closely related notion called \emph{potential}, which correspond one-to-one with computation steps. In a nutshell, the import tokens from UC are like a coarse grained version of potential in Nomos, where the number of computation steps can exceed the number of import tokens by an arbitrary polynomial.
-The main technical challenge is that proofs in UC typically rely on \emph{local simulation of a network in a sandbox}, in which case we have to show how to simulate the handling of import tokens as well. Our solution is to introduce a hierarchy of \emph{virtual tokens} that are created by the host and passed to sandbox processes to use.
-%Furthermore, since import is ultimately connected to the security parameter, NomosUC
-%therefore, not only guarantees termination, but also asserts polynomial bounds on
-%the execution cost in terms of the security parameter.
-Because the import tokens and running time are statically analyzed within in our type system, we are able to show that our preservation theorem ensures that any well-typed process is also polynomial time in the UC sense.
+% We also show how the resource-aware ``potential'' mechanism in Nomos can be adapted to model the ``import'' mechanism that UC uses to express computational runtime bounds.
+% UC expresses polynomial runtime constraints for interactive procesess by keeping track of a conserved quantity of \emph{import tokens}, which can be passed between processes but not created or destroyed. At any given time, the runtime of the currently running process must be bounded by (some polynomial function of) the net amount of import it has received so far.
+% In Nomos, runtime bounds are expressed using a closely related notion called \emph{potential}, which correspond one-to-one with computation steps. In a nutshell, the import tokens from UC are like a coarse grained version of potential in Nomos, where the number of computation steps can exceed the number of import tokens by an arbitrary polynomial.
+% The main technical challenge is that proofs in UC typically rely on \emph{local simulation of a network in a sandbox}, in which case we have to show how to simulate the handling of import tokens as well. Our solution is to introduce a hierarchy of \emph{virtual tokens} that are created by the host and passed to sandbox processes to use.
+% %Furthermore, since import is ultimately connected to the security parameter, NomosUC
+% %therefore, not only guarantees termination, but also asserts polynomial bounds on
+% %the execution cost in terms of the security parameter.
+% Because the import tokens and running time are statically analyzed within in our type system, we are able to show that our preservation theorem ensures that any well-typed process is also polynomial time in the UC sense.
 
-%We validate Nomos-UC by working through the standard UC theory of composition operators, as well as including a modular composition case study where we show a coinflipping application based on random oracles, using commitments as an intermediate layer.
+% %We validate Nomos-UC by working through the standard UC theory of composition operators, as well as including a modular composition case study where we show a coinflipping application based on random oracles, using commitments as an intermediate layer.
