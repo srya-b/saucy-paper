@@ -12,15 +12,36 @@ simplifying the analysis!
 UC also encourages a modular design of protocols which can then be composed into larger applications by applying generic composition operators
 provided by UC and their associated theorems.
 
-Despite UC's appeal, programming language tools and techniques for establishing UC emulation is fairly limited with some recent efforts providing
+Despite UC's appeal, programming language tools and techniques for establishing UC emulation are fairly limited with some recent efforts providing
 partial support UC~\cite{ilc,easyuc,ipdl,symbolicuc,barbosa}. This is a result of two key challenges.
-First, at the core of UC lies establishing emulation which corresponds to proving program equivalence and is undecidable in general
+First, at the core of UC lies demonstrating emulation which corresponds to proving program equivalence and is undecidable in general
 and tends to be complicated even for simple programs.
-Furthermore, UC protocols and functionalities today are becoming increasingly complex with dynamic components,
-such as variable number of protocol parties determined at runtime, \ankush{more challenges}.
+Moreover, UC emulation requires designing a simulator generator such that \emph{for all} adversaries, \emph{there exists} a \emph{simulator} (that is constructed
+from the simulator generator) that emulates the protocol \emph{for all} environments.
+This sequence of $\forall \exists \forall$ quantifiers complicates proving equivalence even further, especially when the adversary and simulator can exhibit
+probabilistic behavior.
 The second major challenge is \emph{execution cost} which plays a central role in UC since the security properties
-guaranteed by UC only hold 
+guaranteed by UC only hold in the presence of polynomial-time bounded adveraries.
+More formally, we need to prove that the simulator, which is usually generated from the adversary, is \emph{PPT} (probabilistic polynomial time)
+if the adversary is PPT.
+Statically proving this PPT requirement calls for devising techniques for bounding the execution cost of UC Interactive Turing Machines (ITMs),
+which is also an undecidable problem in general.
+Most prior UC formalization efforts like EasyUC and ILC forego the polynomial runtime analysis entirely, while others~\cite{ipdl,barbosa,ilc}
+express polynomial runtime constraints but only consider restricted subsets of the UC framework where, for example, the number of parties
+or subsessions is statically bounded rather than determined at runtime by an arbitrary environment.
 
+UC protocols and functionalities are expressed via Interactive Turing Machines that communicate via \emph{message tapes} that ITMs can read from/write to
+and are polynomial-bounded, both in their communication and computation.
+Recognizing this polynomially bounded interactive nature, we propose a novel abstraction to statically express and enforce these
+communication protocols based on \emph{resource-aware session types}.
+Session types prescribe bi-directional communication protocols between concurrent message-passsing processes and have been successfully employed
+in capturing the interactions in distributed protocols~\cite{dasnomos,Das20FSCD,Das22LMCS,Das20arxiv}.
+We can utilize session types to express the communication aspects of UC functionalities and protocols with the type checker
+guaranteeing that the processes adhere to their prescribed protocols.
+Recently, session types were extended with \emph{potential}~\cite{das2018work}, an abstract notion that is stored inside processes and
+consumed to perform an execution step, thus bounding their execution cost.
+The key idea here was that messages carry potential to share and amortize the execution cost of a concurrent computation.
+This closely corresponds to the import mechanism in UC where messages carry import which is then used to bound the number of execution steps.
 
 \begin{enumerate}
 \item 
@@ -32,7 +53,7 @@ Is it possible to reconcile these, adding informative session types where they h
 
 \item Execution cost analysis plays a central role in UC, since we are only concerned with
 attackers possessing polynomial-time computational power.
-However, most prior UC formalization efforts like EasyUC and ILC forego the polynomial runtime analysis entirely, while others~\cite{ipdl,barbosa,ilc} express polynomial runtime constraints but only consider restricted subsets of the UC framework where, for example, the number of parties or subsessions is statically bounded rather than determined at runtime by an arbitrary environment.
+However, 
 Can we enforce polynomial running time without otherwise imposing restrictions on the UC framework?
 
 \end{enumerate}
