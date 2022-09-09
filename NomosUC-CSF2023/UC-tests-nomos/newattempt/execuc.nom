@@ -7,38 +7,37 @@ stype out = +{ reset: pump ;
 
 stype execout{n} = <{n}| &{ exec: +{ out: Bit -> 1 }} ;
 
-(* 
-Syntax sugar for 
-   $ch1, $ch2 <- makeChan[s][f] <- ;
-*)
+proc wait_for_terminate : (#z: EtoZ) |- ($d: execout) =
 {
-
-	proc ch1[K][
-
-	#c <- communicator_init[K][f] <- ;
-	
-
+	$z <- acquire #z ;
+	case $z (
+		output => 
+			b = recv $z ;
+			$d.output ; send $d b ;
+		reset => (* this is the pump operation releasing control to the environment *)
+			#z <- release $z ;
+	    $d <- wait_for _terminate #z ;
+	)
 }
 
 
 proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
 	(k: Int), (rng: [Bit]) |- ($d: execout) =
 {
+	#z_to_pw <- channel_init[K][z2p][K] ; 
+	#pw_to_z <- channel_init[K][p2z][K] ; 
+
+	#pw_to_f <- channel_init[K][p2f][K] ; 
+	#f_to_pw <- channel_init[K][f2p][K] ; 
+
+	#a_to_pw <- channel_init[K][a2p][K] ; 
+	#pw_to_a <- channel_init[K][p2a][K] ; 
+
+	#a_to_f <- channel_init[K][a2f][K] ; 
+	#f_to_a <- channel_init[K][f2a][K] ; 
 	
-	#z_to_pw <- communicator_init[K][z2p][K] <- ; 
-	#pw_to_z <- communicator_init[K][p2z][K] <- ; 
-
-	#pw_to_f <- communicator_init[K][p2f][K] <- ; 
-	#f_to_pw <- communicator_init[K][f2p][K] <- ; 
-
-	#a_to_pw <- communicator_init[K][a2p][K] <- ; 
-	#pw_to_a <- communicator_init[K][p2a][K] <- ; 
-
-	#a_to_f <- communicator_init[K][a2f][K] <- ; 
-	#f_to_a <- communicator_init[K][f2a][K] <- ; 
-	
-	#z_to_a <- communicator_init[K][z2a][K] <- ; 
-	#a_to_z <- communicator_init[K][a2z][K] <- ; 
+	#z_to_a <- channel_init[K][z2a][K] ; 
+	#a_to_z <- channel_init[K][a2z][K] ; 
 
 	#z <- PS.env <- k rng #z_to_pw #pw_to_z #z_to_a #a_to_z ;
 	sid = recv #z ;
@@ -51,18 +50,8 @@ proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]:
 					k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f #z ;
 
 	$a <- PS.adv[K] <- k rng sid clist #a_to_z #z_to_a #a_to_pw #pw_to_a #a_to_f #f_to_a #z ;
-	
-	$z <- acquire #z ; 
-	$z.start ;
-	(*$d <- $z *)
-	#z <- release $z ;
-	case $z (
-		output =>
-			b = recv $z ;
-			$d.output ; send $d b ;
-		reset =>
-			#z <- release $z ;
-	)
+
+	$d <- wait_for_terminate #z ;	
 }
 
 	

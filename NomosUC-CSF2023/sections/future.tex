@@ -1,12 +1,9 @@
-This area of research presents several next steps and possibility for futurework building on NomosUC.
+There are a few immediate next steps that can be taked to improve the consruction in this work.
+Namely, we introduce the notion of providerless channels to generalize communication between two process due to the consraints provider/client relationship and the linearity of channels.
+We would like to do away with this requiement for channels and subsequent work would aim to greatly simplify our construction. \todo{I believe the term is `multi-party session types` that refer to non-linear channels that don't need acquire/release?}.
 
-On of the immediate next steps is to overcome the existing Nomos provider-client constraints. 
-Currently, we introduce a several channels and a couple of commuicators to generalize communication between two processes. 
-This is due in large part to linear channels being unique to a specific provider and client.
-We would like to do away withthis requirement in subsequent works and grealy simplify our construction.
+We also point out that we build NomosUC on top of the type system defined by Nomos and retrofit the import mechanism to the existng potential mechanism through our virtual tokens construction.
+A drawback of this approach is that have not yet implemented a type checker for NomosUC and rely on manual type checking of our code. A clear next step would be the first examine the feasibility of such a type checker and explore efficient implementations of it.
 
-We also point out that we build NomosUC on top of the type system defined by Nomos, however, we do not yet implement a type checker for NomosUC. We rely on the typing rules and theorems to validate our approach and manually typed checked the functionalities, protocols, and simulator code we implemented.
-A next step in this direction is attempting to implement the type checker for NomosUC or evaluating the feasibility of doing so.
-
-A few works related to our own, described in Section~\ref{sec:related}, attempt to automate proof generation for composable security. Our work provides tooling to specify and analyze UC definitions, however, a goal of future work is to introduce fuzz testing of protocols, functionalities, and emulation in NomosUC.
+A few related works to our own, also provide automated proof generation albeit for a more consrained version of the UC framework. Our work provides tooling to specify and analyze UC definitions, however, a goal of future work is to introduce further tools like fuzz testing to provide automated guarantees for the correctness of NomosUC code. 
 

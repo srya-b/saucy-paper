@@ -1,11 +1,15 @@
 \begin{figure}
 \centering
 \begin{minipage}{0.38\textwidth}
-\begin{bbox}[title={Functionality $\F_{\m{com}}(S, R)$}]\\
-\textbf{on input} \inmsg{\m{Commit}}{$b$} from $S$:\\
-\hspace*{1em} store $b$ and output (\m{Committed}) to $R$.\\
- Then, \textbf{on input} \inmsg{\m{Open}} from $S$:\\
- \hspace*{1em} send $(\m{Open}, b)$ to $R$.
+\begin{bbox}[title={Functionality $\F_{\m{com}}(S, R)$}]
+
+\OnInput \inmsg{\msf{Commit}}{$b$} from $S$: 
+
+\qquad store $b$ and \Send $(\m{Committed})$ to $R$
+
+then \OnInput \inmsg{Open} from $S$: 
+
+\qquad \Send $(\m{Open}, b)$ to $R$
 \end{bbox}
 \end{minipage}
 \hspace{3em}

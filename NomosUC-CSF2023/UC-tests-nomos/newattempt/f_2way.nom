@@ -1,0 +1,21 @@
+stype sender[a] = +{ sendmsg: a * sender[a]} ;
+stype receiver[a] = &{ msg: a * receiver[a]} ;
+stype adv[a] = &{ leak: a * +{ deliver: adv[a]}} ;
+type 2way_sid = session of PID ^ PID ;
+
+
+proc f_2way[K][a]:
+	(k: Int), (rng: [Bit]), (sid: SID[2way_sid]), 
+	($P1S: sender[a]), ($P1R: receiver[a]), ($P2S: sender[a]), ($P2R: receiver[a]),
+	($A: adv[a]) |- ($ch: 1) =
+{
+	match $P1S, $P2S (
+		sendmsg,* => msg = recv $P1S ;
+								 $A.leak ; send $A msg ;
+								 case $A (deliver => $P2R.msg; send $P2R msg;)
+		*,sendmsg => msg = recv $P2S ;
+								 $A.leak ; send $A msg ;
+								 case $A (deliver => $P1R.msg; send $P1R msg;)
+  )
+}
+
