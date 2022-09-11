@@ -1,0 +1,28 @@
+stype modify[k][v] = <{2}| +{store: PID * k * v * modify[v][k]}
+stype search[k][v] = +{retrieve: PID * k * &{ just: PID -> v -> search[k],
+                                              nothing: PID -> search[k]}}
+
+proc f_database_init[k][v]:
+  (k: Int), (rng: [Bit]), (sid: SID[1]),
+  ($M: modify[k][v]), ($S: search[k][v]), ($A: 1) |- ($ch: 1) =
+{
+  d <- dictionary[k][v] ;
+  $ch <- f_database[k][v] <- k rng sid $M $S $A d ;
+}
+
+proc f_database[k][v]:
+  (k: Int), (rng: [Bit]), (sid: SID[1]),
+  ($M: modify[k][v]), ($S: search[k][v]), ($A: 1), (d: dictionary[k][v]) |- ($ch: 1) =
+{
+  match $M, $S (
+    store,* => pid = recv $M ; k = recv $M, v = recv $M, get $M {2} ;
+               d' <- store d k v ;
+    *,retrieve => pid = recv $S ; k = recv $S ;
+                  v <- search d k ;
+                  if v then
+                    $S.just ; send $S pid v ;
+                  else
+                    $S.nothing ; 
+  )
+}
+

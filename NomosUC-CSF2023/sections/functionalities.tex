@@ -1,15 +1,56 @@
-In this section we explore some of the tradeoffs introduced easlier and the design space for ideal functionalities in NomosUC.
+In this section we explore some of the tradeoffs introduced earlier and the design space for ideal functionalities in NomosUC.
 Specifically, we explore the polymorphism described in Section~\ref{sec:execuc} that mitigates the loss of expressiveness of session types that arises from splitting communication, between a party and a functionality, into two uni-directional channels.
 We also share two functionalities, the random oracle \Fro as an example of a type that allows dynamic parties with only one channel, and we compare secure message communicatin (\Fsmc, a simpler version of \Fauth) to writing functionalities in a closely related work: easyUC~\cite{easyuc}.
+
+\subsection{Polymorphism for Ideal Functionalities}
+We mention in the previous section that despite splitting communication for \Fauth into two uni-directional channels per party, we use polymorphism to achieve message ordering between channels as well.
+A contrived example of such a type below shows that with minimal extra variables in a type can achieve the same for arbitrarily complicated functionalities. 
+The idea is that we can add an arbitrary number of variables to achieve the desired oredering by allowing the protocol to determine the concrete types for each type parameter. 
+The tradeoff is extra session type clutter, from including multiple type variables that don't carry any data, but as we see with the type and functionality definition below the type is still clear upon inspection.
+
+Imagine an ideal functionality where two parties take one of two roles with the following session types:
+\begin{center}
+	\parbox{0cm}{
+	\begin{tabbing}
+		$\m{role1\_p2f}[a] = \ichoice{\mb{do1}: \m{Int} \product \m{a} \product \m{role1\_p2f}}$ \\
+		$\m{role1\_f2p}[a] = \echoice{\mb{do2}: \m{String} \arrow \m{a} \arrow 1}$ \\
+		$\m{role2\_p2f}[a][b][c] = \ichoice{$\=$\mb{do3}: \m{a} \product \m{b} \product \m{role2\_p2f}$ \\
+		\>$\mb{do4}: \m{Int} \product \m{c} \product \m{role2\_p2f}}$ \\
+		$\m{role2\_f2p}[b][c] = \echoice{\mb{do5}: \arrow \m{b} \arrow \m{c} \arrow 1}$
+	\end{tabbing}}
+\end{center}
+The session types define party 1 as giving 1 input \mb{do1} and party 2 giving two inputs \mb{do2}. 
+When used with the following type definition for the a functionality
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape]
+$\nproc$ F[a, b, c]: $\tg{...}$
+  ($\$$P12F: role1_p2f[a]), ($\$$F2P1: role1_f2p[a]), 
+  ($\$$P22F: role2_p2f[a,b,c]), ($\$$F2P2: role2_f2p[b,c]) $\tg{...}$
+\end{lstlisting}
+we can achieve the following ordering of messages \emph{between} the multiple sessions:
+\begin{itemize}
+	\item Party 1 must give input \mb{do1} and determine the type \m{a} before \F can output \mb{do2} of that same type.
+	\item Party 2 must give input \mb{do3} after party 1 gives \mb{do1}, and it must give inputs \mb{do3}, \mb{do4} (concretizing the types of \m{b} and \m{c}) before \F can output \mb{do5}.   
+\end{itemize}
+
+Functionalities whose code attempts to send concrete types over the sessions will fail to type check, and protocols that wish to realize them must also follow the same communication pattern
+It is important to note here that the session type isn't enough to enforce order, but the functionality's type definition must also enforce the dependency.
 
 \subsection{Secure Message Communication, \Fsmc}
 Secure message communication, or \Fsmc, is the \Fauth functionality reduced to handle one-way communication only.
 Therefore, unlike \Fauth the session type can be captured by a single channel for each party. 
-We give the session type and process code below.
-\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, xleftmargin=2em, xrightmargin=2em]
-$\Stype$ sender[a] = +{ sendmsg: PID $\times$ a $\times$ 1 }
-$\Stype$ receiver[a] = &{ recvmsg: PID $\rightarrow$ a $\rightarrow$ 1}
-$\Stype$ adv[a] = &{ leakmsg: a $\rightarrow$ +{ deliver: 1 }}
+The session types for \Fsmc are
+{\centering
+\parbox{0cm}{
+\begin{tabbing}
+$\m{sender}[a] = \ichoice{\mb{sendmsg}: PID \product a \product 1}$ \\
+$\m{receiver}[a] = \echoice{\mb{recv}: PID \arrow a \arrow 1}$ 
+\end{tabbing}}
+}
+The session type, in a sense, defines a state machine that is enforced by the type system.
+The same functionality in a related work, EasyUC, only defines messages and function types, and requires the user code to define a state machine, perform runtime checks on inputs, reject inputs out of order, and manage communication through the EasyUC's addressing scheme. 
+When compared to the entire code for \Fsmc below, the EasyUC code is at least three times as long.
+Not only does that make UC definitions more complicated by introduces the potential for bugs in what should be a simple functionality\footnote{The full code of the EasyUC SMC example can be found at \url{https://github.com/easyuc/EasyUC/blob/master/smc/SMC.ec}}.
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ f_smc[K][a] : ($\$$S: sender[a]), ($\$$R: receiver[a]), 
 	($\$$A: adv[a]) |- ($\$$ch: 1) = {
   let pidS :: PID, pidR :: PID = sid ;
@@ -23,60 +64,11 @@ $\nproc$ f_smc[K][a] : ($\$$S: sender[a]), ($\$$R: receiver[a]),
                else error "bad sender " ++ pid )
 }
 \end{lstlisting}
-\todo{i hesitate with this section because we can't afford to include code for \Fsmc in EasyUC because of space constraints so the point is slightly lost aside from my claims below but there is a URL}
-From the short type it is clear that this is one-shot, only allows one party to send a message, and leaks some information to the adversary after a message is sent. 
-This example highlights the advantages of our approach when we compare it to the same functinality implementd in EasyUC~\footnote{The full code of the EasyUC SMC example can be found at \url{https://github.com/easyuc/EasyUC/blob/master/smc/SMC.ec}}.
-EasyUC must implement and handle the state machine of this functionality (1. message from sender, 2. leak to adverasry, 3.deliver to the receiver) manually and must work with its unique addressing scheme.
-NomosUC, on the other hands abstracts away most of the state handling through the session type and the NomosUC type system. 
+\todo{@andrew: i hesitate with this section because we can't afford to include code for \Fsmc in EasyUC because of space constraints so the point is slightly lost aside from my claims below but there is a URL}
 
-\subsection{Polymorphism for Ideal Functionalities}
-We mention in the previous section that despite splitting communication for \Fauth into two uni-directional channels per party, we use polymorphism to achieve message ordering between channels as well.
-A contrived example of such a type below shows that with minimal extra variables in a type can achieve the same for arbitrarily complicated functionalities. The idea is that we can add an arbitrary number of variables to achieve the desired oredering. 
+We also note that we can realize \Fauth by applying the multisession operator to \Fsmc ($!\Fsmc$) and remove the need for splitting communication between two channels like we did in Section~\ref{sec:execuc}.
+In general, it is better to write ideal functionalities to be as small and single-purpose as possible and combine them with generic operators, like $!$, to create more complex functionalities. 
 
-Imagine an ideal functionality where two parties take one of two roles with the following session types:
-\begin{center}
-	\parbox{0cm}{
-	\begin{tabbing}
-		$\m{role1\_p2f}[a] = \ichoice{\mb{do1}: \m{Int} \product \m{a} \product \m{role1\_p2f}}$ \\
-		$\m{role1\_f2p}[a] = \echoice{\mb{do2}: \m{String} \arrow \m{a} \arrow 1}$ \\
-		$\m{role2\_p2f}[a][b][c] = \ichoice{$\=$\mb{do3}: \m{a} \product \m{b} \product \m{role2\_p2f}$ \\
-		\>$\mb{do4}: \m{Int} \product \m{c} \product \m{role2\_p2f}}$ \\
-		$\m{role2\_f2p}[b][c] = \echoice{\mb{do5}: \arrow \m{b} \arrow \m{c} \arrow 1}$
-	\end{tabbing}}
-\end{center}
-The type above states that one party can give an input $\m{do1}$ and the other party can give two ($\m{do2}$, $\m{do3}$).
-Even though we use polymorhism here the type alone a not enforce any kind of ordering. 
-A functionality that uses different type variables for each of the parameters in the type above would achieve nothing more or be defined by statically choosing concrete parameters. 
-
-A functionality \F with the typedef given below ensures the following:
-\begin{itemize}
-	\item party 1 must give input \mb{do1} that concretized \m{a} before \F outputs \mb{do2} with something of type \m{a}.
-	\item party 2 must give inputs \mb{do3} after party 1 gives \mb{do1} for type \mb{a}, and it must give inputs \mb{do3}, \mb{do4} before \F can output \mb{do5}.   
-\end{itemize}
-
-\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape]
-$\nproc$ F[a, b, c]: $\tg{...}$
-  ($\$$P12F: role1_p2f[a]), ($\$$F2P1: role1_f2p[a]), 
-  ($\$$P22F: role2_p2f[a,b,c]), ($\$$F2P2: role2_f2p[b,c]) $\tg{...}$
-\end{lstlisting}
-
-As we can see using polymorphism doesn't regain all the expressiveness and power of session types, but does mitigate a lot of the tradeoffs.
-The session type itself doesn't ensure message ordering to the user without examining the type of the functionality as well, but even this method still relies on the type checker rather than checks at runtime. 
-
-\subsection{The Random Oracle}
-The random oracle functionality, \Fro, captures an idealized hash function. It samples random strings of length $k$ as ``hash values`` and stores them in a table for deterministic hashes.
-Its session type can be succintly described below in FIgure~\ref{fig:rotype} 
-\begin{figure*}
-		\begin{center}
-			\parbox{0cm}{
-			\begin{tabbing}
-				$\m{oracle} = \textcolor{red}{\getpot^1} \ichoice{\mb{oracle}: \m{pid} \arrow \m{int} \tensor \echoice{\mb{hash}: \m{pid} \arrow \m{int} \tensor \textcolor{red}{\paypot^1} \m{oracle}}}$
-			\end{tabbing}}
-		\end{center}
-		\caption{The session type for the random oracle. Two channels for each party to both query hashes and send/receive messages.}
-		\label{fig:rotype}
-\end{figure*}
-We highlight this functionality to introduce yet another class of functionalities that act like a simple service, or subroutine, for an arbitrary number of parties where all communication is through a single channel. 
-When a party interats with \Fro, the session type begins (at \m{oracle}) and ends at the same value (\m{oracle}). This allows the single channel to also include the PID of the party.
-Such functionalities ocurr often in UC definitions, and are captured in a unique way in NomosUC.
-\todo{i'm convinced showing different ways to realize different classes of functionalities is good, but the language here could be more impactful}.
+%\subsection{Append-only Database}
+%Prior notions of polynomial time in the UC framework require that ITMs execute in time polynomial in the length of their input.
+%Other notions of polynomial time suggested in prior versions of the UC framework and other such notions~\ref{hofheinz} also run into problems when realizing functionalities where protocol parties 

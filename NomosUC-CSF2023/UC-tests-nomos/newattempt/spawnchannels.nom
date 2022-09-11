@@ -1,0 +1,16 @@
+(*
+
+first processes spawned are the ones that require no channels as parameters: only communicators
+then spawn the shell that takes in the communicator channels
+the shell then spawns the dummy processes that offer the linear channel
+then the actual process is spawned within the shell
+
+*)
+
+ch <- providerless1[msgtype] idP idQ
+shell P ch
+shell Q ch
+
+
+(* inside the shell *)
+
