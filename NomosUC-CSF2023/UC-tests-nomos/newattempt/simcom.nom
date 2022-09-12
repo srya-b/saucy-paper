@@ -138,3 +138,34 @@ proc sim_com_receiver_commitcheck[K] :
 			)
 	)
 }
+
+type Z2A[a][b] = Z2A2P of PID ^ a | Z2A2F of b ;
+type A2Z[a][b] = P2A2Z of PID ^ a | F2A2Z of b ;
+
+type rop2f[a] = QHash of Int | Send of PID ^ a | Recv ;
+type rof2p[a] = RHash of Int | Send 
+
+stype comm[K][a] = &{ SEND: a * +{ yes: a * comm[K][a],
+																	  no: comm[K][a] }} 
+
+
+proc sim_com[K][K1][a]:
+	(k: Int), (rng: [Bit]), (sid: session[...]), ($z2p: comm[K][A2Z[rop2f][1]), ($p2z: comm[K][A2Z[rof2p][1]),
+	($a2s: sender[a]), ($a2r: receiver[a]), ($a2f: 1) |- ($ch: 1) =
+{
+	let pidS, pidR = sid ;
+
+	
+}
+
+proc sim_com_env[K][K1][a]: ... |- ($ch: E2Z[...]) =
+{
+
+	-- TODO: figure out how to pass the crupt list and sid as parameters. no partial application of functions
+	-- 			 in NomosUC
+
+	$ch.init ; send $ch session ; send $ch clist ;
+
+	
+	
+}
