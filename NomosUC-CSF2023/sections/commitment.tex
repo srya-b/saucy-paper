@@ -2,15 +2,16 @@ In this section we highlight the use of our token heirarchy and virtual tokens c
 Specifically, we expand on the commitment ideal functionality \Fcom, used throughout this work, to show a simple example of a simulator for a commitment protocol that sandboxes a real world ideal functionality. 
 
 \subsection{Commitment Protocol}
-The commitment protocol realizes \Fcom exists in the \Fropp-hybrid world. This means that protocol parties also have access to an idealized hash function (a random oracle) and a one-way channel \Fropp in the real world 
-A random oracle accepts queries of size $k$ and generates a ``hash'' for them by sampling $k$-bit randomness ($\{0,1\}^k$ and storing the mapping.
-Its hiding and binding properties mean that a generated hash does not leak information about the information committed to and that the committer can't change the pre-image once the hash (or, commitment) is sent to the receiver. 
-Let \O{x} be the reply of \Fropp on query $x$. 
-The committer committing to bit $b$ samples a bliding nonce $n \sample \bits{k-1}$ and sends $c = \O{b || n}$ to the receiver. When opening the commitment, the committer sends $b, n$ to the receiver who can check that $c \equiv \O{b || n}$.
-
+This commitment protocol realizes \Fcom exists in the \Fropp-hybrid world. \Fropp consists of a random oracle (an idealized hash function) and a one-way channel from the committer to the receiver. 
+The random oracle accepts pre-images of size $k$, generates a ``hash'' for them by sampling $k$-bit randomness ($\{0,1\}^k$, and stores the mapping.
+It requires 1 import token to be sent with each query to cover a polynomial number of activations and searching through a polynomial size database. The type for just the random oracle part, \Fro, used below captures the requirement. 
+The oracle's hiding and binding properties mean that a generated hash does not leak information about the pre-image (the value committed to)  and that the committer can't equivocate on the pre-image on a hash sent to the receiver. 
+Let \O{x} be the reply of \Fropp on query $x$. The protocol is succintly described as: 
+The committer commits to bit $b$ by sampling a bliding nonce $n \sample \bits{k-1}$ and sending $c = \O{b || n}$ to the receiver. When opening the commitment, the committer sends $b, n$ to the receiver who can check that $c \equiv \O{b || n}$.
+We omit the details of the communication with the one-way channel but they are identical to the \Fauth presented in Section~\ref{sec:execuc}.
 
 \subsection{A Simulator for \Fcom}
-The protocol above is full-information, i.e. it relies on no secret information like randomly generated keys or encryption with those keys. 
+The protocol above is full-information, i.e. it relies on no secret information like locally generated keys or coinflips. 
 Therefore, a common strategy for such simulators is to sandbox the entire real world execution internall and pass it input from the environment.
 In this case, the simulator \simcom sandboxes only the random oracle, \Fro, part of the ideal functionality \Fropp.
 Sandboxing is performed by creating virtual tokens and passing them to sandboxd processes as ``real'' tokens. 
