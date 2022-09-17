@@ -12,30 +12,30 @@ We omit the details of the communication with the one-way channel but they are i
 
 \subsection{A Simulator for \Fcom}
 The protocol above is full-information, i.e. it relies on no secret information like locally generated keys or coinflips. 
-Therefore, a common strategy for such simulators is to sandbox the entire real world execution internall and pass it input from the environment.
-In this case, the simulator \simcom sandboxes only the random oracle, \Fro, part of the ideal functionality \Fropp.
+Therefore, a common strategy for simulators is to sandbox the entire real world execution internall and pass it input from the environment.
+In this case, the simulator \simcom sandboxes only the random oracle, \Fro, part of the ideal functionality \Fropp. 
 Sandboxing is performed by creating virtual tokens and passing them to sandboxd processes as ``real'' tokens. 
-Our typing judgement for a valid token context ensures polynomial runtime for any depth token heirarchy or number of virtual tokens created. 
+Our typing rules for a valid token context ensures polynomial runtime for virtual processes and the processes sandboxing them at arbitrary token depths.
 
 First, we introduce some necessary types. 
-\simcom receives messages from (and gives output to) \Z for protocol parties and the ideal functionality with the message types
+\simcom receives messages from (and gives output to) \Z for protocol parties and the ideal functionality with the message types through the \m{comm} session type. 
 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
 $\Type$ z2a[a][b] = Z2A2P of PID ^ a | Z2A2F of b 
 $\Type$ a2z[a][b] = P2A2Z of PID ^ a | F2A2Z of b
 \end{lstlisting}
-where \inline{a}'s \inline{rop2f} and \inline{rof2p}, and the \inline{b}'s are 1 in this example. 
+where \inline{a}'s \inline{rop2f} and \inline{rof2p}, and the \inline{b}'s are 1 in this example.  
 
-The type definition of \simcom below is straightdorwar, and we omit the default parameters for the sake of space.
+The resulting type definition of \simcom below is straightdorward, and we omit the default parameters for the sake of space.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-$\nproc$ simcom[K][K1]: ($\$$z2a: comm[K][A2Z[rop2f]][1]),
+$\nproc$ simcom[K][K1]: ($\$$z2a: comm[K][A2Z[rop2f]]{1}),
 ($\$$a2s: sender[K][a]), ($\$$a2r: reciever[K][a]), ($\$$a2f: 1) 
   |- ($\$$ch: 1)
 \end{lstlisting}
 It is parameterized by its own token type \inline{K} and a virtual token type \inline{K1} to be used for sandboxing other processes.
 Much like the environment and \Fcom, \simcom is parameterized  two channels for the sender and the receiver, and to the functionality with a channel typed \m{1}.
 
-\simcom spawns \Fro below with a virtual token type $K_1$. The type system ensures that \Fro is bounced by a polynomial \GlobalF in the number of $k$ and the virtual tokens $t_1$ it receives.
+\simcom spawns \Fro below with a virtual token type $K_1$. The type system ensures that \Fro is bounced by a polynomial \GlobalF in  $k$ and the virtual tokens $t_1$ it receives.
 The providerless channels are created with \inline{chan} in line 1-2 and the linear endpoints are obtained subsequently (line 5-6).
 Simply passing a virtual token type parameter ensures that all potential and import used are virtual, and that \Fro can not communicate outside of the sandbox.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
@@ -60,9 +60,9 @@ $\m{hash} = \textcolor{red}{\getpot^1} \ichoice{\mb{query}: $\=$PID \product Int
 }
 \Z queries \simcom with input for a corrupt party in the form of a message for \Fropp (a random oracle query or a message for the receiver).
 \simcom handles hash queries below. 
-\simcom gets 1 unit of import from \Z (line 3) for input to \Fropp, creates 1 virtual token of type $K_1$ (line 5) and pays it to \Fro with the messages (line 7).
-The number of $K_1$ tokens, $t_1$, is constrained in the type system by a polynomial of the number of type $K$: $t_{1} \leq \GlobalF(t_0, k)$. \simcom never sends import to any other process and therefore can create a polynoial number to perform a potentially polynomial number of hash queries. 
-This snippet of an incomplete case match for a hash query message from \Z illustrates communication over sandboxed channels.
+\simcom gets 1 unit of import from \Z (line 3) for input to \Fropp, creates 1 virtual token of type $K_1$ (line 5) and pays it to \Fro with the query (line 7).
+The number of $K_1$ tokens, $t_1$, is constrained in the type system by a polynomial of the number of type $K$: $t_{1} \leq \GlobalF(t_0, k)$. \simcom never sends import to any other process and therefore can create a polynomial number to perform a potentially polynomial number of hash queries. 
+This snippet of an incomplete case match, from \simcom, for a hash query message from \Z illustrates communication over sandboxed channels.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
 $\ncase$ m ( Z2A2P(pid, msg) =>
   $\nget$ {1} K $\$$z2p ;
@@ -79,9 +79,9 @@ $\ncase$ m ( Z2A2P(pid, msg) =>
 The resuling hash $h$ is sent back to the environement whtout any import (line 12).
 
 \paragraph{Simulating the commitment}
-We complete the inner case match, for \inline{msg}, in the above example with \Z sending a message from the corrupt committer to the receiver.
+We complete the inner case match, for \inline{msg} in the above example, with \Z sending a message from the corrupt committer to the receiver.
 \simcom searches through a list of saved preimages \inline{$\$$l} (line 15-16) and looks for an existing hash table entry (line 17-19). 
-If the commitment exists, extract the bit from the pre-image and tell the committer in the ideal world to commit (line 25).
+If the commitment exists, extract the bit from the pre-image and instruct the committer in the ideal world to commit (line 25).
 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em, firstnumber=13]
 Send(pid, d) =>
