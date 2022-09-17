@@ -230,12 +230,11 @@ If we try to resolve this by splitting communication among two channels, we may 
 %\end{center}
 \par}
 \vspace{2mm}
-However, session types naturally impose a \emph{parent-child relationship} among processes by requiring
+However, linear session types naturally impose a \emph{parent-child relationship} among processes by requiring
 every channel to have a provider and client endpoint.
 Moreover, these endpoints are fixed, i.e., a process cannot transition from being a client of
 a channel to its provider, or vice-versa.
-If $P$ and $Q$ are connected with channels they offer each other, the provider-client relationship
-is undefined as one process must spawn the other.
+If $P$ and $Q$ connected by two channels creates ambiguity between their parent child relationship: a cycle. One processes must have spawned the other. 
 In general, this restriction results in an acyclic tree-like topology among processes where parents progressively
 spawn child processes becoming the client to the channel provided by the child.
 %On the other hand, UC places no such restriction on communication and cyclic communication
@@ -334,19 +333,23 @@ We provide the full typing rule of shared session types in Appendix~\ref{app:typ
 
 An important caveat here is that shared channels can introduce non-determinism
 in the semantics since multiple clients can send the acquire request simultaneously.
-To address this problem, we require that the acquiring client \emph{possess
-the write token}.
-Since write tokens are treated as a linear quantity, only one of the client can
-possess it enabling only that process to acquire the shared channel.
+The \emph{write token} mechanism ensures that only the process holding it can every acquire
+a shared channel. 
 This resolves both read and write non-determinism due to linearity of the channels.
 
-The communicator type is parametric in the message type sent over it, and it is restricted to sending functionally typed messages only. 
-Therefore, in order to continue to meaningfully use session types we give a construction, illustrated in Figure~\ref{fig:newpandq}, that realizes our desired \emph{providerless channels} using communicators.
-We wrap each of $P$ and $Q$ in a shell code, call these $S_P$ and $S_Q$, which spawn two processes each.
-Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. %\snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
-%The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}
-%Second, $a$ and $b$ each communicate with one communicator and convert functionally typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
-Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.
+Using the communicator type severaly restricts all channels to the same session type \m{comm}. 
+We create a new abstracted channel called a \emph{providerless channel} that combines communicators with processes that offer the linear session type desired. 
+Take, for example, Figure~\ref{newpandq}. Here we wish to realize communication with the session types mentioned previously: \m{PtoQ} and \m{QtoP}.
+We being by running the process $P$ in a wrapper that manages its communication.
+For each session type, in this case 2, the wrapper spawns a generated process, $a_p$ and $b_p$ in the diagram, which offer the session types \m{PtoQ} and \m{QtoP}. 
+Providerless channels allow the process $P$, and $Q$ respectively, to communicate only over desired session types, and they abstract away communicators alltogether. 
+
+An important note to providerless channels are that processes $a_p$ and $b_p$ are specific to the session type in question.
+Therefore as part of the compilation of a process we generate the code for them given a simple mapping between session type and the functional messages the communicator uses. We make this clear with an example later in Section~\ref{sec:commitment}.
+%Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. %\snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
+%%The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}
+%%Second, $a$ and $b$ each communicate with one communicator and convert functionally typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
+%Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.
 \begin{figure}
 	\begin{subfigure}{0.5\textwidth}
 	\centering
@@ -365,7 +368,6 @@ Although the process code for terms $a$ and $b$ differ based on the session type
 	\vspace{-5mm}
 \end{figure}
 
-In general, we represent communication between any two ITMs as two providerless channels.
-We further don't restrict the types of the two channels, and allow them to each be bidirectional as well.
-However, for simplicity, and to be as generalized as possible, we stick to two uni-directonal channels as that directly resolves the internal vs external choice that arises from a single session type capturing $P$ and $Q$.
+From now on we only discuss communication in the form of session types and providerless channels.
+We encounter an example of shared channels and creating a providerless channel in Section~\ref{sec:commitment}.
 

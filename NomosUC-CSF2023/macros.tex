@@ -24,8 +24,10 @@
 \newcommand{\Fflip}{\ensuremath{\F_{\msf{coinflip}}}\xspace}
 \newcommand{\Fro}{\ensuremath{\F_{\msf{RO}}}\xspace}
 \renewcommand{\O}[1]{\ensuremath{\mathcal{O}(#1)}\xspace}
-\newcommand{\kbits}{\ensuremath{\{0,1\}^k}\xspace}
-\newcommand{\samplek}{\ensuremath{\xleftarrow{\$} \kbits}\xspace}
+\newcommand{\bits}[1]{\ensuremath{\{0,1\}^{#1}}\xspace}
+\newcommand{\kbits}{\ensuremath{\bits{k}}\xspace}
+\newcommand{\sample}{\ensuremath{\xleftarrow{\$}}\xspace}
+\newcommand{\samplek}{\ensuremath{\sample \kbits}\xspace}
 \newcommand{\Fsmc}{\ensuremath{\F_{\msf{SMC}}}\xspace}
 \newcommand{\Fropp}{\ensuremath{\F_{\msf{P2P\hyp RO}}}\xspace}
 \newcommand{\Gledger}{\ensuremath{\f{G}_{\msf{ledger}}}}
@@ -97,6 +99,7 @@
 \newcommand{\nproc}{\tb{proc}}
 \newcommand{\nwithdraw}{\tm{withdrawTokens}}
 \newcommand{\nif}{\yo{if}}
+\newcommand{\nelse}{\yo{else}}
 \newcommand{\nthen}{\yo{then}}
 \newcommand{\nend}{\yo{end}}
 \newcommand{\nwhile}{\yo{while}}
