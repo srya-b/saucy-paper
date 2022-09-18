@@ -1,24 +1,7 @@
 
-stype EtoZ[a] = +{ init: a ^ list[Int] -> &{start: exec} }
-stype exec = &{ pump: out }
-stype out = +{ reset: exec, 
-					 		 output: Bit -> 1 } ;
+stype EtoZ[a] = +{ init: a ^ list[Int] -> &{start: +{ out: Bit -> 1} }
 
 stype execout{n} = <{n}| &{ exec: +{ out: Bit -> 1 }} ;
-
-proc wait_for_terminate : (#z: EtoZ) |- ($d: execout) =
-{
-	$z <- acquire #z ;
-	case $z (
-		output => 
-			b = recv $z ;
-			$d.output ; send $d b ;
-		reset => (* this is the pump operation releasing control to the environment *)
-			#z <- release $z ;
-	    $d <- wait_for _terminate #z ;
-	)
-}
-
 
 proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]{p2fn,f2pn}{z2pn,p2zn}{a2pn,p2an}{f2an,a2fn}{n}:
 	(k: Int), (rng: [Bit]) |- ($d: execout{n}) =
@@ -40,24 +23,48 @@ proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]{p2fn,f2pn}{z2pn,p2zn}{a2
 	    #z_to_a <- channel_init[K][z2a][K] ; 
 	    #a_to_z <- channel_init[K][a2z][K] ; 
 
-	    #z <- PS.env <- k rng #z_to_pw #pw_to_z #z_to_a #a_to_z ;
-	    case #z (
+	    $z <- PS.env <- k rng #z_to_pw #pw_to_z #z_to_a #a_to_z ;
+	    case $z (
 	    	init =>
-	    		sid = recv #z ;
-	    		clist = recv #z ;
+	    		sid = recv $z ;
+	    		clist = recv $z ;
+	    	  $pw <- party_wrapper[K][K1][p2z,z2p][p2f,f2p][p2a,a2p] <- 
+	    	  				k rng sid clist #pw_to_z #z_to_pw #pw_to_f #f_to_pw #pw_to_a #a_to_pw ;
+
+	    	  $f <- f_wrapper[K][K1][f2p,p2f][f2a,a2f] <-
+	    	  				k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f ;
+
+	    	  $a <- PS.adv[K] <- k rng sid clist #a_to_z #z_to_a #a_to_pw #pw_to_a #a_to_f #f_to_a ;
+
+      	  $z.start ;
+
+				  $d <- $z ;
 	    )
-	    
-	    $pw <- party_wrapper[K][K1][p2z,z2p][p2f,f2p][p2a,a2p] <- 
-	    				k rng sid clist #pw_to_z #z_to_pw #pw_to_f #f_to_pw #pw_to_a #a_to_pw #z ;
-
-	    $f <- f_wrapper[K][K1][f2p,p2f][f2a,a2f] <-
-	    				k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f #z ;
-
-	    $a <- PS.adv[K] <- k rng sid clist #a_to_z #z_to_a #a_to_pw #pw_to_a #a_to_f #f_to_a #z ;
-
-      #z.start ;
-	
-	--$d <- wait_for_terminate #z ;	
 }
 
+proc party_wrapper[K][K1][p2z,z2p][p2f,f2p][p2a,a2p] :
+	(k: Int), (rng: [Bit]), (sid: SID[s]), (clist: [PID]), (#pw_to_z: ), (#z_to_pw: ), 
+	(#pw_to_f), (#f_to_pw: ), (#pw_to_a: ), (#a_to_pw: ) |- ($ch: 1) =
+{
+	$lz2p <- pnil[comm[z2p][K1]{z2pn}] <- ;
+	$lp2z <- pnil[comm[p2z][K1]{p2zn}] <- ;
+	$lp2f <- pnil[comm[p2f][K1]{p2fn}] <- ;
+	$lf2p <- pnil[comm[f2p][K1]{f2pn}] <- ;
+	#pw_to_f.RECV ;
+	case #pw_to_f (
+		yes => pid = recv #pw_to_f; msg = recv #pw_to_f ;
+			if not exists pid then
+				#z2p' <- channel_init[K1][z2p] <- ;
+				#p2z' <- channel_init[K1][p2z] <- ;
+				#p2f' <- channel_init[K1][p2f] <- ;
+				#f2p' <- channel_init[K1][f2p] <- ;
+				$ch <- prot <- k rng sid pid #z2p' #p2z' #p2f' #f2p' ;
+				$lz2p <- append $lz2p z2p' 							
+				$lp2z <- append $lz2p p2z' 							
+				$lp2f <- append $lz2p p2f' 							
+				$lf2p <- append $lz2p f2p' 							
+			else ()
+		
+					
 	
+}	

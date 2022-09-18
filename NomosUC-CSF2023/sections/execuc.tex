@@ -171,13 +171,79 @@ The \partywrapper construction trades off dynamic parties with expressiveness of
 All messages between \Z and protocol partis, for example, pass through the same providerless channel with the \partywrapper, and, therefore, only allows a static amount of import to be passed in each direction.
 Tight runtime constraints, however, are not intended goals of NomosUC or the UC framework.
 
-\paragraph{Functionality Shells}
-As a consequence of our design, the \partywrapper construction must extend to \F as well.
-Instead of losing the soul of session types that we're pursuing, we replicate the virtualization of the \partywrapper for functionalities to meaningfully use session types. 
-NomosUC runs \F in a shell and communcates with \A and the \partywrapper through providerless channels. 
-The same reasoning about the impact of import in the \partywrapper applies here.
+\paragraph{Functionalities}
+Like the \partywrapper, we also treat functionalities are being wrapped by code that handles communication with other processes. The wrapper around a functionality creates the same dummy processes as in the \partywrapper with the desired session type.
+In the \Fcom example, the \partywrapper creates dummy processes that offer the \m{sender} and \m{receiver} session types to the sender and receiver, and the functionality's wrapper does the same for \Fcom. 
 
+%\paragraph{Functionality Shells}
+%As a consequence of our design, the \partywrapper construction must extend to \F as well.
+%Instead of losing the soul of session types that we're pursuing, we replicate the virtualization of the \partywrapper for functionalities to meaningfully use session types. 
+%NomosUC runs \F in a shell and communcates with \A and the \partywrapper through providerless channels. 
+%The same reasoning about the impact of import in the \partywrapper applies here.
 For the remainder of this work we denote and individual protocol party as $\pi$ or $\pi_i$, and a protocol as a whole run inside the \partywrapper as $\m{MX}(\Pi)$ or $\m{MX}(\pi)$.
+
+% important things to mention here:
+%   -- ideal functionalities do the same thing as the multiplexer and have to create extra processes to parameterize them with channels
+%   -- constraints on session types that arises from some functionalities 
+%\subsection{Ideal Functionalities}
+%The core of the UC framework is the ideal functionality: it captures the desired security properties and defines the protocol interface as a simple trusted third party. 
+%Its session types with parties contrains the order of messages and import required, it provides the user insight into the functionality and its interface, and succintly captures the protocol's state machine.
+%Like the \partywrapper, we must treat functionalities as being wrapped by code that communicates with the other processes, and the wrapper around a functionalities creates the same dummy processes that offer the desired session types. 
+%
+%Supporting a dynamic number of parties at the ideal functionality has its own challenges unique from the \partywrapper.
+%For example, the code of a functionality can only wait to read (a blocking operation) on a static number of channels defined in the process code. 
+%In some case, \Fauth overcomes this obstacle by implementing the simpler one-way functionality \Fsmc and applying the multisession operator described later in this section. 
+%Others resort to a polling-based approach where parties query the functionality for new messages or output to be delivered.
+
+%Linear session types require some tradeoff when definin them for ideal functionalities, and we highlight them through the 2-way communiation channel \Fauth.
+%
+%\Fauth accepts messages from two parties and allows \A to decide when the message is delivered to the other.
+%At a given moment, party $P_i$ can give input to, or expect output from, \Fauth. This implies a session type must both accept internal choice and external choice at the same time---a pattern that can not be realized.
+%In such cases, we sacrifice some of the expressiveness of session types and resort to splitting communication between two uni-direcitonal channels.
+%We show this type for \Fauth below. 
+%%From the point of view of either part $P_i$, it can write to \Fauth or receive a message from it---a communication pattern that can't be expressed by a single session type.
+%%Most functionalities that exhibit ambiguity in which end point can send a message must fallback on two competing approaches: split communication over two uni-directional channels or switch communication to polling where the party or \A asks \Fauth for new messages.
+%%Both cases can be captured by session types but lose some of the power of the session type mediating the order of messages in the protocol. 
+%%For example int he former approach the session types for \Fauth look something like this
+%
+%%We use providerless channels, in part, to allow functionalities in NomosUC to use meaningful session types with a dynamic number of parties.
+%%The 2-way channel ideal functionality, \Fauth, is a simple and clear illustration of design choices and tradeoffs when writing functionalities in NomosUC.
+%%\Fauth provides only message \emph{integrity} and leaks the message to \A.
+%%When a message is sent by $P_s$, \Fauth sends the message to \A and waits for a response to deliver it to $P_r$. 
+%%
+%%In plain session types, communication between two parties $P_s$ and $P_r$ occurs over a single duplex channel.
+%%In UC the role of the adversary as a message scheduler in \Fauth, the most common network channel model, means a more complicated functionality involving $P_s$, $P_r$, \F, and \A. 
+%%\Fauth provides only the following guarantee: (\emph{integrity}) the adversary can not modify messages from the sender.
+%%It sends the message to \A when it receives one from the sender, and waits for the adversary to instruct it to deliver the message.
+%%When \A writes back to \Fauth to deliver the message, \Fauth sends it to the receiver.
+%%The communication pattern in \Fauth exhibits the same problems with the communication in Figure~\ref{fig:newpandq}.
+%%
+%%We, therefore, are confronted with two options: transition to a functionality where all parties and the adversary poll for new messages or split communication among two uni-directional providerless channels.
+%%The former buffers messages from $P_s$ until asked for by $A$, and then delivers (with \A's approval) to $P_r$ when polled.
+%%The type and mechanics of this version require constant activations by \Z and are inconvenient.
+%%The latter is a more generalizable construction and can be typed as: 
+%\begin{center}
+%\parbox{0cm}{
+%\begin{tabbing}
+%$\m{sendmsg}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{send}: \m{a} \product \m{sendmsg}}$ \\
+%$\m{recvmsg}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \product \m{recvmsg}}$ \\
+%$\m{adv}[a] = \echoice{\mb{leakmsg}: a \product \ichoice{ \mb{ok}: \m{adv}}}$
+%\end{tabbing}}
+%\end{center}
+%We can recover some expressiveness by making use of polymorphism in our types. In this example the session types are parameterized by a type \inline{a}. 
+%\Fauth parameterized by channels using the ambiguous \inline{a}, makes it impossible for \Fauth to typecheck unless a \mb{recv} with before a \mb{send} that concretizes \inline{a}.
+%The protocols concretize polymorphic functionalities, and, in general, we can use this trick anywhere we split communication into two-unidirectional channels to enforce ordering of messages between channels. 
+%We show a more complicated, but contrived, example in Section~\ref{sec:functionalities} which expandds on how this trick can be used. 
+
+%Supporting a dynamic number of parties also comes with limitations on expressiveness. 
+%For example, NomosUC code can only wait for messages on a static number of channels because read operations are blocking. 
+%Some functionalities, like p2p message passing between an arbitrary number of parties, don't share state between pairs of parties and can be implemented by defining simpler functionalities, like a one-way channel, and applying a generic opertor like the multisession defined later in this section.
+%For others, we resort messages polling approaches where the functionality can ask each channel for new messages and react when given one. 
+%This tradeoff also comes up in some functionalities that do not exhibit this communication pattern, but handle a dynamic number of parties without a communication pattern like \Fro described in a later
+%With \Fro, we can use the same channel for every party because of the type of the communication, however, in general the code of a functionaliy can only \emph{wait} on a statically defined number of channels at a given moment. Therefore, in such cases, we also split the channels and use polymorphism to maintain ordering.
+%where each party has one channel typed as $\m{sending}$ and the other as $\m{recvmsg}$.
+%Despite this limitation we note that the type parameter $a$ for the message type ensures that no party can receice a message from \Fauth before a message is sent which concretizes $a$ to some type.
+%Therefore, although some of the power of session types is lost when dealing with such functionalities, they are still capable of enforcing protocol message ordering and providing resource analysis through import.
 
 \subsection{Polynomial Bound}
 The UC framework introduces the concept of import tokens as a new way to reason about ITMs being polynomial in the security parameter $k$. 
