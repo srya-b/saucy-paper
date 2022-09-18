@@ -98,9 +98,10 @@ Send(pid, d) =>
         $\nelse$ ())
   $\$$a2s.commit ; send $\$$a2s b ;
 \end{lstlisting}
-
 When the commitment is opened by \Z, if no bit $b$ was found above on line 21, then the open is ignored and no output is received by \Z from \Fcom.
 If a $b$ was found, \simcom simply instructs the sender to open (\inline{$\$$a2s.open}) and, iteself, terminates.  
+
+We offload the full code of \simcom to the appendix, but it should be clear that in such full-information protocols, simulting the real world (in this case just the random oracle), suffices to create an identical view to the environment.
 
 
 

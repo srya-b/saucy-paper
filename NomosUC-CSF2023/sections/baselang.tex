@@ -368,6 +368,23 @@ Therefore as part of the compilation of a process we generate the code for them 
 	\vspace{-5mm}
 \end{figure}
 
+Splitting communication over two channels in this way also imposes constraints on the expressiveness of session types. 
+An example of the motivating case is a two-way communication channel \Fauth.
+\Fauth accepts messages from two parties and allows \A to decide when the message is delivered to the other.
+At a given moment, party $P_i$ can give input to, or expect output from, \Fauth. This implies a session type must both accept internal choice and external choice at the same time---a pattern that can not be realized.
+Splitting communication into two uni-directional channels like the $P$ and $Q$ example results in the following session type:
+\begin{center}
+\parbox{0cm}{
+\begin{tabbing}
+$\m{sendmsg}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{send}: \m{a} \product \m{sendmsg}}$ \\
+$\m{recvmsg}[a] = \textcolor{red}{\getpot^m} \echoice{\mb{recv}: \m{a} \product \m{recvmsg}}$ \\
+$\m{adv}[a] = \echoice{\mb{leakmsg}: a \product \ichoice{ \mb{ok}: \m{adv}}}$
+\end{tabbing}}
+\end{center}
+The intended ordering of a send before a read is lost by splitting the session type like this, however we can recover some expressiveness by making use of polymorphism in our types. In this example the session types are parameterized by a type \inline{a}. 
+Only the sender of the message can concretize the parameter \inline{a} forcing \Fauth to wait for a message send before giving a message to the receiver. 
+In general, this trick can be used to enforce an ordering of messages between different channels.
+
 From now on we only discuss communication in the form of session types and providerless channels.
 We encounter an example of shared channels and creating a providerless channel in Section~\ref{sec:commitment}.
 
