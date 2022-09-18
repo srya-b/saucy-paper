@@ -10,12 +10,30 @@ stype ropened = 1
 type comp2f = Commit of Bit | Open ;
 type comf2p = Commit | Open of Bit ;
 
-proc prot_com_init[K] :
-	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
+type comsid = SID of PID ^ PID
+
+proc prot[K]:
+	(k: Int), (rng: [Bit]), (sid: session[comsid]), (pid: PID),
+	(#z2p: comm[....]), (#p2z: comm[....]), (#f2p: comm[....]), (#p2f: comm[....]) |- ($ch: 1) = 
+{
+	case sid (
+		SID(c, r) => 
+			if pid == c then
+				$com_z2p <- com_z2p_r1[K] <- k rng sid pid #z2p #p2z ;
+			  $com_p2f <- prot_f2p[K] <- k rng sid pid #p2f #f2p ;
+			  $c <- prot_com_sender[K] <- k rng sid pid $com_z2p $com_f2p ;
+			else if pid == r then
+				$com_z2p <- com_z2p_r2[K] <- k rng sid pid #z2p #p2z ;
+			  $com_p2f <- prot_f2p[K] <- k rng sid pid #p2f #f2p ;
+			  $c <- prot_com_receiver[K] <- k rng sid pid $com_z2p $com_f2p ;
+			end
+  )
+}
+			
 
 proc prot_com_sender[K] :
 	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
-	($z2p: sender)  |- ($p2f: party[a]) =
+	($z2p: sender), ($p2f: hash)  |- ($c: 1) =
 {
 	case $z2p (
 		commit =>	
