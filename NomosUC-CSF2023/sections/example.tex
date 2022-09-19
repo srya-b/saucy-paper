@@ -41,6 +41,8 @@ Finally, the $\ichoiceop$ constructor
 it here for the purpose of exposition}
 enforces that $S$ sends $\mb{Open}$ to $\Fcom$ followed by type $\one$
 that indicates $S$ terminates and closes its channel.
+In UC, one-shot functionalities terminate after a single after one instance, and reactive
+functionalities persist and run many times. 
 It is important to point out that session types capture communication over one channel.
 For example, the session type of the sender doesn't capture what, if any, information is leaked to the adversary when \Fcom is activated.
 It also does not directly capture either of \Fcom's security properties: the type can not enforce the same bit that was committed is the one that is opened.

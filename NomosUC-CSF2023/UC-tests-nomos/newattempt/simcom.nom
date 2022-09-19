@@ -138,3 +138,91 @@ proc sim_com_receiver_commitcheck[K] :
 			)
 	)
 }
+
+type Z2A[a][b] = Z2A2P of PID ^ a | Z2A2F of b ;
+type A2Z[a][b] = P2A2Z of PID ^ a | F2A2Z of b ;
+
+type rop2f[a] = QHash of Int | Send of PID ^ a | Recv ;
+type rof2p[a] = RHash of Int | Send 
+
+stype comm[K][a] = &{ SEND: a * +{ yes: a * comm[K][a],
+																	  no: comm[K][a] }} 
+
+
+-- this code block is created when we talk about code generation
+-- the providerless channels contain processes that read from communicators and 
+-- offer channels with a linear session type that the protocol party actually
+-- communicates with. This is such a process and the channel it offers the simulator
+-- will be the one use to communicate with the internal F_ro
+proc party_ro_p2f[K]:
+	(#p_to_f: comm[rop2f][K]), (#f_to_p: comm[rof2p][K]) |- ($p: party[a])
+
+
+proc sim_com[K][K1][a]:
+	(k: Int), (rng: [Bit]), (sid: session[...]), ($z2a: comm[K][A2Z[rop2f][1]), ($a2z: comm[K][A2Z[rof2p][1]),
+	($a2s: sender[a]), ($a2r: receiver[a]), ($a2f: 1) |- ($ch: 1) =
+{
+	let pidS, pidR = sid ;
+
+	#p_to_f <- channel[K1][rop2f] ; #f_to_p <- channel[K1][rof2p]
+	#a_to_f <- channel[K1][1] ; #f_to_a <- channel[K1][1]
+
+	<- Fro[K1] <- #p_to_f #f_to_p #a_to_f #f_to_a ;
+  $p2f' <- ro_p2f[K1] #p_to_f ; $f2p' <- ro_f2p[K1] #f_to_p ;
+
+	$ch <- sim_com_z2p <- k rng sid $z2a $a2z $a2s $a2r $a2f $p2f $f2p 
+}
+
+proc sim_com_z2p_crupt_committer[K][K1][a]: 
+	.... ($p2f': query[K1]), ($f2p': hash[K1]), ($l: [Int]) |- ($ch: 1) =
+{
+	$z2p.recv ;
+	case $z2p (
+		yes => m = recv $z2p ; get K {1} $z2p 
+					 case m (
+					   Z2A2P(pid, msg) =>
+						   case msg (
+				 	       QHash(x) => 
+								   withdrawtoken K K1 1 ;
+									 $l <- append $l x ;
+									 $p2f'.hash; send $p2f' pid ; send $p2f' x ;
+								   pay {1} K1 $p2f' ;
+									 case $p2f' (
+									   shash => pid = recv $p2f' ; h = recv $p2f' ;
+										   $a2z.send ; send $a2z P2A2Z(pid, RHash(h))
+									 )
+									 $ch <- sim_zom_z2p_crupt_commitment[K][K1]
+                 Send(pid, d) =>
+                   b = sample rng 1 ;
+                   forSeq_ $l \p ->
+                     withdrawtoken K K1 1 ;
+                     $p2f'.hash ; send $p2f' 1 ; send $p2f' p ;
+                     pay {1} K1 $p2f' ;
+                     case $p2f'( 
+                       shash => recv $p2f' ; h = recv $p2f' ;
+                         if h == d then
+                           (b: n) = h  -- parse bit and nonce
+                           break
+                         else ())
+                   $a2s.commit ; send $a2s b ;
+                   $ch <- sim_com_z2p_crupt_committer[K][K1] <- k rng sid $z2a $a2z $a2s $a2r $p2f' $f2p' $l
+						   )
+           )
+	  no => $ch <- sim_com_z2p_crupt_committer
+}
+
+
+
+proc sim_com_env[K][a]: 
+	(k: Int), (rng: [Bit]), (#z_to_pw: comm[K][rop2f[a]]), (#pw_to_z: comm[K][rof2p[a]]), 
+	(#z_to_a: comm[K][1]),  (#a_to_z: comm[K][1]) |- ($ch: EtoZ[...]) =
+{
+
+	-- TODO: figure out how to pass the crupt list and sid as parameters. no partial application of functions
+	-- 			 in NomosUC
+
+	$ch.init ; send $ch session ; send $ch clist ;
+
+	
+	
+}
