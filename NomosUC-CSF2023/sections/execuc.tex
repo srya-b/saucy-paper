@@ -110,15 +110,16 @@ As a result of using channels, NomosUC needs the \partywrapper to handle the dyn
 %The \partywrapper is not a requirement specific to the session-typed setting of NomosUC, but motivated by the use of channels for communication.
 
 We achieve this in two ways: by our providerless channels construction and by sandboxing protocol parties within the \partywrapper.
-Instead of directly connected a party to a functionality through a providerless channel, the \partywrapper presents a view to parties as if they are directly connected to \F or \Z but, in fact, the partywrapper maintains a single providerless channel to \Z, \F, and \A through which all communication is routed. 
+Instead of parties directly connected to \F and \Z through a providerless channel, the \partywrapper runs them virtually, internally, but presents a view to them as if they are directly connected to \F and \Z. 
+In fact, the \partywrapper is connected by single channels to \F, \Z, and \A, and it routes communication to/from the appropriate protocol party. 
 In Figure~\ref{fig:singlemultiplex}, we see an instance of a protocol party within the \partywrapper that is connected to processes offering it linear channels for communication with \Z and \F. 
-These are only part of the providerless channel where the other end is handled by the \partywrapper.
+This is only the part of the providerless channel connected to the party, whereas the other end is handled by the \partywrapper.
 
 Like the providerless channels, which rely on some code generation, the \partywrapper also relies on the code generation to create processes which can convert messages from the single providerless channel between, say, \partywrapper and \F  and the individual linear channels offered to each protocol arty.
-Typically, such protocol-specific communication constructe are written by users, as is the case with the addressing scheme in EasyUC~\ref{easyuc}, but in NomosUC the processes themselves are so trivial (like a function application on messages) that they can be generated easily
+Typically, such protocol-specific communication constructs are written by users, as is the case with the addressing scheme in EasyUC~\ref{easyuc}, but in NomosUC the processes themselves are so trivial (akin to a function application on messages) that they can be generated easily.
 
-One tradeoff with the \partywrapper design is that the import sent to it by \F, \Z, and \A must be constant as they each communicate over a single providerless channel.  
-In the sandbox, howdver, the protocol parties receive virtual import tokens according to the varying amounts specified by the session types.
+One tradeoff with the \partywrapper design is that the import sent to it by \F, \Z, and \A must be constant as they each communicate with it over a single providerless channel.  
+In the sandbox, however, the protocol parties receive virtual import tokens according to the varying amounts specified by the session types.
 We don't see this as a downside of the approach as tight runtime constraints or reasoning is not an intended goal of NomosUC or the UC framework.
 %The sandboxed parties communicate over virtual providerless channels, using a virtual token type, with the \partywrapper, but see an interface that's directly connected to \F or \Z. 
 %The \partywrapper connects to \F, \A, and \Z through communicators and multiplexes incoming and outgoing messages by the $\m{PID}$ included in them. 
