@@ -146,17 +146,17 @@
   and increasingly in computer security more broadly.
   However, compared with traditional game-based definitions, UC has been relatively less studied from the viewpoint
   of programming language semantics and formal methods.
-  This work complements the existing formalizations of UC by introducing a novel abstraction to express UC
-  functionalities and protocols.
+  This work complements the existing formalizations of UC by introducing a novel abstraction called \emph{import
+  session types} (IST) to express UC functionalities and protocols.
   This new abstraction has been inspired from \emph{resource-aware session types} (Rast), a recently designed type system
-  for concurrent message-passing systems.
+  for analyzing execution cost of concurrent message-passing systems.
   Session types are a typed framework for prescribing bi-directional communication protocols in a distributed system
   that are statically enforced via type-checking.
   Rast enhances this framework by adding \emph{potential annotations} to these communication protocols
-  that modularly describe the execution cost of message-passing systems.
-  We observe the close correspondence between Rast and UC where session types are used
+  that modularly describe their abstract execution cost.
+  IST establishes a close correspondence between Rast and UC where session types can be used
   to describe the interaction protocol of Interactive Turing Machines involved in a cryptographic protocol.
-  Moreover, resource-aware types can be used to statically encode the \emph{import mechanism} in UC used to
+  Moreover, IST can be used to statically encode the \emph{import mechanism} in UC used to
   ensure polynomial-time computation.
   We therefore combine Nomos, an existing language based on Rast with a process-based core calculus for UC (ILC)
   to build a new language called NomosUC to implement executable UC protocols.
