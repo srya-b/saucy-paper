@@ -6,35 +6,37 @@ Below, we introduce how the UC experiment is defined in NomosUC, and then provid
 
 \subsection{The UC Experiment}
 %The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
-The type definition of \inline{execUC} is straightforward \todo{once we have clarity on the intro and type system section length we can include the typedef of here}. 
-It is parameterized by at least one virtual token type to allow for sandboxing of other processes (usually by the adversary or environment) and message types specified by the protocolin question. 
+The type definition of \inline{execUC} is straightforward \todo{once we have clarity on the intro and type system section length we can include the typedef of here, it's not very interesting imo}. 
+It is parameterized by at least one virtual token type to allow for sandboxing of other processes (usually by the adversary or environment) and message types specified by the protocol in question. 
 Its only functional parameters are the security parameter $k$ and a random bit string $r$. 
-An example typedef for the commitment example is in Figure~\ref{fig:execuc} where there are no virtual token types as the simulator doesn't perform any sandboxing.
-Its type \m{execout} is defined as follows:
+It offers the following type \m{execout}:
 {\centering
 \parbox{0cm}{
 \begin{tabbing} 
- $\m{execout}[a] = \textcolor{red}{\getpot^n} \echoice{\mb{exec}: $\=$ \ichoice{ out: Bit \product 1}}$ 
+ $\m{execout}[a] = \textcolor{red}{\getpot^n} \echoice{\mb{exec}: $\=$ \ichoice{ \mb{out}: Bit \product 1}}$ 
  \end{tabbing}}
 }
+The spawning procss for \m{execUC} must provide it some number of tokens $n$ before the experiment starts. 
+NomosUC forces us to be explicit in the polynomials used when checking a polynomial bound in the type system, and, as long as we ensure we provide a number of tokens $n \in poly(k)$, Theorems~\ref{thm:global_ppt} and \ref{thm:preservation} guarantee that the experiment terminates in $poly(k)$. 
 
-\begin{figure*}
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-$\nproc$ execUC[K][p2f,f2p][z2p,p2z][a2p,p2a][f2a,a2f]{p2fn,f2pn}{z2pn,p2zn}{a2pn,p2an}{f2an,a2fn}{n}: 
-  (k: Int), (rng: [Bit]) |- ($\$$d: execout)
-\end{lstlisting}
-\caption{Type definition for \m{execUC} with no virtual tokens.}
-\label{fig:execuc}
-\end{figure*}
+%\begin{figure*}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+%$\nproc$ execUC[K][p2f,f2p][z2p,p2z][a2p,p2a][f2a,a2f]{p2fn,f2pn}{z2pn,p2zn}{a2pn,p2an}{f2an,a2fn}{n}: 
+%  (k: Int), (rng: [Bit]) |- ($\$$d: execout)
+%\end{lstlisting}
+%\caption{Type definition for \m{execUC} with no virtual tokens.}
+%\label{fig:execuc}
+%\end{figure*}
 
-The message types are used the providerless channels of of the main processs. For example, the communicator between \Z and \A is instantiated as
+The type parameters of \m{execUC} are parameters to the channels spawned between the main processes.
+For example, the channels between \Z and \A are instantiated as
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
 #z_to_a $\leftarrow$ channel_init[$\tp{K}$][$\tp{z2a}$]{$\tp{z2an}$}
 #a_to_z $\leftarrow$ channel_init[$\tp{K}$][$\tp{a2z}$]{$\tp{a2zn}$}
 \end{lstlisting}
-where the type of \inline{#z_to_a} is given in Section~\ref{subsec:communicators} and its type parameters like $\tp{z2a}$ and $\tp{z2an}$ (the import amount) are type parameters of \inline{execUC}.
+where its import parameters $\tp{z2an}$ and $\tp{a2zn}$ (the import amount) are also type parameters of \inline{execUC}.
 %When processes are spawned, their shell codes correctly connect the channel endpoints internally.
-The processes definitions of \Z, \A, \F, and $\Pi$ are not passed as parameters to \inline{execUC} because NomosUC currently doesn't support passing them as parameters. We instead define them as part of an imported module. 
+We point out that process definitions for \Z, \A, \F, and $\Pi$ are not passed as parameters to \inline{execUC} because NomosUC currently doesn't support passing them as parameters.
 %Therefore, \inline{execUC} is defint in terms of a imported user module \inline{PS
 %We define the \inline{execUC}, in Figure~\ref{lst:execuc}, process as the initial process in the configuration, and it spawns the main processes in the execution: a environment \Z, a \partywrapper, an adversary \A, and a functionality \F.
 %Its type parameters are all of the message types, import amounts used in the protocol, and some number of token types depending on the protocol in question. In the example in Figure~\ref{fig:execuc} we show \inline{execUC} where some processes, like the simulator for commitments, will need a virtual token type \inline{K1}.
@@ -43,17 +45,18 @@ The processes definitions of \Z, \A, \F, and $\Pi$ are not passed as parameters 
 %NomosUC relies on providerless channels so \inline{execUC} first spawns the communicators that all the shell processes will communicate over.
 %imately the shell processes will attempt to read messages from the shared channels and shuttle them to their internal processes which makes use of session types.
 
-The environment \Z is the first main processes and offers the type \m{EtoZ} (below). 
-It sends \mb{init} to \m{execUC}, and it selects the corrupt parties and an SID (a user-defined type).
-On \mb{start} by \m{execUC}, \Z begins with the execution, and concludes with a output \mb{Bit} to \m{execUC}.
+The environment \Z is the first main processes and offers the type \m{EtoZ} (below) to \m{execUC}.
+\Z sends an \mb{init} message with the list of corrupt parties and an SID (a user-defined type).
+On \mb{start} by \m{execUC} along with $n$ import tokens, \Z begins with the execution, and it concludes with a output \mb{Bit} to \m{execUC}.
 {\centering
 \parbox{0cm}{
 \begin{tabbing}
- $\m{EtoZ}[a] = \up \ichoice{\mb{init}: $\=$ a \arrow [PID] \arrow$ \\
-\>$\echoice{\mb{start} \arrow \ichoice{\mb{bit}: Bit \arrow 1}}}$
+ $\m{EtoZ}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{init}: $\=$ SID[a] \arrow [PID] \arrow$ \\
+\>$\echoice{\mb{start} \arrow \ichoice{\mb{out}: Bit \arrow 1}}}$
  \end{tabbing}}
 }
-We later define indistiguishability between the two worlds over the distribution of output bits in each of them.
+The output bit, it's guess of which world it is in, forms the basis for the definition of indistinguishability.  	
+
 %When we define indistinguishability, we want the distribution of output bits to be as close to coin tossing as possible (different with negligible probability)
 %Sandboxing is a common design pattern in UC, especially for simulators.
 %NomosUC supports it through the use of virtual tokens, however, the statically typed nature of NomosUC requires us to be explicit about the number of virtual tokens in use in an execution.
@@ -100,24 +103,35 @@ We later define indistiguishability between the two worlds over the distribution
 	\vspace{-3mm}
 \end{figure}
 The \partywrapper spawns protocol parties, runs them in a sandbox, and routes messages to/from them and \Z, \F, and \A.
-As a result of using channels, NomosUC needs the \partywrapper to handle spwaning new parties, the channels they require, and connecting them to the rest of the experiment.
+As a result of using channels, NomosUC needs the \partywrapper to handle the dynamic creation of parties: spawning processes, creating the channels they require, and connecting them to the rest of the experiment.
 %Without the \partywrapper, NomosUC may have to rely on \Z to create the channels for new parties and route messages to them.
 %Similarly, \F and \A would have to all handle new channels from the creation of new parties.
 %The \partywrapper runs all of the protocol parties internally in a sandbox, has one providerless channel to \Z, one to \A, and one with \F, and it multiplexes messages to and from them to its internal parties. 
 %The \partywrapper is not a requirement specific to the session-typed setting of NomosUC, but motivated by the use of channels for communication.
 
-The sandboxed parties communicate over virtual providerless channels, using a virtual token type, with the \partywrapper, but see an interface that's directly connected to \F or \Z. 
-The \partywrapper connects to \F, \A, and \Z through communicators and multiplexes incoming and outgoing messages by the $\m{PID}$ included in them. 
-We depict a single, sandboxed party running inside the \partywrapper in Figure ~\ref{fig:singlemultiplex}.
-It is important to note that like most providerless channels, the construction of channels here is protocols/functionality-dependent---they must convert between message types and offer the correct session types. 
-Typically, such protocol-specific communication constructs are written by users, as is the case with EasyUC~\cite{easyuc}, but in NomosUC the constructions are so trivial and can be systematically generated based on the type and PID of the party.
+We achieve this in two ways: by our providerless channels construction and by sandboxing protocol parties within the \partywrapper.
+Instead of directly connected a party to a functionality through a providerless channel, the \partywrapper presents a view to parties as if they are directly connected to \F or \Z but, in fact, the partywrapper maintains a single providerless channel to \Z, \F, and \A through which all communication is routed. 
+In Figure~\ref{fig:singlemultiplex}, we see an instance of a protocol party within the \partywrapper that is connected to processes offering it linear channels for communication with \Z and \F. 
+These are only part of the providerless channel where the other end is handled by the \partywrapper.
+
+Like the providerless channels, which rely on some code generation, the \partywrapper also relies on the code generation to create processes which can convert messages from the single providerless channel between, say, \partywrapper and \F  and the individual linear channels offered to each protocol arty.
+Typically, such protocol-specific communication constructe are written by users, as is the case with the addressing scheme in EasyUC~\ref{easyuc}, but in NomosUC the processes themselves are so trivial (like a function application on messages) that they can be generated easily
+
+One tradeoff with the \partywrapper design is that the import sent to it by \F, \Z, and \A must be constant as they each communicate over a single providerless channel.  
+In the sandbox, howdver, the protocol parties receive virtual import tokens according to the varying amounts specified by the session types.
+We don't see this as a downside of the approach as tight runtime constraints or reasoning is not an intended goal of NomosUC or the UC framework.
+%The sandboxed parties communicate over virtual providerless channels, using a virtual token type, with the \partywrapper, but see an interface that's directly connected to \F or \Z. 
+%The \partywrapper connects to \F, \A, and \Z through communicators and multiplexes incoming and outgoing messages by the $\m{PID}$ included in them. 
+%We depict a single, sandboxed party running inside the \partywrapper in Figure ~\ref{fig:singlemultiplex}.
+%It is important to note that like most providerless channels, the construction of channels here is protocols/functionality-dependent---they must convert between message types and offer the correct session types. 
+%Typically, such protocol-specific communication constructs are written by users, as is the case with EasyUC~\cite{easyuc}, but in NomosUC the constructions are so trivial and can be systematically generated based on the type and PID of the party.
 
 %In actuality, the \partywrapper is connected to \Z via communicator whose type includes the $\m{PID}$ with every message, and it routes messages to the appropriate virtual instance.
 %An example of a party $\pi_i$ running within the \partywrapper is shown in Figure~\ref{fig:singlemultiplex}. The process $\pi_{pid}$ is the shell process mentioned previously and is connected to communicators as expected from providerless channels. The endpoint of the communicators is the \partywrapper.  
 
-The \partywrapper construction trades off dynamic parties with expressiveness of import in session types.
-All messages between \Z and protocol partis, for example, pass through the same providerless channel with the \partywrapper, and, therefore, only allows a static amount of import to be passed in each direction.
-Tight runtime constraints, however, are not intended goals of NomosUC or the UC framework.
+%The \partywrapper construction trades off dynamic parties with expressiveness of import in session types.
+%All messages between \Z and protocol partis, for example, pass through the same providerless channel with the \partywrapper, and, therefore, only allows a static amount of import to be passed in each direction.
+%Tight runtime constraints, however, are not intended goals of NomosUC or the UC framework.
 
 \paragraph{Functionalities}
 Like the \partywrapper, we also treat functionalities are being wrapped by code that handles communication with other processes. The wrapper around a functionality creates the same dummy processes as in the \partywrapper with the desired session type.
@@ -264,9 +278,24 @@ In this section we present a composition operator for protocols that completes t
 The composition operator allows replacement of a functioality with a protocol realizing it, and, potentially, any functionality that protocol uses.
 
 In NomosUC, composition of protocols occurs in the \partywrapper where output from $\rho_i$ to $\F_2$ is given as input to $(\pi, \F_1)$. $\pi$ runs in the \partywrapper and $\F_1$ is the hybrid functionality. 
-The generic composition operator of NomosUC connects the shells of parties $\rho_i$ and $\pi_i$ through providerless channels. 
-As mentioned earlier, for functionalities/protocols that don't need to split communication over two channels, the coposition operator can be trivialized by directly connected the channel offered by $\rho_i$ as the input channel of $\pi_i$.
-The type system here guarantees that our composition gives $\pi_i$ an appropriate amount of import and tha the resulting protocol is also polynomially bound. 
+The operator connects parties of $\rho$ and $\pi$ through providerless channels as expected. 
+Like \m{execUC} (whose code can be seen in the Appendix), the operator spawns a providerless channel to intermediate communication between the two protocols, spawns their wrapper processes, and returns:
+
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+#rho2pi $\leftarrow$ channel_init[K][rho2f]{rho2fn} ;
+#pi2rho $\leftarrow$ channel_init[K][f2eho]{f2rhon} ;
+
+$\$$r $\leftarrow$ rho <- k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
+$\$$p $\leftarrow$ pi <- k rng sid pid #rho2pi #pi2rho #p2f #f2p;
+\end{lstlisting}
+The processes \inline{rho} and \inline{pi} are actually wrapped processes like the one depicted in Figures~\ref{fig:newpandq} and \ref{fig:singlemultiplex}.
+The challenge in creating a generic composition operator is managing protocol and type-specific providerless channels.  
+As we stated previously, the \partywrapper and protocol channels rely on some code generation in order to make use of expressive session types, and the composition operator is now different.
+In our construction above, 
+
+%The generic composition operator of NomosUC connects the shells of parties $\rho_i$ and $\pi_i$ through providerless channels. 
+%As mentioned earlier, for functionalities/protocols that don't need to split communication over two channels, the coposition operator can be trivialized by directly connected the channel offered by $\rho_i$ as the input channel of $\pi_i$.
+%The type system here guarantees that our composition gives $\pi_i$ an appropriate amount of import and tha the resulting protocol is also polynomially bound. 
 
 Part of the security proof of security under composition is providing a simulator that ensures emulation.
 For this we can defina simulator compostion operator that connects the simulators \SIM{\rho} and \SIM{\pi} in the natural way. 

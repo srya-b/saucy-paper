@@ -9,7 +9,7 @@ proc compose[z][p][s]:
 }
 
 
-proc compose[K][s][z2rho][rho2z][pi2f][f2pi][rho2f][f2rho]{rho2fn}{f2rhon}
+proc compose[K,s][z2rho,rho2z][pi2f,f2pi][rho2f,f2rho]{rho2fn,f2rhon}
 	(k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
 	(#z2p: comm[K][z2rho]{z2rhon}), (#p2z: comm[K][rho2z]{rho2zn}), (#p2f: comm[K][pi2f]{pi2fn})
 	(#f2p: comm[K][f2pi]{f2pin}) |- ($ch: 1) =
