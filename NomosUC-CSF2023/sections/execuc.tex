@@ -137,6 +137,10 @@ We don't see this as a downside of the approach as tight runtime constraints or 
 Like the \partywrapper, we also treat functionalities are being wrapped by code that handles communication with other processes. The wrapper around a functionality creates the same dummy processes as in the \partywrapper with the desired session type.
 In the \Fcom example, the \partywrapper creates dummy processes that offer the \m{sender} and \m{receiver} session types to the sender and receiver, and the functionality's wrapper does the same for \Fcom. 
 
+\paragraph{Functionalities}
+Like the \partywrapper, we also treat functionalities are being wrapped by code that handles communication with other processes. The wrapper around a functionality creates the same dummy processes as in the \partywrapper with the desired session type.
+In the \Fcom example, the \partywrapper creates dummy processes that offer the \m{sender} and \m{receiver} session types to the sender and receiver, and the functionality's wrapper does the same for \Fcom. 
+
 %\paragraph{Functionality Shells}
 %As a consequence of our design, the \partywrapper construction must extend to \F as well.
 %Instead of losing the soul of session types that we're pursuing, we replicate the virtualization of the \partywrapper for functionalities to meaningfully use session types. 
