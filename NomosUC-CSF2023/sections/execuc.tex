@@ -17,7 +17,7 @@ It offers the following type \m{execout}:
  \end{tabbing}}
 }
 The spawning procss for \m{execUC} must provide it some number of tokens $n$ before the experiment starts. 
-NomosUC forces us to be explicit in the polynomials used when checking a polynomial bound in the type system, and, as long as we ensure we provide a number of tokens $n \in poly(k)$, Theorems~\ref{thm:global_ppt} and \ref{thm:preservation} guarantee that the experiment terminates in $poly(k)$. 
+NomosUC forces us to be explicit in the polynomials used when checking a polynomial bound in the type system, and, as long as \m{execUC} is provided a number of tokens $n \in poly(k)$, Theorems~\ref{thm:global_ppt} and \ref{thm:preservation} guarantee that the experiment terminates in $poly(k)$. Therefore, we can conclude that every process in the experiment is also running time polynomial in $k$.  
 
 %\begin{figure*}
 %\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
@@ -207,34 +207,34 @@ For the remainder of this work we denote and individual protocol party as $\pi$ 
 %Despite this limitation we note that the type parameter $a$ for the message type ensures that no party can receice a message from \Fauth before a message is sent which concretizes $a$ to some type.
 %Therefore, although some of the power of session types is lost when dealing with such functionalities, they are still capable of enforcing protocol message ordering and providing resource analysis through import.
 
-\subsection{Polynomial Bound}
-The UC framework introduces the concept of import tokens as a new way to reason about ITMs being polynomial in the security parameter $k$. 
-The import mechainsm as described in UC, and which we describe in Section~\ref{sec:background}, ensures that a single ITM's execution is upper-bounded by some poynomial $T(n,k)$ where $T$ is a polynomial, $n$ is its net import token balance (received - sent), and $k$ is the security parameter.
-
-In Section~\ref{sec:import}, we described how the NomosUC type systems judges processes to be PPT in the security parameter $k$. 
-It still remains to show that our definition is sound by extending the arguing that the UC experiment \m{execUC} is polynomial time.
-\begin{ddef}[PPT in $k$]\label{def:ppt}
-A closed term $e(k,r)$ is  PPT in $k$ if, given some amount of initial import $n \in poly(k)$, there exists a polynomial $T(n,k)$ such that $\forall k, r, e(r,k) \{n\}$ terminates in at most $T(n,k)$ steps.
-We use the notation $e(r,k) \leq T(n,k)$ to refer to such a PPT process.
-\end{ddef}
-%Notice that our choice of polynomial representation, a function of both the import and security parameter $k$, only partially defines PPT in terms of the security parameter. It still remains to be shown that the system is polynomial \emph{only} in $k$.
-
-Soundness is a simple argument to make and comes down to showing that our UC experiment is PPT in only the security parameter $k$. 
-%The UC framework provides a simulation of a configuration of ITMs on a universal turing machine and proves that such a turing machine is also bounded by a polynomial $T$. 
-%Given the initial input of import tokens into the machine ($poly(k)$ amount of import), it concludes that the import mechanism falls in line with the standard length-of-input notion of polynomial time and satisfied their ``PPT in $k$'' definition. 
-In NomosUC, we do not deal directly with ITMs, however, our type system allows us to judge whether a process, or collection of processes through the Preservation Theorem~\ref{thm:preservation}, is locally PPT given a particular polynomial. 
-We rely on the Lemma~\ref{lem:local_ppt} and Theorem~\ref{thm:global_ppt} to adapt Proposition 7 from UC~\cite{canettiUC} to NomosUC, and show that our notion of locally PPT leads to a UC execution that is PPT in the security parameter $k$.
-
-%In order to reason about configurations in Theorem~\ref{thm:soundness}, we define the UC execution as a series of configurations that capture the relevant processes--the \partywrapper, \Z, \F, and \A--and the channels that connect them.
-\begin{theorem} \label{thm:soundness}
-Let \F, \A, \Z, and \m{MX}(\PI) be locally PPT configurations bounded by super additive polynomials $T_\F$, $T_\A$, $T_\Z$, $T_\PI$. Let \m{UC} be a configuration composed of a single process that runs \inline{execUC}. If \m{UC} receives $n \in poly(k)$ import initially, then any composed configuration $\m{UC} = \m{execUC} \; || \; \Z \; || \; \A \; || \; \m{MX}(\PI) \; || \; \F$ is PPT in $k$, where \m{MX} is the \partywrapper.
-\end{theorem}
-
-\begin{proof}
-It suffices to argue that the resuting process configuration \m{UC} offers only one channel, the one offered by \m{execUC}.
-As $n \in poly(k)$ is the total import given to \m{UC}, and by Lemma \ref{lem:local_ppt} and Theorem \ref{thm:global_ppt}, we can conclude that $\m{UC} \leq poly(k)$.
-\end{proof}
-\todo{@Andrew: we had a discussion that such a theorem as is necessary, but with the global PPT theorem and proof in the type system section is it really necessary? we're just relying on those two lemmas so what's the point.}
+%\subsection{Polynomial Bound}
+%The UC framework introduces the concept of import tokens as a new way to reason about ITMs being polynomial in the security parameter $k$. 
+%The import mechainsm as described in UC, and which we describe in Section~\ref{sec:background}, ensures that a single ITM's execution is upper-bounded by some poynomial $T(n,k)$ where $T$ is a polynomial, $n$ is its net import token balance (received - sent), and $k$ is the security parameter.
+%
+%In Section~\ref{sec:import}, we described how the NomosUC type systems judges processes to be PPT in the security parameter $k$. 
+%It still remains to show that our definition is sound by extending the arguing that the UC experiment \m{execUC} is polynomial time.
+%\begin{ddef}[PPT in $k$]\label{def:ppt}
+%A closed term $e(k,r)$ is  PPT in $k$ if, given some amount of initial import $n \in poly(k)$, there exists a polynomial $T(n,k)$ such that $\forall k, r, e(r,k) \{n\}$ terminates in at most $T(n,k)$ steps.
+%We use the notation $e(r,k) \leq T(n,k)$ to refer to such a PPT process.
+%\end{ddef}
+%%Notice that our choice of polynomial representation, a function of both the import and security parameter $k$, only partially defines PPT in terms of the security parameter. It still remains to be shown that the system is polynomial \emph{only} in $k$.
+%
+%Soundness is a simple argument to make and comes down to showing that our UC experiment is PPT in only the security parameter $k$. 
+%%The UC framework provides a simulation of a configuration of ITMs on a universal turing machine and proves that such a turing machine is also bounded by a polynomial $T$. 
+%%Given the initial input of import tokens into the machine ($poly(k)$ amount of import), it concludes that the import mechanism falls in line with the standard length-of-input notion of polynomial time and satisfied their ``PPT in $k$'' definition. 
+%In NomosUC, we do not deal directly with ITMs, however, our type system allows us to judge whether a process, or collection of processes through the Preservation Theorem~\ref{thm:preservation}, is locally PPT given a particular polynomial. 
+%We rely on the Lemma~\ref{lem:local_ppt} and Theorem~\ref{thm:global_ppt} to adapt Proposition 7 from UC~\cite{canettiUC} to NomosUC, and show that our notion of locally PPT leads to a UC execution that is PPT in the security parameter $k$.
+%
+%%In order to reason about configurations in Theorem~\ref{thm:soundness}, we define the UC execution as a series of configurations that capture the relevant processes--the \partywrapper, \Z, \F, and \A--and the channels that connect them.
+%\begin{theorem} \label{thm:soundness}
+%Let \F, \A, \Z, and \m{MX}(\PI) be locally PPT configurations bounded by super additive polynomials $T_\F$, $T_\A$, $T_\Z$, $T_\PI$. Let \m{UC} be a configuration composed of a single process that runs \inline{execUC}. If \m{UC} receives $n \in poly(k)$ import initially, then any composed configuration $\m{UC} = \m{execUC} \; || \; \Z \; || \; \A \; || \; \m{MX}(\PI) \; || \; \F$ is PPT in $k$, where \m{MX} is the \partywrapper.
+%\end{theorem}
+%
+%\begin{proof}
+%It suffices to argue that the resuting process configuration \m{UC} offers only one channel, the one offered by \m{execUC}.
+%As $n \in poly(k)$ is the total import given to \m{UC}, and by Lemma \ref{lem:local_ppt} and Theorem \ref{thm:global_ppt}, we can conclude that $\m{UC} \leq poly(k)$.
+%\end{proof}
+%\todo{@Andrew: we had a discussion that such a theorem as is necessary, but with the global PPT theorem and proof in the type system section is it really necessary? we're just relying on those two lemmas so what's the point.}
 
 \subsection{Emulation}
 The central security definition in UC is indistinguishability between the real and ideal world experiments.
