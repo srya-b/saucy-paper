@@ -92,7 +92,7 @@ In the \Fcom example, the \partywrapper creates dummy processes that offer the \
 Like the \partywrapper, we also treat functionalities are being wrapped by code that handles communication with other processes. The wrapper around a functionality creates the same dummy processes as in the \partywrapper with the desired session type.
 In the \Fcom example, the \partywrapper creates dummy processes that offer the \m{sender} and \m{receiver} session types to the sender and receiver, and the functionality's wrapper does the same for \Fcom. 
 
-For the remainder of this work we denote and individual protocol party as $\pi$ or $\pi_i$, and a protocol as a whole run inside the \partywrapper as $\m{MX}(\Pi)$ or $\m{MX}(\pi)$.
+%For the remainder of this work we denote and individual protocol party as $\pi$ or $\pi_i$, and a protocol as a whole run inside the \partywrapper as $\m{MX}(\Pi)$ or $\m{MX}(\pi)$.
 
 
 \subsection{Emulation}
@@ -100,9 +100,11 @@ The central security definition in UC is indistinguishability between the real a
 In NomosUC, we define the term \textit{well-matched} to mean the configuration resulting from a PPT term $e$ connected to another term $e'$ in well-typed, and we denote it as: $e \leftrightarrow e'$.
 The term allows us to quantify statements over only adversaries and environments whose types match the protocol/functionality in question when reasoning about emulation. 
 
-We define the output bit of the partial term of \inline{execUC}, for a specific $\pi$ and \F, as an ensemble of distributions over all possible random bitstrings and security parameters.
-Emulation, then, is about the ensembles created by two UC executions being computationally indistinguishable from each other.
-We define indistinuishability between ensembles in a standard way using \textit{statistical distance}: $\mathcal{D}_{1,k} sim \mathcal{D}_{2,k}$ if their statistical distance is at most $negl{k}, \forall k$.
+We define indistinguishability in terms of te ensemble of distributions of the output bit of the partial term $\m{execUC}\ \pi\ \F$ over all possible bitstrings and security parameters using the standard way of statistical distribution.  
+
+%We define the output bit of the partial term of \inline{execUC}, for a specific $\pi$ and \F, as an ensemble of distributions over all possible random bitstrings and security parameters.
+%Emulation, then, is about the ensembles created by two UC executions being computationally indistinguishable from each other.
+%We define indistinuishability between ensembles in a standard way using \textit{statistical distance}: $\mathcal{D}_{1,k} sim \mathcal{D}_{2,k}$ if their statistical distance is at most $negl{k}, \forall k$.
 %\begin{definition}[Indistinguishability]\label{def:distance}
 %Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\mathcal{D}_{1,k} \sim \mathcal{D}_{2,k}$, if their statistical distance is at most $negl(k), \forall k$.
 %\end{definition}
@@ -118,7 +120,7 @@ If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI an
 		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
 		\forall \A \ | \ \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_3', \ \langle \A \leftrightarrow \pi \rangle \\
 		\Rightarrow \exists \ (\Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3') \ | \ \langle \Sim_\A \leftrightarrow \phi \rangle \\
-		\Rightarrow \forall \Z  \; \msf{execUC} \ \pi\ \Z\ \F_1\ \A \approx\ \msf{execUC} \ \phi\ \Z\ \F_2\ \Sim_\A
+		\Rightarrow \forall \Z  \; \msf{execUC} \ \pi\ \F_1\ \Z\ \A \approx\ \msf{execUC} \ \phi\ \F_2\ \Z\ \Sim_\A
 	}
 	{
 		% EMULATION DEFINITION
@@ -127,17 +129,18 @@ If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI an
 \end{mathpar}
 \end{definition}
 
-An important validation of our approach is the the Dummy Lemma~\ref{thm:dummythicclemma} which shows that a simulator for the dummy adversary satisfies the emulation definition for all adversaries. The proof of the Lemma is a simulator that we state in Appendix Section~\ref{sec:diummy}, but we sate the theorem here. 
+An important validation of our approach is the the Dummy Lemma~\ref{thm:dummythicclemma} which shows that a simulator, \DS, for the dummy adversary satisfies the emulation definition for all adversaries \A. 
 \begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
+The proof of the Lemma is in the form of a simulator that combines the real world adversary and the dummy simulator in a straightforward way (in Appendix~\ref{sec:dummy}. Though a simple construction it illustrates the simplicity of our sandboxing and allows us to work only with dummy simulators from now on.
 
 \subsection{Single Composition}
 In this section we present a composition operator for protocols that completes the single composition theorem, Theorem~\ref{thm:singlecomp}.
-The composition operator allows replacement of a functioality with a protocol realizing it, and, potentially, any functionality that protocol uses.
+The composition operator allows replacement of a single instance of a functioality with a protocol realizing it, and, potentially, any functionality that protocol uses.
 
 In NomosUC, composition of protocols occurs in the \partywrapper where output from $\rho_i$ to $\F_2$ is given as input to $(\pi, \F_1)$. $\pi$ runs in the \partywrapper and $\F_1$ is the hybrid functionality. 
-The operator connects parties of $\rho$ and $\pi$ through providerless channels as expected. 
+The operator connects parties of $\rho$ and $\pi$ through providerless channels where $\rho$ gives input to $\pi$. 
 Like \m{execUC} (whose code can be seen in the Appendix), the operator spawns a providerless channel to intermediate communication between the two protocols, spawns their wrapper processes, and returns:
 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
@@ -147,18 +150,23 @@ Like \m{execUC} (whose code can be seen in the Appendix), the operator spawns a 
 $\$$r $\leftarrow$ rho <- k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
 $\$$p $\leftarrow$ pi <- k rng sid pid #rho2pi #pi2rho #p2f #f2p;
 \end{lstlisting}
-The processes \inline{rho} and \inline{pi} are actually wrapped processes like the one depicted in Figures~\ref{fig:newpandq} and \ref{fig:singlemultiplex}.
-The challenge in creating a generic composition operator is managing protocol and type-specific providerless channels.  
-As we stated previously, the \partywrapper and protocol channels rely on some code generation in order to make use of expressive session types, and the composition operator is now different.
-In our construction above, 
+
+Recall that every protocol and functionality comes with generated processes which handle communication as part of the providerless channels as depicted in Figure~\ref{fig:newpandq}.
+In the code snippet above, this means that \inline{rho} and \inline{pi} are wrappers that encapsulate the actual protocol and the generated processes, and passing the channel endpoints to the shell connects them correctly. 
+
+%The processes \inline{rho} and \inline{pi} are actually wrapped processes like the one depicted in Figures~\ref{fig:newpandq} and \ref{fig:singlemultiplex}.
+%The challenge in creating a generic composition operator is managing protocol and type-specific providerless channels.  
+%As we stated previously, the \partywrapper and protocol channels rely on some code generation in order to make use of expressive session types, and the composition operator is now different.
+%In our construction above, 
 
 %The generic composition operator of NomosUC connects the shells of parties $\rho_i$ and $\pi_i$ through providerless channels. 
 %As mentioned earlier, for functionalities/protocols that don't need to split communication over two channels, the coposition operator can be trivialized by directly connected the channel offered by $\rho_i$ as the input channel of $\pi_i$.
 %The type system here guarantees that our composition gives $\pi_i$ an appropriate amount of import and tha the resulting protocol is also polynomially bound. 
 
 Part of the security proof of security under composition is providing a simulator that ensures emulation.
-For this we can defina simulator compostion operator that connects the simulators \SIM{\rho} and \SIM{\pi} in the natural way. 
-Inputs to the adversary are intended for $\F_1$ or dummy parties of $\F_1$ and are handled by \SIM{\pi}. Outputs from \SIM{\pi} are intended for $\F_2$ and dummy parties of $\F_2$ is simulated by \SIM{\rho}.
+For this we can define simulator compostion operator that connects the simulators \SIM{\rho} and \SIM{\pi} in the natural way: pipe output from \SIM{\pi} to \SIM{\rho} and vice versa.
+The providerless channel abstraction makes the construction simple to realize and involves only simple function application to messages.
+%Inputs to the adversary are intended for $\F_1$ or dummy parties of $\F_1$ and are handled by \SIM{\pi}. Outputs from \SIM{\pi} are intended for $\F_2$ and dummy parties of $\F_2$ is simulated by \SIM{\rho}.
 
 \subsection{UC Composition}
 

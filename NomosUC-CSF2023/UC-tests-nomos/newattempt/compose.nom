@@ -11,3 +11,64 @@ proc compose[K,s][z2rho,rho2z][pi2f,f2pi][rho2f,f2rho]{rho2fn,f2rhon}
 }
 
 
+-- match #a, #v (
+-- 	*,casea1 => foo1
+--   *,casea2 => foo2
+-- 	caseb1,* => bar1
+--  caseb2,* => bar2
+-- )
+-- 
+--      (==)
+-- 
+-- acquire #a ;
+-- #a.RECV ;
+-- case #a (
+-- 	yes => m = recv #a ;
+-- 				 release #a ;
+-- 				 case m (
+-- 				   casea1 =>  foo1 ;
+-- 					 casea2 => foo2 ;
+-- 				 )
+-- 	no => release #a 
+-- )
+-- acquire #b ;
+-- #b.RECV ;
+-- case #b (
+-- 	yes => m = recv #b ;
+-- 				 release #b ;
+-- 				 case m (
+-- 				   caseb1 => bar1 ;
+-- 					 caseb2 => bar2 ;
+-- 				 )
+--   no => release #b ;
+-- )
+
+proc z2a_wrap[K][a] : 
+	(#in2p: comm[K][a]), (#in2f: comm[K][b]), (#out: comm[K][Z2A[a][b]) |- ($ch: 1) =
+{
+	match #in2p, #in2f (
+		*,A2F(m) => #out.SEND ; send #out Z2A2F(m) ;
+		A2P(pid,m), * => #out.SEND ; send #out Z2A2P(pid, m) ;
+  )
+  $ch <- z2a_wrap[K][a] <- #in2p #in2f #out 
+}
+
+proc sim_compose[K,K1][...]: 
+	... ($z2a: comm[K][z2a]), ($a2z: comm[K][a2z]), ($a2p: comm[K][a2p]),
+	($p2a: comm[K][p2a]), ($f2a: comm[K][f2a]), ($a2f: comm[K][a2f) |- ($ch: 1) =
+{
+	#z2a' <- channel_init[K1][Z2A[z2piP][z2piF]] ; 
+	#a2z' <- channel_init[K1][A2Z[z2rho]] ;
+	#a2f' <- channel_init[K1][
+
+	#pi2pfrho <- channel_init[K1][Z2A[z2rhoP][z2rhoF]] ;
+	#pi2prho <- channel_init[K1][A2P[z2rhoP]] ;
+	#pi2frho <- channel_init[K1][A2F[z2rhoF]] ;
+
+	#pfrho2pi <- channel_init[K1][A2Z[rhoP2A][rhoF2A]] ;
+	#prho2pi <- channel_init[K1][P2A[rhoP2A]] ;
+	#frho2pi <- channel_init[K1][F2A[rhoF2A]] ;
+
+	$ch <- sim_rho <- k rng sid crupt #z2a 	
+	
+}
