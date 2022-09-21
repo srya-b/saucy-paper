@@ -64,6 +64,7 @@ proc sim_compose[K,K1][...]:
 	#pi2pfrho <- channel_init[K1][Z2A[z2rhoP][z2rhoF]] ;
 	#pi2prho <- channel_init[K1][A2P[z2rhoP]] ;
 	#pi2frho <- channel_init[K1][A2F[z2rhoF]] ;
+	
 
 	#pfrho2pi <- channel_init[K1][A2Z[rhoP2A][rhoF2A]] ;
 	#prho2pi <- channel_init[K1][P2A[rhoP2A]] ;
