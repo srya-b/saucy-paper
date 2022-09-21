@@ -340,11 +340,14 @@ This resolves both read and write non-determinism due to linearity of the channe
 Using the communicator type severaly restricts all channels to the same session type \m{comm}. 
 We create a new abstracted channel called a \emph{providerless channel} that combines communicators with processes that offer the linear session type desired. 
 Take, for example, Figure~\ref{newpandq}. Here we wish to realize communication with the session types mentioned previously: \m{PtoQ} and \m{QtoP}.
-We being by running the process $P$ in a wrapper that manages its communication.
-For each session type, in this case 2, the wrapper spawns a generated process, $a_p$ and $b_p$ in the diagram, which offer the session types \m{PtoQ} and \m{QtoP}. 
+We begin by running the process $P$ in a wrapper that manages its communication.
+For each session type, in this case 2, the wrapper spawns a generated process, $a_p$ and $b_p$ in the diagram, which offer the session types \m{PtoQ} and \m{QtoP}. The wrapper connects to the communicators.
 Providerless channels allow the process $P$, and $Q$ respectively, to communicate only over desired session types, and they abstract away communicators alltogether. 
 
 An important note to providerless channels are that processes $a_p$ and $b_p$ are specific to the session type in question.
+These processes map functional messages from the communicator to the linear channel they offer.  
+Typically, such protocol-specific communication constructs are written by users, as is the case with the addressing scheme in EasyUC~\ref{easyuc}, but in NomosUC the processes themselves are so trivial (akin to a function application on messages) that they can be generated easily.
+
 Therefore as part of the compilation of a process we generate the code for them given a simple mapping between session type and the functional messages the communicator uses. We make this clear with an example later in Section~\ref{sec:commitment}.
 %Each shell spawns two processes, call then $a$ and $b$, which offer the types \m{PtoQ} and \m{Qto} to each of $P$ and $Q$. They also handle functional messages from the communicators and sends the corresponding message, specified by the session type, on the channels they offer. %\snote{Cleared up this point, the previous one and your comment is commented out in the latex.}
 %%The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}
