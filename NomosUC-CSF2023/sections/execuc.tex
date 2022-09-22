@@ -80,7 +80,7 @@ We use the \partywrapper to handle spawning parties, creating their channels, an
 Instead of parties directly connected to \F and \Z through a providerless channels, the \partywrapper runs them virtually and presents a consistent ``real'' view to them. 
 Virtual tokens enables the types and import requirements of the protocol parties to be met while sandboxing them. 
 The \partywrapper, in turn, is connected by single channels to \F, \Z, and \A, and it routes communication to/from the appropriate protocol party. 
-In Figure~\ref{fig:singlemultiplex}, we see a wrapped protocol party, with its generated processes, inside the \partywrapper. \todo{this figre now just looks like an example of a wrapped process and not to insightful}
+In Figure~\ref{fig:singlemultiplex}, we see a wrapped protocol party, with its generated processes, inside the \partywrapper. \todo{this figre now just looks like an example of a wrapped process and isn't tot insightful}
 
 The \partywrapper design implies that the import sent to it by \F, \Z, and \A must be constant, because they each communicate with it over a single providerless channel. However, the protocol parties still receive and operate on virtual tokens according to their type. 
 We don't see this as a downside of the approach as tight runtime constraints are not an intended goal of NomosUC or the UC framework.
@@ -131,19 +131,24 @@ Though a simple Lemma, the simplicity of the resulting simulator proof highlight
 In this section we present a composition operator for protocols that completes Theorem~\ref{thm:singlecomp}.
 
 The composition allows replacement of a single ideal functionality $\F_2$ with a protocol $\pi$ that realizes it in the $\F_1$-hybrid world. 
-A protocol party $\rho_i$ that gives input to $\F_2$ instead gives input to party $\pi_i$. 
-The composes protocol $\rho \circ \pi$ connects parties of both protocols with providerless channels in the \partywrapper. 
+A protocol party $\rho_i$ that gives input to $\F_2$ instead gives input to party $\pi_i$ through a providerless channel in the \partywrapper. 
 %In NomosUC, composition of protocols occurs in the \partywrapper where output from $\rho_i$ to $\F_2$ is given as input to $(\pi, \F_1)$. $\pi$ runs in the \partywrapper and $\F_1$ is the hybrid functionality. 
 %The operator connects parties of $\rho$ and $\pi$ through providerless channels where $\rho$ gives input to $\pi$. 
-Like \m{execUC} (whose code can be seen in the Appendix), the operator operates on wrapped processes. That means it spawns the shared providerless channels and connects the wrapped processes.
+Like \m{execUC} (full code in the Appendix), the operator connects wrapped processes with providerless channels as shown below. 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-#rho2pi $\leftarrow$ channel_init[K][rho2f]{rho2fn} ;
-#pi2rho $\leftarrow$ channel_init[K][f2eho]{f2rhon} ;
-
-$\$$r $\leftarrow$ rho <- k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
-$\$$p $\leftarrow$ pi <- k rng sid pid #rho2pi #pi2rho #p2f #f2p;
+$\nproc$ compose[$\tg{...}$][rho2f,f2rho]{rho2fn,f2rhon}
+  $\tg{(* args *)}$ |- ($\$$ch: 1) = {
+  #rho2pi $\leftarrow$ channel_init[K][rho2f]{rho2fn} ;
+  #pi2rho $\leftarrow$ channel_init[K][f2rho]{f2rhon} ;
+  
+  $\$$r $\leftarrow$ rho $\leftarrow$ k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
+  $\$$p $\leftarrow$ pi $\leftarrow$ k rng sid pid #rho2pi #pi2rho #p2f #f2p;
+  w:wq
+}
 \end{lstlisting}
 
+Proving the UC security under composition requires creating a simulator for $\rho \circ \pi$ that realizes $\F_3$. This is done by connectin the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
+Aslo the like the Dummy Lemma: the simulator construction provided in the Appendix is agnostic to the types of the composed protocols and can be easily specified thanks to our token heirarchy. 
 %Recall that every protocol and functionality comes with generated processes which handle communication as part of the providerless channels as depicted in Figure~\ref{fig:newpandq}.
 %In the code snippet above, this means that \inline{rho} and \inline{pi} are wrappers that encapsulate the actual protocol and the generated processes, and passing the channel endpoints to the shell connects them correctly. 
 
@@ -155,10 +160,6 @@ $\$$p $\leftarrow$ pi <- k rng sid pid #rho2pi #pi2rho #p2f #f2p;
 %The generic composition operator of NomosUC connects the shells of parties $\rho_i$ and $\pi_i$ through providerless channels. 
 %As mentioned earlier, for functionalities/protocols that don't need to split communication over two channels, the coposition operator can be trivialized by directly connected the channel offered by $\rho_i$ as the input channel of $\pi_i$.
 %The type system here guarantees that our composition gives $\pi_i$ an appropriate amount of import and tha the resulting protocol is also polynomially bound. 
-
-Part of the security proof of security under composition is providing a simulator that ensures emulation.
-For this we can define simulator compostion operator that connects the simulators \SIM{\rho} and \SIM{\pi} in same way as the Dummy Lemma: \SIM{\pi} receives input from \Z and \SIM{\rho} receives output fro m \F and the \partywrapper.
-
 \subsection{UC Composition}
 
 \begin{theorem}[Composition]\label{thm:composition}
@@ -177,8 +178,10 @@ For this we can define simulator compostion operator that connects the simulator
 \end{theorem}
 
 Full composition, Theorem~\ref{thm:composition}, extends Theorem~\ref{thm:singlecomp} to replace multipe concurrent instances of a functionality with a realizing protocol.
-We show that it can be realized in NomosUC by first introducing  an operator $!$ and intermediate Theorems~\ref{thm:functor} and \ref{thm:squash}. We cover the latter in the appendix
-because it's statement and proof are intuitive. 
+We provide it by first proving a much simpler theorem arising from the multisession operator $!$, Theorems~\ref{thm:functor} and \ref{thm:suash}.
+Theorem~\ref{thm:squash} trivially shows a protocol \m{squash} such that $!\F \xrightarrow{\m{squash}} !!\F$.
+The proof of Theorem~\ref{thm:functor} is trivially proven by replicating \SIM{\pi} for every instance of $\F_2$.  
+
 \begin{theorem}[Multisession Composition]\label{thm:functor}
 	\begin{mathpar}
 		\inferrule*[right=MultiComp]
@@ -190,13 +193,10 @@ because it's statement and proof are intuitive.
 		}
 	\end{mathpar}
 \end{theorem}
-Theorem~\ref{thm:functor} is easily proven by replicating the single simulator because the concurrent sessions don't share any state. We describe the simulator in the Appendix, and, again we rely on our novel virtual tokens construction to implement it. 
-Defining these extensions, theorem and their simulators in NomosUC allows us to conclude that NomosUC captures the full, generlized UC composition theorem with the following argument. 
 
+We can now prove Theorem~\ref{thm:composition} in NomosUC:
 \begin{proof}
-By Theorem~\ref{thm:singlecomp} we have that $\F_1 \xrightarrow{\pi} \F_2$. If we combine this result with Theorem~\ref{thm:functor} we can conclude that $!!\F_1 \xrightarrow{\rho \circ !\pi} !\F_3$. 
-Finally we can squash two $!!$ operators into one $!$ with Theorem~\ref{thm:squash} (in Appendix~\ref{app:ms}) to get $!\F_1 \xrightarrow{\rho \circ !\pi \circ \m{squash}} \F_3$.
+By Theorem~\ref{thm:singlecomp} we have that $\F_1 \xrightarrow{\pi} \F_2$. Combine it with Theorem~\ref{thm:functor} and conclude that $!!\F_1 \xrightarrow{\rho \circ !\pi} !\F_3$. 
+Finally, squash two $!!$ operators into one with Theorem~\ref{thm:squash} to get $!\F_1 \xrightarrow{\rho \circ !\pi \circ \m{squash}} \F_3$.
 \end{proof}
-
-The relative simplicity of our encoding of the UC experiment, the related opreators and theorems, comes down to our providerlss channel abstraction that removes constraits on possible communication patterns, the virtual token heirarchy that allows re-use of code akin to the UC ITM model of computation, and a strong type system that guarantees us polynomial time execution.
 
