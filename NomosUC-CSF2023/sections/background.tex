@@ -1,13 +1,15 @@
-\subsection{Universal Composability}
-Universal Composability (UC) is a framework~\cite{canettiUC} used to define security in cryptographic protocols based on
-a real world / ideal world paradigm.
-Security is defined as a relation between these two worlds:
+The UC framework~\cite{canettiUC} defines security using
+a real world / ideal world paradigm:
 the real world features a protocol $\pi$ and an arbitrary adversary \A that controls corrupt parties;
-the ideal world comprises of an ideal functionality \F, a trusted third party that carries out the desired task directly.
-A reason ideal functionalities have become a popular alternative to traditional game-based definitions is that a security definition consists of a single program for one trusted party, rather than a collection of properties pertaining to several (potentially faulty) parties.
-
-To summarize the ideal/real security relation, roughly we need to show ``any attack in the real world is also exhibited by the ideal functionality.'' This means constructing a simulator \Sim that plays the role of adversary in the ideal world.
-What makes UC the strongest among ideal/real frameworks is that the inputs and number of honest parties are chosen adaptively, and dynamically, by a distinguishing environment \Z, which can communicate with the adversary and interleave its interactions with honest parties.
+the ideal world comprises of an ideal functionality \F and a trusted third party that carries out the desired task directly.
+% A reason ideal functionalities have become a popular alternative to traditional game-based definitions is that a
+% security definition consists of a single program for one trusted party, rather than a collection of
+% properties pertaining to several (potentially faulty) parties.
+To achieve the ideal/real security relation, we roughly need to show that ``any possible attack in the real world can also exhibited
+in the ideal world''.
+This means constructing a simulator \Sim that plays the role of an adversary in the ideal world.
+What makes UC the strongest definitional model is that the inputs and number of honest parties are chosen \emph{adaptively}
+and \emph{dynamically}, by a distinguishing environment \Z, which can also communicate with the adversary and interleave its interactions with honest parties.
 %This adversary model leads to a flexible approach to composition, which we'll say more about shortly.
 More formally, the security definition says that a protocol $\pi$ realizes an ideal functionality $\F$
 if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal world are indistinguishable to any environment \Z:
@@ -16,12 +18,12 @@ if for every adversary $\A$, we can construct a simulator $\Sim$, such that the 
   \forall \A \; \exists \Sim \; \forall \Z, \; \; \msf{execUC} \; \Z \, \idealP \, \F \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F_0 \, \A
 \end{equation}
 Here $\F_0$ takes the place of the ideal functionality in the real world, and is typically used to express network assumptions or assumed primitives the protocol relies on.
-The \msf{execUC} defines the UC experiment in NomosUC that hooks up the channels to the processes in its arguments.
-Defining \msf{execUC} in our core calculus, and especially reconciling its the dynamic nature with the static guarantees of our type system will be the central technical challenge we tackle later.
+The \msf{execUC} defines the UC execution experiment that hooks up the channels to the processes in its arguments.
+Defining \msf{execUC} in our core calculus, and especially reconciling its dynamic nature with our static type system will be the central technical challenge we tackle later.
 
-\paragraph{Composition Notation}
+\paragraph*{\textbf{Composition Notation}}
 The UC framework is designed to encourage a highly compositional and modular design approach, where we analyze single-instance protocols in isolation, then apply generic composition operators to build more complex systems.
-Encoding the standard theory of UC composition in our framework is one of the main ways we validate the expressiveness of our language design.
+Encoding the standard theory of UC composition in our core calculus is one of the main ways we validate the expressiveness of our language design.
 Here we summarize the main composition theorems using category notation, where objects are functionalities and arrows are protocols.
 First, if $\pi$ realizes a single instance of $\F_2$ in the $\F_1$-hybrid world according to the definition above, we write:
 \[
