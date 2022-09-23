@@ -1,56 +1,28 @@
-In this section we highlight the use of our token heirarchy and virtual tokens construction in NomosUC.
-Specifically, we expand on the commitment ideal functionality \Fcom, used throughout this work, to show a simple example of a simulator for a commitment protocol that sandboxes a real world ideal functionality. 
+In this section we show how virtual tokens are used to construct a simulator for the running example, \Fcom, in this work.
+The design pattern is identical to the simulator proofs of Theorems~\ref{thm:dummythicclemma}, \ref{thm:singlecomp}, \ref{thm:functor}.
+This section highlights the simplicity of our encoding and token heirarchy.
 
 \subsection{Commitment Protocol}
-This commitment protocol realizes \Fcom exists in the \Fropp-hybrid world. \Fropp consists of a random oracle (an idealized hash function) and a one-way channel from the committer to the receiver. 
-The random oracle accepts pre-images of size $k$, generates a ``hash'' for them by sampling $k$-bit randomness ($\{0,1\}^k$, and stores the mapping.
-It requires 1 import token to be sent with each query to cover a polynomial number of activations and searching through a polynomial size database. The type for just the random oracle part, \Fro, used below captures the requirement. 
-The oracle's hiding and binding properties mean that a generated hash does not leak information about the pre-image (the value committed to)  and that the committer can't equivocate on the pre-image on a hash sent to the receiver. 
-Let \O{x} be the reply of \Fropp on query $x$. The protocol is succintly described as: 
-The committer commits to bit $b$ by sampling a bliding nonce $n \sample \bits{k-1}$ and sending $c = \O{b || n}$ to the receiver. When opening the commitment, the committer sends $b, n$ to the receiver who can check that $c \equiv \O{b || n}$.
-We omit the details of the communication with the one-way channel but they are identical to the \Fauth presented in Section~\ref{sec:execuc}.
+The commitment protocol that we prove realizes \Fcom exists in the \Fropp-hybrid world.
+\Fropp is a combination of a a random oracle \Fro (idealized hash function) a one-way channel \Fauth.
+Let the output of the function $\O{x}$ be the hash reply of \Fropp on query $x$ with 1 import token.
+On input \mb{commit(b)} and 1 import from \Z, the committer chooses a random blind $n \sample \bits{k-1}$ and sends $h = \O{b || n}$ to the receiver. 
+On \mb{open} from \Z, the commiter sends $b,n$ and the receiver checks $h \equiv \O{b || n}$ and outputs \mb{open} and $b$ if true. 
 
 \subsection{A Simulator for \Fcom}
 The protocol above is full-information, i.e. it relies on no secret information like locally generated keys or coinflips. 
-Therefore, a common strategy for simulators is to sandbox the entire real world execution internall and pass it input from the environment.
-In this case, the simulator \simcom sandboxes only the random oracle, \Fro, part of the ideal functionality \Fropp. 
-Sandboxing is performed by creating virtual tokens and passing them to sandboxd processes as ``real'' tokens. 
-Our typing rules for a valid token context ensures polynomial runtime for virtual processes and the processes sandboxing them at arbitrary token depths.
-
-First, we introduce some necessary types. 
-\simcom receives messages from (and gives output to) \Z for protocol parties and the ideal functionality with the message types through the \m{comm} session type. 
-
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
-$\Type$ z2a[a][b] = Z2A2P of PID ^ a | Z2A2F of b 
-$\Type$ a2z[a][b] = P2A2Z of PID ^ a | F2A2Z of b
-\end{lstlisting}
-where \inline{a}'s \inline{rop2f} and \inline{rof2p}, and the \inline{b}'s are 1 in this example.  
-
-The resulting type definition of \simcom below is straightdorward, and we omit the default parameters for the sake of space.
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-$\nproc$ simcom[K][K1]: ($\$$z2a: comm[K][A2Z[rop2f]]{1}),
-($\$$a2s: sender[K][a]), ($\$$a2r: reciever[K][a]), ($\$$a2f: 1) 
-  |- ($\$$ch: 1)
-\end{lstlisting}
-It is parameterized by its own token type \inline{K} and a virtual token type \inline{K1} to be used for sandboxing other processes.
-Much like the environment and \Fcom, \simcom is parameterized  two channels for the sender and the receiver, and to the functionality with a channel typed \m{1}.
-
-\simcom spawns \Fro below with a virtual token type $K_1$. The type system ensures that \Fro is bounced by a polynomial \GlobalF in  $k$ and the virtual tokens $t_1$ it receives.
-The providerless channels are created with \inline{chan} in line 1-2 and the linear endpoints are obtained subsequently (line 5-6).
-Simply passing a virtual token type parameter ensures that all potential and import used are virtual, and that \Fro can not communicate outside of the sandbox.
+Therefore, a common strategy for simulators full-informatio protocols is to run the real world in a sandbox and give the corrupt and honest parties in it the same input as the ideal world. 
+In this case, the simulator \simcom is even simpler and need only sandbox the random oracle \Fro to maintain the real world hash table.
+Sandboxing in NomosUC is achieved simply by passing a virtual token type as a parameter to a process rather than the real one. 
+\simcom spawns the wrapped \Fro simply with
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
 #p_to_f $\leftarrow$ chan[K1][rop2f]{1}
 #f_to_p $\leftarrow$ chan[K1][rof2p]{1}
 
 $\leftarrow$ Fro[K1] <- k rng sid #p_to_f #f_to_p ;
-$\$$p2f' $\leftarrow$ ro_p2f[K1] #p_to_f ;
-$\$$f2p' $\leftarrow$ ro_f2p[K1] #f_to_p ;
+$\$$p2f' $\leftarrow$ ro_p2f[K1] #p_to_f #f_to_p;
 \end{lstlisting}
-
-
-\paragraph{Messages for \Fro}
-The session type desribing \Fro is given by
-
+where \inline{$\$$p2f'}, the linear endpoint of the providerless channel with \Fro, is typed as 
 {\centering
 \parbox{0cm}{
 \begin{tabbing}
@@ -58,11 +30,17 @@ $\m{hash} = \textcolor{red}{\getpot^1} \ichoice{\mb{query}: $\=$PID \product Int
 \>$\echoice{\mb{hash}: PID \arrow Int \arrow \m{hash}}}$
 \end{tabbing}}
 }
-\Z queries \simcom with input for a corrupt party in the form of a message for \Fropp (a random oracle query or a message for the receiver).
-\simcom handles hash queries below. 
-\simcom gets 1 unit of import from \Z (line 3) for input to \Fropp, creates 1 virtual token of type $K_1$ (line 5) and pays it to \Fro with the query (line 7).
-The number of $K_1$ tokens, $t_1$, is constrained in the type system by a polynomial of the number of type $K$: $t_{1} \leq \GlobalF(t_0, k)$. \simcom never sends import to any other process and therefore can create a polynomial number to perform a potentially polynomial number of hash queries. 
-This snippet of an incomplete case match, from \simcom, for a hash query message from \Z illustrates communication over sandboxed channels.
+
+Communication between \Z and \A is governed by the simple linear type \inline{comm[K][Z2A[2p][2f]} introduced in Section~\ref{sec:basic} where \inline{z2a} is defined as 
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
+$\Type$ z2a[a][b] = Z2A2P of PID ^ a | Z2A2F of b 
+$\Type$ a2z[a][b] = P2A2Z of PID ^ a | F2A2Z of b
+\end{lstlisting}
+
+\subsection{Corrupt Committer}
+We only cover the case of the corrupt committer here as it is the most interesting with the incomplete case match below.
+When \Z gives \simcom a hash query for the committer with 1 unit of import (line 1-3), \simcom creates 1 virtual token of type $K_1$ (line 4) and queries the sandboxed \Fro (lines 5-6).  
+The hash from \Fro is forwarded back to \Z as output \inline{P2A2Z(pid, msg} from the committer (lines 10-11).
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
 $\ncase$ m ( Z2A2P(pid, msg) =>
   $\nget$ {1} K $\$$z2p ;
@@ -76,13 +54,11 @@ $\ncase$ m ( Z2A2P(pid, msg) =>
                $\$$a2z.send ;
                $\nsend$ $\$$a2z P2A2Z(pid, RHash(h))
 \end{lstlisting}
-The resuling hash $h$ is sent back to the environement whtout any import (line 12).
+The import tokens that \simcom receives ensurs that it can make a polynomial number of virtual tokens for a potentially polynomial number of queries. 
 
-\paragraph{Simulating the commitment}
 We complete the inner case match, for \inline{msg} in the above example, with \Z sending a message from the corrupt committer to the receiver.
 \simcom searches through a list of saved preimages \inline{$\$$l} (line 15-16) and looks for an existing hash table entry (line 17-19). 
 If the commitment exists, extract the bit from the pre-image and instruct the committer in the ideal world to commit (line 25).
-
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em, firstnumber=13]
 Send(pid, d) =>
   b = sample rng 1 ;
@@ -98,10 +74,22 @@ Send(pid, d) =>
         $\nelse$ ())
   $\$$a2s.commit ; send $\$$a2s b ;
 \end{lstlisting}
-When the commitment is opened by \Z, if no bit $b$ was found above on line 21, then the open is ignored and no output is received by \Z from \Fcom.
-If a $b$ was found, \simcom simply instructs the sender to open (\inline{$\$$a2s.open}) and, iteself, terminates.  
+When the commitment is opened by \Z and no bit $b$ was found above on line 21, the open is ignored and the \Fcom doesn't open.
+If a $b$ is found, \simcom simply instructs the sender to open (\inline{$\$$a2s.open}) and it, itself, terminates.  
 
-We offload the full code of \simcom to the appendix, but it should be clear that in such full-information protocols, simulting the real world (in this case just the random oracle), suffices to create an identical view to the environment.
+\subsection{Sandboxing}
+Akin to how \Fro was used above in a sandbox, the main theorems in this work are proven through connectin simulators, and potentially adversaries, in a sandbox. 
+As we can see above, the providerless channel abstraction allows specification to be very general and straightforward. 
+The token heirarchy neatly abstracts away the notion of virtualization from process definitions. 
+
+%The resulting type definition of \simcom below is straightdorward, and we omit the default parameters for the sake of space.
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+%$\nproc$ simcom[K][K1]: ($\$$z2a: comm[K][A2Z[rop2f]]{1}),
+%($\$$a2s: sender[K][a]), ($\$$a2r: reciever[K][a]), ($\$$a2f: 1) 
+%  |- ($\$$ch: 1)
+%\end{lstlisting}
+%It is parameterized by its own token type \inline{K} and a virtual token type \inline{K1} to be used for sandboxing other processes.
+%Much like the environment and \Fcom, \simcom is parameterized  two channels for the sender and the receiver, and to the functionality with a channel typed \m{1}.
 
 
 
