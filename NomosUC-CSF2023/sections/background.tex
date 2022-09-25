@@ -13,18 +13,21 @@ The UC framework is defined on top of a communication model called interactive t
 %This rules out, for example, the ordinary semantics of $\pi$-calculus, which introduces unbounded non-determinism with the possible scheduler choices.
 %This adversary model leads to a flexible approach to composition, which we'll say more about shortly.
 The UC security definition is more formally defined by the following relationship between two UC exections. 
-Here, \m{execUC} is a UC experiment that takes four parameters and creates the main ITMs of the execution, namely the environment \Z, an adversary \A, and an ideal functionality \F.  
-Parties of the protocol $\pi$ are created at runtime when messages are written to them. 
+Here, \m{execUC} defines a UC experiment that takes four parameters and creates the main ITMs of the execution, namely the environment \Z, an adversary \A, and an ideal functionality \F.  
+Parties running the protocol $\pi$ are created at runtime when they are sent messages. 
+
 We say that a protocol $\pi$ realizes an ideal functionality $\F_2$
-if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal world are indistinguishable to any environment \Z:
+if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal worlds are indistinguishable to any environment \Z:
 \begin{equation}
   \label{eqn:emulation}
   \forall \A \; \exists \Sim \; \forall \Z, \; \; \msf{execUC} \; \Z \, \idealP \, \F_2 \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F_1 \, \A
 \end{equation}
-Indistinguishability is denoted by the $\sim$ symbol, and it implies that the ensemble of distributions resulting from the output of \Z in each execution, over all possible security parameters and randomness, have \emph{statistcal difference} that is negligible in $k$. 
+At the end of its execution \Z outputs a bit as its guess for which world it is in.
+We denote indistinguishability with the $\sim$ symbol, and it means that the ensembles of distributions resulting from the output of \Z in each execution, over all possible randomness and security parameters, have \emph{statistical difference} that is negligible in $k$. 
 
-For UC realization the protocol in the ideal world is the \idealP, or the \emph{dummy protocol}, that forwads messages between $\F_2$, \Z, and \A. 
-Similarly, the real world can also contain an ideal functionality $\F_1$ that may captures network assumptions or assumed primitives the protocol relies on. We call this world the $\F_1$-hybrid world.
+Generally, emulation deals with arbitrary protocols in both worlds, however, for UC realization (above) specifically the protocol in the real world is \idealP, or the \emph{dummy protocol}, that forwards messages between $\F_2$, \Z,  an \A. 
+Similarly, the real world can also contain an ideal functionality $\F_1$ that may captures network assumptions or assumed primitives the protocol relies on. 
+This real world is also called the $\F_1$-hybrid world.
 Defining \msf{execUC} in our core calculus, and especially reconciling its dynamic nature with our static type system will be the central technical challenge we tackle later.
 
 \paragraph*{\textbf{Composition Notation}}
