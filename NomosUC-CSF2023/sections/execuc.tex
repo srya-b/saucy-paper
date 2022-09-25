@@ -69,21 +69,24 @@ Finally, the output bit, \Z's guess of which world it is in, forms the basis of 
 %\end{figure*}
 
 \subsection{The \partywrapper}
-\begin{figure}
-	\centering
-	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
-	\caption{This is the \partywrapper that routes messages to the correct internally runnint protocol party. This figure shows how one protoco party (dotted box) is instantiated within it. The party $\pi_{pid}$ is shell code akin to Figure~\ref{fig:newpandq}.}%\snote{Updated caption to say it's multiplexer with one instance. The reason I don't want to include another instance is that I couldn't figure out a way to add it and expand the diagram horizontally. It will leave so much white space on the sides if I add a new party and will take up much more vertical space which we need to cut down on anyway.}}
-	\label{fig:singlemultiplex}
-	\vspace{-3mm}
-\end{figure}
+%\begin{figure}
+%	\centering
+%	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
+%	\caption{This is the \partywrapper that routes messages to the correct internally runnint protocol party. This figure shows how one protoco party (dotted box) is instantiated within it. The party $\pi_{pid}$ is shell code akin to Figure~\ref{fig:newpandq}.}%\snote{Updated caption to say it's multiplexer with one instance. The reason I don't want to include another instance is that I couldn't figure out a way to add it and expand the diagram horizontally. It will leave so much white space on the sides if I add a new party and will take up much more vertical space which we need to cut down on anyway.}}
+%	\label{fig:singlemultiplex}
+%	\vspace{-3mm}
+%\end{figure}
 We use the \partywrapper to handle spawning parties, creating their channels, and connectint them to the rest of the experiment.
 Instead of parties directly connected to \F and \Z through a providerless channels, the \partywrapper runs them virtually and presents a consistent ``real'' view to them. 
 Virtual tokens enables the types and import requirements of the protocol parties to be met while sandboxing them. 
 The \partywrapper, in turn, is connected by single channels to \F, \Z, and \A, and it routes communication to/from the appropriate protocol party. 
-In Figure~\ref{fig:singlemultiplex}, we see a wrapped protocol party, with its generated processes, inside the \partywrapper. \todo{this figre now just looks like an example of a wrapped process and isn't tot insightful}
+%In Figure~\ref{fig:singlemultiplex}, we see a wrapped protocol party, with its generated processes, inside the \partywrapper. \todo{this figre now just looks like an example of a wrapped process and isn't tot insightful}
 
-The \partywrapper design implies that the import sent to it by \F, \Z, and \A must be constant, because they each communicate with it over a single providerless channel. However, the protocol parties still receive and operate on virtual tokens according to their type. 
-We don't see this as a downside of the approach as tight runtime constraints are not an intended goal of NomosUC or the UC framework.
+%In our encoding of the UC execution the wrapped versions of \Z, \F, \A, and the \partywrapper are all connected to each other by single providerless channels.  
+%The shared portion of the providereless channel 
+
+%The \partywrapper design implies that the import sent to it by \F, \Z, and \A must be constant, because they each communicate with it over a single providerless channel. However, the protocol parties still receive and operate on virtual tokens according to their type. 
+%We don't see this as a downside of the approach as tight runtime constraints are not an intended goal of NomosUC or the UC framework.
 
 The \partywrapper forces \F to also be wrapped to multiplex communication from the \partywrapper. 
 
