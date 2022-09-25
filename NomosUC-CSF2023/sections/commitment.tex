@@ -41,39 +41,39 @@ $\Type$ a2z[a][b] = P2A2Z of PID ^ a | F2A2Z of b
 We only cover the case of the corrupt committer here as it is the most interesting with the incomplete case match below.
 When \Z gives \simcom a hash query for the committer with 1 unit of import (line 1-3), \simcom creates 1 virtual token of type $K_1$ (line 4) and queries the sandboxed \Fro (lines 5-6).  
 The hash from \Fro is forwarded back to \Z as output \inline{P2A2Z(pid, msg} from the committer (lines 10-11).
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
-$\ncase$ m ( Z2A2P(pid, msg) =>
-  $\nget$ {1} K $\$$z2p ;
-  $\ncase$ msg ( QHash(x) =>
-    $\nwithdraw$ K K1 1 ;
-    $\$$p2f'.hash; $\nsend$ $\$$p2f' pid; $\nsend$ $\$$p2f' x ;
-    $\npay$ {1} K1 $\$$p2f'
-    $\ncase$ $\$$p2f' (
-      shash => pid = $\nrecv$ $\$$p2f' 
-               h = $\nrecv$ $\$$p2f'
-               $\$$a2z.send ;
-               $\nsend$ $\$$a2z P2A2Z(pid, RHash(h))
-\end{lstlisting}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
+%$\ncase$ m ( Z2A2P(pid, msg) =>
+%  $\nget$ {1} K $\$$z2p ;
+%  $\ncase$ msg ( QHash(x) =>
+%    $\nwithdraw$ K K1 1 ;
+%    $\$$p2f'.hash; $\nsend$ $\$$p2f' pid; $\nsend$ $\$$p2f' x ;
+%    $\npay$ {1} K1 $\$$p2f'
+%    $\ncase$ $\$$p2f' (
+%      shash => pid = $\nrecv$ $\$$p2f' 
+%               h = $\nrecv$ $\$$p2f'
+%               $\$$a2z.send ;
+%               $\nsend$ $\$$a2z P2A2Z(pid, RHash(h))
+%\end{lstlisting}
 The import tokens that \simcom receives ensurs that it can make a polynomial number of virtual tokens for a potentially polynomial number of queries. 
 
 We complete the inner case match, for \inline{msg} in the above example, with \Z sending a message from the corrupt committer to the receiver.
 \simcom searches through a list of saved preimages \inline{$\$$l} (line 15-16) and looks for an existing hash table entry (line 17-19). 
 If the commitment exists, extract the bit from the pre-image and instruct the committer in the ideal world to commit (line 25).
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em, firstnumber=13]
-Send(pid, d) =>
-  b = sample rng 1 ;
-  forSeq_ $\$$l \p ->
-    withdrawtoken K K1 1 ;
-    $\$$p2f'.hash ; $\nsend$ $\$$p2f' 1 ; $\nsend$ $\$$p2f' p ;
-    $\npay$ {1} K1 $\$$p2f' ;
-    $\ncase$ $\$$p2f'( 
-      shash => $\nrecv$ $\$$p2f' ; h = $\nrecv$ $\$$p2f' ;
-        $\nif$ h == d $\nthen$
-          (b: n) = h  $\tg{(*parse bit and nonce *)}$
-          break
-        $\nelse$ ())
-  $\$$a2s.commit ; send $\$$a2s b ;
-\end{lstlisting}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em, firstnumber=13]
+%Send(pid, d) =>
+%  b = sample rng 1 ;
+%  forSeq_ $\$$l \p ->
+%    withdrawtoken K K1 1 ;
+%    $\$$p2f'.hash ; $\nsend$ $\$$p2f' 1 ; $\nsend$ $\$$p2f' p ;
+%    $\npay$ {1} K1 $\$$p2f' ;
+%    $\ncase$ $\$$p2f'( 
+%      shash => $\nrecv$ $\$$p2f' ; h = $\nrecv$ $\$$p2f' ;
+%        $\nif$ h == d $\nthen$
+%          (b: n) = h  $\tg{(*parse bit and nonce *)}$
+%          break
+%        $\nelse$ ())
+%  $\$$a2s.commit ; send $\$$a2s b ;
+%\end{lstlisting}
 When the commitment is opened by \Z and no bit $b$ was found above on line 21, the open is ignored and the \Fcom doesn't open.
 If a $b$ is found, \simcom simply instructs the sender to open (\inline{$\$$a2s.open}) and it, itself, terminates.  
 
@@ -90,6 +90,38 @@ The token heirarchy neatly abstracts away the notion of virtualization from proc
 %\end{lstlisting}
 %It is parameterized by its own token type \inline{K} and a virtual token type \inline{K1} to be used for sandboxing other processes.
 %Much like the environment and \Fcom, \simcom is parameterized  two channels for the sender and the receiver, and to the functionality with a channel typed \m{1}.
+
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em, firstnumber=8]
+case m (
+  Z2A2P(pid, msg) =>
+    case msg (
+      QHash(x) => 
+        withdrawtoken K K1 1 ;
+        $\$$l <- append $l x ;
+        $\$$p2f'.hash; send $\$$p2f' pid ; send $\$$p2f' x ;
+        pay {1} K1 $\$$p2f' ;
+        case $\$$p2f' (
+          shash => pid = recv $\$$p2f' ; h = recv $\$$p2f' ;
+            $\$$a2z.send ; send $\$$a2z P2A2Z(pid, RHash(h))
+        )
+        $\$$ch <- sim_zom_z2p_crupt_commitment[K][K1]
+      Send(pid, d) =>
+        b = sample rng 1 ;
+        forSeq_ $\$$l \p ->
+          withdrawtoken K K1 1 ;
+          $\$$p2f'.hash ; send $\$$p2f' 1 ; send $\$$p2f' p ;
+          pay {1} K1 $\$$p2f' ;
+          case $\$$p2f'( 
+            shash => recv $\$$p2f' ; h = recv $\$$p2f' ;
+              if h == d then
+                (b: n) = h 
+                break
+              else ())
+        $\$$a2s.commit ; send $\$$a2s b ;
+        $\$$ch <- sim_com_z2p_crupt_committer[K][K1] <- k rng sid $\$$z2a $\$$a2z $\$$a2s $\$$a2r $\$$p2f' $\$$f2p' $\$$l
+    )
+\end{lstlisting}
+
 
 
 
