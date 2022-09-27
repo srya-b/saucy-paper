@@ -1,9 +1,9 @@
-There are a few immediate next steps that can be taked to improve the consruction in this work.
-Namely, we introduce the notion of providerless channels to generalize communication between two process due to the consraints provider/client relationship and the linearity of channels.
-We would like to do away with this requiement for channels and subsequent work would aim to greatly simplify our construction. \todo{I believe the term is `multi-party session types` that refer to non-linear channels that don't need acquire/release?}.
+The immediate next steps coming from this work are cleark.
+First, we would like to remove the provider/client constraints of linear session types, while maintaining the import mechanism, so that providerless channels are no longer needed in our construction.
+This would greatly simplify our construction and allow for easier expression communication patterns. 
 
-We also point out that we build NomosUC on top of the type system defined by Nomos and retrofit the import mechanism to the existng potential mechanism through our virtual tokens construction.
-A drawback of this approach is that have not yet implemented a type checker for NomosUC and rely on manual type checking of our code. A clear next step would be the first examine the feasibility of such a type checker and explore efficient implementations of it.
+The NomosUC polynomial time notion arises from retrofitting the import mechanism to the potential mechanism already present in Nomos' resource aware session types through our token heirarchy.
+A clear next step would be to, first, examine the feasibility of a type checker for the existing import tokens mechanism, and, two, create import session types from the ground up .
 
-A few related works to our own, also provide automated proof generation albeit for a more consrained version of the UC framework. Our work provides tooling to specify and analyze UC definitions, however, a goal of future work is to introduce further tools like fuzz testing to provide automated guarantees for the correctness of NomosUC code. 
+An ambitious, but still distant, goal is to create software tools around NomosUC to do some automated testing or proof generation like other related works to our own. For example, tools that fuzz test functionality/protocol definitions or provider correctness guarantees to NomosUC code. 
 
