@@ -1,34 +1,43 @@
+The \partywrapper manages creating new parties in a sandbox and routing messages to/from them an the execution. 
+In this section we present a snippet of the \partywrapper code to show how it reacts to new messages, creates new parties, and delivers them the message.
+The example below shows a new message from \Z to a protocol party. 
+For messages from \Z, the \partywrapper receives import according to the parameterized amount for the \inline{z2p} channel (line 3).
+If the party with \inline{pid} doesn't exist, then it is spawned along with its providerless channels (lines 5-7) and the channel endpoints are saved in lists (line 8).  
+Finally, the message is delivered to the providerless channel with the corresponding about of \emph{virtual} tokens of type \inline{K1} (line 11-13). 
+Finally, after receiving a message from the outside, the \partywrapper switches to iterating through the outgoing channels of the protocol parties starting with the index 0th channel in the \inline{z2p} list (line 20).
 
-The example we've used throughout this paper, \Fcom, supports only a limited number of parties.
-We realize the functionality, in Section~\ref{sec:commitment}, with a protocol that uses random oracle \Fro--an idealize hash function.
-This functionality allows for an arbitrary number of parties to write to it, and is the first example so far that makes use of the arbitrary parties support.
-An environment that uses our arbitrary party mechanism is shown in Figure~\ref{fig:envarb}.
-
-\begin{figure}
+\begin{figure}[h]
 	\centering
 	\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-$\nproc$ env_ro[K] :
-  (k: Int), (rng: [Bit]), (sid: session[a]),
-  (#z_to_pw: comm[z2pmsg[rop2f]]), (#pw_to_z: comm[p2zmsg[rof2p]]),
-  (#z_to_a: comm[z2amsg[roa2f]]), (#a_to_a: comm[a2zmsg[roz2a]]) |- (#ch: EtoZ[a]) =
-{
-  ...
-  b <- $\yo{sample}$ rng 5 ;
-  i = 0 
-  $\nwhile$ i < b {
-    p <- $\tb{sample}$ rng k ;
-    #z_to_pw.SEND ;
-    $\tg{(* each call spawns a new party with pid=i *)}$
-    $\nsend$ #z_to_pw Z2P(i, QHash(p)) ;
-    ...
-  }
-  $\$$ch.output ;
-  $\nsend$ $\$$ch 1 ;
-}
+$\nmatch$ $\$$z2p, $\$$f2p, $\$$a2p (
+  Z2P(pid,m),*,* =>
+    $\nget$ {z2pn} K $\$$z2p ;
+    $\nif$ not exists pid $\nthen$
+      #z2p' $\leftarrow$ channel_init[K1][z2p]; 
+      #p2z' $\leftarrow$ channel_init[K1][p2z];
+      #f2p' $\leftarrow$ channel_init[K1][f2p]; 
+      #p2f' $\leftarrow$ channel_init[K1][p2f];
+      $\$$c' $\leftarrow$ PS.prot $\leftarrow$ k rng sid 
+               #z2p' #p2z' #f2p' #p2f';
+      lz2p $\leftarrow$ append lz2p #z2p'; 
+      lp2z $\leftarrow$ append lp2z #p2z';
+      lp2f $\leftarrow$ append lp2f #p2f'; 
+      lf2p $\leftarrow$ append lf2p #f2p';
+    $\nelse$ ()
+    #z2p' $\leftarrow$ search lz2p pid ;
+    $\nwithdraw$ K K1 z2pn
+    #z2p'.SEND ; $\nsend$ #z2p m; $\npay$ {z2pn} K1 #z2p' ;
+  *,F2P(pid,m),* =>
+    $\tg{(* identical case *)}$
+  *,*,A2P(pid,m) =>
+    $\tg{(* identical case *)}$
+)
+$\tg{(* iterate through the p2f providerless channels}$
+$\tg{starting with 0th index of the lit lp2f *)}$
+$\$$ch $\leftarrow$ party_wrapper_p2f[K][s][z2p,p2z][p2f,f2p] 
+                     $\leftarrow$ $\tg{(*identical args*)}$ 0 ;
 	\end{lstlisting}
-	\caption{An example of an environment that spawns an arbitrary number of parties. For the sake of clarity we present this example without the use of any import.}
-	\label{fig:envarb}
+\caption{Code for the \partywrapper receiving messages from \Z.}
+\label{lst:partywrapper}
 \end{figure}
 
-The environment is well-matched with an execution where dummy parties are used, parties the forward messages from \Z (or \A if they are corrupt) to the functionality, and does the same to messages from \F to \Z.
-    	
