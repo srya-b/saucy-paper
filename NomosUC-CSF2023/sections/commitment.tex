@@ -1,18 +1,17 @@
 In this section we show how virtual tokens are used to construct a simulator for the running example, \Fcom, in this work.
-The design pattern is identical to the simulator proofs of Theorems~\ref{thm:dummythicclemma}, \ref{thm:singlecomp}, \ref{thm:functor}.
-This section highlights the simplicity of our encoding and token heirarchy.
+The design pattern is identical to the simulator proofs of Theorems~\ref{thm:dummythicclemma}, \ref{thm:singlecomp}, and \ref{thm:functor}, and it highlights the simplicity of our encoding and token heirarchy.
 
 \subsection{Commitment Protocol}
 The commitment protocol that we prove realizes \Fcom exists in the \Fropp-hybrid world.
-\Fropp is a combination of a a random oracle \Fro (idealized hash function) a one-way channel \Fauth.
+\Fropp is a combination of a random oracle \Fro (idealized hash function) a one-way channel \Fauth.
 Let the output of the function $\O{x}$ be the hash reply of \Fropp on query $x$ with 1 import token.
 On input \mb{commit(b)} and 1 import from \Z, the committer chooses a random blind $n \sample \bits{k-1}$ and sends $h = \O{b || n}$ to the receiver. 
-On \mb{open} from \Z, the commiter sends $b,n$ and the receiver checks $h \equiv \O{b || n}$ and outputs \mb{open} and $b$ if true. 
+On \mb{open} from \Z, the commiter sends $b,n$ and the receiver checks $h \equiv \O{b || n}$ and outputs \mb{opened} and $b$ if true. 
 
 \subsection{A Simulator for \Fcom}
-A common strategy for simulators is to run the real world in a sandbox and give the corrupt, and honest, parties in it the same input as the ideal world. 
+A common strategy for simulators is to run the real world in a sandbox and give the parties in it the same input as the ideal world. 
 In this case, the simulator \simcom is even simpler and need only sandbox the random oracle \Fro to maintain the real world hash table, because there is no need to simulate message passing from one party to another. 
-Sandboxing in NomosUC is achieved simply by passing a virtual token type as a parameter to a process rather than the real one. 
+Sandboxing in NomosUC is achieved simply by passing a virtual token type as the token type of the process rather than the real one. 
 \simcom spawns the wrapped \Fro simply with
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
 #p_to_f $\leftarrow$ chan[K1][rop2f]{1}
@@ -37,9 +36,9 @@ $\Type$ a2z[a][b] = P2A2Z of PID ^ a | F2A2Z of b
 \end{lstlisting}
 
 \subsection{Corrupt Committer}
-We only cover the case of the corrupt committer here as it is the most interesting with the incomplete case match below.
-When \Z gives \simcom a hash query for the committer with 1 unit of import (line 1-3), \simcom creates 1 virtual token of type $K_1$ (line 4) and queries the sandboxed \Fro (lines 5-6).  
-The hash from \Fro is forwarded back to \Z as output \inline{P2A2Z(pid, msg} from the committer (lines 10-11).
+We only cover the case of the corrupt committer here, as it is the most interesting, with the incomplete case match below.
+When \Z gives \simcom a hash query for the committer with 1 unit of import (line 10-12), \simcom creates 1 virtual token of type $K_1$ (line 13) and queries the sandboxed \Fro (lines 15-16).  
+The hash from \Fro is forwarded back to \Z as output \inline{P2A2Z(pid, msg} from the committer (lines 19-20).
 %\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]
 %$\ncase$ m ( Z2A2P(pid, msg) =>
 %  $\nget$ {1} K $\$$z2p ;
@@ -55,9 +54,9 @@ The hash from \Fro is forwarded back to \Z as output \inline{P2A2Z(pid, msg} fro
 %\end{lstlisting}
 The import tokens that \simcom receives ensurs that it can make a polynomial number of virtual tokens for a potentially polynomial number of queries. 
 
-We complete the inner case match, for \inline{msg} in the above example, with \Z sending a message from the corrupt committer to the receiver.
-\simcom searches through a list of saved preimages \inline{$\$$l} (line 15-16) and looks for an existing hash table entry (line 17-19). 
-If the commitment exists, extract the bit from the pre-image and instruct the committer in the ideal world to commit (line 25).
+We complete the inner case match, for \inline{msg} with \Z sending a message from the corrupt committer to the receiver.
+\simcom searches through a list of saved preimages \inline{$\$$l} (line 25) and looks for an existing hash table entry (line 28-32). 
+If the commitment exists, extract the bit from the pre-image and instruct the committer in the ideal world to commit (line 33).
 %\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em, firstnumber=13]
 %Send(pid, d) =>
 %  b = sample rng 1 ;
@@ -73,11 +72,11 @@ If the commitment exists, extract the bit from the pre-image and instruct the co
 %        $\nelse$ ())
 %  $\$$a2s.commit ; send $\$$a2s b ;
 %\end{lstlisting}
-When the commitment is opened by \Z and no bit $b$ was found above on line 21, the open is ignored and the \Fcom doesn't open.
-If a $b$ is found, \simcom simply instructs the sender to open (\inline{$\$$a2s.open}) and it, itself, terminates.  
+When the commitment is opened by \Z and if no bit $b$ was found, the open is ignored and the \Fcom doesn't open.
+If a $b$ was found, \simcom simply instructs the sender to open (\inline{$\$$a2s.open}) and it, itself, terminates.  
 
 \subsection{Sandboxing}
-Akin to how \Fro was used above in a sandbox, the main theorems in this work are proven through connectin simulators, and potentially adversaries, in a sandbox. 
+Akin to how \Fro was used above in a sandbox, the main theorems in this work are proven through connecting simulators, and potentially adversaries, in a sandbox. 
 As we can see above, the providerless channel abstraction allows specification to be very general and straightforward. 
 The token heirarchy neatly abstracts away the notion of virtualization from process definitions. 
 
@@ -91,33 +90,35 @@ The token heirarchy neatly abstracts away the notion of virtualization from proc
 %Much like the environment and \Fcom, \simcom is parameterized  two channels for the sender and the receiver, and to the functionality with a channel typed \m{1}.
 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em, firstnumber=8]
-case m (
+$\ncase$ m (
   Z2A2P(pid, msg) =>
-    case msg (
+    $\nget$ {1} K $\$$z2a
+    $\ncase$ msg (
       QHash(x) => 
-        withdrawtoken K K1 1 ;
-        $\$$l <- append $l x ;
-        $\$$p2f'.hash; send $\$$p2f' pid ; send $\$$p2f' x ;
-        pay {1} K1 $\$$p2f' ;
-        case $\$$p2f' (
-          shash => pid = recv $\$$p2f' ; h = recv $\$$p2f' ;
-            $\$$a2z.send ; send $\$$a2z P2A2Z(pid, RHash(h))
+        $\nwithdraw$ K K1 1 ;
+        $\$$l <- append $\$$l x ;
+        $\$$p2f'.hash; $\nsend$ $\$$p2f' pid ; 
+        $\nsend$ $\$$p2f' x ; $\npay$ {1} K1 $\$$p2f' ;
+        $\ncase$ $\$$p2f' (
+          shash => pid = $\nrecv$ $\$$p2f' ; 
+            h = $\nrecv$ $\$$p2f'; $\$$a2z.send ; 
+            $\nsend$ $\$$a2z P2A2Z(pid, RHash(h))
         )
-        $\$$ch <- sim_zom_z2p_crupt_commitment[K][K1]
+        $\$$ch <- sim_com[K][K1] <- $\tg{(* args *)}$
       Send(pid, d) =>
         b = sample rng 1 ;
         forSeq_ $\$$l \p ->
-          withdrawtoken K K1 1 ;
-          $\$$p2f'.hash ; send $\$$p2f' 1 ; send $\$$p2f' p ;
-          pay {1} K1 $\$$p2f' ;
-          case $\$$p2f'( 
-            shash => recv $\$$p2f' ; h = recv $\$$p2f' ;
-              if h == d then
+          $\nwithdraw$ K K1 1 ;
+          $\$$p2f'.hash ; $\nsend$ $\$$p2f' 1 ; 
+          $\nsend$ $\$$p2f' p ; $\npay$ {1} K1 $\$$p2f' ;
+          $\ncase$ $\$$p2f'( 
+            shash => $\nrecv$ $\$$p2f'; h = $\nrecv$ $\$$p2f'
+              $\nif$ h == d $\nthen$
                 (b: n) = h 
+                $\$$a2s.commit ; $\nsend$ $\$$a2s b ;
                 break
-              else ())
-        $\$$a2s.commit ; send $\$$a2s b ;
-        $\$$ch <- sim_com_z2p_crupt_committer[K][K1] <- k rng sid $\$$z2a $\$$a2z $\$$a2s $\$$a2r $\$$p2f' $\$$f2p' $\$$l
+              $\nelse$ ())
+        $\$$ch <- sim_com_z2p[K][K1] <- $\tg{(* args *)}$
     )
 \end{lstlisting}
 
