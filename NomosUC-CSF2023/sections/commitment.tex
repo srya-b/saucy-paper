@@ -10,9 +10,8 @@ On input \mb{commit(b)} and 1 import from \Z, the committer chooses a random bli
 On \mb{open} from \Z, the commiter sends $b,n$ and the receiver checks $h \equiv \O{b || n}$ and outputs \mb{open} and $b$ if true. 
 
 \subsection{A Simulator for \Fcom}
-The protocol above is full-information, i.e. it relies on no secret information like locally generated keys or coinflips. 
-Therefore, a common strategy for simulators full-informatio protocols is to run the real world in a sandbox and give the corrupt and honest parties in it the same input as the ideal world. 
-In this case, the simulator \simcom is even simpler and need only sandbox the random oracle \Fro to maintain the real world hash table.
+A common strategy for simulators is to run the real world in a sandbox and give the corrupt, and honest, parties in it the same input as the ideal world. 
+In this case, the simulator \simcom is even simpler and need only sandbox the random oracle \Fro to maintain the real world hash table, because there is no need to simulate message passing from one party to another. 
 Sandboxing in NomosUC is achieved simply by passing a virtual token type as a parameter to a process rather than the real one. 
 \simcom spawns the wrapped \Fro simply with
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=2em]

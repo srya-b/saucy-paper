@@ -1,7 +1,7 @@
-In this section we highlight how the UC experiment is encoded in NomosUC by \msf{execUC}.
-Recall from Section~\ref{sec:basic} that linear session types impose constraints on what forms of communication can be captures, and pose challenges to supporting 
+In this section we highlight how \m{execUC} is encoded in NomosUC.
+Recall from Section~\ref{sec:basic} that linear session types impose constraints on what forms of communication can be captured, and pose challenges to supporting 
 a dynamic number of protocol parties, or functionalities, at runtime. 
-We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper, and validated our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
+We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper, and validate our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
 These three results allow us to ultimately conclude that NomosUC realizes full UC composition.
 
 %Combined with providerless channels, we create the \partywrapper that runs protocol parties in a sandbox and manages their communication with \F, \A, and \Z.
@@ -13,20 +13,22 @@ These three results allow us to ultimately conclude that NomosUC realizes full U
 %The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
 The UC experiment is instantiated by the \msf{execUC} function. 
 It's definition is straightforward owing to our use of providerless channels. 
-\m{execUC} is parameterized by at least one virtual token type to allow for sandboxing (usually by the adversary or environment) and message type parameters specified for the protocol in question. 
-It additionally takes in a security parameter $k$ and a random bit string $r$ that is used as a source of randomness for all future processes. 
-{\centering
+\m{execUC} is parameterized by at least one virtual token type to allow for sandboxing (usually by the adversary or environment) and message type parameters for the protocol in question. 
+It also takes in a security parameter $k$ and a random bit string $r$ that is used as a source of randomness for all future processes.
+\begin{center}
+\vspace{-2mm}
 \parbox{0cm}{
 \begin{tabbing} 
  $\m{execout}[a] = \textcolor{red}{\getpot^n} \echoice{\mb{exec}: $\=$ \ichoice{ \mb{out}: Bit \product 1}}$ 
  \end{tabbing}}
-}
+\vspace{-2mm}
+\end{center}
 
 Its type $\m{execout}[a]$ accepts $n$ import tokens, and returns an output \inline{Bit} as the result from \Z. 
-The NomosUC type system requires explicit polynomials for checking runtime bounds, and this allows us to ensure runtime that is $poly(k)$ as long as the the number of tokens $n \in poly(k)$.
+The NomosUC type system requires explicit polynomials for checking runtime bounds, and this allows us to ensure a runtime that is $poly(k)$ as long as the the number of tokens $n \in poly(k)$.
 
 All main processes in NomosUC are wrapped according to the providerless channel specification in Section~\ref{sec:basic}. 
-Therefore, \m{execUC} creates only the shared parts of the providerless channel and passes them as input to the wrapped processes. For example \Z and \A are connected by the following channels: parameters to both \A and \Z. 
+Therefore, \m{execUC} creates only the shared parts of the providerless channel and passes them as input to the wrapped processes. For example \Z and \A are connected by the following channels:
 %\begin{figure*}
 %\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
 %$\nproc$ execUC[K][p2f,f2p][z2p,p2z][a2p,p2a][f2a,a2f]{p2fn,f2pn}{z2pn,p2zn}{a2pn,p2an}{f2an,a2fn}{n}: 
@@ -49,13 +51,16 @@ The type parameters to the channels are the token type \inline{K} and some of th
 The environment, \Z, is the first spawned process and defines the main parameters for the rest of the execution: the session ID and the set of corrupted parties.  
 According to its type \m{EtoZ} (below), \Z sends the SID (a user-defined type) and the corruption list to \m{execUC} that passes them to \F, \A and the \partywrapper.  
 \Z starts on input \mb{start} with $n$ tokens. 
-{\centering
+\begin{center}
+\vspace{-2mm}
 \parbox{0cm}{
 \begin{tabbing}
  $\m{EtoZ}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{init}: $\=$ SID[a] \arrow [PID] \arrow$ \\
 \>$\echoice{\mb{start} \arrow \ichoice{\mb{out}: Bit \arrow 1}}}$
  \end{tabbing}}
-}
+\vspace{-2mm}
+\end{center}
+
 Finally, the output bit, \Z's guess of which world it is in, forms the basis of the definition of indistinguishability.
 
 %\begin{figure*}[t]
@@ -76,10 +81,11 @@ Finally, the output bit, \Z's guess of which world it is in, forms the basis of 
 %	\label{fig:singlemultiplex}
 %	\vspace{-3mm}
 %\end{figure}
-We use the \partywrapper to handle spawning parties, creating their channels, and connectint them to the rest of the experiment.
-Instead of parties directly connected to \F and \Z through a providerless channels, the \partywrapper runs them virtually and presents a consistent ``real'' view to them. 
+We create the \partywrapper to handle spawning parties, creating their channels, and connecting them to the rest of the experiment.
+Instead of parties directly communicating with \F and \Z through providerless channels, the \partywrapper runs them virtually and presents a consistent ``real'' view to them. 
 Virtual tokens enables the types and import requirements of the protocol parties to be met while sandboxing them. 
 The \partywrapper, in turn, is connected by single channels to \F, \Z, and \A, and it routes communication to/from the appropriate protocol party. 
+Its design of encapsulating the protocol parties forces the wrapper round \F to do the same to de-multiplex inputs from \partywrapper.
 %In Figure~\ref{fig:singlemultiplex}, we see a wrapped protocol party, with its generated processes, inside the \partywrapper. \todo{this figre now just looks like an example of a wrapped process and isn't tot insightful}
 
 %In our encoding of the UC execution the wrapped versions of \Z, \F, \A, and the \partywrapper are all connected to each other by single providerless channels.  
@@ -88,12 +94,10 @@ The \partywrapper, in turn, is connected by single channels to \F, \Z, and \A, a
 %The \partywrapper design implies that the import sent to it by \F, \Z, and \A must be constant, because they each communicate with it over a single providerless channel. However, the protocol parties still receive and operate on virtual tokens according to their type. 
 %We don't see this as a downside of the approach as tight runtime constraints are not an intended goal of NomosUC or the UC framework.
 
-The \partywrapper forces \F to also be wrapped to multiplex communication from the \partywrapper. 
-
 \subsection{Emulation}
 The central security definition in UC is indistinguishability between the real and ideal world experiments.
 We define indistinguishability in terms of the ensemble of distributions created by the output bit of the partial term $\m{execUC}\ \pi\ \F$ over all possible bitstrings and security parameters. 
-We sa that two worlds are indistinguishable if $\forall \A\ \exists \Sim\ \forall Z$ the ensembles have  \emph{statistical difference} that is negligible in $k$ (Definition~\ref{def:emulation}).
+We say that two worlds are indistinguishable if $\forall \A\ \exists \Sim\ \forall Z$ the ensembles have  \emph{statistical difference} that is negligible in $k$ (Definition~\ref{def:emulation}).
 
 %We define the output bit of the partial term of \inline{execUC}, for a specific $\pi$ and \F, as an ensemble of distributions over all possible random bitstrings and security parameters.
 %Emulation, then, is about the ensembles created by two UC executions being computationally indistinguishable from each other.
@@ -110,7 +114,7 @@ If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI an
 	\inferrule*[right=emulate]
 	{
 		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
-		\forall \A \ | \ \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_3', \ \langle \A \leftrightarrow \pi \rangle \\
+		\forall \langle \A \leftrightarrow \pi \rangle \ | \ \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_3',\\
 		\Rightarrow \exists \ (\Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3') \ | \ \langle \Sim_\A \leftrightarrow \phi \rangle \\
 		\Rightarrow \forall \Z  \; \msf{execUC} \ \pi\ \F_1\ \Z\ \A \approx\ \msf{execUC} \ \phi\ \F_2\ \Z\ \Sim_\A
 	}
@@ -127,7 +131,7 @@ An important validation of our approach is the the Dummy Lemma~\ref{thm:dummythi
 \begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
-The proof of the Lemma is in the form of systematic constructor for a simulator for any arbitrary real world \A (in Appendix~\ref{sec:dummy}.
+The proof of the Lemma is in the form of a constructor for a simulator for any arbitrary real world \A (in Appendix~\ref{sec:dummy}).
 Though a simple Lemma, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token heirarcy and sandboxing afford. 
 
 \subsection{Single Composition}
@@ -146,12 +150,12 @@ $\nproc$ compose[$\tg{...}$][rho2f,f2rho]{rho2fn,f2rhon}
   
   $\$$r $\leftarrow$ rho $\leftarrow$ k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
   $\$$p $\leftarrow$ pi $\leftarrow$ k rng sid pid #rho2pi #pi2rho #p2f #f2p;
-  w:wq
 }
 \end{lstlisting}
 
-Proving the UC security under composition requires creating a simulator for $\rho \circ \pi$ that realizes $\F_3$. This is done by connectin the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
-Aslo the like the Dummy Lemma: the simulator construction provided in the Appendix is agnostic to the types of the composed protocols and can be easily specified thanks to our token heirarchy. 
+Proving UC security under composition requires creating a simulator for $\rho \circ \pi$ that realizes $\F_3$. 
+This is done by connecting the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
+Also like the Dummy Lemma, the simulator construction provided in the Appendix is agnostic to the types of the composed protocols and can be easily specified thanks to our token heirarchy. 
 %Recall that every protocol and functionality comes with generated processes which handle communication as part of the providerless channels as depicted in Figure~\ref{fig:newpandq}.
 %In the code snippet above, this means that \inline{rho} and \inline{pi} are wrappers that encapsulate the actual protocol and the generated processes, and passing the channel endpoints to the shell connects them correctly. 
 
@@ -181,9 +185,8 @@ Aslo the like the Dummy Lemma: the simulator construction provided in the Append
 \end{theorem}
 
 Full composition, Theorem~\ref{thm:composition}, extends Theorem~\ref{thm:singlecomp} to replace multipe concurrent instances of a functionality with a realizing protocol.
-We provide it by first proving a much simpler theorem arising from the multisession operator $!$, Theorems~\ref{thm:functor} and \ref{thm:suash}.
-Theorem~\ref{thm:squash} trivially shows a protocol \m{squash} such that $!\F \xrightarrow{\m{squash}} !!\F$.
-The proof of Theorem~\ref{thm:functor} is trivially proven by replicating \SIM{\pi} for every instance of $\F_2$.  
+We provide it by first proving a much simpler theorem arising from the multisession operator ($!$), Theorem~\ref{thm:functor}, and Theorem \ref{thm:squash}.
+Theorem~\ref{thm:squash} trivially shows a protocol \m{squash} such that $!\F \xrightarrow{\m{squash}} !!\F$, and the proof of Theorem~\ref{thm:functor} is trivially proven by replicating \SIM{\pi} for every instance of $\F_2$.  
 
 \begin{theorem}[Multisession Composition]\label{thm:functor}
 	\begin{mathpar}
