@@ -1,39 +1,30 @@
 
-The core calculus of NomosUC relies on \emph{binary session types}~\cite{caires2010session}:
-a type discipline for communication-centric programming derived from a Curry-Howard interpretation
-of intuitionistic linear logic~\cite{girard1987linear}.
-Under this correspondence, a process term $P$ is assigned to
-a logical judgment of the form $A_1, \ldots A_n \vdash C$ and each antecedent as well as the succedent is
-labeled with a \emph{channel} to obtain
-\begin{center}
-\begin{minipage}{0cm}
-\begin{tabbing}
-$(x_1 : A_1), (x_2 : A_2), \ldots, (x_n : A_n) \vdash P :: (z : C)$
-\end{tabbing}
-\end{minipage}
-\end{center}
-
-The resulting judgment states that process $P$ \emph{provides} a service
+The core calculus of NomosUC relies on \emph{import session types}, a novel derivative of
+binary session types.
+We will introduce this calculus in two phases.
+In this section, we discuss the base system of session types, whereas the next section
+will introduce the import annotations.
+Session types are derived from a Curry-Howard interpretation of intuitionistic linear logic~\cite{girard1987linear}.
+Under this correspondence, a process term $P$ is assigned the following typing judgment
+\[
+(x_1 : A_1), (x_2 : A_2), \ldots, (x_n : A_n) \vdash P :: (z : C)
+\]
+which states that process $P$ \emph{provides} a service
 of session type $C$ along channel $z$, \emph{using} the services of session
 types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$ respectively.
-We mandate all channel names to be distinct for the judgment
-to be \emph{well-formed}.
+For a \emph{well-formed} judgment, all channel names need to be distinct.
 The linear antecedents are often abbreviated to $\D$.
 
-Formally, the typing judgment for processes in NomosUC is written as
-\begin{center}
-\begin{minipage}{0cm}
-\begin{tabbing}
-$\Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)$
-\end{tabbing}
-\end{minipage}
-\end{center}
+The NomosUC judgment has some additional components
+\[
+\Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)
+\]
 
 $\Sg$ denotes the signature containing type and process definitions and $k$
 denotes the security parameter.
 Both these quantities are globally known and fixed, therefore we omit them from
 most typing rules for brevity.
-$\Tokens$ describes the total and current ($=$ received - sent) import tokens
+$\Tokens$ describes the total (ever received) and current ($=$ received - sent) import tokens
 of each type stored in the process (explained more in Section~\ref{sec:import}).
 $\Psi$ represents the functional data structures and $\D$ collects the
 session-typed channels along with an optional \emph{write token} $\wt$
@@ -48,91 +39,87 @@ Similar to import tokens, the natural number annotations $q$ and $q'$ on the tur
 denote the total and current potential stored in the process.
 We will gradually explain each component of the language, initiating
 with the basic system of session types.
-For simplicity of exposition, we will display the yet unexplained
-parts of the system in blue.
+For simplicity of exposition, we will mark the yet unexplained
+parts of the system in \B{gray}.
 
-The operational semantics for session-typed programs are formalized as a
+The operational semantics of NomosUC is formalized as a
 system of \emph{multiset rewriting rules}~\cite{cervesato2009relating}.
-These rules consist of semantic objects $\proc{c}{P}$ and $\msg{c}{M}$ describing
+These rules consist of semantic objects $\proc{c}{w, P}$ and $\msg{c}{w, M}$ describing
 process $P$ (or message $M$) providing service along channel $c$.
+The work counter $w$ stores the work performed
+(number of computational steps executed) by process $P$ (resp. message $M$).
 Remarkably, in this formulation, a message is just a particular form of process,
 thereby not requiring any special rules for typing; it can be typed just as processes.
-Since we track computational cost as well in NomosUC, we extend the semantic objects
-to $\proc{c}{w, P}$ and $\msg{c}{w, P}$ where work counter $w$ stores the work performed
-(number of computational steps executed) by process $P$ (resp. message $M$).
 
 \subsection{Session Type Constructors}
 \label{subsec:constructors}
-
-The Curry-Howard correspondence gives each linear logic connective an
-interpretation as a session type.
-We follow a detailed description of each of these session type constructors,
-but restricted to a subset that are sufficient for the applications of NomosUC.
+NomosUC uses only a subset of session type constructors since we did not find
+any application of exchanging channels over channels in UC experiments.
+We briefly describe a representative set of these session-typed constructors
+with full details in Appendix~\ref{app:typing_rules}.
 
 \paragraph*{\textbf{Choice Operators}}
 The internal choice $\ichoice{\ell : A_\ell}_{\ell \in L}$ constructor
 is an $n$-ary labeled generalization of the additive disjunction $A \oplus B$.
 A process that provides $x : \ichoice{\ell : A_\ell}_{\ell \in L}$ can send
-any label $k \in L$ along $x$ and then continue by providing $x : A_k$. The
-corresponding process is written as $(\esendl{x}{k} \semi P)$, where
-$P$ is the continuation that provides $A_k$.
+any label $l \in L$ along $x$ and then continue by providing $x : A_l$. The
+corresponding process is written as $(\esendl{x}{l} \semi P)$, where
+$P$ is the continuation that provides $A_l$.
 On the other end of the channel, the client branches on the label received along $x$.
 The provider and client are typed according to the following $\oplus R$ and $\oplus L$
-rules respectively.
+rules respectively (we omit $\Sg, k, \Psi, \Tokens$ from the rules since they are constants).
 \parbox{\linewidth}{
 \begin{mathpar} \small
   \infer[{\oplus}R]
-  {\B{\Tokens \semi \Psi} \semi \wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{k} \semi P) ::
+  {\wt, \D \entailpot{\B{q}}{\B{q'}} (\esendl{x}{l} \semi P) ::
     (x : \ichoice{\ell : A_\ell}_{\ell \in L})}
-  {(k \in L) \qquad \B{\Tokens \semi \Psi} \semi \D \entailpot{\B{q}}{\B{q'}} P :: (x : A_k)}
+  {(l \in L) \qquad \D \entailpot{\B{q}}{\B{q'}} P :: (x : A_l)}
 \and
   \infer[{\oplus}L]
-  {\B{\Tokens \semi \Psi} \semi \D, (x : \ichoice{\ell : A_\ell}_{\ell \in L})
+  {\D, (x : \ichoice{\ell : A_\ell}_{\ell \in L})
     \entailpot{\B{q}}{\B{q'}} \ecase{x}{\ell}{Q_\ell}_{\ell \in L} :: (z : C)}
-  {(\forall \ell \in L) \qquad \B{\Tokens \semi \Psi} \semi \wt, \D, (x : A_\ell)
+  {(\forall \ell \in L) \qquad \wt, \D, (x : A_\ell)
     \entailpot{\B{q}}{\B{q'}} Q_\ell :: (z : C)}
 \end{mathpar}}
 
 Additionally, the provider should possess the write token to be able to send the
-label $k$. Dually, the client receives the write token with the label to continue
+label. Dually, the client receives the write token with the label to continue
 execution.
 
 Operationally, since communication is asynchronous, the process
-$(\esendl{c}{k} \semi P)$ sends a message $k$
+$(\esendl{c}{l} \semi P)$ sends a message $l$
 along $c$ and continues as $P$ without waiting for it to be received.
 As a technical device to ensure that consecutive messages on a
 channel arrive in order, the sender also creates a fresh continuation
 channel $c'$ so that the message $k$ is actually represented as
-$(\esendl{c}{k} \semi \fwd{c}{c'})$ (read: send $k$ along $c$ and
+$(\esendl{c}{l} \semi \fwd{c}{c'})$ (read: send $l$ along $c$ and
 continue as $c'$). The provider substitutes $c'$ for $c$ enforcing
 that the next message is sent on $c'$.
 The work counter of the process remains unaltered, and the new message
 is created with work $0$.
 \begin{tabbing}
-$(\oplus S) : \proc{c}{w, \esendl{c}{k} \semi P} \step$ \\
-\qquad \qquad $\proc{c'}{w, [c'/c]P}, \qquad \qquad \qquad \qquad \quad \fresh{c'}$ \\
-\qquad \qquad $\msg{c}{0, \esendl{c}{k} \semi \fwd{c}{c'}} $
+$(\oplus S) : \proc{c}{w, \esendl{c}{l} \semi P} \step$ \\
+\qquad $\proc{c'}{w, [c'/c]P},
+\msg{c}{0, \esendl{c}{l} \semi \fwd{c}{c'}} \qquad \fresh{c'}$
 \end{tabbing}
-When the message $k$ is received along $c$, the client selects branch
-$k$ and also substitutes the continuation channel $c'$ for $c$, thereby
+When the message $l$ is received along $c$, the client selects branch
+$l$ and also substitutes the continuation channel $c'$ for $c$, thereby
 ensuring that it receives the next message on $c'$. This implicit
 substitution of the continuation channel ensures the ordering of the
 messages.
 The client process also collects the work performed by the message, if
 there is any.
 \begin{tabbing}
-$(\oplus C) :$ \= $\msg{c}{w, \esendl{c}{k} \semi \fwd{c}{c'}},
+$(\oplus C) :$ \= $\msg{c}{w, \esendl{c}{l} \semi \fwd{c}{c'}},
 \proc{d}{w', \ecase{c}{\ell}{Q_\ell}}$ \\
-$\qquad \qquad \step \proc{d}{w+w',[c'/c]Q_k}$
+$\qquad \qquad \step \proc{d}{w+w',[c'/c]Q_l}$
 \end{tabbing}
 
 The dual of internal choice is \emph{external choice} $\echoice{\ell :
-A_\ell}_{\ell \in L}$, the $n$-ary labeled generalization of the
-additive conjunction $A \with B$. This dual operator simply reverses
-the role of the provider and client. The provider process of
-$x : \echoice{\ell : A_\ell}_{\ell \in L}$ branches on receiving a label
+A_\ell}_{\ell \in L}$, which reverses the role of the provider and client.
+The provider process of $x : \echoice{\ell : A_\ell}_{\ell \in L}$ branches on receiving a label
 using the expression $\ecase{x}{\ell}{Q_\ell}_{\ell \in L}$,
-while the client sends one such label in $L$ using the expression $(\esendl{x}{k} \semi P)$.
+while the client sends one such label in $L$ using the expression $(\esendl{x}{l} \semi P)$.
 % $k \in L$ (described in $\with R$), while the client sends this label
 % (described in $\with L$).
 % \begin{mathpar}
@@ -155,14 +142,14 @@ sent to the provider along with the label.
 The typing and semantics rules for external choice are just the inverse of internal choice,
 and presented in Appendix~\ref{app:typing_rules}.
 
-\paragraph*{\textbf{Termination}}
-The type $\one$, the multiplicative unit of linear logic, represents
-termination of a process, which is not allowed to use
-any linear channels. A terminating process offering on $x : \one$ simply
-closes channel $x$ using the expression $\eclose{x}$ while the client waits
-for this close message to arrive using the expression $\ewait{x} \semi Q$
-and then continues executing $Q$.
-The typing rules are presented in Appendix~\ref{app:typing_rules}.
+% \paragraph*{\textbf{Termination}}
+% The type $\one$, the multiplicative unit of linear logic, represents
+% termination of a process, which is not allowed to use
+% any linear channels. A terminating process offering on $x : \one$ simply
+% closes channel $x$ using the expression $\eclose{x}$ while the client waits
+% for this close message to arrive using the expression $\ewait{x} \semi Q$
+% and then continues executing $Q$.
+% The typing rules are presented in Appendix~\ref{app:typing_rules}.
 % Operationally, the provider converts into a closing message
 % with no continuation since the offered channel terminates.
 % \begin{tabbing}
@@ -184,8 +171,7 @@ The typing rules are presented in Appendix~\ref{app:typing_rules}.
 % \]
 
 \paragraph*{\textbf{Exchanging Functional Data}}
-So far, we have discussed the channels in $\D$ in the typing judgment for NomosUC.
-Now, we turn out attention to the functional layer $\Psi$ that contains the
+We now turn our attention to the functional layer $\Psi$ that contains the
 traditional data structures and values.
 Communicating a \emph{value} of the functional fragment along a channel
 is expressed at the type level by adding the following two session types.

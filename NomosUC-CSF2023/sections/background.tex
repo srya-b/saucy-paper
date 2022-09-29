@@ -1,5 +1,5 @@
 The UC framework~\cite{canettiUC} defines security using
-a real world / ideal world paradigm:
+a real-world / ideal-world paradigm:
 the real world features a protocol $\pi$ and an arbitrary adversary \A that controls corrupt parties;
 To achieve the ideal/real security relation, we roughly need to show that ``any possible attack in the real world can also be exhibited
 in the ideal world''.
@@ -7,14 +7,15 @@ This means constructing a simulator \Sim that plays the role of an adversary in 
 What makes UC the strongest definitional model is that the inputs and number of honest parties are chosen \emph{adaptively}
 and \emph{dynamically}, by a distinguishing environment \Z, which can also communicate with the adversary and interleave its interactions with honest parties.
 
-The UC framework is defined on top of a communication model called interactive turing machines (ITMs), in which multiple Turing-complete processes run concurrently in a system and communicate by passing messages over channels~\cite{canettiUC}.
+The UC framework is defined on top of a communication model called interactive turing machines (ITMs), in which multiple Turing-complete processes run concurrently in a system and communicate by exchanging messages over channels~\cite{canettiUC}.
 %Although the Turing-complete computations can be instantiated in any reasonable core calculus, the approach to message passing in ITMs has some essential but subtle restrictions.
 %In order to do cryptographic analysis, we need to make reductions to (ordinary sequential) probabilistic polynomial time computations (PPTs).
 %This rules out, for example, the ordinary semantics of $\pi$-calculus, which introduces unbounded non-determinism with the possible scheduler choices.
 %This adversary model leads to a flexible approach to composition, which we'll say more about shortly.
 The UC security definition is more formally defined by the following relationship between two UC exections. 
-Here, \m{execUC} defines a UC experiment that takes four parameters and creates the main ITMs of the execution, namely the environment \Z, an adversary \A, and an ideal functionality \F.  
-Parties running the protocol $\pi$ are created at runtime when they are sent messages. 
+Here, \m{execUC} defines a UC experiment that takes four parameters: an environment \Z, a protocol $\pi$, a functionality \F, and an adversary \A.
+Then, $\m{execUC}$ creates the main ITMs for each of these parameters and the internal parties that execute the protocol $\pi$ are created by
+activation messages that are sent by these main ITMs.
 
 We say that a protocol $\pi$ realizes an ideal functionality $\F_2$
 if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal worlds are indistinguishable to any environment \Z:
@@ -22,7 +23,7 @@ if for every adversary $\A$, we can construct a simulator $\Sim$, such that the 
   \label{eqn:emulation}
   \forall \A \; \exists \Sim \; \forall \Z, \; \; \msf{execUC} \; \Z \, \idealP \, \F_2 \, \Sim \sim \msf{execUC} \; \Z \, \pi \, \F_1 \, \A
 \end{equation}
-At the end of its execution \Z outputs a bit as its guess for which world it is in.
+At the end of its execution, \Z outputs a bit as its guess for which world it is in.
 We denote indistinguishability with the $\sim$ symbol, and it means that the ensembles of distributions resulting from the output of \Z in each execution, over all possible randomness and security parameters, have \emph{statistical difference} that is negligible in $k$. 
 
 Generally, emulation deals with arbitrary protocols in both worlds, however, for UC realization (above) specifically the protocol in the real world is \idealP, or the \emph{dummy protocol}, that forwards messages between $\F_2$, \Z,  an \A. 
