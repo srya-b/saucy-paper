@@ -4,15 +4,9 @@ a dynamic number of protocol parties, or functionalities, at runtime.
 We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper, and validate our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
 These three results allow us to ultimately conclude that NomosUC realizes full UC composition.
 
-%Combined with providerless channels, we create the \partywrapper that runs protocol parties in a sandbox and manages their communication with \F, \A, and \Z.
-%We validate our encoding of the UC experiment by realizing a critical result from the UC literature, the Dummy Lemma, which highlights the degree to which NomosUC captures the flexibility and modularity of the UC ITM model. 
-%Finally we cover to important operators, composition and multisession, which allow us to prove the full composition theorem of UC in NomosUC.
-
-
 \subsection{The UC Experiment}
-%The UC experiment is an execution of protocol parties and an ideal functionality, reacting to input by an adversary \A or the environment \Z.
 The UC experiment is instantiated by the \msf{execUC} function. 
-It's definition is straightforward owing to our use of providerless channels. 
+Its definition is straightforward owing to our use of providerless channels. 
 \m{execUC} is parameterized by at least one virtual token type to allow for sandboxing (usually by the adversary or environment) and message type parameters for the protocol in question. 
 It also takes in a security parameter $k$ and a random bit string $r$ that is used as a source of randomness for all future processes.
 \begin{center}
@@ -28,28 +22,20 @@ Its type $\m{execout}[a]$ accepts $n$ import tokens, and returns an output \inli
 The NomosUC type system requires explicit polynomials for checking runtime bounds, and this allows us to ensure a runtime that is $poly(k)$ as long as the the number of tokens $n \in poly(k)$.
 
 All main processes in NomosUC are wrapped according to the providerless channel specification in Section~\ref{sec:basic}. 
-Therefore, \m{execUC} creates only the shared parts of the providerless channel and passes them as input to the wrapped processes. For example \Z and \A are connected by the following channels:
-%\begin{figure*}
-%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
-%$\nproc$ execUC[K][p2f,f2p][z2p,p2z][a2p,p2a][f2a,a2f]{p2fn,f2pn}{z2pn,p2zn}{a2pn,p2an}{f2an,a2fn}{n}: 
-%  (k: Int), (rng: [Bit]) |- ($\$$d: execout)
-%\end{lstlisting}
-%\caption{Type definition for \m{execUC} with no virtual tokens.}
-%\label{fig:execuc}
-%\end{figure*}
+Therefore, \m{execUC} creates only the shared parts of the providerless channel and passes them as input to the wrapped processes. The wrapped processes 
+create the intermediate processes which offer the session type to the actual process.
+For example \Z and \A are connected by the following channels:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
 #z_to_a $\leftarrow$ channel_init[$\tp{K}$][$\tp{z2a}$]{$\tp{z2an}$}
 #a_to_z $\leftarrow$ channel_init[$\tp{K}$][$\tp{a2z}$]{$\tp{a2zn}$}
 $\tg{...}$
-$\$$z <- Env[K] k rng #z_to_p #p_to_z #z_to_a #a_to_z ;
+$\$$z <- Env[K][K1] k rng #z_to_p #p_to_z #z_to_a #a_to_z ;
 \end{lstlisting}
-The type parameters to the channels are the token type \inline{K} and some of the message / import type paraeters to \m{execUC}.
-%When processes are spawned, their shell codes correctly connect the channel endpoints internally.
-%We point out that process definitions for \Z, \A, \F, and $\Pi$ are not passed as parameters to \inline{execUC} because NomosUC currently doesn't support passing them as parameters.
+The channels are typed with the real token type \inline{K} and the import / message types required for the protocol being analyzed.
 
 \paragraph{Execution Parameters}
 The environment, \Z, is the first spawned process and defines the main parameters for the rest of the execution: the session ID and the set of corrupted parties.  
-According to its type \m{EtoZ} (below), \Z sends the SID (a user-defined type) and the corruption list to \m{execUC} that passes them to \F, \A and the \partywrapper.  
+According to its type \m{EtoZ} (below), \Z sends the SID (a user-defined type) and the corruption list to \m{execUC}, and \m{execUC} passes them as parameters to \F, \A and the \partywrapper.  
 \Z starts on input \mb{start} with $n$ tokens. 
 \begin{center}
 \vspace{-2mm}
@@ -63,48 +49,17 @@ According to its type \m{EtoZ} (below), \Z sends the SID (a user-defined type) a
 
 Finally, the output bit, \Z's guess of which world it is in, forms the basis of the definition of indistinguishability.
 
-%\begin{figure*}[t]
-%\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, caption={The process definition of the \msf{execUC} function.}]
-%$\Stype$ Bit{n} = <{n}| &{ exec: +{out : Bit $\rightarrow$ 1}} ;
-%
-%$\tb{proc}$ execUC[$\tp{K}$][$\tp{K1}$][$\tp{sid}$][$\tp{p2f,f2p}$][$\tp{z2p,p2z}$][$\tp{a2p,p2a}$][$\tp{a2f,f2a}$]{$\tp{p2fn,f2pn}$}{$\tp{p2zn,z2pn}$}{$\tp{a2pn,p2an}$}{$\tp{a2fn,f2an}$} :
-%  (k: $\tgr{int}$), (r: [Bit]) |- ($\$$d: Bit)
-%\end{lstlisting}
-%\label{lst:execuc}
-%\end{figure*}
-
 \subsection{The \partywrapper}
-%\begin{figure}
-%	\centering
-%	\includegraphics[scale=0.5]{figures/singleshellmultiplex.pdf}
-%	\caption{This is the \partywrapper that routes messages to the correct internally runnint protocol party. This figure shows how one protoco party (dotted box) is instantiated within it. The party $\pi_{pid}$ is shell code akin to Figure~\ref{fig:newpandq}.}%\snote{Updated caption to say it's multiplexer with one instance. The reason I don't want to include another instance is that I couldn't figure out a way to add it and expand the diagram horizontally. It will leave so much white space on the sides if I add a new party and will take up much more vertical space which we need to cut down on anyway.}}
-%	\label{fig:singlemultiplex}
-%	\vspace{-3mm}
-%\end{figure}
 We create the \partywrapper to handle spawning parties, creating their channels, and connecting them to the rest of the experiment.
 Instead of parties directly communicating with \F and \Z through providerless channels, the \partywrapper runs them virtually and presents a consistent ``real'' view to them. 
 Virtual tokens enables the types and import requirements of the protocol parties to be met while sandboxing them. 
 The \partywrapper, in turn, is connected by single channels to \F, \Z, and \A, and it routes communication to/from the appropriate protocol party. 
-Its design of encapsulating the protocol parties forces the wrapper round \F to do the same to de-multiplex inputs from \partywrapper.
-%In Figure~\ref{fig:singlemultiplex}, we see a wrapped protocol party, with its generated processes, inside the \partywrapper. \todo{this figre now just looks like an example of a wrapped process and isn't tot insightful}
-
-%In our encoding of the UC execution the wrapped versions of \Z, \F, \A, and the \partywrapper are all connected to each other by single providerless channels.  
-%The shared portion of the providereless channel 
-
-%The \partywrapper design implies that the import sent to it by \F, \Z, and \A must be constant, because they each communicate with it over a single providerless channel. However, the protocol parties still receive and operate on virtual tokens according to their type. 
-%We don't see this as a downside of the approach as tight runtime constraints are not an intended goal of NomosUC or the UC framework.
+Its design of encapsulating the protocol parties forces the wrapper round \F to do the same to de-multiplex inputs from the \partywrapper and react to newly created parties.
 
 \subsection{Emulation}
 The central security definition in UC is indistinguishability between the real and ideal world experiments.
-We define indistinguishability in terms of the ensemble of distributions created by the output bit of the partial term $\m{execUC}\ \pi\ \F$ over all possible bitstrings and security parameters. 
+We define indistinguishability in terms of the ensemble of distributions created by the output bit of the partial term $(\m{execUC}\ \pi\ \F)$ over all possible random inputs and security parameters. 
 We say that two worlds are indistinguishable if $\forall \A\ \exists \Sim\ \forall Z$ the ensembles have  \emph{statistical difference} that is negligible in $k$ (Definition~\ref{def:emulation}).
-
-%We define the output bit of the partial term of \inline{execUC}, for a specific $\pi$ and \F, as an ensemble of distributions over all possible random bitstrings and security parameters.
-%Emulation, then, is about the ensembles created by two UC executions being computationally indistinguishable from each other.
-%We define indistinuishability between ensembles in a standard way using \textit{statistical distance}: $\mathcal{D}_{1,k} sim \mathcal{D}_{2,k}$ if their statistical distance is at most $negl{k}, \forall k$.
-%\begin{definition}[Indistinguishability]\label{def:distance}
-%Two ensembles $\mathcal{D}_{1,k}, \mathcal{D}_{2,k}$ are indistinguishable, $\mathcal{D}_{1,k} \sim \mathcal{D}_{2,k}$, if their statistical distance is at most $negl(k), \forall k$.
-%\end{definition}
 
 \begin{definition}[Emulation]\label{def:emulation}
 If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI and $\phi$, emulated each other, then $\forall \A$ of type $\Delta_3'$ well-matched with \PI, there must $\exists \Sim$ of the same type,  well-matched with $\phi$, s.t. $\forall \Z$ : $\msf{execUC}(\pi, \F_1, \Z, \A)$ $\approx$ $\msf{execUC}(\phi, \F_2, \Z, \Sim)$:
@@ -114,7 +69,7 @@ If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI an
 	\inferrule*[right=emulate]
 	{
 		\pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
-		\forall \langle \A \leftrightarrow \pi \rangle \ | \ \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_3',\\
+		\forall \A \ | \ \Delta_4[\Tokentypes][\mathrm{T}_{\A}] \vdash \A :: \Delta_3', \langle \A \leftrightarrow \pi \rangle\\
 		\Rightarrow \exists \ (\Delta_3[\Tokentypes][\mathrm{T}_{\Sim}] \vdash \Sim_\A :: \Delta_3') \ | \ \langle \Sim_\A \leftrightarrow \phi \rangle \\
 		\Rightarrow \forall \Z  \; \msf{execUC} \ \pi\ \F_1\ \Z\ \A \approx\ \msf{execUC} \ \phi\ \F_2\ \Z\ \Sim_\A
 	}
@@ -139,8 +94,6 @@ In this section we present a composition operator for protocols that completes T
 
 The composition allows replacement of a single ideal functionality $\F_2$ with a protocol $\pi$ that realizes it in the $\F_1$-hybrid world. 
 A protocol party $\rho_i$ that gives input to $\F_2$ instead gives input to party $\pi_i$ through a providerless channel in the \partywrapper. 
-%In NomosUC, composition of protocols occurs in the \partywrapper where output from $\rho_i$ to $\F_2$ is given as input to $(\pi, \F_1)$. $\pi$ runs in the \partywrapper and $\F_1$ is the hybrid functionality. 
-%The operator connects parties of $\rho$ and $\pi$ through providerless channels where $\rho$ gives input to $\pi$. 
 Like \m{execUC} (full code in the Appendix), the operator connects wrapped processes with providerless channels as shown below. 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
 $\nproc$ compose[$\tg{...}$][rho2f,f2rho]{rho2fn,f2rhon}
@@ -156,17 +109,7 @@ $\nproc$ compose[$\tg{...}$][rho2f,f2rho]{rho2fn,f2rhon}
 Proving UC security under composition requires creating a simulator for $\rho \circ \pi$ that realizes $\F_3$. 
 This is done by connecting the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
 Also like the Dummy Lemma, the simulator construction provided in the Appendix is agnostic to the types of the composed protocols and can be easily specified thanks to our token heirarchy. 
-%Recall that every protocol and functionality comes with generated processes which handle communication as part of the providerless channels as depicted in Figure~\ref{fig:newpandq}.
-%In the code snippet above, this means that \inline{rho} and \inline{pi} are wrappers that encapsulate the actual protocol and the generated processes, and passing the channel endpoints to the shell connects them correctly. 
 
-%The processes \inline{rho} and \inline{pi} are actually wrapped processes like the one depicted in Figures~\ref{fig:newpandq} and \ref{fig:singlemultiplex}.
-%The challenge in creating a generic composition operator is managing protocol and type-specific providerless channels.  
-%As we stated previously, the \partywrapper and protocol channels rely on some code generation in order to make use of expressive session types, and the composition operator is now different.
-%In our construction above, 
-
-%The generic composition operator of NomosUC connects the shells of parties $\rho_i$ and $\pi_i$ through providerless channels. 
-%As mentioned earlier, for functionalities/protocols that don't need to split communication over two channels, the coposition operator can be trivialized by directly connected the channel offered by $\rho_i$ as the input channel of $\pi_i$.
-%The type system here guarantees that our composition gives $\pi_i$ an appropriate amount of import and tha the resulting protocol is also polynomially bound. 
 \subsection{UC Composition}
 
 \begin{theorem}[Composition]\label{thm:composition}
