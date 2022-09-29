@@ -17,7 +17,7 @@ Here, \m{execUC} defines a UC experiment that takes four parameters: an environm
 Then, $\m{execUC}$ creates the main ITMs for each of these parameters and the internal parties that execute the protocol $\pi$ are created by
 activation messages that are sent by these main ITMs.
 
-We say that a protocol $\pi$ realizes an ideal functionality $\F_2$
+We say that a protocol $\pi$, with access to a functionality $\F_1$, realizes an ideal functionality $\F_2$
 if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal worlds are indistinguishable to any environment \Z:
 \begin{equation}
   \label{eqn:emulation}
