@@ -367,7 +367,7 @@ An important note to providerless channels are that processes $a_P$, $a_Q$, $b_P
 generically if the types $\m{PtoQ}$ and $\m{QtoP}$ are known.
 Typically, such protocol-specific communication constructs are written by users, as is the case with the addressing scheme in EasyUC~\cite{easyuc},
 but in NomosUC the processes themselves are so trivial that they can be generated automatically.
-We call these intermediate processes and channels as \emph{communicator wrappers}.
+We call these intermediate sub-configuration as \emph{communicator wrapper} (box in Figure~\ref{fig:newpandq}).
 
 Finally, to bound the execution time of these communicator wrappers, we require at most a constant amount of import sent over them with each message.
 This is because at each activation, these intermediate processes do a constant amount of work to convert messages from one type to another. 
@@ -380,20 +380,24 @@ We do not see this as a downside of the approach as tight runtime constraints ar
 %Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.
 \begin{figure}
 	\begin{subfigure}{0.5\textwidth}
-	\centering
+	\begin{center}
 	\includegraphics[scale=0.5]{figures/p_and_q.pdf}
-	\caption{$P$ and $Q$ connected by two logical channels which are actually implemented by the figure on the right.}
+	\caption{Goal: $P$, $Q$ connected by channels labelled with their types.}
 	\label{fig:pandq}
+	\end{center}
+	\vspace{0.1em}
 	\end{subfigure}
-	\\
 	\begin{subfigure}{0.5\textwidth}
-	\centering
+	\begin{center}
 	\includegraphics[scale=0.4]{figures/newPandQ.pdf}
-	\caption{We can realize the left be intermediating communication with communicators. The direction of messages from $P$ to $Q$ still suggest a cycle but the communicator is provider (dot) to \emph{both} shell codes.}
+	\caption{Internal implementation of channels using communication\\wrapper
+	with channels labelled with their session types.}
 	\label{fig:newpandq}
+	\end{center}
 	\end{subfigure}
-	\caption{Two ITM configurations. One possible with ITMs (left) and one realized in NomosUC (right). Arrows indicate direction of messages.}
-	\vspace{-5mm}
+	\caption{Two ITM configurations. One possible with ITMs (top) and one realized in NomosUC (bottom). Arrows indicate direction of messages
+	and labels indicate types.}
+	\vspace{-1em}
 \end{figure}
 
 % Splitting communication over two channels in this way also imposes constraints on the expressiveness of session types. 
