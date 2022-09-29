@@ -1,7 +1,9 @@
-The immediate next steps coming from this work are cleark.
-First, we would like to remove the provider/client constraints of linear session types, while maintaining the import mechanism, so that providerless channels are no longer needed in our construction.
-This would greatly simplify our construction and allow for easier expression communication patterns. 
+The immediate next steps coming from this work are clear.
+First, we would like to remove the provider/client constraints of linear session types and implemet import session types on top of them.
+This would allow us to get rid of the providerless channel design and directly connect all processes with single linear session types allowing us to realize arbitrary
+ITM communication without worrying about cyclic topologies. 
 
+\todo{what are better future works?}
 The NomosUC polynomial time notion arises from retrofitting the import mechanism to the potential mechanism already present in Nomos' resource aware session types through our token heirarchy.
 A clear next step would be to, first, examine the feasibility of a type checker for the existing import tokens mechanism, and, two, create import session types from the ground up .
 
