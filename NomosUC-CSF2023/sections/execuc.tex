@@ -26,10 +26,10 @@ Therefore, \m{execUC} creates only the shared parts of the providerless channel 
 create the intermediate processes which offer the session type to the actual process.
 For example \Z and \A are connected by the following channels:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
-#z_to_a $\leftarrow$ channel_init[$\tp{K}$][$\tp{z2a}$]{$\tp{z2an}$}
-#a_to_z $\leftarrow$ channel_init[$\tp{K}$][$\tp{a2z}$]{$\tp{a2zn}$}
+#ztoa $\leftarrow$ channel_init[$\tp{K}$][$\tp{z2a}$]{$\tp{z2an}$}
+#atoz $\leftarrow$ channel_init[$\tp{K}$][$\tp{a2z}$]{$\tp{a2zn}$}
 $\tg{...}$
-$\$$z <- Env[K][K1] k rng #z_to_p #p_to_z #z_to_a #a_to_z ;
+$\$$z <- Env[K][K1] k rng #ztop #ptoz #ztoa #atoz ;
 \end{lstlisting}
 The channels are typed with the real token type \inline{K} and the import / message types required for the protocol being analyzed.
 
@@ -41,8 +41,8 @@ According to its type \m{EtoZ} (below), \Z sends the SID (a user-defined type) a
 \vspace{-2mm}
 \parbox{0cm}{
 \begin{tabbing}
- $\m{EtoZ}[a] = \textcolor{red}{\getpot^n} \ichoice{\mb{init}: $\=$ SID[a] \arrow [PID] \arrow$ \\
-\>$\echoice{\mb{start} \arrow \ichoice{\mb{out}: Bit \arrow 1}}}$
+ $\m{EtoZ}[a] = \ichoice{\mb{init}: $\=$ SID[a] \arrow [PID] \arrow$ \\
+\>$\textcolor{red}{\getpot^n} \echoice{\mb{start} \arrow \ichoice{\mb{out}: Bit \arrow 1}}}$
  \end{tabbing}}
 \vspace{-2mm}
 \end{center}
@@ -70,9 +70,9 @@ If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI an
 	{
 		\F_1 : \Delta_{\F_1}'[\Tokentypes][\mathrm{T}_{\F_1}], \F_2 : \Delta_{\F_2}'[\Tokentypes][\mathrm{T}_{\F_1}] \\ 
 		\Delta_{\F_1}' \vdash \pi : \Delta_1'[\Tokentypes][\mathrm{T}_{\pi}] \semi \Delta_{\F_2}' \vdash \phi : \Delta_2'[\Tokentypes][\mathrm{T}_{\phi}] \semi \\
-		\forall \A \ | \ \Delta_4[\Tokentypes][\mathrm{T}_{\A}], \Delta_1' \vdash \A :: \Delta_3', \matched{\A}{\pi}, \matched{\A}{\F_1} \\
-		\Rightarrow \exists \Sim_\A \ | \ (\Delta_3[\Tokentypes][\mathrm{T}_{\Sim}], \Delta_2' \vdash \Sim_\A :: \Delta_3'), \matched{\Sim_\A}{\phi}, \matched{\Sim_\A}{\F_2} \semi \\
-		\forall \Z \ | \ \matched{\Z}{\pi}, \matched{\Z}{\phi} \; \msf{execUC} \ \pi\ \F_1\ \Z\ \A \sim \msf{execUC} \ \phi\ \F_2\ \Z\ \Sim_\A
+		\forall \A \ . \ \Delta_4[\Tokentypes][\mathrm{T}_{\A}], \Delta_1' \vdash \A :: \Delta_3', \matched{\A}{\pi}, \matched{\A}{\F_1} \\
+		\Rightarrow \exists \Sim_\A \ . \ (\Delta_3[\Tokentypes][\mathrm{T}_{\Sim}], \Delta_2' \vdash \Sim_\A :: \Delta_3'), \matched{\Sim_\A}{\phi}, \matched{\Sim_\A}{\F_2} \semi \\
+		\forall \Z \ . \ \matched{\Z}{\pi}, \matched{\Z}{\phi} \; \msf{execUC} \ \pi\ \F_1\ \Z\ \A \sim \msf{execUC} \ \phi\ \F_2\ \Z\ \Sim_\A
 	}
 	{
 		% EMULATION DEFINITION
