@@ -44,35 +44,44 @@ $\Sim_\A$ sandboxes the two simulators using our virtual tokens construction.
 The construction simulator is straightforward, and we provide sample snippets of code from the simulator.
 The adversaries \A and \DS expect to receive input from \Z through communicator.
 
-Input from \Z is passed to \A:
+The simulator creates channels for each of \A and \DS and connects them together.
+For example, output from \A on its channel to a party or the functionality is merged 
+into input from \Z for \DS.
+In the dummy simulator the channels are created as:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
-msg = $\tb{recv}$ $\$$z_to_a ;
-case msg (
-  Z2A2P(pid, msg) =>
-    $\tb{get}$ $\$$z_to_a {z2an : K} ;
-    $\tm{withdrawTokens}$ f K K1 z2an;
-    $\$$a_z2a.SEND ;
-    $\nsend$ $\$$a_z2a Z2A2P(pid, msg) ;
-    $\npay$ {z2an : K1} $\$$a_z2a ;
-    $\$$ch <- sim_a_a2p <- ... 
-  Z2A2F(msg) =>
-    $\tb{get}$ $\$$z_to_a {z2an : K} ;
-    $\tm{withdrawTokens}$ f K K1 z2an ;
-    $\$$a_z2a.SEND ;
-    $\nsend$ $\$$a_z2a Z2A2F(msg) ;
-    $\npay$ {z2an : K1} $\$$a_z2a ;
-    $\$$ch <- sim_a_a2f <- ... ;
+#a2ps <- channel_init[K1][p2f] ;
+#a2fs <- channel_init[K1][s2f] ;
+#z2s <- channl_init[K1][Z2A[p2f][s2f]] ;
+<- a2z_wrap[K][p2f][s2f] <- #a2ps #a2fs #z2s ;
 \end{lstlisting}
-\end{proof}
-It is worth noting that in NomosUC existing processes can be run directly in a sandbox just be using a virtual token.
-This is different from the UC notion of the universal turing machine where other ITMs are first encoded as data.
+where \inline{a2z_wrap} simply reads from \inline{#a2ps} and \inline{#a2fs} and wraps it in the type constructor for messages from \Z to \A:
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
+$\nproc$ a2s_wrap[K][a][b]:
+  (#in2p: comm[K][a]), (#in2f: comm[K][b]), 
+  (#out: comm[K][Z2A[a][b]) |- ($\$$c : 1) =
+{
+  $\nmatch$ #in2p, #in2f (
+    *,m => #out.SEND ; $\nsend$ #out Z2A2F(m) ;
+    A2P(pid,m),* => #out.SEND ; 
+    $\nsend$ #out Z2A2P(pid, m) ;
+  )
+  $\$$c <- a2s_wrap[K][a][b] <- #in2p #in2f #out 
+}
+\end{lstlisting}
 
-Output from \A to the \partywrapper or \F is passed as \inline{Z2A2P} or \inline{Z2A2F} input to \DS using the same token type \inline{K1}.
-Output from \DS is forward along to the outside world as adversary input to the dummy parties and the ideal functionality:
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-msg = $\nrecv$ $\$$ds_a2p ;
-$\nget$ $\$$ds_a2p {a2pn : K1} ;
-$\$$a_to_pw.SEND ;
-$\nsend$ $\$$a_to_pw msg ;
-$\npay$ $\$$a_to_pw {a2fpn : K} ;
+On input from \Z, we simply forward the message with virtual tokens instead of real tokens and outgoing messages from \A as real output to \Z:
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
+$\nmatch$ #z2a {z2an} K, #a2z' {a2zn} K1 (
+  m,* =>
+    $\nwithdraw$ K K1 {z2an} ;
+    #z2a'.SEND; $\nsend$ #z2a' pid ; $\nsend$ #z2a' m ;
+    $\npay$ K1 {z2an} #z2a' ;
+  *,m =>
+    #z2a'.SEND; $\nsend$ #z2a' pid ; $\nsend$ #z2a' m ;
+    $\npay$ K {z2an} #z2a' ;
+)
 \end{lstlisting}
+We use the \inline{match} over shared channels as syntax sugar that abstracts away their special handling and receiving the given import and token type from them. 
+
+Input from the ideal world \F or the \partywrapper is forwarded, virtualy, to \DS in the same way as above. 
+\end{proof}
