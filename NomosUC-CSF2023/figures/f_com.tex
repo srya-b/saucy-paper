@@ -15,14 +15,13 @@ then \OnInput \inmsg{Open} from $S$:
 \hspace{3em}
 \begin{minipage}{0.5\textwidth}
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
-$\nproc$ Fcom: (k: $\tgr{int}$), (rng: [Bit]), (sid: SID),
-(S: sender), (R: receiver)  |- (fc: 1) = {
+$\nproc$ Fcom: (S: sender), (R: receiver)  |- (fc: 1) =
   $\ncase$ S (
     Commit => b = $\nrecv$ S ;
               R.Committed ;
               $\ncase$ S (
                 Open => R.Opened ;
-                        $\nsend$ R b ; ))}
+                        $\nsend$ R b ; ))
 \end{lstlisting}
 \end{minipage}
 \caption{(a) Pseudocode for \Fcom parameterized by sender $S$ and receiver $R$,

@@ -84,12 +84,12 @@ The process first case analyzes on channel $S$ branching on the
 message received.
 Since there is only one choice $\mb{Commit}$, we only have one
 branch in the definition.
-$\Fcom$ then receives the bit $b$ (line 4) on $S$, followed by sending the
-\m{Committed} message on channel $R$ to the receiver (line 5).
+$\Fcom$ then receives the bit $b$ (line 3) on $S$, followed by sending the
+\m{Committed} message on channel $R$ to the receiver (line 4).
 Then, $\Fcom$ receives the $\mb{Open}$ message on $S$ followed by sending the
-$\mb{Opened}$ message on $R$ (line 7), followed by the bit $b$ (line 8).
-$\Fcom$ then waits for the channels $R$ and $S$ to close and then finally
-closes the \inline{fc} channel.
+$\mb{Opened}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
+$\Fcom$ then waits for the channels $R$ and $S$ to terminate and then finally
+terminates the \inline{fc} channel (code not shown for brevity).
 
 %A protocol may consist parties with different roles with different sets of inputs and messages in the protocol. 
 %A session type defines the protocol for only one role in an ideal functionality and others may have their own types.
