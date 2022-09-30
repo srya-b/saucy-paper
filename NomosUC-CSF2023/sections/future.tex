@@ -1,11 +1,9 @@
-The immediate next steps coming from this work are clear.
-First, we would like to remove the provider/client constraints of linear session types and implemet import session types on top of them.
+The primary next step coming from this work is clear.
+We would like to remove the provider/client constraints from linear session types while preserving the potential mechanism from resource-aware session types.
 This would allow us to get rid of the providerless channel design and directly connect all processes with single linear session types allowing us to realize arbitrary
-ITM communication without worrying about cyclic topologies. 
+ITM communication without worrying about cyclic topologies.
 
-\todo{what are better future works?}
-The NomosUC polynomial time notion arises from retrofitting the import mechanism to the potential mechanism already present in Nomos' resource aware session types through our token heirarchy.
-A clear next step would be to, first, examine the feasibility of a type checker for the existing import tokens mechanism, and, two, create import session types from the ground up .
-
-An ambitious, but still distant, goal is to create software tools around NomosUC to do some automated testing or proof generation like other related works to our own. For example, tools that fuzz test functionality/protocol definitions or provider correctness guarantees to NomosUC code. 
-
+We also want to expand our encoding of UC in NomosUC by expressing synchronous and asyncronous models of communication and computation. 
+Specifically, creating programming conventions and models around the NomosUC to express such models.
+Furthermore, we want to add better tooling around our UC definitions such as automated property-based or model-based testing of functionality/protcol specifications and fuzz testing. 
+Tooling like this around NomosUC makes a strong case for it as a practical language for implementing cryptographic/distributed protocols.
