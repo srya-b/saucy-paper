@@ -17,8 +17,8 @@ However, to ensure bounded computation, we need to bound the computational cost 
 sandboxed execution as well.
 And the only mechanism to bound the cost of an execution is via import tokens.
 However, virtual execution within a sandbox must not cost real import tokens.
-For instance, consider a process $P$ storing $t$ real import tokens that wishes to
-simulate the execution of $Q$ within a sandbox in a way that $Q$ requires $t$
+For instance, suppose a process $P$ storing $t$ real import tokens
+simulates a sandboxed execution of $Q$ such that $Q$ requires $t$
 import tokens.
 If $P$ transfers all its import to $Q$, $P$ will not be able to perform any execution of its own.
 
@@ -29,51 +29,53 @@ allowing it to have its own execution.
 In effect, the sandboxed execution is internal to a process and therefore must obey the resource (import token)
 constraints provided to it.
 
-Formally, every process contains a unique real token type, which we call type $K_0$, by default.
+Formally, every process contains a unique real token type, which we call type $\K_0$, by default.
 There is no mechanism to create a real token; when a process is spawned (whether in a sandbox or not),
 the parent process must specify the real token type and quantity for the newly spawned process.
 Virtual tokens, on the other hand, can be created (under certain conditions, see below) by a process.
-To ensure bounded execution, we require all tokens follow a \emph{token hierarchy}: $K_0 \to K_1 \to K_2 \to \ldots K_m$
-such that we can only use tokens of type $K_i$ to construct tokens of type $K_{i+1}$.
+To ensure bounded execution, we require all tokens follow a \emph{token hierarchy}: $\K_0 \to \K_1 \to \K_2 \to \ldots \K_m$
+such that we can only use tokens of type $\K_i$ to construct tokens of type $\K_{i+1}$.
 However, allowing processes to create an unbounded number of virtual token types would lead to
 an unbounded computational cost.
 Thus, we statically fix all the virtual token types along with their hierarchy in a NomosUC program.
 For instance, to define the above hierarchy, the programmer writes
-\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily]
-  token types K0 -> K1 -> ... -> Km
-\end{lstlisting}
+\vspace{-0.5em}
+\begin{mathpar}
+  \mi{token types\;}\;\K_0 \to \K_1 \to ... \to \K_m
+  \vspace{-0.5em}
+\end{mathpar}
 and then the programmer can only use one of these $m$ token types in their process definitions.
 We call $m$ the \emph{simulation depth} of the program, allowing sandboxed processes to execute their
 own sandboxes up to a depth of $m$.
 
 The token context of a process, written as $\Tokens$ in its typing judgment, maintains the number
 of tokens of each type stored in it.
-We use the notation $K \hookrightarrow (t, t')$ to express the total and current number of tokens
-of type $K$ stored in the process.
+We use the notation $\K \hookrightarrow (t, t')$ to express the total and current number of tokens
+of type $\K$ stored in the process.
 The total number here represents the amount of tokens created of that type, so whenever we create
-new tokens of type $K$, we increment the total.
+new tokens of type $\K$, we increment the total.
 The current number, on the other hand, tracks the amount of tokens currently owned by the process,
 so whenever tokens are exchanged, they only impact the current token quantity and not the total.
 The distinction helps us ensure bounded execution as exemplified by the validity of a token context, explained below.
 
 For a process to be well-typed, an implicit side condition is
 that its token context must always be \emph{valid w.r.t. the security parameter $k$}.
-To this end, we introduce a fixed and globally known function $\GlobalF$ as the \emph{connection rate}
+To this end, we introduce a fixed and globally known function $\GlobalF : \m{(nat, nat)} \to \m{nat}$ as the \emph{connection rate}
 between two successive tokens in the hierarchy.
 UC requires this function to be \emph{super-additive}, i.e.,
 $\GlobalF(x+y, k) \geq \GlobalF(x, k) + \GlobalF(y, k)$.
-Then, we require that if $\Tokens$ contains $m'$ current tokens of type
-$K_i$, it can only contain at most $\GlobalF(m',k)$ total tokens of type
-$K_{i+1}$. We express this validity condition using the following inductive rules below.
+Then, we require that if $\Tokens$ contains $t'$ current tokens of type
+$\K_i$, it can only contain at most $\GlobalF(t',k)$ total tokens of type
+$\K_{i+1}$. We express this validity condition using the following inductive rules.
 \begin{mathpar}
   \infer
-  {K_0 \hookrightarrow (t_0, t_0') \;\; \m{valid}(k)}
+  {\K_0 \hookrightarrow (t_0, t_0') \;\; \m{valid}(k)}
   {}
   \and
   \infer
-  {\Tokens, K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}')\;\; \m{valid}(k)}
+  {\Tokens, \K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}')\;\; \m{valid}(k)}
   {\Tokens\;\; \m{valid}(k) \and
-  K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and
+  \K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and
   t_{i+1} \leq \GlobalF(t_i',k)}
 \end{mathpar}
 Since validity of a token context is a side condition, we mandate
@@ -86,15 +88,17 @@ We now present the process typing rules that impact the token context $\Tokens$.
 As a first step in introducing program notation for import tokens, we need 
 syntax for creating new tokens of a given token type.
 We call this construct $\m{withdrawToken} \; K_i \; n \; K_{i+1}$.
+% \vspace{-0.5em}
 \begin{mathpar} \small
   \inferrule*[right=$\m{tok}$]
-  {\Tokens, K_{i+1} \hookrightarrow (t_{i+1} + n, t_{i+1}' + n) \semi
+  {\Tokens, \K_{i+1} \hookrightarrow (t_{i+1} + n, t_{i+1}' + n) \semi
   \Psi \semi\wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
-  {\Tokens, K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}') \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} \hspace{4em} \\
-    \hspace{5em}\m{withdrawToken} \; K_i \; n\; K_{i+1}  \semi P :: (x : A)}
+  {\Tokens, \K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}') \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} \hspace{4em} \\
+    \hspace{5em}\m{withdrawToken} \; \K_i \; n\; \K_{i+1}  \semi P :: (x : A)}
+% \vspace{-0.5em}
 \end{mathpar}
-The above construct generates $n$ new tokens of type $K_{i+1}$ and adds
-them to both the total and current count for $K_{i+1}$ in the token
+The above construct generates $n$ new tokens of type $\K_{i+1}$ and adds
+them to both the total and current count for $\K_{i+1}$ in the token
 context $\Tokens$.
 The implicit side condition of the validity of the token context ensures
 that $t_{i+1} + n \leq \GlobalF(t_i',k)$ where $K_i \hookrightarrow (t_i, t_i') \in \Tokens$.
@@ -106,82 +110,84 @@ To this end, we first introduce two new type constructors.
 \begin{center}
 \begin{minipage}{0cm}
 \begin{tabbing}
-$A ::= \ldots \mid \tpaypot{A}{r : K} \mid \tgetpot{A}{r : K}$
+$A ::= \ldots \mid \tpaypot{A}{r : \K} \mid \tgetpot{A}{r : \K}$
 \end{tabbing}
 \end{minipage}
 \end{center}
-The provider of $x : \tgetpot{A}{r : K}$ is required to receive
-$r$ import tokens of type $K$ from the client using the construct
-$\eget{x}{r : K}$. Dually, the client needs to pay this import
-using the construct $\epay{x}{r : K}$.
-The corresponding typing rules are
+The provider of $x : \tgetpot{A}{r : \K}$ is required to receive
+$r$ import tokens of type $\K$ from the client using the construct
+$\eget{x}{r : \K}$. Dually, the client needs to pay this import
+using the construct $\epay{x}{r : \K}$.
+The behavior of $\tpaypot{A}{r : \K}$ is the exact inverse, the
+provider pays potential that the client receives.
+The typing rules for $\getpot$ are
 \begin{mathpar} \small
   \infer[\getpot R]
-  {\Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}} \eget{x}{r : K_i} \semi P ::
-  (x : \tgetpot{A}{r : K_i})}
-  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
+  {\Tokens, \K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}} \eget{x}{r : \K_i} \semi P ::
+  (x : \tgetpot{A}{r : \K_i})}
+  {\Tokens, \K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
   %
   \and
   %
   \inferrule*[Right=$\getpot L$]
-  {\Tokens, K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
-  {\Tokens, K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : K_i}) \\\ \entailpot{\B{q}}{\B{q'}} 
-  \epay{x}{r : K_i} \semi P :: (z : C)}
+  {\Tokens, \K_i \hookrightarrow (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
+  {\Tokens, \K_i \hookrightarrow (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r : \K_i}) \\\ \entailpot{\B{q}}{\B{q'}} 
+  \epay{x}{r : \K_i} \semi P :: (z : C)}
 \end{mathpar}
-In the rule $\getpot R$, process $P$ storing $(t_i, t_i')$ import tokens of type $K_i$
-receives $r$ additional $K_i$ tokens adding it to the current token counter, thus
-the continuation executes with $(t_i, t_i'+r)$ tokens of type $K_i$.
+In the rule $\getpot R$, process $P$ storing $(t_i, t_i')$ import tokens of type $\K_i$
+receives $r$ additional $\K_i$ tokens adding it to the current token counter, thus
+the continuation executes with $(t_i, t_i'+r)$ tokens of type $\K_i$.
 Note that validity of token context is trivially satisfied in this case since the
 process is gaining import tokens.
 %
-In the dual rule $\getpot L$, a process containing $(t_i, t_i'+r)$ tokens of type $K_i$
-pays $r$ units along channel $x$ leaving $(t_i, t_i')$ import tokens of type $K_i$ with
+In the dual rule $\getpot L$, a process containing $(t_i, t_i'+r)$ tokens of type $\K_i$
+pays $r$ units along channel $x$ leaving $(t_i, t_i')$ import tokens of type $\K_i$ with
 the continuation.
 In this case, the validity of the token context establishes that $t_{i+1} \leq \GlobalF(t_i',k)$,
 a condition that is necessary for successful typechecking.
-The typing rules for the dual constructor $\tpaypot{A}{r : K}$
+The typing rules for the dual constructor $\tpaypot{A}{r : \K}$
 are the exact inverse and omitted for brevity.
 Similar to prior rules, the sender of the import tokens transfers the write token $\wt$
 along with the import to the receiver.
 
-The need for virtual tokens in UC arises because machines often simulate
-other machines as part of their construction. The program notation for \msf{withdrawToken}
-does not require an inverse to exchange tokens \textit{back} from type $K'$ to $K$.
-The reason is that virtual tokens only exist to allow re-use of existing processes 
-and satisfy their types. Type $K$ tokens are not deducted when new ones of type $K'$ 
-are created is because, in reality, simulating a process by calling it or simply running
-its code natively should be equivalent in cost. Therefore, there is also no need to 
-include an inverse of \msf{withdrawToken} which exchanges from $K'$ to $K$.
+% The need for virtual tokens in UC arises because machines often simulate
+% other machines as part of their construction. The program notation for \msf{withdrawToken}
+% does not require an inverse to exchange tokens \textit{back} from type $K'$ to $K$.
+% The reason is that virtual tokens only exist to allow re-use of existing processes 
+% and satisfy their types. Type $K$ tokens are not deducted when new ones of type $K'$ 
+% are created is because, in reality, simulating a process by calling it or simply running
+% its code natively should be equivalent in cost. Therefore, there is also no need to 
+% include an inverse of \msf{withdrawToken} which exchanges from $K'$ to $K$.
 
 \paragraph*{\textbf{Process Definitions and Sandboxing}}
 Process definitions in NomosUC have the form
-$\Psi \semi \D \vdash f\{t : K\} :: (x : A) = P$ where $f$
+$\Psi \semi \D \vdash f\{t : \K\} :: (x : A) = P$ where $f$
 is the name of the process and $P$ its definition.
 In addition, $\Psi$ and $\D$ denote the functional variables and session-typed channels
 used by $f$ respectively while offering type $A$ on channel $x$.
-In addition, $K$ is the real token type for $f$ and we need $t$ tokens of type $K$
+In addition, $\K$ is the real token type for $f$ and we need $t$ tokens of type $\K$
 to spawn $f$.
 All definitions are collected in a fixed global process signature $\Sg$.
 Also, since process definitions are mutually recursive, it is required that
 for every process in the signature is well-typed w.r.t. $\Sg$.
 This, in effect, requires us checking that each process definition obeys the type
 specified for it in its signature.
-Formally, for every definition of the form $\Psi \semi \D \vdash f\{t : K\} :: (x : A) = P$ in $\Sg$,
-we are required to check $K \hookrightarrow (t, t) \semi \Psi \semi \D \entailpot{0}{0} P :: (x : A)$
-\footnote{A process always starts with no potential, the reasoning for which is explained later}.
+Formally, for every definition of the form $\Psi \semi \D \vdash f\{t : \K\} :: (x : A) = P$ in $\Sg$,
+we are required to check $\K \hookrightarrow (t, t) \semi \Psi \semi \D \entailpot{0}{0} P :: (x : A)$
 Note that every process initiates with only one token type, i.e., its real token type,
-and hence, its token context is trivially valid. 
+and hence, its token context is trivially valid.
+A process always starts with no potential, the reasoning for which is explained later.
 
 But how is a new process spawned and how is the real token type for a newly spawned
 process determined?
 A new instance of a defined process $f$ can be spawned with
-the expression $\procdef{f\{r : K\}}{\overline{y}}{x} \semi Q$
-where $\overline{y}$ is a sequence of variables matching the
-antecedents $\Psi$ and $\D$, and the real token type for $f$ is $K$ with quantity $r$.
+the expression $\procdef{f\{r : \K\}}{\overline{y}}{x} \semi Q$
+where $\overline{y}$ is a sequence of argument expressions and channels matching the
+antecedents $\Psi$ and $\D$ from the signature $\Sg$, and the real token type for $f$ is $\K$ with quantity $r$.
 Sometimes a process invocation is a \emph{tail call}, written without
-a continuation as $\procdef{f\{r : K\}}{\overline{y}}{x}$.
+a continuation as $\procdef{f\{r : \K\}}{\overline{y}}{x}$.
 This is a short-hand for
-$\procdef{f\{r : K\}}{\overline{y}}{x'} \semi \fwd{x}{x'}$ for a
+$\procdef{f\{r : \K\}}{\overline{y}}{x'} \semi \fwd{x}{x'}$ for a
 fresh variable $x'$, that is, a fresh channel is created and
 immediately identified with $x$.
 A process spawn is typed as follows.
@@ -204,8 +210,8 @@ which appears in the context for the typing of the continuation $Q$.
 Remarkably, we can use the same syntactic construct for spawning
 processes, whether it is a regular or sandboxed spawn.
 Semantically, they are distinguished based on the token parameter.
-For a regular spawn, the parent process passes in the real token type $K_0$,
-while for a sandboxed call, a virtual token type $K_i (i > 0)$ is passed in.
+For a regular spawn, the parent process passes in the real token type $\K_0$,
+while for a sandboxed call, a virtual token type $\K_i (i > 0)$ is passed in.
 We have a similar distinction for $\m{pay}$ and $\m{get}$ expressions:
 if a real token is passed into these terms, it's a regular token
 exchange; if a virtual token is passed in, it's a sandboxed $\m{pay}$
@@ -264,10 +270,10 @@ Note that this is the only rule that increments the work counter of a process.
 And since this operation consumes $r$ units of potential, we can infer
 that the total sum of potential and work of a closed set of processes will always be bounded.
 
-The implementation of NomosUC can integrate a cost instrumentation engine that automatically
-inserts a $\etick{1}$ construct before each syntactic construct.
-This enables us to simulate the cost model that counts the total number of
-execution steps.
+% The implementation of NomosUC can integrate a cost instrumentation engine that automatically
+% inserts a $\etick{1}$ construct before each syntactic construct.
+% This enables us to simulate the cost model that counts the total number of
+% execution steps.
 
 % \begin{mathpar}
 %   \D_1 \equiv_Z \D_2 \\

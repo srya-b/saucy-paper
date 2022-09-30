@@ -3,6 +3,7 @@ Recall from Section~\ref{sec:basic} that linear session types impose constraints
 a dynamic number of protocol parties, or functionalities, at runtime. 
 We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper, and validate our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
 These three results allow us to ultimately conclude that NomosUC realizes full UC composition.
+We also run through a case of a coin-flip protocol, composed with the cryptographic commitment, in the Appendix. 
 
 \subsection{The UC Experiment}
 The UC experiment is instantiated by the \msf{execUC} function. 
@@ -50,15 +51,15 @@ According to its type \m{EtoZ} (below), \Z sends the SID (a user-defined type) a
 Finally, the output bit, \Z's guess of which world it is in, forms the basis of the definition of indistinguishability.
 
 \subsection{The \partywrapper}
-We create the \partywrapper to handle spawning parties, creating their channels, and connecting them to the rest of the experiment.
-Instead of parties directly communicating with \F and \Z through providerless channels, the \partywrapper runs them virtually and presents a consistent ``real'' view to them. 
-Virtual tokens enables the types and import requirements of the protocol parties to be met while sandboxing them. 
-The \partywrapper, in turn, is connected by single channels to \F, \Z, and \A, and it routes communication to/from the appropriate protocol party. 
-Its design of encapsulating the protocol parties forces the wrapper round \F to do the same to de-multiplex inputs from the \partywrapper and react to newly created parties.
+We create the \partywrapper to handle spawning parties, create their channels, and connect them to the rest of the experiment.
+Instead of parties directly communicating with \F and \Z through providerless channels, the \partywrapper runs them virtually and presents a ``real'' view to them.
+The virtual tokens construct enables us to virtualize the protocol parties and satisfy the import their session types require while sandboxing them. 
+The \partywrapper, in turn, is connected by single channels each of \F, \Z, and \A and routes communication to/from the appropriate protocol party. 
+Its design forces the wrapper around \F to do the same. It must de-multiplex inputs from the \partywrapper and react similarly to messages fro newly created parties. 
 
 \subsection{Emulation}
 The central security definition in UC is indistinguishability between the real and ideal world experiments.
-We define indistinguishability in terms of the ensemble of distributions created by the output bit of the partial term $(\m{execUC}\ \pi\ \F)$ over all possible random inputs and security parameters. 
+It is defined in terms of the ensemble of distributions created by the output bits from the partial term $(\m{execUC}\ \pi\ \F)$ over all possible random inputs and security parameters. 
 We say that two worlds are indistinguishable if $\forall \A\ \exists \Sim\ \forall Z$ the ensembles have  \emph{statistical difference} that is negligible in $k$ (Definition~\ref{def:emulation}).
 
 \begin{definition}[Emulation]\label{def:emulation}
@@ -89,7 +90,7 @@ An important validation of our approach is the the Dummy Lemma~\ref{thm:dummythi
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
 The proof of the Lemma is in the form of a constructor for a simulator for any arbitrary real world \A (in Appendix~\ref{sec:dummy}).
-Though a simple Lemma, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token heirarcy and sandboxing afford. 
+Though a simple Lemma, and simulator construction, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token heirarcy and sandboxing afford. 
 
 \subsection{Single Composition}
 In this section we present a composition operator for protocols that completes Theorem~\ref{thm:singlecomp}.
