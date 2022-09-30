@@ -107,7 +107,7 @@ $\ncase$ m (
         $\$$ch <- sim_com[K][K1] <- $\tg{(* args *)}$
       Send(pid, d) =>
         b = sample rng 1 ;
-        forSeq_ $\$$l \p ->
+        forSeq $\$$l \p ->
           $\nwithdraw$ K K1 1 ;
           $\$$p2f'.hash ; $\nsend$ $\$$p2f' 1 ; 
           $\nsend$ $\$$p2f' p ; $\npay$ {1} K1 $\$$p2f' ;
