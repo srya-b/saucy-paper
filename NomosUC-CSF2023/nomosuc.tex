@@ -148,23 +148,23 @@
   of programming language semantics and formal methods.
   This work complements the existing formalizations of UC by introducing a novel abstraction called \emph{import
   session types} (IST) to express UC functionalities and protocols.
-  This new abstraction has been inspired from \emph{resource-aware session types} (Rast), a recently designed type system
+  This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
   for analyzing execution cost of concurrent message-passing systems.
-  Session types are a typed framework for prescribing bi-directional communication protocols in a distributed system
+  Session types are a typed framework for describing bi-directional communication protocols in a distributed system
   that are statically enforced via type-checking.
   Rast enhances this framework by adding \emph{potential annotations} to these communication protocols
   that modularly describe their abstract execution cost.
   IST establishes a close correspondence between Rast and UC where session types can be used
-  to describe the interaction protocol of Interactive Turing Machines involved in a cryptographic protocol.
+  to describe the communication patterns of the Interactive Turing Machines in a UC protocol.
   Moreover, IST can be used to encode and statically enforce the \emph{import mechanism} in UC used to
   ensure polynomial-time computation.
-  We therefore combine Nomos, an existing language based on Rast with a process-based core calculus for UC (ILC)
-  to build a new language called NomosUC to implement executable UC protocols.
-  This combination, however, required solving a range of technical challenges,
-  as session types are naturally linear that prevent cyclic topologies and adversaries in UC should be able
-  to dynamically steer the communication patterns preventing a static encoding via session types.
-  Even encoding \emph{import tokens} into potential annotations required introduction of virtual tokens that
-  establish a \emph{token hierarchy} and eventually translate to the potential mechanism in Rast.
+  We therefore combine Nomos, an existing language based on Rast, with ILC, a process-based core calculus for UC,
+  to build a new language called NomosUC.
+  Designing NomosUC required solving a range of technical challenges.
+  While session types are naturally linear and prevent cyclic topologies, UC 
+  allows adversaries the freedom to adaptively steer the communication.
+  Also, since UC makes use of sandbox execution and other generic composition operations,
+  reconciling UC \emph{import} with Rast \emph{potential} required introducing a hierarchy of virtual tokens.
   To validate our design, we work through the standard theory of UC composition operators,
   and complete a modular application case study: a coin tossing protocol in the random oracle model
   using commitments as the intermediate primitive.
