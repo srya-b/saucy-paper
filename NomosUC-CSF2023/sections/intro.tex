@@ -1,7 +1,7 @@
 Universal Composability (UC)~\cite{canettiUC} is the leading framework for defining security properties of cryptographic protocols.
 It is considered the strongest definitional model since it guarantees the security properties even when the protocol is arbitrarily composed with
 multiple concurrently-executing sessions of the same (or another) protocol.
-UC has recently gained popularity for analysis of cryptographic protocols due to its \emph{ideal world/real world} simulation mechanism.
+UC has recently gained popularity for analyzing cryptographic protocols due to its \emph{ideal world/real world} simulation mechanism.
 In contrast to game-based cryptography where security properties are defined via attack games,
 UC defines an \emph{ideal functionality} for a protocol, i.e., a program that serves as the \emph{protocol specification}.
 When executed by a trusted third party that communicates over secure channels, the ideal functionality exhibits all possible behaviors of the protocol.
@@ -14,11 +14,11 @@ provided by UC and their associated theorems.
 
 Despite UC's appeal, programming language tools and techniques for establishing UC emulation are fairly limited with some recent efforts providing
 partial support~\cite{ilc,easyuc,ipdl,symbolicuc,barbosa}. This is a result of two key challenges.
-First, at the core of UC lies demonstrating emulation which relies on proving program equivalence and is undecidable in general
+The first challenge is that at the core of UC lies demonstrating emulation which relies on proving program equivalence and is undecidable in general
 and tends to be complicated even for simple programs.
-Moreover, UC emulation requires designing a simulator generator such that \emph{for all} adversaries, \emph{there exists} a simulator (that is constructed
-from the simulator generator) that emulates the protocol \emph{for all} environments.
-This sequence of $\forall \exists \forall$ quantifiers complicates proving equivalence even further, especially when the adversary and simulator can exhibit
+Moreover, UC emulation requires designing a simulator generator such that \emph{for all} ($\forall$) adversaries, \emph{there exists} ($\exists$) a simulator (that is constructed
+from the simulator generator) that emulates the protocol \emph{for all} ($\forall$) environments.
+This sequence of quantifiers ($\forall \ \exists \ \forall$) complicates proving equivalence further, especially when the adversary and simulator can exhibit
 probabilistic behavior.
 The second major challenge is \emph{execution cost} which plays a central role in UC since the security properties
 guaranteed by UC only hold in the presence of polynomial-time bounded adveraries.
@@ -50,7 +50,7 @@ The import value of a message is also directly encoded in its type, thus providi
 among ITMs.
 Internally, an ITM can use its import to generate \emph{potential}, an abstract quantity that is consumed to perform a single
 unit of computation.
-Formally, an ITM containing $n$ units of import can generate $T(n)$ potential units (where $T$ is a ``reasonable'' function)
+Formally, an ITM containing $n$ units of import can generate $T(n)$ potential units (where $T$ is a ``reasonable'' polynomial function)
 and since each execution step costs 1 potential unit, we can ultimately prove that the run-time budget of an ITM is never exceeded.
 
 To facilitate the implementation of UC protocols and functionalities, we propose a novel core calculus called NomosUC that

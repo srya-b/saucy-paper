@@ -144,7 +144,7 @@
 \begin{abstract}
   Universal Composability (UC) is a leading definitional framework for secure protocols, used in cryptography
   and increasingly in computer security more broadly.
-  However, compared with traditional game-based definitions, UC has been relatively less studied from the viewpoint
+  However, compared with traditional game-based definitions, UC has been less studied from the viewpoint
   of programming language semantics and formal methods.
   This work complements the existing formalizations of UC by introducing a novel abstraction called \emph{import
   session types} (IST) to express UC functionalities and protocols.
@@ -156,7 +156,7 @@
   that modularly describe their abstract execution cost.
   IST establishes a close correspondence between Rast and UC where session types can be used
   to describe the interaction protocol of Interactive Turing Machines involved in a cryptographic protocol.
-  Moreover, IST can be used to statically encode the \emph{import mechanism} in UC used to
+  Moreover, IST can be used to encode and statically enforce the \emph{import mechanism} in UC used to
   ensure polynomial-time computation.
   We therefore combine Nomos, an existing language based on Rast with a process-based core calculus for UC (ILC)
   to build a new language called NomosUC to implement executable UC protocols.
@@ -197,8 +197,9 @@
 \section{The UC Experiment} \label{sec:execuc}
 \input{sections/execuc}
 
-\section{Sandboxing}
-\input{sections/commitment} \label{sec:commitment}
+\section{Sandboxing} \label{sec:commitment}
+\input{sections/commitment} 
+
 %\section{Ideal Functionalities} \label{sec:idealfs}
 %\input{sections/functionalities}
 %\section{Coin Flipping and Commitment} \label{sec:commitment}
