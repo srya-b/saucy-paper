@@ -50,31 +50,14 @@ $\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
       $\tg{(* identical case *)}$
 \end{lstlisting}
 
-The simulator construction for the Multisession Composition Theorem~\ref{thm:functor} is trivial.
-UC guarantees that different session of a protocol or ideal functionality can not share state. 
-In the multisession operator, this means that different instances of \F within $!\F$ also don't share any information.
-This allows us to construct a simulator for Theorem~\ref{thm:functor} that, for every subsession of \F, creates a corresponding
-instance of $\Sim_\pi$.
-Messages are routed to the correct instance of $\Sim_\pi$ based on the \inline{ssid} of the message. 
-
-\begin{theorem}[Multisession Composition]\label{thm:functor}
-	\begin{mathpar}
-		\inferrule*[right=MultiComp]
-		{
-			\F_1 \xrightarrow{\pi} \F_2
-		}
-		{
-			!\F_1 \xrightarrow{!\pi} !\F_2
-		}
-	\end{mathpar}
-\end{theorem}
-The complete proof for this theorem is more involved than \emph{just} the simulator construction.
-Instead, it relies on a hybrid argument that replaces a certain number of instances of \F with instances of $\pi$ and proving, by contradiction, that Theorem~\ref{thm:functor} holds. 
-
 \subsection{Squash} \label{sec:squash}
+Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$ instead of a single \msg{ssid}.
+The real world protocol \msf{squash} realizes it with only a single $!\F$. 
+As every instance of \F in $!!\F$ is referred to be a unique pair of \msf{ssid}s, it suffices for \msf{squash} to ``squash'' the two into a single \inline{ssid}.
 
-Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
-The real world that realizes it is comprised of a protocol that ``flattens'' the pair of ssids $(\m{ssid}_1, \m{ssid}_2)$ into a single ssid $\m{ssid}_3 = \m{ssid}_1 || \m{ssid}_2$, the concatenation (can be any other one-to-one and invertible function on the pair) of them.
+Recall the type \inline{session[a] = SID of String ^ a} used for all session-ids. The \inline{String} is meant to be unique to the session and \inline{a} is protocol-specific and used to encode arbitrary information, such as global parameters, for the functionality in question. 
+If the index of some \F in !!\F is $(\msf{SID}(s_1, x), \msf{SID}(s_2, x))$ then the squashed session id for the corresponding instance in !\F has $\msf{SID}(s_1 || s_2, x)$. 
+In general we only need that the two strings $s_1, s_2$ are joined with a one-to-one and reversible function. 
 
 \begin{theorem}[Squash Theorem] \label{thm:squash}
 	\begin{mathpar}
@@ -89,42 +72,42 @@ The real world that realizes it is comprised of a protocol that ``flattens'' the
 \end{theorem}
 
 \begin{proof}
-The simulator for this construction is a direct simulation where $\Sim{\m{squash}}$ takes as input one of 
+The simulator for this construction is a direct simulation where $\SIM{\m{squash}}$ takes as input one of 
 \begin{itemize}
-	\item \inline{Z2A2P(pid, P2MS(ssid, msg))}: $\SIM{\m{squash}}$ un-concatenates \inline{ssid} into a pair (\inline{ssid1}, \inline{ssid2}) and forward the message \inline{A2P(pid, P2MS(ssid1, P2MS(ssid2, msg)))}.
+	\item \inline{Z2A2P(pid, P2MS(ssid, msg))}: $\SIM{\m{squash}}$ un-concatenates \inline{ssid} into a pair (\inline{ssid1}, \inline{ssid2}) and forward the message \inline{A2P(pid, P2MS(ssid1, P2MS(ssid2, msg)))} to the \idealP (forwards to !!\F).
 	\item \inline{Z2A2F(A2MS(ssid, msg))}: Similar to above, $\SIM{\m{squash}}$ splits the given \inline{ssid} and sends \\ \inline{A2F(A2MS(ssid1, A2MS(ssid2, msg)))}. 
 \end{itemize}
 
-\SIM{\m{squash}} also keeps one import for every message it ges and forwards the remainder to either of \F or the \partywrapper.
 On input from \Z, \SIM{\m{squash}} does the following; 
-
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ sim_squash[K][p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn}:
-  $\tg{(* default args *)}$
-  (#ztoa: comm[z2amsg]), (#atoz: comm[a2zmsg]) 
+  $\tg{(* default + usual args *)}$
+  ($\$$ztoa: comm[z2amsg]), ($\$$atoz: comm[a2zmsg]) 
   $\vdash$ ($\$$ch: 1) =
 {
   ...
-  $\ncase$ #ztoa (
+  $\ncase$ $\$$ztoa (
     Z2A2P(pid, P2MS(ssid, msg))) =>
       ssid1, ssid2 $\leftarrow$ split ssid
-      #atop.SEND ;
-      $\npay$ #a_to_p {a2pn-1} ;
-      $\nsend$ #a_to_p A2P(pid, 
-                P2MS(ssid2, P2MS(ssid2, msg)) ;
+      $\$$atop.SEND ;
+      $\npay$ $\$$atop {a2pn} ;
+      $\nsend$ $\$$atop A2P(pid, 
+                  P2MS(ssid2, P2MS(ssid2, msg)) ;
     Z2A2F(A2MS(ssid, msg)) =>
       ssid1,ssid2 $\leftarrow$ split ssid
-      #atof.SEND ; 
-      $\npay$ #atof {a2fn-1} ;
-	  $\nsend$ #atof A2P(A2MS(ssid1, 
-                A2MS(ssid2, msg))) ;
+      $\$$atof.SEND ; 
+      $\npay$ $\$$atof {a2fn} ;
+      $\nsend$ $\$$atof A2P(A2MS(ssid1, 
+                  A2MS(ssid2, msg))) ;
   ...
 }	  
 \end{lstlisting}
 \end{proof}
+The \msf{split} function the inverse of the one-to-one function used to combine two \msf{ssid}s.
 
-We further require Theorem~\ref{thm:functor} in order to conclude full UC-style composition. We restate it here
-\begin{theorem}[Multisession Composition]
+\section{Multisession Composition} 
+We further require Theorem~\ref{thm:functor} in order to conclude full UC-style composition.
+\begin{theorem}[Multisession Composition]\label{thm:functor}
 	\begin{mathpar}
 		\inferrule*[right=MultiComp]
 		{
@@ -135,20 +118,36 @@ We further require Theorem~\ref{thm:functor} in order to conclude full UC-style 
 		}
 	\end{mathpar}
 \end{theorem}
+%\begin{theorem}[Multisession Composition]
+%	\begin{mathpar}
+%		\inferrule*[right=MultiComp]
+%		{
+%			\F_1 \xrightarrow{\pi} \F_2
+%		}
+%		{
+%			!\F_1 \xrightarrow{!\pi} !\F_2
+%		}
+%	\end{mathpar}
+%\end{theorem}
+The simulator construction for the Multisession Composition Theorem~\ref{thm:functor} is trivial.
+UC guarantees that different session of a protocol or ideal functionality can not share state. 
+In the multisession operator, this means that different instances of \F within $!\F$ also don't share any information.
+This allows us to construct a simulator for Theorem~\ref{thm:functor} that, for every subsession of \F, creates a corresponding
+instance of $\Sim_\pi$.
+Messages are routed to the correct instance of $\Sim_\pi$ based on the \inline{ssid} of the message. 
 
-The simulator for this theorem runs internal copies of $\Sim_\pi$ for each new \m{ssid} spawned.
-It is easy to see why simulating each isolated instance should be feasible, given that the protocol instances and functionality do not share any state with each other.
-However, to complete the proof we need to show a reduction that translates an environment $\Z$ that can distinguish the multi-session experiment into an environment $\Z^*$ that can distinguish real from ideal in the single session experiment.
+The complete proof for this theorem is more involved than \emph{just} the simulator construction.
+Instead, it relies on a hybrid argument that translates an environment $\Z$ that can distinguish the multi-session experiment into an environment $\Z^*$ that can distinguish real from ideal in the single session experiment.
 
-The high level approach is as follows: $\Z^*$ can only interact with only a single instance of $\F_1$ in the real world, but it must present a view of multiple sessions $!\F_1$ to its sandbox execution of $\Z$.
-To do this, $\Z^*$ will create local simulations of subsessions of $\F_1$ for all but one subsession, which it forwards to its external channel.
+The high level approach is as follows: $\Z^*$ can only interact with only a single instance of $\F_1$ in the real execution, but it must present a view of multiple sessions $!\F_1$ to its sandbox execution of $\Z$.
+To do this, $\Z^*$ will locally sandbox subsessions of $\F_1$ for all but one subsession, the one in the real execution.
 
 To complete the precise statement of this proof, we have to resort to (a variable number of) hybrid worlds~\cite{canettiUC,variablehybrids}. We sketch the proof below.
 We define a family of environments $\Z^*_i$, indexed by a polynomial $i$,
 \begin{itemize}
-\item the first $i(k)-1$ subsessions shown to $\Z$ are a local simulation of $\F_1$.
-\item the $i(k)$'th subsession is forwarded to the external channel,
-\item the $i(k)+1$'th and later subsessions are a simulation of $\pi$.
+\item the first $i(k)-1$ subsessions shown to $\Z$ are sandboxed instances of $\F_1$.
+\item the $i(k)$'th subsession is the instance running in the ``real'' exection, i.e. not in a sandbox. 
+\item the $i(k)+1$'th and later subsessions are sandboxed instance of $\F_1$ replaced by $pi$
 \end{itemize}
 Notice that $\Z^*_0$ presents a simulation of exactly the multi-session real world, while $\Z^*_q$ presents a simulation of exactly the multi-session ideal world where $q$ is a polynomial bound on the runtime resulting from $\Z$.
 What we can show is that by triangle rule, if $\Z$ is a distinguisher for the multi-session experiment, there must exist some polynomial $i$ such that the real world with $\Z^*_i$ is distinguishable from the real world with $\Z^*_{i+1}$. Since the real world with $\Z^*_{i+1}$ is exactly the same as the ideal world with $\Z^*_i$, this gives us that $\Z^*_i$ is a distinguisher for real and ideal in the single-session experiment.
