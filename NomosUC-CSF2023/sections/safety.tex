@@ -1,7 +1,6 @@
-The main type safety theorems that exhibit the deep connection between our type
-system and the operational semantics are the usual \emph{type
-preservation} and \emph{progress}.
-In addition, we formally prove the polytime bounds that are guaranteed by the NomosUC design.
+The deep connection between our type system and the operational semantics are
+formalized by the standard \emph{type preservation} and \emph{progress} theorems.
+The preservation theorem also guarantees that the execution time is polynomial in the import tokens.
 To express these theorems, we recall the semantic objects
 $\proc{c}{w, P}$ and $\msg{c}{w, M}$ of a NomosUC program.
 A multiset of such semantic objects communicating with each other
@@ -9,42 +8,43 @@ is known as a \emph{configuration}, denoted as $\config$.
 \begin{mathpar}
   \config ::= \msg{c}{w, M} \mid \proc{c}{w, P} \mid \config \; \config
 \end{mathpar}
-A configuration is typed w.r.t. a signature containing a set of
-type and process definitions.
-A signature $\Sg$ is \emph{well formed} if
+A configuration is typed w.r.t. a signature $\Sg$ containing type and process definitions.
+$\Sg$ is \emph{well formed} if
 (a) every type definition $V = A_V \in \Sg$ is \emph{contractive}, i.e.,
 $A_V$ is not itself a type name,
 and (b) every process definition
-$\Psi \semi \D \vdash f \{t : K\} :: (x : A) = P$ in $\Sg$
+$\Psi \semi \D \vdash f \{t : \K\} :: (x : A) = P$ in $\Sg$
 is well typed according to the process typing judgment, i.e.
-$K \hookrightarrow (t,t) \semi \Psi \semi \D \entailpot{0}{0} P :: (x : A)$.
+$\Sg \semi k \semi \K \hookrightarrow (t,t) \semi \Psi \semi \D \entailpot{0}{0} P :: (x : A)$.
 
 \begin{figure}[t]
 \begin{mathpar}
   \infer[\m{empty}]
   {\D \overset{0}{\underset{0}{\vDash}} (\cdot) :: \D}
   {}
-  \and
+  \and\vspace{-0.5em}
   \infer[\m{compose}]
   {\D_0 \overset{T_1+T_2}{\underset{W_1+W_2}{\vDash}} (\config_1 \; \config_2) :: \D_2}
   {\D_0 \overset{T_1}{\underset{W_1}{\vDash}} \config_1 :: \D_1 \qquad
   \D_1 \overset{T_2}{\underset{W_2}{\vDash}} \config_2 :: \D_2}
-  \and
+  \and\vspace{-0.5em}
   \inferrule*[right=$\m{proc}$]
-  {\Tokens, K_0 \hookrightarrow (t, t') \semi \cdot \semi \D_1 \entailpot{q}{q'} P :: (c : A)}
+  {\Tokens, \K_0 \hookrightarrow (t, t') \semi \cdot \semi \D_1 \entailpot{q}{q'} P :: (c : A)}
   {\D, \D_1 \overset{t}{\underset{w}{\vDash}} \proc{c}{w, P} :: (\D, (c : A) )}
-  \and
+  \and\vspace{-0.5em}
   \inferrule*[right=$\m{msg}$]
-  {\Tokens, K_0 \hookrightarrow (t, t') \semi \cdot \semi \D_1 \entailpot{q}{q'} M :: (c : A)}
+  {\Tokens, \K_0 \hookrightarrow (t, t') \semi \cdot \semi \D_1 \entailpot{q}{q'} M :: (c : A)}
   {\D, \D_1 \overset{t}{\underset{w}{\vDash}} \msg{c}{w, M} :: (\D, (c : A) )}
 \end{mathpar}
+\vspace{-0.5em}
 \caption{Typing rules for a configuration}
+\vspace{-0.5em}
 \label{fig:config_typing}
 %\Description{Configuration Typing Rules}
 \end{figure}
 
 A key question then is how to type these configurations.
-Since they consist of both processes and messages, they
+Since they consist a set of processes and messages, they
 both \emph{use} and \emph{provide} a collection of channels.
 Another goal with the type safety theorems is to establish a connection
 between the statically determined import tokens of a process,
@@ -58,20 +58,19 @@ We use the following judgment to type a configuration w.r.t. $\Sg$
 It states that the configuration $\config$
 uses the channels in the context $\D_1$ and provides the channels in
 the context $\D_2$.
-In addition, $T$, $Q$, and $W$ denotes the total sum of the number of real tokens,
-potential, and work counter of each semantic object in a configuration respectively.
+In addition, $T$, and $W$ denotes the total sum of the number of real tokens,
+and work counter of each semantic object in a configuration respectively.
 
 
 The configuration typing judgment is defined using
 the rules presented in Figure~\ref{fig:config_typing}.
 %
 The rule $\m{empty}$ defines that an empty configuration
-is well-typed with $(T, Q, W) = (0, 0, 0)$ and uses and
+is well-typed with $(T, W) = (0, 0)$ and uses and
 provides the same set of channels.
 The $\m{compose}$ rule combines two configurations by canceling out
 the common channels in $\D_1$ and adding the individual tokens, potential, and work.
-From the viewpoint of import, the most interesting is the $\m{proc}$ rule
-which creates a singleton configuration out of a process.
+To build up the configuration from processes (resp. messages), we use the $\m{proc}$ (resp. $\m{msg}$) rule.
 For a process, the configuration simply checks how many real tokens $t$ it possesses and
 uses it as the token count.
 Note that the process could be operating in a sandbox in which case it would not possess
@@ -83,20 +82,20 @@ by their values.
 
 \begin{lemma}[Local PPT]\label{lem:local_ppt}
   Consider a semantic object $\proc{c}{w, P}$ originating from a well-typed configuration and
-  typed as $K_i \hookrightarrow (t, t'), \Tokens \semi \cdot \semi \D \entailpot{q}{q'} P :: (c : A)$
-  where $K_i$ is the real token type for $P$.
-  Then there exists a polynomial $\mathbf{p}$ such that $w \leq \mathbf{p}(t, k)$.
+  typed as $\K_0 \hookrightarrow (t, t'), \Tokens \semi \cdot \semi \D \entailpot{q}{q'} P :: (c : A)$
+  where $\K_0$ is the real token type for $P$.
+  Then there exists a polynomial $\poly$ such that $w \leq \poly(t, k)$.
 \end{lemma}
 
 \begin{proof}
   Since $q'$ is always non-negative, we trivially obtain $w \leq q'+w$.
   Also, note that the work counter $w$ only increments while executing $\etick{r}$
   which decrements $q'$ by $r$.
-  And since $q$ is never decremented during such executions, we get $q'+w \leq q$.
+  And since $q$ is never decremented during executions, we get $q'+w \leq q$.
   Then, from the $\m{pot}$ rule, we obtain $q \leq \GlobalF(t_m', k) \leq \GlobalF(t_m, k)$.
   And, we keep following the token hierarchy to obtain
-  $w \leq q \leq \GlobalF^{m-i}(t, k)$.
-  And, thus $\mathbf{p} = \GlobalF^{m-i}$ where $m$ is the simulation depth of the process.
+  $w \leq q \leq \GlobalF^{m}(t, k)$.
+  And, thus $\poly = \GlobalF^{m}$ where $m$ is the simulation depth of the process.
   The same lemma would hold for messages as well.
 \end{proof}
 
@@ -104,19 +103,17 @@ Next, we turn the local polytime invariant into a global polytime invariant expl
 the super-additivity of $\GlobalF$.
 
 \begin{theorem}[Global PPT] \label{thm:global_ppt}
-  Given a well-typed configuration written as $\D \overset{T}{\underset{W}{\vDash}} \config :: \D'$,
-  there exists a polynomial $\GlobalP$ such that $W \leq \GlobalP(T, k)$.
+  If a well-typed configuration is written as $\D \overset{T}{\underset{W}{\vDash}} \config :: \D'$,
+  then $W \leq \poly(T, k)$.
 \end{theorem}
 
 \begin{proof}
   We use Lemma~\ref{lem:local_ppt} to obtain that for every semantic object $\proc{c}{w, P}$ (or $\msg{c}{w, M}$),
-  $w \leq \mathbf{p}(t, k)$ where $t$ is the real token quantity for that object.
-  When these objects are composed, we get $W = \Sg w \leq \Sg \mathbf{p}(t, k) \leq \Sg \GlobalP(t, k) \leq
-  \GlobalP(\Sg t, k) = \GlobalP(T, k)$.
-  First, we can set $\GlobalP = \m{max}(\mathbf{p})$ for all objects, thus obtaining the inequality
-  that $\mathbf{p}(t, k) \leq \GlobalP(t, k)$.
-  Also, note that due to super-additivity of $\GlobalF$, we get that $\GlobalP$ is super-additive
-  and therefore $\Sg \GlobalP(t, k) \leq \GlobalP(\Sg t, k)$.
+  $w \leq \poly(t, k)$ where $t$ is the real token quantity for that object.
+  When these objects are composed, we get $W = \Sg w \leq \Sg \poly(t, k) \leq
+  \poly(\Sg t, k) = \poly(T, k)$.
+  Note that due to super-additivity of $\GlobalF$, we get that $\poly = \GlobalF^m$ is super-additive
+  and therefore $\Sg \poly(t, k) \leq \poly(\Sg t, k)$.
 \end{proof}
 
 Finally, we establish the standard type safety theorems.
@@ -128,16 +125,16 @@ $\D \overset{T_1}{\underset{W_1}{\vDash}} \config_1 :: \D'$.
 If $\config_1 \step \config_2$, then there exist $T_2$ and $W_2$ such
 that $\D \overset{T_2}{\underset{W_2}{\vDash}} \config_2 :: \D'$.
 \end{theorem}
-\begin{proof}
+\begin{proofsketch}
   By case analysis on the transition rule, applying inversion to the
   given typing derivation, and then assembling a new derivation of
   $\config_2$.
-\end{proof}
+\end{proofsketch}
 
 A process or message is said to be \emph{poised} if it is trying to
-communicate along the channel that it provides.  A poised process is
+receive along the channel that it provides.  A poised process is
 comparable to a computation expecting a value (e.g. a lambda expression).
-Similarly, a poised message is equivalent to a value.
+Similarly, a poised message is trying to send along its provided channel and is equivalent to a value.
 A configuration is poised if every process or message in the configuration is poised.
 Conceptually, this implies that the configuration is trying to communicate
 externally, i.e. along one of the channel it provides.
