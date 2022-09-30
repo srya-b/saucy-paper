@@ -7,7 +7,8 @@ In the second code snippet, Figure~\ref{lst:receiver}, the receiver is activated
 
 \begin{figure}
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\tg{(* committer code after receiving a 'commit' message from the environment *)}$
+$\tg{(* committer code after receiving a 'commit'}$
+        $\tg{message from the environment *)}$
 b = $\tm{recv}$ $\$$z2p ;
 $\nget$ $\$$z2p {1} ;
 bits = sample k rng ;
@@ -34,7 +35,8 @@ $\tb{case}$ $\$$p2f (
 %...
 \begin{figure}
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\tg{(* receiver waiting for the commitment opening from the random oracle channel *)}$
+$\tg{(* receiver waiting for the commitment opening}$
+        $\tg{from the random oracle channel *)}$
 sender = $\tm{recv}$ $\$$f2p ;
 (b,h) = recv $\tm{recv}$ $\$$f2p ;
 $\nget$ $\$$f2p {1} ; 

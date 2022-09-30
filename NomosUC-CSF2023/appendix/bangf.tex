@@ -23,9 +23,11 @@ The multisession operator runs each instance of the functionality inside the wra
 The !\F, on input from the \partywrapper, reads a message from the communicator and then does the following:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ f_multisession_p2f_input[K][K1]{p2fn,f2pn} : 
-  (k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
-  (#p2f: comm[p2fmsg[p2ms]][K]), (#f2p: comm[f2pmsg[ms2p]][K]), 
-  (#a2f: comm[a2fmsg[a2ms]][K]), (#f2a: comm[f2amsg[ms2a]][K]) |- ($\$$ch: 1) =
+  $\tg{(* default args *)}$
+  (#p2f: comm[p2fms[p2ms]][K]), 
+  (#f2p: comm[f2pms[ms2p]][K]), 
+  (#a2f: comm[a2fms[a2ms]][K]), 
+  (#f2a: comm[f2ams[ms2a]][K]) $\vdash$ ($\$$ch: 1) =
 {
   ...
   msg = $\nrecv$ #p2f ;
@@ -33,27 +35,29 @@ $\nproc$ f_multisession_p2f_input[K][K1]{p2fn,f2pn} :
     P2F(pid, P2MS(ssid, msg)) =>
       $\nif$ not ssid in $\$$p2ssid
       $\nthen$
-      	#new_p2ssid <- communicator_init[K1][p2f] <- ;
-      	#new_ssid2p <- communicator_init[K1][f2p] <- ;
-      	#new_a2ssid <- communicator_init[K1][a2f] <- ;
-      	#new_ssid2a <- communicator_init[K1][f2a] <- ;
+      	#new_p2ssid $\leftarrow$ channel_init[K1][p2f] $\leftarrow$ ;
+      	#new_ssid2p $\leftarrow$ channel_init[K1][f2p] $\leftarrow$ ;
+      	#new_a2ssid $\leftarrow$ channel_init[K1][a2f] $\leftarrow$ ;
+      	#new_ssid2a $\leftarrow$ channel_init[K1][f2a] $\leftarrow$ ;
       
-      	$\$$p2ssidnew <- pappend $\$$p2ssid #new_p2ssid ;
-      	$\$$ssid2pnew <- pappend $\$$ssid2p #new_ssid2p ;
-      	$\$$a2ssidnew <- pappend $\$$a2ssid #new_a2ssid ;
-      	$\$$ssid2anew <- pappend $\$$ssid2a #new_ssid2a ;
+      	$\$$p2ssidnew $\leftarrow$ append $\$$p2ssid #new_p2ssid ;
+      	$\$$ssid2pnew $\leftarrow$ append $\$$ssid2p #new_ssid2p ;
+      	$\$$a2ssidnew $\leftarrow$ append $\$$a2ssid #new_a2ssid ;
+      	$\$$ssid2anew $\leftarrow$ append $\$$ssid2a #new_ssid2a ;
       
-      	$\$$chprime <- f_wrapper[K1][f2p,p2f][f2a,a2f] <- 
-                           k rng sid clist $\#$p2ssid $\#$ssid2p $\#$a2ssid $\#$ssid2a $\#$z ;
+      	$\$$chprime $\leftarrow$ f_wrapper[K1][f2p,p2f][f2a,a2f] $\leftarrow$
+               k rng sid clist $\#$p2ssid $\#$ssid2p 
+               $\#$a2ssid $\#$ssid2a $\#$z ;
       $\nend$
   
-      #ch <- get_channel #p2ssid ssid ;
+      #ch $\leftarrow$ get_channel #p2ssid ssid ;
       $\nwithdraw$ K K1 {p2fn} ;
       $\$$ch.SEND ;
       $\nsend$ $\$$ch P2F(pid, msg) ;
       $\npay$ $\$$ch {p2fn : K1} ;
   	
-    $\$$ch <- f_multisession_f2p_i[K][K1] <- .... $\$$p2ssidnew $\$$ssid2pnew $\$$a2ssidnew $\$$ssid2anew 0;	
+    $\$$ch $\leftarrow$ f_multisession_f2p_i[K][K1] $\leftarrow$ $\tg{(* args *)}$ 	
+      $\$$p2ssidnew $\$$ssid2pnew $\$$a2ssidnew $\$$ssid2anew 0;	
 }
 \end{lstlisting}
 
@@ -126,22 +130,25 @@ The simulator for this construction is a direct simulation where $\Sim{\m{squash
 On input from \Z, \SIM{\m{squash}} does the following; 
 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-proc sim_squash[K][p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn} :
-  (k: Int), (rng: [Bit]), (sid: session[a]), (crupt: list[pid]),
-  (#z_to_a: comm[z2amsg]), (#a_to_z: comm[a2zmsg]) ... |- ($\$$ch: 1) =
+$\nproc$ sim_squash[K][p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn}:
+  $\tg{(* default args *)}$
+  (#ztoa: comm[z2amsg]), (#atoz: comm[a2zmsg]) 
+  $\vdash$ ($\$$ch: 1) =
 {
   ...
-  $\ncase$ #z_to_a (
+  $\ncase$ #ztoa (
     Z2A2P(pid, P2MS(ssid, msg))) =>
-      ssid1, ssid2 <- split ssid
-      #a_to_p.SEND ;
+      ssid1, ssid2 $\leftarrow$ split ssid
+      #atop.SEND ;
       $\npay$ #a_to_p {a2pn-1} ;
-      $\nsend$ #a_to_p A2P(pid, P2MS(ssid2, P2MS(ssid2, msg)) ;
+      $\nsend$ #a_to_p A2P(pid, 
+                P2MS(ssid2, P2MS(ssid2, msg)) ;
     Z2A2F(A2MS(ssid, msg)) =>
-      ssid1,ssid2 <- split ssid
-      #a_to_f.SEND ; 
-      $\npay$ #a_to_f {a2fn-1} ;
-	  $\nsend$ #a_to_f A2P(A2MS(ssid1, A2MS(ssid2, msg))) ;
+      ssid1,ssid2 $\leftarrow$ split ssid
+      #atof.SEND ; 
+      $\npay$ #atof {a2fn-1} ;
+	  $\nsend$ #atof A2P(A2MS(ssid1, 
+                A2MS(ssid2, msg))) ;
   ...
 }	  
 \end{lstlisting}
