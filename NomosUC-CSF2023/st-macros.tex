@@ -368,7 +368,15 @@
 
 %% UC stuff
 \newcommand{\fcomm}{\mathcal{F}_{\msf{comm}}}
-\newcommand{\B}[1]{\textcolor{gray}{#1}}
+%\newcommand{\B}[1]{\colorbox{gray}{#1}}
+%\newcommand{\hlc}[2][yellow]{{%
+%    \colorlet{foo}{#1}%
+%        \sethlcolor{foo}\hl{#2}}%
+%        }
+%\newcommand{\hlcyan}[1]{{\sethlcolor{cyan}\hl{#1}}}
+%\newcommand{\B}[1]{\hlc[pink]{#1}}
+\definecolor{airforceblue}{rgb}{0.36, 0.54, 0.66}
+\newcommand{\B}[1]{{\color{airforceblue}{#1}}}
 \newcommand{\wt}{\circled{w}}
 
 %% TODO
