@@ -1,0 +1,46 @@
+type p2ms[s][a] = P2MS of SID[s] ^ a ;
+type ms2p[s][a] = MS2P of SIS[s] ^ a ;
+
+type a2ms[s][a] = A2MS of SID[a] ^ a ;
+type ms2a[s][a] = MS2A of SID[a] ^ a ;
+
+proc f_ms_init[K][K1][s,p2f,f2p,a2f,f2a] :
+  (* args *)
+  ($p2f: comm[P2F[p2ms[s][p2f]][K]]), ($f2p: comm[F2P[ms2p[s][f2p]][K]]),
+  ($a2f: comm[a2ms[s][a2f]][K]), ($f2a: comm[ms2a[s][f2a]][K])
+    |- ($c : 1) =
+{
+  -- create list for all the parties 
+  lp2f<- pnil[comm[P2F[p2f]][K1]]; lf2p <- pnil[comm[F2P[f2p]][K1]];
+  la2f <- pnil[comm[a2f][K1]]; lf2a <- pnil[comm[f2a][K1]];
+
+  $ch <- f_ms[K][K1][s,p2f,f2p,a2f,f2a] <- (* args *)
+        lp2f lf2p la2f lf2a 
+}
+
+proc f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
+  (* args *)
+  ($p2f: comm[p2ms[s][p2f]][K]), ($f2p: comm[ms2p[s][f2p]][K]),
+  ($a2f: comm[a2ms[s][a2f]][K]), ($f2a: comm[ms2a[s][f2a]][K]),
+  (lp2f: [comm[P2F[p2f]][K1]]), (lf2p: [comm[F2P[f2p]][K1]]),
+  (la2f: [comm[a2f][K1]]), (lf2a: [comm[f2a][K1]]) |- ($ch: 1) =
+{
+  match $p2f, $a2f (
+    P2F(pid, P2MS(ssid, m)),* =>
+      get {p2msn} K $p2f ;
+      if not exists ssid lp2f then
+        #p2f' <- channel_init[K1][P2F[p2f]] ;
+        #f2p' <- channel_init[K1][F2P[f2p]] ;
+        #a2f' <- channel_init[K1][a2f] ;
+        #f2a' <- channel_init[K1][f2a] ;
+        $c' <- Func[K][K1] <- k rng sid #p2f' #f2p' #a2f' #f2a'
+        lp2f <- append #p2f' lp2f; lf2p <- append #f2p' lf2p;
+        la2f <- append #a2f' la2f; lf2a <- append #f2a' lf2a;
+      else ()
+      #p2f' <- search ssid lp2f ;
+      withdrawtoken K K1 p2fn ;
+      #p2f'.SEND ; send #p2f' P2F(pid, m) ; pay {p2fn} K1 #p2f' ;
+    *,A2MS(ssid, m) => 
+      (* identical case *)
+  )
+} 

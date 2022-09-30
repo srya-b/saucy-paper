@@ -1,92 +1,62 @@
-In this section we give more extensive code on how the multisession extension work. We also explore Theorems \ref{thm:squash} and \ref{thm:functor} in greater detail, and, specifically address the proof obligation for both.
+In this section we give more extensive code on how the multisession extension works. 
+We also explore Theorems \ref{thm:squash} and \ref{thm:functor} in greater detail, and, specifically address the proof obligation for both.
 
 \subsection{!\F}
-The multisession operator presents the same interface to \inline{execUC} as any other functionality.
-However, the shell code that we run it inside operates directly on functional messages from its communicators with \F and the \partywrapper instead of performing any conversion to session-types.
-The reason for this choice is that a session type for the operator is not very meaningful as it only provides an interface of ``input'' and ``ouput'' to/from underlying instances of the functionality.
+The multisession extension runs instances of the wrapped functionality in a sandbox much like the \partywrapper.
+Its type is simple and relies on a simple send/poll message passing introduced in the linear type \inline{comm}.
+The reason for such a simple type (below) for the operator is that it needs to be agnostic to the underlying session types 
+of the functionality. All it does it route messages and forward them to the shared part of the providerless channel
+connecting to the internal instances of \F.
 
-!\F communicates with the \partywrapper through the type
 \begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
 $\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
 $\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
 \end{lstlisting}
-and with \A through the type
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
-$\yo{type}$ a2ms[a] = A2MS of ssid ^ a ;
-$\yo{type}$ ms2a[b] = MS2A of ssid ^ b ;
-\end{lstlisting}
-both of which are parameterized by the functionality message types \inline{a} and \inline{b}.
 
-Recall that all functionalities are run inside some shell code, and their shell code communicates with communicators to other parities--we can call this a functionality wrapper as it wraps around the actual functionality code.
-The multisession operator runs each instance of the functionality inside the wrapper, and provides each with ``virtual'' communicators for \A and the \partywrapper.
-
-The !\F, on input from the \partywrapper, reads a message from the communicator and then does the following:
+Like the \partywrapper virtualizaton is achieved just by spawnig functionalities with the virtual token type \inline{K1}.
+From the code below for accepting messages fro the \partywrapper, we can see that the operator's code is alost identical the code in Appendix~\ref{app:arbparties}.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\nproc$ f_multisession_p2f_input[K][K1]{p2fn,f2pn} : 
-  $\tg{(* default args *)}$
-  (#p2f: comm[p2fms[p2ms]][K]), 
-  (#f2p: comm[f2pms[ms2p]][K]), 
-  (#a2f: comm[a2fms[a2ms]][K]), 
-  (#f2a: comm[f2ams[ms2a]][K]) $\vdash$ ($\$$ch: 1) =
+$\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
+  $\tg{(* args *)}$
+  ($\$$p2f: comm[p2ms[s][p2f]][K]), 
+  ($\$$f2p: comm[ms2p[s][f2p]][K]),
+  ($\$$a2f: comm[a2ms[s][a2f]][K]), 
+  ($\$$f2a: comm[ms2a[s][f2a]][K]),
+  (lp2f: [comm[P2F[p2f]][K1]]), 
+  (lf2p: [comm[F2P[f2p]][K1]]),
+  (la2f: [comm[a2f][K1]]), 
+  (lf2a: [comm[f2a][K1]]) |- ($\$$ch: 1) =
 {
-  ...
-  msg = $\nrecv$ #p2f ;
-  $\ncase$ msg (
-    P2F(pid, P2MS(ssid, msg)) =>
-      $\nif$ not ssid in $\$$p2ssid
-      $\nthen$
-      	#new_p2ssid $\leftarrow$ channel_init[K1][p2f] $\leftarrow$ ;
-      	#new_ssid2p $\leftarrow$ channel_init[K1][f2p] $\leftarrow$ ;
-      	#new_a2ssid $\leftarrow$ channel_init[K1][a2f] $\leftarrow$ ;
-      	#new_ssid2a $\leftarrow$ channel_init[K1][f2a] $\leftarrow$ ;
-      
-      	$\$$p2ssidnew $\leftarrow$ append $\$$p2ssid #new_p2ssid ;
-      	$\$$ssid2pnew $\leftarrow$ append $\$$ssid2p #new_ssid2p ;
-      	$\$$a2ssidnew $\leftarrow$ append $\$$a2ssid #new_a2ssid ;
-      	$\$$ssid2anew $\leftarrow$ append $\$$ssid2a #new_ssid2a ;
-      
-      	$\$$chprime $\leftarrow$ f_wrapper[K1][f2p,p2f][f2a,a2f] $\leftarrow$
-               k rng sid clist $\#$p2ssid $\#$ssid2p 
-               $\#$a2ssid $\#$ssid2a $\#$z ;
-      $\nend$
-  
-      #ch $\leftarrow$ get_channel #p2ssid ssid ;
-      $\nwithdraw$ K K1 {p2fn} ;
-      $\$$ch.SEND ;
-      $\nsend$ $\$$ch P2F(pid, msg) ;
-      $\npay$ $\$$ch {p2fn : K1} ;
-  	
-    $\$$ch $\leftarrow$ f_multisession_f2p_i[K][K1] $\leftarrow$ $\tg{(* args *)}$ 	
-      $\$$p2ssidnew $\$$ssid2pnew $\$$a2ssidnew $\$$ssid2anew 0;	
-}
+  $\nmatch$ $\$$p2f, $\$$a2f (
+    P2F(pid, P2MS(ssid, m)),* =>
+      $\nget$ {p2msn} K $\$$p2f ;
+      $\nif$ not exists ssid lp2f $\nthen$
+        #p2f' $\leftarrow$ channel_init[K1][P2F[p2f]] ;
+        #f2p' $\leftarrow$ channel_init[K1][F2P[f2p]] ;
+        #a2f' $\leftarrow$ channel_init[K1][a2f] ;
+        #f2a' $\leftarrow$ channel_init[K1][f2a] ;
+        $\$$c' $\leftarrow$ Func[K][K1] $\leftarrow$ k rng sid #p2f' #f2p' 
+                                 #a2f' #f2a'
+        lp2f $\leftarrow$ append #p2f' lp2f; 
+        lf2p $\leftarrow$ append #f2p' lf2p;
+        la2f $\leftarrow$ append #a2f' la2f; 
+        lf2a $\leftarrow$ append #f2a' lf2a;
+      $\nelse$ ()
+      #p2f' $\leftarrow$ search ssid lp2f ;
+      $\nwithdraw$ K K1 p2fn ;
+      #p2f'.SEND ; $\nsend$ #p2f' P2F(pid, m) ; 
+      $\npay$ {p2fn} K1 #p2f' ;
+    *,A2MS(ssid, m) => 
+      $\tg{(* identical case *)}$
 \end{lstlisting}
 
-First it checks whether the \m{ssid} exists. It not it spawns new communicators for the instance \F: two for the \partywrapper and two for \A.
-It then grabs the \inline{#p2f} channel for $\F_{\m{ssid}}$, creates the appropriate virtual tokens and sends the message along that channel.
-Finally, after handling the incoming message, it moves to the next step of checking for outgoing messages, to the \partywrapper, from each \F by calling \inline{f_multisession_f2p_i}.
-The function accepts an integer at the end, in this example 0, which is the index to check in the communicator list. Eventually all communicators in the list are checked.
+The simulator construction for the Multisession Composition Theorem~\ref{thm:functor} is trivial.
+UC guarantees that different session of a protocol or ideal functionality can not share state. 
+In the multisession operator, this means that different instances of \F within $!\F$ also don't share any information.
+This allows us to construct a simulator for Theorem~\ref{thm:functor} that, for every subsession of \F, creates a corresponding
+instance of $\Sim_\pi$.
+Messages are routed to the correct instance of $\Sim_\pi$ based on the \inline{ssid} of the message. 
 
-\todo{this is copied from the main body and still references the appendix, make this appenfix referenced.}
-The multi-session extension of a protocol or functionality, specified by the $!$ operator (such as $!\rho$ or $!\F$), allows multiple instances of the protocol/functionality to be run within a single ITM.
-An ITM simulates the instances and multiplexes input/output to/from them much like the \partywrapper.
-The multisession received functionally typed messages like all other functionalities, however, like the \partywrapper, does not have a session type to govern its communication with parties or the adversary.
-Its relies on the session type of the underlying functionalities it spawns to enforce protocol constraints.
-The type of messages it receives are given by 
-\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape]
-$\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
-$\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
-\end{lstlisting}
-and a similar type for communication with \A.
-The multisession extension is mentioned in greater detail in Appendix~\ref{app:ms}.
-
-The first claim we make is that our multisession extension remains polynomial time.
-\begin{theorem}[PPT !]\label{thm:bangppt}
-If a functionality $\F$ is well-resource-typed, then it's multisession extension $!\F$ is well-resource-typed.
-\end{theorem}
-It easy to see why the multisession extension, performing constant work and being activated a polynomial number of times, remains well-resource-typed and PPT given that \F is PPT.
-We elaborate on the remaining theorems in this section in the Appendix.
-
-The next theorem realizes multiple sessions of a functionality with multiple sessions of a realizing protocol and it's hybrid functionality.
 \begin{theorem}[Multisession Composition]\label{thm:functor}
 	\begin{mathpar}
 		\inferrule*[right=MultiComp]
@@ -98,11 +68,10 @@ The next theorem realizes multiple sessions of a functionality with multiple ses
 		}
 	\end{mathpar}
 \end{theorem}
-Theorem~\ref{thm:functor} is intuitive in the sense that each session of the real world protocol $\pi$ communicates with an analogous session of $\F_1$ in isolation to realize the corresponding instance of $\F_2$. 
-A UC proof for this is more involved that just providing a simulator but, instead, relies on a hybrid argument. 
-We leave the bulk of the hybrid argument to Appendix~\ref{app:ms}.
+The complete proof for this theorem is more involved than \emph{just} the simulator construction.
+Instead, it relies on a hybrid argument that replaces a certain number of instances of \F with instances of $\pi$ and proving, by contradiction, that Theorem~\ref{thm:functor} holds. 
 
-
+\subsection{Squash} \label{sec:squash}
 
 Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$.
 The real world that realizes it is comprised of a protocol that ``flattens'' the pair of ssids $(\m{ssid}_1, \m{ssid}_2)$ into a single ssid $\m{ssid}_3 = \m{ssid}_1 || \m{ssid}_2$, the concatenation (can be any other one-to-one and invertible function on the pair) of them.
