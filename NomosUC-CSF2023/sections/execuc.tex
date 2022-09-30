@@ -20,7 +20,7 @@ It also takes in a security parameter $k$ and a random bit string $r$ that is us
 \end{center}
 
 Its type $\m{execout}[a]$ accepts $n$ import tokens, and returns an output \inline{Bit} as the result from \Z. 
-The NomosUC type system requires explicit polynomials for checking runtime bounds, and this allows us to ensure a runtime that is $poly(k)$ as long as the the number of tokens $n \in poly(k)$.
+The NomosUC type system requires explicit polynomials for checking runtime bounds, and this allows us to ensure a runtime that is $poly(k)$ as long as the number of tokens $n \in poly(k)$.
 
 All main processes in NomosUC are wrapped according to the providerless channel specification in Section~\ref{sec:basic}. 
 Therefore, \m{execUC} creates only the shared parts of the providerless channel and passes them as input to the wrapped processes. The wrapped processes 
@@ -85,12 +85,12 @@ If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI an
 The notation $e \leftrightarrow e'$ is used to denote two \emph{well-matched} terms: a configuration connected the two is well-typed. 
 
 \subsection{Dummy Lemma}
-An important validation of our approach is the the Dummy Lemma~\ref{thm:dummythicclemma} which shows that a simulator, \DS, for the dummy adversary, suffices to prove emulation. 
+An important validation of our approach is the Dummy Lemma~\ref{thm:dummythicclemma} which shows that a simulator, \DS, for the dummy adversary, suffices to prove emulation. 
 \begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
 The proof of the Lemma is in the form of a constructor for a simulator for any arbitrary real world \A (in Appendix~\ref{sec:dummy}).
-Though a simple Lemma, and simulator construction, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token heirarcy and sandboxing afford. 
+Though a simple Lemma, and simulator construction, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token hierarchy and sandboxing afford. 
 
 \subsection{Single Composition}
 In this section we present a composition operator for protocols that completes Theorem~\ref{thm:singlecomp}.
@@ -130,7 +130,7 @@ Also like the Dummy Lemma, the simulator construction provided in the Appendix i
 \end{mathpar}
 \end{theorem}
 
-Full composition, Theorem~\ref{thm:composition}, extends Theorem~\ref{thm:singlecomp} to replace multipe concurrent instances of a functionality with a realizing protocol.
+Full composition, Theorem~\ref{thm:composition}, extends Theorem~\ref{thm:singlecomp} to replace multiple concurrent instances of a functionality with a realizing protocol.
 We provide it by first proving a much simpler theorem arising from the multisession operator ($!$), Theorem~\ref{thm:functor}, and Theorem \ref{thm:squash}.
 Theorem~\ref{thm:squash} trivially shows a protocol \m{squash} such that $!\F \xrightarrow{\m{squash}} !!\F$, and the proof of Theorem~\ref{thm:functor} is trivially proven by replicating \SIM{\pi} for every instance of $\F_2$.  
 
