@@ -21,7 +21,8 @@ Barbosa realizes simplified UC~\cite{suc}, and, like EasyUC, doesn't capture dyn
 %%Furthermore it suffers similar drawbacks to EasyUC, and all works mentioned in this section, in that does not fully capture dynamic party creation in UC, and they realize only a simplified version of UC~\cite{suc}.
 
 ILC by Liao et al.~\cite{ilc} is another work closely related to our own from which we borrow the write token. If suffers some of the same drawbacks as EasyUC and the work of Barbosa, becaue it does not support full composition and is also limited to a static number of parties in its UC definition.
-It improves on EasyUC and provides a polynomial time notion however, but ends up requiring simulation in both directions to prove emulation. This means that even simple protocols and functionalities can't be judged secure.\todo{should we be specific with an example?} 
+It improves on EasyUC and provides a polynomial time notion however, but ends up requiring simulation in both directions to prove emulation. 
+This means that even simple protocols like a ping-response server can't be judged secure.
 
 We finish with IPDL~\cite{ipdl} by Morrisett et al. which improves upon EasyUC by providing a better notion of emulation, more akin to the UC framework, and symbolically tracks the run time of straight-line programs (and those with statically upper-bounded loops).
 IPDL further implements a unique communication mechanism that imposes a static dependency between channels ``firing''.
