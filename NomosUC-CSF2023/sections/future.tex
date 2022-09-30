@@ -1,7 +1,7 @@
-The primary next step coming from this work is clear.
-We would like to remove the provider/client constraints from linear session types while preserving the potential mechanism from resource-aware session types.
-This would allow us to get rid of the providerless channel design and directly connect all processes with single linear session types allowing us to realize arbitrary
-ITM communication without worrying about cyclic topologies.
+In this work we focused on adapting binary session types to the UC setting. The decision was motivated, in part, by Nomos~\ref{nomos} whose resource-aware binary session types
+fit nicely into the import mechanism in UC.
+We want to explore adding import on top of other formulation of session types, like multiparty session types.
+Resource-aware session types in Nomos also came with an implementation of their powerful type system, so, while this work is only on paper implementing NomosUC type system is a natural next step.
 
 We also want to expand our encoding of UC in NomosUC by expressing synchronous and asyncronous models of communication and computation. 
 Specifically, creating programming conventions and models around the NomosUC to express such models.
