@@ -58,10 +58,10 @@ Finally, the output bit, \Z's guess of which world it is in, forms the basis of 
 
 
 \paragraph*{\textbf{The \partywrapper}}
-We create the \partywrapper to handle spawning parties, create their channels, and connect them to the rest of the experiment.
+We create the \partywrapper to handle process spawn, channel creation and connection to the rest of the experiment.
 Instead of parties directly communicating with \F and \Z through providerless channels, the \partywrapper runs them virtually and presents a ``real'' view to them.
-The virtual tokens construct enables us to virtualize the protocol parties and satisfy the import their session types require while sandboxing them. 
-The \partywrapper, in turn, is connected by single channels each of \F, \Z, and \A and routes communication to/from the appropriate protocol party. 
+Virtual tokens enable us to simulate the protocol parties and satisfy the import their session types require while sandboxing them. 
+The \partywrapper, in turn, is connected by a channel to each of \F, \Z, and \A and routes communication to/from the appropriate protocol party. 
 Its design forces the wrapper around \F to do the same. It must de-multiplex inputs from the \partywrapper and react similarly to messages fro newly created parties. 
 
 \paragraph*{\textbf{Emulation}}
@@ -93,17 +93,18 @@ by \PI and $\phi$, emulated each other, then $\forall \A$ of type $\Delta_3'$ we
 	}
 \end{mathpar}
 \end{definition}
-The notation $e \leftrightarrow e'$ is used to denote two \emph{well-matched} terms: a configuration connected the two is well-typed. 
+The notation $e \leftrightarrow e'$ is used to denote two \emph{well-matched} process terms meaning
+that they have the \emph{same type on all the channels} used and provided.
 
-\subsection{Dummy Lemma}
-An important validation of our approach is the Dummy Lemma~\ref{thm:dummythicclemma} which shows that a simulator, \DS, for the dummy adversary, suffices to prove emulation. 
+% \paragraph*{\textbf{Dummy Lemma}}
 \begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
+An important validation of our approach is the Dummy Lemma which shows that a simulator, \DS, for the dummy adversary, suffices to prove emulation. 
 The proof of the Lemma is in the form of a constructor for a simulator for any arbitrary real world \A (in Appendix~\ref{sec:dummy}).
 Though a simple Lemma, and simulator construction, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token hierarchy and sandboxing afford. 
 
-\subsection{Single Composition}
+\paragraph*{\textbf{Single Composition}}
 In this section we present a composition operator for protocols that completes Theorem~\ref{thm:singlecomp}.
 
 The composition allows replacement of a single ideal functionality $\F_2$ with a protocol $\pi$ that realizes it in the $\F_1$-hybrid world. 
@@ -124,7 +125,7 @@ Proving UC security under composition requires creating a simulator for $\rho \c
 This is done by connecting the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
 Also like the Dummy Lemma, the simulator construction provided in the Appendix is agnostic to the types of the composed protocols and can be easily specified thanks to our token heirarchy. 
 
-\subsection{UC Composition}
+% \paragraph*{\textbf{UC Composition}}
 
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
