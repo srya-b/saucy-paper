@@ -22,14 +22,14 @@ $\$$p2f' $\leftarrow$ ro_p2f[G1] $\$$p_to_f $\$$f_to_p;
 where channel \inline{$\$$p2f'}, the linear endpoint of the providerless channel with \Fro, is typed as:
 
 \begin{tabbing}
-$\m{hash} = \textcolor{red}{\getpot^1} \ichoice{\mb{query}: $\=$PID \product Int \product$ \\
-\>$\echoice{\mb{hash}: PID \arrow Int \arrow \m{hash}}}$
+$\m{hash} = \textcolor{red}{\getpot^1} \ichoice{\mb{query}: $\=$\m{PID} \product \m{int} \product$ \\
+\>$\echoice{\mb{hash}: \m{PID} \arrow \m{int} \arrow \m{hash}}}$
 \end{tabbing}
 
 Communication between \Z and \A is governed by the simple linear type \inline{comm[G][Z2A[2p][2f]} introduced in Section~\ref{sec:basic} where \inline{z2a} is defined as 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
-$\Type$ z2a[a][b] = Z2A2P of PID ^ a | Z2A2F of b 
-$\Type$ a2z[a][b] = P2A2Z of PID ^ a | F2A2Z of b
+$\Type$ z2a[a][b] = Z2A2P of PID x a | Z2A2F of b 
+$\Type$ a2z[a][b] = P2A2Z of PID x a | F2A2Z of b
 \end{lstlisting}
 
 \paragraph*{\textbf{Corrupt Committer}}

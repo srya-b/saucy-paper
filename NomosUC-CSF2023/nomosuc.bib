@@ -14,6 +14,62 @@
   organization={IEEE}
 }
 
+@InProceedings{HondaCONCUR1993,
+  author    = {Kohei Honda},
+  title     = {Types for Dyadic Interaction},
+  booktitle = {4th International Conference on Concurrency Theory (CONCUR)},
+  year      = {1993},
+  pages     = {509--523},
+  publisher = {Springer},
+}
+
+@InProceedings{HondaESOP1998,
+  author    = {Kohei Honda and Vasco T. Vasconcelos and Makoto Kubo},
+  title     = {Language Primitives and Type Discipline for Structured Communication-Based Programming},
+  booktitle = {7th European Symposium on Programming (ESOP)},
+  year      = {1998},
+  pages     = {122--138},
+  publisher = {Springer},
+}
+
+@InProceedings{HondaPOPL2008,
+  author    = {Kohei Honda and Nobuko Yoshida and Marco Carbone},
+  title     = {Multiparty Asynchronous Session Types},
+  booktitle = {35th {ACM SIGPLAN-SIGACT} Symposium on Principles of Programming Languages (POPL)},
+  year      = {2008},
+  pages     = {273--284},
+  publisher = {ACM},
+  bibsource = {dblp computer science bibliography, http://dblp.org},
+  biburl    = {http://dblp.uni-trier.de/rec/bib/conf/popl/HondaYC08},
+}
+
+@InProceedings{ToninhoESOP2013,
+  author    = {Bernardo Toninho and Lu{\'\i}s Caires and Frank Pfenning},
+  title     = {Higher-Order Processes, Functions, and Sessions: a Monadic Integration},
+  booktitle = {22nd European Symposium on Programming (ESOP)},
+  year      = {2013},
+  pages     = {350--369},
+  publisher = {Springer},
+}
+
+@InProceedings{PfenningFOSSACS2015,
+  author    = {Frank Pfenning and Dennis Griffith},
+  title     = {Polarized Substructural Session Types},
+  booktitle = {18th International Conference on Foundations of Software Science and Computation Structures (FoSSaCS)},
+  year      = {2015},
+  pages     = {3--22},
+  publisher = {Springer},
+}
+
+@InProceedings{WadlerICFP2012,
+  author    = {Philip Wadler},
+  title     = {Propositions as Sessions},
+  booktitle = {17th ACM SIGPLAN International Conference on Functional Programming (ICFP)},
+  year      = {2012},
+  pages     = {273--286},
+  publisher = {ACM},
+}
+
 @inproceedings{das2018work,
   title={Work analysis with resource-aware session types},
   author={Das, Ankush and Hoffmann, Jan and Pfenning, Frank},
@@ -22,12 +78,95 @@
   year={2018}
 }
 
-@article{dasnomos,
-  title={Resource-aware session types for digital contracts},
+@INPROCEEDINGS{dasnomos,
+
   author={Das, Ankush and Balzer, Stephanie and Hoffmann, Jan and Pfenning, Frank and Santurkar, Ishani},
-  journal={arXiv preprint arXiv:1902.06056},
-  year={2019}
+
+  booktitle={2021 IEEE 34th Computer Security Foundations Symposium (CSF)}, 
+
+  title={Resource-Aware Session Types for Digital Contracts}, 
+
+  year={2021},
+
+  volume={},
+
+  number={},
+
+  pages={1-16},
+
+  doi={10.1109/CSF51468.2021.00004}}
+
+
+@INPROCEEDINGS{Derakhshan21LICS,
+
+  author={Derakhshan, Farzaneh and Balzer, Stephanie and Jia, Limin},
+
+  booktitle={2021 36th Annual ACM/IEEE Symposium on Logic in Computer Science (LICS)}, 
+
+  title={Session Logical Relations for Noninterference}, 
+
+  year={2021},
+
+  volume={},
+
+  number={},
+
+  pages={1-14},
+
+  doi={10.1109/LICS52264.2021.9470654}}
+
+
+@InProceedings{Capecchi10CONCUR,
+author="Capecchi, Sara
+and Castellani, Ilaria
+and Dezani-Ciancaglini, Mariangiola
+and Rezk, Tamara",
+editor="Gastin, Paul
+and Laroussinie, Fran{\c{c}}ois",
+title="Session Types for Access and Information Flow Control ",
+booktitle="CONCUR 2010 - Concurrency Theory",
+year="2010",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="237--252",
+abstract="We consider a calculus for multiparty sessions with delegation, enriched with security levels for session participants and data. We propose a type system that guarantees both session safety and a form of access control. Moreover, this type system ensures secure information flow, including controlled forms of declassification. In particular, the type system prevents leaks that could result from an unrestricted use of the control constructs of the calculus, such as session opening, selection, branching and delegation. We illustrate the use of our type system with a number of examples, which reveal an interesting interplay between the constraints used in security type systems and those used in session types to ensure properties like communication safety and session fidelity.",
+isbn="978-3-642-15375-4"
 }
+
+
+
+@inproceedings{HoffmannW15,
+  author = {Jan Hoffmann and Ankush Das and Shu-Chun Weng},
+  title = {{Towards Automatic Resource Bound Analysis for OCaml}},
+  booktitle = {44th Symposium on Principles of Programming Languages (POPL'17)},  
+  year = 2017
+}
+
+@inproceedings{Hofmann03AARA,
+ author = {Hofmann, Martin and Jost, Steffen},
+ title = {Static Prediction of Heap Space Usage for First-order Functional Programs},
+ booktitle = {Proceedings of the 30th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
+ series = {POPL '03},
+ year = {2003},
+ isbn = {1-58113-628-5},
+ location = {New Orleans, Louisiana, USA},
+ pages = {185--197},
+ numpages = {13},
+ url = {http://doi.acm.org/10.1145/604131.604148},
+ doi = {10.1145/604131.604148},
+ acmid = {604148},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {functional programming, garbage collection, heap, program analysis, resources},
+} 
+
+@inproceedings{DasHP18,
+  author = {Ankush Das and Jan Hoffmann and Frank Pfenning},
+  title = {Parallel Complexity Analysis with Temporal Session Types},
+  year = 2018,
+  booktitle = {23rd International Conference on Functional Programming (ICFP'18)},
+}
+
 
 @inproceedings{Das20FSCD,
   author    = {Ankush Das and

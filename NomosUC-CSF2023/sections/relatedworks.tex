@@ -1,11 +1,14 @@
 There is a large volume of work that introduces tools for modeling UC protocols and reasoning about UC security.
-Some even mechanize UC proof-generation~cite{certicrypt, easycrypt, cryptoverif, cryptol, fstar}, however, unlike our work, many of them only do so in the standlong setting without any composition guarantees. They also may not completely capture a robust polynomial-time notion or realize generalized composition. 
+Some even mechanize UC proof-generation~\cite{certicrypt, easycrypt, cryptoverif, cryptol, fstar}.
+However, unlike our work, many of them only do so in the standalone setting without any composition guarantees.
+They also do not completely capture a robust polynomial-time notion or realize generalized composition. 
 
-Canetti et al.~\cite{easyuc} and Barbosa et al.~\cite{barbosa} both build off EasyCrypt's game-based security definitions to reach UC-like simulation based definitions.
+Canetti et al.~\cite{easyuc} and Barbosa et al.~\cite{barbosa} both build off EasyCrypt's game-based security definitions to reach UC-like simulation-based definitions.
 They both incorporate security proof generation but differ in a critial way.
 Barbosa introduces a limited polynomial time notion, whereas EasyUC~\cite{easyuc} does not encode any runtime guarantees in its programs. 
 For example, it cannot detect indefinite message passing between \A and \F. Neither, however, capture full UC composition.
-Barbosa realizes simplified UC~\cite{suc}, and, like EasyUC, doesn't capture dynamic party creation or the multisession operator.
+Barbosa realizes simplified UC~\cite{suc}, and, like EasyUC, does not capture dynamic party creation or the multisession operator.
+In contrast, NomosUC derives a polynomial-time bound on ITMs statically with a proof that the computed bounds are correct.
 
 %EasyUC~\cite{easyuc} introduces a toolset built on top of the existing EasyCrypt~\cite{easycrypt} toolset to model UC protocols and generate proofs of security.
 %It moves past the game-based security limitation of EasyCrypt and achieves the broader simulation-based definitions of UC, but does not encode any runtime guarantees.
@@ -20,24 +23,28 @@ Barbosa realizes simplified UC~\cite{suc}, and, like EasyUC, doesn't capture dyn
 %%Barbarosa also must contend with the procedure call communication of EasyCrypt limiting the expressiveness of the framework. 
 %%Furthermore it suffers similar drawbacks to EasyUC, and all works mentioned in this section, in that does not fully capture dynamic party creation in UC, and they realize only a simplified version of UC~\cite{suc}.
 
-ILC by Liao et al.~\cite{ilc} is another work closely related to our own from which we borrow the write token. If suffers some of the same drawbacks as EasyUC and the work of Barbosa, becaue it does not support full composition and is also limited to a static number of parties in its UC definition.
+ILC proposed by Liao et al.~\cite{ilc} is another work closely related to ours which introduced the idea of using a write token
+to resolve read and write non-determinism.
+But it suffers some of the same drawbacks as EasyUC and the work of Barbosa et al.~\cite{barbosa},
+becaue it does not support full composition and is also limited to a static number of parties in its UC definition.
 It improves on EasyUC and provides a polynomial time notion however, but ends up requiring simulation in both directions to prove emulation. 
-This means that even simple protocols like a ping-response server can't be judged secure.
+This means that even simple protocols like a ping-response server cannot be judged secure.
 
-We finish with IPDL~\cite{ipdl} by Morrisett et al. which improves upon EasyUC by providing a better notion of emulation, more akin to the UC framework, and symbolically tracks the run time of straight-line programs (and those with statically upper-bounded loops).
+The work on IPDL~\cite{ipdl} by Morrisett et al. improves upon EasyUC by providing a better notion of emulation,
+more akin to the UC framework, and symbolically tracks the run time of straight-line programs (and those with statically upper-bounded loops).
 IPDL further implements a unique communication mechanism that imposes a static dependency between channels ``firing''.
 %It symbolically tracks the run time of programs but can only do so for straight-line programs or those with statically upper-bounded loops.
-The former precludes expressing constructs like the multisession operator, presented later in this work. 
+However, it precludes expressing constructs like the multisession operator, presented later in this work. 
 %The operator allows creation of an arbitrary number of subsessions of a functionality and is critical to realizing the full UC composition theorem.
 
 We summarize the imporant features of the most closely related work to NomosUC in Figure~\ref{fig:relatedworks}.
 %The columns are broken up according to the features mentioned in the above discussion.
-The first column discusses whether the environment can create an arbitrary number of parties at runtime. %There is no partial-support in this category, either it is supported or it isn't.
-The second column broadly covers whether any runtime or polynomial-time analysis/tracking is supported, partially supported like ILC's restricted notion, or no supported at all. %restricted poly time (partiais performed by the project
+The first row discusses whether the environment can create an arbitrary number of parties at runtime. %There is no partial-support in this category, either it is supported or it isn't.
+The second row broadly covers whether there is any restricted or full support for runtime or polynomial-time analysis or dynamic tracking. %restricted poly time (partiais performed by the project
 %Notice that there is partial support where ILC provides a restricted notion of polynomial time.
-The third column determines whether full UC-style composition is supported, i.e. replacement of an arbitrary number of functionalities with realizing protocols (the existence of a multisession operator is essential). 
-The last column highlights a design choice in communication through channels or through programming-style procedure calls.
-The distinction plays an important role in how communication is captured each work, and whether arbitrary communication patterns from UC are not fully supported.
+The third row determines whether full UC-style composition is supported, i.e. replacement of an arbitrary number of functionalities with realizing protocols (the existence of a multisession operator is essential). 
+The last row highlights a design choice in communication through channels or through programming-style procedure calls.
+The distinction plays an important role in how communication is captured in each work, and whether arbitrary communication patterns from UC are not fully supported.
 
 % Colums: blank | parties at runtime | notion of UC | polynomial time | generalized composition operator | channels | procedural 
 \begin{figure}[H]
@@ -72,9 +79,24 @@ The distinction plays an important role in how communication is captured each wo
 	\end{tabular}}
 \end{table}
 \vspace{-1em}
-\caption{This table summarizes the features that related works do or do not have. An empty cicle \emptycirc[0.5ex] indicates no support for the feature, the half circle \halfcircleft[0.5ex] indicates partial support, and the full circle \fullcirc[0.5ex] indicates full support. The last column distinguished on design decisions and not a limitation/drawback.}
+\caption{Aspects covered by related works.
+Empty circle \emptycirc[0.5ex] indicates no support, half circle \halfcircleft[0.5ex] indicates partial support,
+and full circle \fullcirc[0.5ex] indicates full support.}
+\vspace{-1em}
 \label{fig:relatedworks}
 \end{figure}
+
+On a different thread, the core calculus of NomosUC relies on resource-aware session types~\cite{das2018work} which combines
+session types~\cite{HondaCONCUR1993, HondaESOP1998, HondaPOPL2008,caires2010session, ToninhoESOP2013, PfenningFOSSACS2015,
+WadlerICFP2012} and automatic amortized resource analysis~\cite{Hofmann03AARA,HoffmannW15}.
+Session types were introduced by Honda et al.~\cite{HondaCONCUR1993} to describe and enforce bi-directional communication protocols
+in message-passing systems.
+Resource-aware session types~\cite{das2018work,DasHP18} add cost annotations to session types for analysis of execution time
+of distributed protocols.
+More related to security, session types have been employed to prove detect information flows in concurrent systems, both
+in the binary~\cite{Derakhshan21LICS} and multiparty~\cite{Capecchi10CONCUR} setting.
+The former uses logical relations to define non-intereference which is then ensured through the type system.
+The latter proposes a type system to guarantee a form of access control and secure information flow.
 
 %There is large body of similar work that introduces process calculi, some extensions of $\pi$-calculus, like ILC.
 %Mateus et al.~\cite{mateus} for example introduces process calulus for simpler, sequential composition but is constraints to a schedular-based construction where probabilistic state transitions follow unifor distribution at every step.
