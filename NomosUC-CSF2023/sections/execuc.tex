@@ -124,6 +124,21 @@ This is done by connecting the two simulators, \SIM{\pi} and \SIM{\rho}, in the 
 Also like the Dummy Lemma, the simulator construction provided in the Appendix is agnostic to the types of the composed protocols and can be easily specified thanks to our token heirarchy. 
 
 % \paragraph*{\textbf{UC Composition}}
+Full composition extends Theorem~\ref{thm:singlecomp} to replace multiple concurrent instances of a functionality with a realizing protocol. 
+The proof relies on Theorem~\ref{thm:functor}, whose simulator proof is found in Appendix~\ref{app:ms} and a simpler Theorem~\ref{thm:squash}, presented here, 
+that allows $!!\F \xrightarrow{\msf{squash}} !\F$. 
+
+\begin{theorem}[Multisession Composition]\label{thm:functor}
+	\begin{mathpar}
+		\inferrule*[right=MultiComp]
+		{
+			\F_1 \xrightarrow{\pi} \F_2
+		}
+		{
+			!\F_1 \xrightarrow{!\pi} !\F_2
+		}
+	\end{mathpar}
+\end{theorem}
 
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
@@ -140,23 +155,8 @@ Also like the Dummy Lemma, the simulator construction provided in the Appendix i
 \end{mathpar}
 \end{theorem}
 
-Full composition extends Theorem~\ref{thm:singlecomp} to replace multiple concurrent instances of a functionality with a realizing protocol.
-The full proof is described in Appendix~\ref{app:ms} and arises from a simpler theorem for the multisession operator ($!$).
 % We provide it by first proving a much simpler theorem arising from the , Theorem~\ref{thm:functor}, and Theorem \ref{thm:squash}.
 % Theorem~\ref{thm:squash} trivially shows a protocol \m{squash} such that $!\F \xrightarrow{\m{squash}} !!\F$, and the proof of Theorem~\ref{thm:functor} is trivially proven by replicating \SIM{\pi} for every instance of $\F_2$.  
-
-\begin{theorem}[Multisession Composition]\label{thm:functor}
-	\begin{mathpar}
-		\inferrule*[right=MultiComp]
-		{
-			\F_1 \xrightarrow{\pi} \F_2
-		}
-		{
-			!\F_1 \xrightarrow{!\pi} !\F_2
-		}
-	\end{mathpar}
-\end{theorem}
-
 We can now prove Theorem~\ref{thm:composition} in NomosUC:
 \begin{proof}
 By Theorem~\ref{thm:singlecomp} we have that $\F_1 \xrightarrow{\pi} \F_2$. Combine it with Theorem~\ref{thm:functor} and conclude that $!!\F_1 \xrightarrow{\rho \circ !\pi} !\F_3$. 
