@@ -1,7 +1,7 @@
 In this section we expand on the real world protocol that realizes \Fcom in the \Fropp-hybrid model.
 The type of \Fropp in Figure~\ref{fig:fropptype} builds on the \Fro type presented in Section~\ref{sec:commitment}. 
-Because the receiver must receive a message \Fropp and potentially send it a hash query, we split communication between two uni-directional channels.
-The adversary type with the functionality which that lets it query hashes isn't shown but requires 1 unit of import to be sent along with a query. 
+Because the receiver gets a message from \Fropp and potentially sends it a hash query, we split communication between two uni-directional channels.
+The adversary's type with the functionality, that lets it query hashes, isn't shown but requires 1 unit of import to be sent along with a query. 
 
 \begin{figure}
 \begin{center}
@@ -19,30 +19,24 @@ The adversary type with the functionality which that lets it query hashes isn't 
 \label{fig:fropptype}
 \end{figure}
 
-Due to the fact that there is a single channel connecting the \partywrapper and the functionality, the amount of import send from the \partywrapper to the wrapped \F is constant. Similarly, a constant amount of import is sent back from \F to the \partywrapper.
-If we sendt the most import ever needed, as specified by the session type in Figure~\ref{fig:fropptype}, it would result in the \partywrapper sending 1 import to \Fropp with every message and receiving 1 import with from \Fropp with every message--resulting \Fropp having 0 net import.
-Therefore, alongside the functional message types the user must specify for the shared parts of providerless channels they must also determine an assignment of import with the messages that satisfies the session types of the wrapped processes and allow for them to have enough import to send to othes.
+Due to the fact that there is a single channel connecting the \partywrapper and the functionality, the amount of import sent from the \partywrapper to the wrapped \Fropp is constant. Similarly, a constant amount of import is sent back from \Fropp to the \partywrapper.
+In general, the \partywrapper must send/receive, with every message, at least the maximum import any of its sessions ever requires. 
+This constant import is sent with the functional messages (recall intermdeiate processes convert functonal messages from communicators to session types) in the shared part of the providerless channel.
+If we take the session type specified by the session type in Figure~\ref{fig:fropptype} (this is THE session types that the wrapped committer and receiver see inside the \partywrapper) it would result in the \partywrapper sending 1 import to \Fropp with every message and receiving 1 import with from \Fropp with every message--resulting \Fropp having 0 net import.
+This is undesirable as we want to ensure \Fropp has 1 net import token, at least in order to compute a poynomial number of hashes. 
 
-In the case of the commitment protocol, the assignment might look something like this.
-The intended behavior of the session type is for a random oracle query to cost 1 unit of import, and for the committer to send 1 import to the receiver so that it can ``spend'' it to check the commitment with the random oracle. 
-Firstly the import sent to/from the \partywrapper must ensure that it has enough for both the sender and receiver's queries to the random oracle. 
-A satisfying import assignment is that $\pi_\msf{com}$ requires 4 units of import on \mb{commit} from \Z to the \partywrapper, and it requires 2 units of import to be sent from \partywrapper to \Fropp. Why?
-We need to ensure that the generic random oracle always has at least 1 net import token to handle a possible polynomial number of queries and storage. 
-Furthermore, after the committer queries the \Fro and sends a message to the receier the \partywrapper has sent 4 import tokens and received 1 in return leaving it a net of 1 import tokens. 
-When the message to the receiver is delievered, the \partywrapper gets back 1 unit of import. When the receiver queries the random oracle to check the commitment, the \partywrapper now has the 2 import tokens required to send a message to \Fropp and complete the protocol. 
+Below we describe what the import constants should be for \Fcom and \Fropp. \emph{Note} we desribe the import values applied on top of the familiar 
+session types of the two functionalities. In actuality these assignments are sent with the functional message equivalents of the sessions. 
 
-Though complicated, the assignment of import above attempts to use minimal number of tokens. In fact, a simple heuristic for assignments ensures that all processes always have 1 net import token left over so that they can always perform polynomial work and any additional tokens are used to send to other processes. 
-Recall from Section~\ref{sec:basic} why this isn't a concern: capturing tight runing bounds or timing guarantees aren't an intended goal of the import mechanism in UC or NomosUC.
-
-By this same reasoning it may suffice to apply this assignment of import to the session type in Figure~\ref{fig:ropptype} above yielding the following type for the commitment
+The import for the type of $\Fcom$:
 \begin{center}
 	\parbox{0cm}{
 	\begin{tabbing}
-		$\m{sender} =  \ichoice{ \mb{commit}: \textcolor{red}{\paypot^4} \m{Bit} \product \ichoice{ \mb{open}: \mb{1}}}$ \\
+		$\m{sender} =  \ichoice{ \mb{commit}: \textcolor{red}{\paypot^4} \m{Bit} \product \ichoice{ \mb{open}: \rpaypot{4} \mb{1}}}$ \\
 		$\m{receiver} = \echoice{ \mb{committed}: \echoice{ \mb{opened}: \m{Bit} \arrow \mb{1}}}$
 	\end{tabbing}}
 \end{center}
-and the following for \Fropp
+The following for \Fropp:
 \begin{center}
 	\parbox{0cm}{
 	\begin{tabbing}
@@ -54,7 +48,15 @@ and the following for \Fropp
 		\>$\mb{msg}: \textcolor{red}{\getpot^1} \m{PID} \arrow \m{a} \arrow \m{receive}[a]}$
 	\end{tabbing}}
 \end{center}
-With session types parameterized by these import amounts the the providerless channels between \Z, the \partywrapper, and \F always send the maximum amount import ever used over the session type.
+
+We give a brief explanation on how such an assignment is detemrined. We note beforehand that there are many such assignments that satisfy the basic invariant we want to ensure:
+the wrapped \Fropp always has at least 1 net import token and the \partywrapper (for the sake of the receiver) has 2 net import tokens at the end of the protocol to allow the receiver to 
+check the commitment with a random oracle query. 
+Even though the session type the receiver sees only requires 1 import, the \partywrapper, forced to send a constant amount (and must send 2 for hash queries), must still have 2 import to send on behalf of the receiver. 
+On \m{commit} with 4 import, the \partywrapper spends 2 for the receiver's query and gets one in return with the hash. When the committer sends 
+the commitment to the receiver the \partywrapper again spends 2 and ends with 2 import tokens. Finally on \m{open} with 4 tokens the \partywrapper
+spends tokens to send the opening to the receiver and has enough tokens for the receiver's last query to the random oracle. Notice that 
+any arbitrarily high number for \m{commit} and \m{open} would work here, but \Fropp still always requires 1 import token. 
 
 \begin{figure}
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]

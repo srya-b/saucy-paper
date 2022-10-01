@@ -10,6 +10,24 @@ stype rcommitted[a] = &{ open: Bit x ropened,
 											sendmsg[a]: a * rcommitted[a] }
 stype ropened = 1 
 
+-- comm plus a channel 
+stype committerp2f[a] = +{ commit: Bit * commmitedp2f[a],
+													    sendmsg: a * committer[a]}
+stype committedp2f[a] = +{ open: donep2f[a],
+													 sendmsg: a * committed[a]}
+stype committerf2p[a] = &{ msg: a -> committerf2p[a] }
+
+stype receiverp2f[a] = &{ sendmsg: a -> senderf2p[a]} 
+stype receiverf2p[a] = &{ committed: receivedf2p[a],
+												  msg: a -> receiverf2p[a]}
+stype receivedf2p[a] = &{ opened: Bit -> donep2f[a],
+													msg: a -> receivedf2p[a] }
+
+stype donep2f[a] = +{ sendmsg: a * donep2f[a] }
+
+
+
+
 type comp2f = Commit of Bit | Open ;
 type comf2p = Commit | Open of Bit ;
 
