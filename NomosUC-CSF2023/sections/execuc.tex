@@ -5,22 +5,25 @@ We detail how our encoding realizes dynamic parties through the use of virtual t
 These three results allow us to ultimately conclude that NomosUC realizes full UC composition.
 We also run through a case of a coin-flip protocol, composed with the cryptographic commitment, in the Appendix. 
 
-\subsection{The UC Experiment}
-The UC experiment is instantiated by the \msf{execUC} function. 
-Its definition is straightforward owing to our use of providerless channels. 
-\m{execUC} is parameterized by at least one virtual token type to allow for sandboxing (usually by the adversary or environment) and message type parameters for the protocol in question. 
-It also takes in a security parameter $k$ and a random bit string $r$ that is used as a source of randomness for all future processes.
+% \subsection{The UC Experiment}
+The definition of \m{execUC} is straightforward owing to our mechanism of providerless channels. 
+\m{execUC} is parameterized by at least one virtual token type to allow for sandboxing
+(usually by the adversary or environment) and message type parameters for the protocol in question. 
+It also takes in a security parameter $k$ and a random bit string $r$ that is used as a source of
+randomness for all future processes.
+\m{execUC} offers the following type:
 \begin{center}
 \vspace{-2mm}
 \parbox{0cm}{
 \begin{tabbing} 
- $\m{execout}[a] = \textcolor{red}{\getpot^n} \echoice{\mb{exec}: $\=$ \ichoice{ \mb{out}: Bit \product 1}}$ 
+ $\m{execout}[a]\{n\} = \textcolor{red}{\getpot^{\{n : \K\}}} \echoice{\mb{exec}: $\=$ \m{Bit} \product 1}$ 
  \end{tabbing}}
 \vspace{-2mm}
 \end{center}
-
-Its type $\m{execout}[a]$ accepts $n$ import tokens, and returns an output \inline{Bit} as the result from \Z. 
-The NomosUC type system requires explicit polynomials for checking runtime bounds, and this allows us to ensure a runtime that is $poly(k)$ as long as the number of tokens $n \in poly(k)$.
+The type is parameterized by the message type $a$ and the import $n$ so that it can receive a generic amount of import.
+The type $\m{execout}[a]$ accepts $n$ import tokens and an $\mb{exec}$ message, and returns an output \m{Bit} as the result from \Z. 
+With the help of the super-additive conversion function, the NomosUC type system ensures
+that the runtime bound of \m{execUC} is $poly(k)$ as long as the number of tokens $n \in poly(k)$.
 
 All main processes in NomosUC are wrapped according to the providerless channel specification in Section~\ref{sec:basic}. 
 Therefore, \m{execUC} creates only the shared parts of the providerless channel and passes them as input to the wrapped processes. The wrapped processes 
