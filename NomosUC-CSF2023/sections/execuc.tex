@@ -100,25 +100,23 @@ that they have the \emph{same type on all the channels} used and provided.
 \begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
-An important validation of our approach is the Dummy Lemma which shows that a simulator, \DS, for the dummy adversary, suffices to prove emulation. 
+An important validation of our approach is the Dummy Lemma which shows that a simulator \DS for the dummy adversary, suffices to prove emulation. 
 The proof of the Lemma is in the form of a constructor for a simulator for any arbitrary real world \A (in Appendix~\ref{sec:dummy}).
-Though a simple Lemma, and simulator construction, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token hierarchy and sandboxing afford. 
+The simplicity of the simulator construction and the resulting simulation proof highlights the
+simplicity and expressiveness that our token hierarchy and sandboxing afford. 
 
 \paragraph*{\textbf{Single Composition}}
-In this section we present a composition operator for protocols that completes Theorem~\ref{thm:singlecomp}.
-
-The composition allows replacement of a single ideal functionality $\F_2$ with a protocol $\pi$ that realizes it in the $\F_1$-hybrid world. 
+Recalling Theorem~\ref{thm:singlecomp}, composition allows replacement of a single ideal functionality $\F_2$ with a protocol $\pi$ that realizes it in the $\F_1$-hybrid world. 
 A protocol party $\rho_i$ that gives input to $\F_2$ instead gives input to party $\pi_i$ through a providerless channel in the \partywrapper. 
 Like \m{execUC} (full code in the Appendix), the operator connects wrapped processes with providerless channels as shown below. 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
 $\nproc$ compose[$\tg{...}$][rho2f,f2rho]{rho2fn,f2rhon}
-  $\tg{(* args *)}$ |- ($\$$ch: 1) = {
-  #rho2pi $\leftarrow$ channel_init[K][rho2f]{rho2fn} ;
-  #pi2rho $\leftarrow$ channel_init[K][f2rho]{f2rhon} ;
+  $\tg{(* args *)}$ |- ($\$$ch: 1) = 
+#rho2pi $\leftarrow$ channel_init[K][rho2f]{rho2fn} ;
+#pi2rho $\leftarrow$ channel_init[K][f2rho]{f2rhon} ;
   
-  $\$$r $\leftarrow$ rho $\leftarrow$ k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
-  $\$$p $\leftarrow$ pi $\leftarrow$ k rng sid pid #rho2pi #pi2rho #p2f #f2p;
-}
+$\$$r $\leftarrow$ rho $\leftarrow$ k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
+$\$$p $\leftarrow$ pi $\leftarrow$ k rng sid pid #rho2pi #pi2rho #p2f #f2p;
 \end{lstlisting}
 
 Proving UC security under composition requires creating a simulator for $\rho \circ \pi$ that realizes $\F_3$. 
@@ -132,7 +130,7 @@ Also like the Dummy Lemma, the simulator construction provided in the Appendix i
 \inferrule*[right=compose]
 {
 	%(\pi, !\F_1) \sim (\idealP, F_2) \semi (\rho, !\F_2) \sim (\idealP, \F_3) \\ 
-	!\F_1 \xrightarrow{\pi} \F_2 \semi !\F_2 \xrightarrow{\rho} \F_3 \\
+	!\F_1 \xrightarrow{\pi} \F_2 \and !\F_2 \xrightarrow{\rho} \F_3 \\
 	%\Rightarrow \exists \Sim(\A) \vdash (\rho^{!\F_2 \rightarrow (!\pi \, \circ \, \msf{squash})}, !\F_1) \sim (\idealP, \F_3)
 }
 {
@@ -142,9 +140,10 @@ Also like the Dummy Lemma, the simulator construction provided in the Appendix i
 \end{mathpar}
 \end{theorem}
 
-Full composition, Theorem~\ref{thm:composition}, extends Theorem~\ref{thm:singlecomp} to replace multiple concurrent instances of a functionality with a realizing protocol.
-We provide it by first proving a much simpler theorem arising from the multisession operator ($!$), Theorem~\ref{thm:functor}, and Theorem \ref{thm:squash}.
-Theorem~\ref{thm:squash} trivially shows a protocol \m{squash} such that $!\F \xrightarrow{\m{squash}} !!\F$, and the proof of Theorem~\ref{thm:functor} is trivially proven by replicating \SIM{\pi} for every instance of $\F_2$.  
+Full composition extends Theorem~\ref{thm:singlecomp} to replace multiple concurrent instances of a functionality with a realizing protocol.
+The full proof is described in Appendix~\ref{app:ms} and arises from a simpler theorem for the multisession operator ($!$).
+% We provide it by first proving a much simpler theorem arising from the , Theorem~\ref{thm:functor}, and Theorem \ref{thm:squash}.
+% Theorem~\ref{thm:squash} trivially shows a protocol \m{squash} such that $!\F \xrightarrow{\m{squash}} !!\F$, and the proof of Theorem~\ref{thm:functor} is trivially proven by replicating \SIM{\pi} for every instance of $\F_2$.  
 
 \begin{theorem}[Multisession Composition]\label{thm:functor}
 	\begin{mathpar}
