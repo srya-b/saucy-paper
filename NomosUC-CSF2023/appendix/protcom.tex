@@ -7,7 +7,7 @@ The adversary type with the functionality which that lets it query hashes isn't 
 \begin{center}
 	\parbox{0cm}{
 	\begin{tabbing}
-		$\m{sender}[a] =  \ichoice{ $\=$ \mb{query}: \textcolor{red}{\paypot^2} \m{PID} \product \tgr{\m{Int}} \product \m{sender}[a],$ \\
+		$\m{sender}[a] =  \ichoice{ $\=$ \mb{query}: \textcolor{red}{\paypot^1} \m{PID} \product \tgr{\m{Int}} \product \m{sender}[a],$ \\
 		\>$\mb{sendmsg}: \textcolor{red}{\paypot^1} \m{ PID} \product \m{a} \product \m{sender}[a]}$ \\
 		$\m{shash} = \echoice{ \mb{hash}: \m{ PID} \arrow \tgr{\m{Int}} \arrow \m{hash}}$ \\
 		$\m{rquery} =  \ichoice{ \mb{query}: \textcolor{red}{\paypot^1} \m{PID} \product \tgr{\m{Int}} \product \m{rquery} }$ \\
@@ -19,11 +19,20 @@ The adversary type with the functionality which that lets it query hashes isn't 
 \label{fig:fropptype}
 \end{figure}
 
-Due to the fact that there is a single channel connectig the \partywrapper and the functionality, the amount of import send from the \partywrapper to the wrapped \F is constant. Similarly, a constant amount of import is sent back from \F to the \partywrapper.
-Recall from Section~\ref{sec:basic}, that as a result of this construction some messages may be sent with more import to the wrapped processes than required.
-In general, despite the import on the session type, setting the parameters for that constant amount of import requires careful consideration in order to ensure that the \partywrapper has enough import to handle all messages parties may send out. 
+Due to the fact that there is a single channel connecting the \partywrapper and the functionality, the amount of import send from the \partywrapper to the wrapped \F is constant. Similarly, a constant amount of import is sent back from \F to the \partywrapper.
+If we sendt the most import ever needed, as specified by the session type in Figure~\ref{fig:fropptype}, it would result in the \partywrapper sending 1 import to \Fropp with every message and receiving 1 import with from \Fropp with every message--resulting \Fropp having 0 net import.
+Therefore, alongside the functional message types the user must specify for the shared parts of providerless channels they must also determine an assignment of import with the messages that satisfies the session types of the wrapped processes and allow for them to have enough import to send to othes.
 
-In order to realize the communication attern where the receiver gets no input (and hence no import) from \Z, the type parameters to the providerless channels between, for example, \Z and \partywrapper need to be 4 units of import.  Similarly, as the session type of \Fropp indicates, 2 import is sent from \partywrapper to wrapped \Fropp and 1 import back. 
+In the case of the commitment protocol, the assignment might look something like this.
+The intended behavior of the session type is for a random oracle query to cost 1 unit of import, and for the committer to send 1 import to the receiver so that it can ``spend'' it to check the commitment with the random oracle. 
+Firstly the import sent to/from the \partywrapper must ensure that it has enough for both the sender and receiver's queries to the random oracle. 
+A satisfying import assignment is that $\pi_\msf{com}$ requires 4 units of import on \mb{commit} from \Z to the \partywrapper, and it requires 2 units of import to be sent from \partywrapper to \Fropp. Why?
+We need to ensure that the generic random oracle always has at least 1 net import token to handle a possible polynomial number of queries and storage. 
+Furthermore, after the committer queries the \Fro and sends a message to the receier the \partywrapper has sent 4 import tokens and received 1 in return leaving it a net of 1 import tokens. 
+When the message to the receiver is delievered, the \partywrapper gets back 1 unit of import. When the receiver queries the random oracle to check the commitment, the \partywrapper now has the 2 import tokens required to send a message to \Fropp and complete the protocol. 
+
+Though complicated, the assignment of import above attempts to use minimal number of tokens. In fact, a simple heuristic for assignments ensures that all processes always have 1 net import token left over so that they can always perform polynomial work and any additional tokens are used to send to other processes. 
+Recall from Section~\ref{sec:basic} why this isn't a concern: capturing tight runing bounds or timing guarantees aren't an intended goal of the import mechanism in UC or NomosUC.
 
 \begin{figure}
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
