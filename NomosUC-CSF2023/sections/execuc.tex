@@ -1,7 +1,8 @@
 In this section we highlight how \m{execUC} is encoded in NomosUC.
 Recall from Section~\ref{sec:basic} that linear session types impose constraints on what forms of communication can be captured, and pose challenges to supporting 
 a dynamic number of protocol parties, or functionalities, at runtime. 
-We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper, and validate our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
+We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper,
+and validate our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
 These three results allow us to ultimately conclude that NomosUC realizes full UC composition.
 %We also run through a case of a coin-flip protocol, composed with the cryptographic commitment, in the Appendix. 
 
@@ -16,57 +17,64 @@ randomness for all future processes.
 \vspace{-2mm}
 \parbox{0cm}{
 \begin{tabbing} 
- $\m{execout}[a]\{n\} = \textcolor{red}{\getpot^{\{n : \K\}}} \echoice{\mb{exec}: $\=$ \m{Bit} \product 1}$ 
+ $\m{execout}[\K][a]\{n\} = \textcolor{red}{\getpot^{\{n : \K\}}} \echoice{\mb{exec}: $\=$ \m{Bit} \product 1}$ 
  \end{tabbing}}
 \vspace{-2mm}
 \end{center}
-The type is parameterized by the message type $a$ and the import $n$ so that it can receive a generic amount of import.
+The type is parameterized by the real token type $\K$, message type $a$ and the import quantity $n$.
 The type $\m{execout}[a]$ accepts $n$ import tokens and an $\mb{exec}$ message, and returns an output \m{Bit} as the result from \Z. 
 With the help of the super-additive conversion function, the NomosUC type system ensures
 that the runtime bound of \m{execUC} is $poly(k)$ as long as the number of tokens $n \in poly(k)$.
 
 All main processes in NomosUC are wrapped according to the providerless channel specification in Section~\ref{sec:basic}. 
-Therefore, \m{execUC} creates only the shared parts of the providerless channel and passes them as input to the wrapped processes. The wrapped processes 
-create the intermediate processes which offer the session type to the actual process.
+Therefore, \m{execUC} creates only the external part of the providerless channel (e.g. $\m{PtoQ}$ channel from Figure~\ref{fig:newpandq})
+and passes them as input to the communicator wrappers.
+The wrapper creates the intermediate processes and the shared session types providing the linear channel to \m{execUC}.
 For example \Z and \A are connected by the following channels:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
-#ztoa $\leftarrow$ channel_init[$\tp{K}$][$\tp{z2a}$]{$\tp{z2an}$}
-#atoz $\leftarrow$ channel_init[$\tp{K}$][$\tp{a2z}$]{$\tp{a2zn}$}
+$\$$ztoa $\leftarrow$ channel_init[$\tp{G}$][$\tp{z2a}$]{$\tp{z2an}$}
+$\$$atoz $\leftarrow$ channel_init[$\tp{G}$][$\tp{a2z}$]{$\tp{a2zn}$}
 $\tg{...}$
-$\$$z <- Env[K][K1] k rng #ztop #ptoz #ztoa #atoz ;
+$\$$z <- env[G] k rng $\$$ztop $\$$ptoz $\$$ztoa $\$$atoz ;
 \end{lstlisting}
-The channels are typed with the real token type \inline{K} and the import / message types required for the protocol being analyzed.
-
-\paragraph{Execution Parameters}
-The environment, \Z, is the first spawned process and defines the main parameters for the rest of the execution: the session ID and the set of corrupted parties.  
-According to its type \m{EtoZ} (below), \Z sends the SID (a user-defined type) and the corruption list to \m{execUC}, and \m{execUC} passes them as parameters to \F, \A and the \partywrapper.  
-\Z starts on input \mb{start} with $n$ tokens. 
+Once the channels are created using the communicator wrappers, we spawn the
+environment process and provide the necessary channels as arguments (along with
+security parameter $k$ and the $\m{rng}$).
+The environment, \Z, is the first spawned process and defines the main parameters for the rest of the execution: the session id (\m{SID}) and a set of
+process ids ([\m{PID}]) indicating the corrupted parties.
+The channel connecting $\m{execUC}$ and \Z has type $\m{EtoZ}$:
 \begin{center}
 \vspace{-2mm}
 \parbox{0cm}{
 \begin{tabbing}
- $\m{EtoZ}[a] = \ichoice{\mb{init}: $\=$ SID[a] \arrow [PID] \arrow$ \\
-\>$\textcolor{red}{\getpot^n} \echoice{\mb{start} \arrow \ichoice{\mb{out}: Bit \arrow 1}}}$
+ $\m{EtoZ}[a]$ = $\m{SID}[a] \arrow [\m{PID}] \arrow \textcolor{red}{\getpot^n} \echoice{\mb{start}: \m{Bit} \arrow 1}$
  \end{tabbing}}
 \vspace{-2mm}
 \end{center}
-
+The type dictates that \Z sends the SID and the corruption list to \m{execUC},
+and \m{execUC} passes them as parameters to \F, \A and the \partywrapper.  
+\Z starts on input \mb{start} with $n$ tokens. 
 Finally, the output bit, \Z's guess of which world it is in, forms the basis of the definition of indistinguishability.
 
-\subsection{The \partywrapper}
-We create the \partywrapper to handle spawning parties, create their channels, and connect them to the rest of the experiment.
+
+\paragraph*{\textbf{The \partywrapper}}
+We create the \partywrapper to handle process spawn, channel creation and connection to the rest of the experiment.
 Instead of parties directly communicating with \F and \Z through providerless channels, the \partywrapper runs them virtually and presents a ``real'' view to them.
-The virtual tokens construct enables us to virtualize the protocol parties and satisfy the import their session types require while sandboxing them. 
-The \partywrapper, in turn, is connected by single channels each of \F, \Z, and \A and routes communication to/from the appropriate protocol party. 
+Virtual tokens enable us to simulate the protocol parties and satisfy the import their session types require while sandboxing them. 
+The \partywrapper, in turn, is connected by a channel to each of \F, \Z, and \A and routes communication to/from the appropriate protocol party. 
 Its design forces the wrapper around \F to do the same. It must de-multiplex inputs from the \partywrapper and react similarly to messages fro newly created parties. 
 
-\subsection{Emulation}
+\paragraph*{\textbf{Emulation}}
 The central security definition in UC is indistinguishability between the real and ideal world experiments.
-It is defined in terms of the ensemble of distributions created by the output bits from the partial term $(\m{execUC}\ \pi\ \F)$ over all possible random inputs and security parameters. 
-We say that two worlds are indistinguishable if $\forall \A\ \exists \Sim\ \forall Z$ the ensembles have  \emph{statistical difference} that is negligible in $k$ (Definition~\ref{def:emulation}).
+It is defined in terms of the ensemble of distributions created by the output bits from the partial term
+$(\m{execUC}\ \pi\ \F)$ over all possible random inputs and security parameters. 
+We say that two worlds are indistinguishable if $\forall \A\ \exists \Sim\ \forall Z$
+the \emph{statistical difference} in ensembles from the two worlds is negligible in $k$ (see
+Definition~\ref{def:emulation} below).
 
 \begin{definition}[Emulation]\label{def:emulation}
-If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI and $\phi$, emulated each other, then $\forall \A$ of type $\Delta_3'$ well-matched with \PI, there must $\exists \Sim$ of the same type,  well-matched with $\phi$, s.t. $\forall \Z$ : $\msf{execUC}(\pi, \F_1, \Z, \A)$ $\approx$ $\msf{execUC}(\phi, \F_2, \Z, \Sim)$:
+If two protocols $(\pi, \F_1)$ and $(\phi, \F_2)$, which we refer to only
+by \PI and $\phi$, emulated each other, then $\forall \A$ of type $\Delta_3'$ well-matched with \PI, there must $\exists \Sim$ of the same type,  well-matched with $\phi$, s.t. $\forall \Z$ : $\msf{execUC}(\pi, \F_1, \Z, \A)$ $\approx$ $\msf{execUC}(\phi, \F_2, \Z, \Sim)$:
 
 \begin{mathpar}
 	\footnotesize
@@ -85,17 +93,18 @@ If two protocols $(\pi, \F_1)$, $(\phi, \F_2)$, which we refer to only by \PI an
 	}
 \end{mathpar}
 \end{definition}
-The notation $e \leftrightarrow e'$ is used to denote two \emph{well-matched} terms: a configuration connected the two is well-typed. 
+The notation $e \leftrightarrow e'$ is used to denote two \emph{well-matched} process terms meaning
+that they have the \emph{same type on all the channels} used and provided.
 
-\subsection{Dummy Lemma}
-An important validation of our approach is the Dummy Lemma~\ref{thm:dummythicclemma} which shows that a simulator, \DS, for the dummy adversary, suffices to prove emulation. 
+% \paragraph*{\textbf{Dummy Lemma}}
 \begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 \end{theorem}
+An important validation of our approach is the Dummy Lemma which shows that a simulator, \DS, for the dummy adversary, suffices to prove emulation. 
 The proof of the Lemma is in the form of a constructor for a simulator for any arbitrary real world \A (in Appendix~\ref{sec:dummy}).
 Though a simple Lemma, and simulator construction, the simplicity of the resulting simulator proof highlights the simplicity and expressiveness that our token hierarchy and sandboxing afford. 
 
-\subsection{Single Composition}
+\paragraph*{\textbf{Single Composition}}
 In this section we present a composition operator for protocols that completes Theorem~\ref{thm:singlecomp}.
 
 The composition allows replacement of a single ideal functionality $\F_2$ with a protocol $\pi$ that realizes it in the $\F_1$-hybrid world. 
@@ -116,7 +125,7 @@ Proving UC security under composition requires creating a simulator for $\rho \c
 This is done by connecting the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
 Also like the Dummy Lemma, the simulator construction provided in the Appendix is agnostic to the types of the composed protocols and can be easily specified thanks to our token heirarchy. 
 
-\subsection{UC Composition}
+% \paragraph*{\textbf{UC Composition}}
 
 \begin{theorem}[Composition]\label{thm:composition}
 \begin{mathpar}
