@@ -37,9 +37,9 @@ $\Sg \semi k \semi \K \hookrightarrow (t,t) \semi \Psi \semi \D \entailpot{0}{0}
   {\Tokens, \K_0 \hookrightarrow (t, t') \semi \cdot \semi \D_1 \entailpot{q}{q'} M :: (c : A)}
   {\D, \D_1 \overset{t}{\underset{w}{\vDash}} \msg{c}{w, M} :: (\D, (c : A) )}
 \end{mathpar}
-\vspace{-1em}
+\vspace{-1.2em}
 \caption{Typing rules for a configuration}
-\vspace{-1.3em}
+\vspace{-1.1em}
 \label{fig:config_typing}
 %\Description{Configuration Typing Rules}
 \end{figure}
@@ -53,9 +53,11 @@ its total potential, and the dynamically evolving work counters
 that account for the total number of execution steps.
 We use the following judgment to type a configuration w.r.t. $\Sg$
 (which we omit from the rules unless necessary).
+\vspace{-0.2em}
 \[
 \Sg \semi \D_1 \overset{T}{\underset{W}{\vDash}} \config :: \D_2
 \]
+\vspace{-0.2em}
 It states that the configuration $\config$
 uses the channels in the context $\D_1$ and provides the channels in
 the context $\D_2$.

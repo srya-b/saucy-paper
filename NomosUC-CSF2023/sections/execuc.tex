@@ -112,8 +112,8 @@ Like \m{execUC} (full code in the Appendix), the operator connects wrapped proce
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
 $\nproc$ compose[$\tg{...}$][rho2f,f2rho]{rho2fn,f2rhon}
   $\tg{(* args *)}$ |- ($\$$ch: 1) = 
-#rho2pi $\leftarrow$ channel_init[K][rho2f]{rho2fn} ;
-#pi2rho $\leftarrow$ channel_init[K][f2rho]{f2rhon} ;
+#rho2pi $\leftarrow$ channel_init[G][rho2f]{rho2fn} ;
+#pi2rho $\leftarrow$ channel_init[G][f2rho]{f2rhon} ;
   
 $\$$r $\leftarrow$ rho $\leftarrow$ k rng sid pid #z2p #p2z #rho2pi #pi2rho; 
 $\$$p $\leftarrow$ pi $\leftarrow$ k rng sid pid #rho2pi #pi2rho #p2f #f2p;
@@ -129,6 +129,7 @@ The proof relies on Theorem~\ref{thm:functor}, whose simulator proof is found in
 that allows $!!\F \xrightarrow{\msf{squash}} !\F$. 
 
 \begin{theorem}[Multisession Composition]\label{thm:functor}
+\vspace{-0.5em}
 	\begin{mathpar}
 		\inferrule*[right=MultiComp]
 		{
@@ -141,6 +142,7 @@ that allows $!!\F \xrightarrow{\msf{squash}} !\F$.
 \end{theorem}
 
 \begin{theorem}[Composition]\label{thm:composition}
+\vspace{-0.5em}
 \begin{mathpar}
 \inferrule*[right=compose]
 {
