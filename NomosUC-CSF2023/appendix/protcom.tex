@@ -7,11 +7,11 @@ The adversary type with the functionality which that lets it query hashes isn't 
 \begin{center}
 	\parbox{0cm}{
 	\begin{tabbing}
-		$\m{sender}[a] =  \ichoice{ $\=$ \mb{query}: \textcolor{red}{\paypot^2} \m{PID} \product Int \product \m{sender}[a],$ \\
+		$\m{sender}[a] =  \ichoice{ $\=$ \mb{query}: \textcolor{red}{\paypot^2} \m{PID} \product \tgr{\m{Int}} \product \m{sender}[a],$ \\
 		\>$\mb{sendmsg}: \textcolor{red}{\paypot^1} \m{ PID} \product \m{a} \product \m{sender}[a]}$ \\
-		$\m{shash} = \echoice{ \mb{hash}: \m{ PID} \arrow Int \arrow \m{hash}}$ \\
-		$\m{rquery} =  \ichoice{ \mb{query}: \textcolor{red}{\paypot^1} \m{PID} \product Int \product \m{rquery} }$ \\
-		$\m{receive}[a] = \echoice{ $\=$\mb{hash}: \m{PID} \arrow Int \arrow \m{receive}[a],$ \\
+		$\m{shash} = \echoice{ \mb{hash}: \m{ PID} \arrow \tgr{\m{Int}} \arrow \m{hash}}$ \\
+		$\m{rquery} =  \ichoice{ \mb{query}: \textcolor{red}{\paypot^1} \m{PID} \product \tgr{\m{Int}} \product \m{rquery} }$ \\
+		$\m{receive}[a] = \echoice{ $\=$\mb{hash}: \m{PID} \arrow \tgr{\m{Int}} \arrow \m{receive}[a],$ \\
 		\>$\mb{msg}: \textcolor{red}{\getpot^1} \m{PID} \arrow \m{a} \arrow \m{receive}[a]}$
 	\end{tabbing}}
 \end{center}

@@ -19,10 +19,10 @@ $\nmatch$ $\$$z2p, $\$$f2p, $\$$a2p (
       #p2f' $\leftarrow$ channel_init[K1][p2f];
       $\$$c' $\leftarrow$ PS.prot $\leftarrow$ k rng sid 
                #z2p' #p2z' #f2p' #p2f';
-      lz2p $\leftarrow$ append lz2p #z2p'; 
-      lp2z $\leftarrow$ append lp2z #p2z';
-      lp2f $\leftarrow$ append lp2f #p2f'; 
-      lf2p $\leftarrow$ append lf2p #f2p';
+      lz2p $\leftarrow$ append lz2p (pid, #z2p'); 
+      lp2z $\leftarrow$ append lp2z (pid, #p2z');
+      lp2f $\leftarrow$ append lp2f (pid, #p2f'); 
+      lf2p $\leftarrow$ append lf2p (pid, #f2p');
     $\nelse$ ()
     #z2p' $\leftarrow$ search lz2p pid ;
     $\nwithdraw$ K K1 z2pn

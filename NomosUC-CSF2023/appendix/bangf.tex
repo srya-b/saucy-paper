@@ -22,10 +22,10 @@ $\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
   ($\$$f2p: comm[ms2p[s][f2p]][K]),
   ($\$$a2f: comm[a2ms[s][a2f]][K]), 
   ($\$$f2a: comm[ms2a[s][f2a]][K]),
-  (lp2f: [comm[P2F[p2f]][K1]]), 
-  (lf2p: [comm[F2P[f2p]][K1]]),
-  (la2f: [comm[a2f][K1]]), 
-  (lf2a: [comm[f2a][K1]]) |- ($\$$ch: 1) =
+  (lp2f: [(SID[s], comm[P2F[p2f]][K1])]), 
+  (lf2p: [(SID[s], comm[F2P[f2p]][K1])]),
+  (la2f: [(SID[s], comm[a2f][K1])]), 
+  (lf2a: [(SID[s], comm[f2a][K1])]) |- ($\$$ch: 1) =
 {
   $\nmatch$ $\$$p2f, $\$$a2f (
     P2F(pid, P2MS(ssid, m)),* =>
@@ -37,10 +37,10 @@ $\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
         #f2a' $\leftarrow$ channel_init[K1][f2a] ;
         $\$$c' $\leftarrow$ Func[K][K1] $\leftarrow$ k rng sid #p2f' #f2p' 
                                  #a2f' #f2a'
-        lp2f $\leftarrow$ append #p2f' lp2f; 
-        lf2p $\leftarrow$ append #f2p' lf2p;
-        la2f $\leftarrow$ append #a2f' la2f; 
-        lf2a $\leftarrow$ append #f2a' lf2a;
+        lp2f $\leftarrow$ append (ssid, #p2f') lp2f; 
+        lf2p $\leftarrow$ append (ssid, #f2p') lf2p;
+        la2f $\leftarrow$ append (ssid, #a2f') la2f; 
+        lf2a $\leftarrow$ append (ssid, #f2a') lf2a;
       $\nelse$ ()
       #p2f' $\leftarrow$ search ssid lp2f ;
       $\nwithdraw$ K K1 p2fn ;
@@ -48,6 +48,8 @@ $\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
       $\npay$ {p2fn} K1 #p2f' ;
     *,A2MS(ssid, m) => 
       $\tg{(* identical case *)}$
+  )
+}
 \end{lstlisting}
 
 \subsection{Squash} \label{sec:squash}
