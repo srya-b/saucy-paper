@@ -34,6 +34,28 @@ When the message to the receiver is delievered, the \partywrapper gets back 1 un
 Though complicated, the assignment of import above attempts to use minimal number of tokens. In fact, a simple heuristic for assignments ensures that all processes always have 1 net import token left over so that they can always perform polynomial work and any additional tokens are used to send to other processes. 
 Recall from Section~\ref{sec:basic} why this isn't a concern: capturing tight runing bounds or timing guarantees aren't an intended goal of the import mechanism in UC or NomosUC.
 
+By this same reasoning it may suffice to apply this assignment of import to the session type in Figure~\ref{fig:ropptype} above yielding the following type for the commitment
+\begin{center}
+	\parbox{0cm}{
+	\begin{tabbing}
+		$\m{sender} =  \ichoice{ \mb{commit}: \textcolor{red}{\paypot^4} \m{Bit} \product \ichoice{ \mb{open}: \mb{1}}}$ \\
+		$\m{receiver} = \echoice{ \mb{committed}: \echoice{ \mb{opened}: \m{Bit} \arrow \mb{1}}}$
+	\end{tabbing}}
+\end{center}
+and the following for \Fropp
+\begin{center}
+	\parbox{0cm}{
+	\begin{tabbing}
+		$\m{sender}[a] =  \ichoice{ $\=$ \mb{query}: \textcolor{red}{\paypot^2} \m{PID} \product \tgr{\m{Int}} \product \m{sender}[a],$ \\
+		\>$\mb{sendmsg}: \textcolor{red}{\paypot^2} \m{ PID} \product \m{a} \product \m{sender}[a]}$ \\
+		$\m{shash} = \echoice{ \mb{hash}: \textcolor{red}{\getpot^1} \m{ PID} \arrow \tgr{\m{Int}} \arrow \m{hash}}$ \\
+		$\m{rquery} =  \ichoice{ \mb{query}: \textcolor{red}{\paypot^2} \m{PID} \product \tgr{\m{Int}} \product \m{rquery} }$ \\
+		$\m{receive}[a] = \echoice{ $\=$\mb{hash}: \textcolor{red}{\getpot^1} \m{PID} \arrow \tgr{\m{Int}} \arrow \m{receive}[a],$ \\
+		\>$\mb{msg}: \textcolor{red}{\getpot^1} \m{PID} \arrow \m{a} \arrow \m{receive}[a]}$
+	\end{tabbing}}
+\end{center}
+With session types parameterized by these import amounts the the providerless channels between \Z, the \partywrapper, and \F always send the maximum amount import ever used over the session type.
+
 \begin{figure}
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\tg{(* committer code after receiving a 'commit'}$
