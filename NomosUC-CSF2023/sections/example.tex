@@ -54,16 +54,26 @@ Local session types also do not directly capture \Fcom's security property that 
 \footnote{With refinement session types~\cite{Das20CONCUR,Das20FSCD}, such advanced properties can be captured but they would significantly
 complicate the type system.}
 
+In tihs work \emph{import session types} extend the above session type $\m{sender}$ with annotations that express import tokens, which act as runtime budgets, passed over a channel between processes. 
+Though a trivial example of import given that $\Fcom$ is a one-shot functionality which requies only a constant amount of work, the import session type for $\m{sender}$ is given below.
+\begin{mathpar}
+  \mi{type} \; \m{sender} = \textcolor{red}{\paypot^{0}} \ichoice{\mb{Commit}: \m{bit} \product \textcolor{red}{\paypot^{0}} \ichoice{\mb{Open}: \one}}
+\end{mathpar}
+The annotation makes explicit thtat the sender send no import tokens with its $\mb{Commit}$ and $\mb{Open}$ messages given the constant amount of work being performed.
+The dual of $\paypot$ is given by $\getpot$ where an external choice operation can be specified with a required amoutn of import to be received. 
+The typing rules for both $\paypot$ and $\getpot$, and a more comprehensive discussion about the handling of import tokens, is given in Section~\ref{sec:import}.
+
 Similar to the sender, we define a channel provided by the receiver $R$ and
 used by $\Fcom$ with the following session type
 \begin{mathpar}
-	\mi{type} \; \m{receiver} = \echoice{\mb{Committed}: \echoice{\mb{Opened} : \m{bit} \arrow \one}}
+	\mi{type} \; \m{receiver} = \textcolor{red}{\getpot^0} \echoice{\mb{Committed}: \textcolor{red}{\getpot^0} \echoice{\mb{Opened} : \m{bit} \arrow \one}}
 \end{mathpar}
 Dual to internal choice, the $\echoiceop$ type constructor represents \emph{external choice}
 prescribing that the provider $R$ must receive a $\mb{Committed}$ message from $\Fcom$
 followed by an $\mb{Opened}$ message (using another $\echoiceop$ constructor) from $\Fcom$.
 Then, $R$ must receive a bit from $\Fcom$ as depicted by the $\arrow$ constructor (dual to $\product$)
 followed by termination (indicated by $\one$).
+Dual to $\mb{sender}$, the receiver here expects to receive no import from $\Fcom$.
 
 \input{figures/f_com}
 
