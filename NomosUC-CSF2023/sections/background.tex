@@ -43,10 +43,14 @@ If $\pi$ realizes $\F_2$ in the $\F_1$-hybrid world (as defined in Equation~\ref
 	\F_1 \xrightarrow{\pi} \F_2
 \]
 %This means in the real world $\pi$ makes use of a single instance of $\F_1$, and the ideal world consists of a single instance of $\F_2$.
-The first composition theorem states that this relation is transitive, where $\rho \circ \pi$ is a generic composition operator that
-combines two protocols by connecting $\rho$ to $\pi$ where $\rho$'s communication with $\F_2$ is relayed as input to $\pi$. 
+
+In this work, we realize UC composition, Theorem~\ref{thm:composition}, by defining simpler composition theorems and combining them.
+The first composition theorem we rely on, Theorem~\ref{thm:singlecomp} is a simplified version of composition and states that the relation define above for \emph{realizing a functioality} is transitive, where $\rho \circ \pi$ is a generic composition operator that combines two protocols by connecting $\rho$ to $\pi$ where $\rho$'s communication with $\F_2$ is relaued as input, from \Z, to $\pi$. 
+
+%The first composition theorem states that this relation is transitive, where $\rho \circ \pi$ is a generic composition operator that
+%combines two protocols by connecting $\rho$ to $\pi$ where $\rho$'s communication with $\F_2$ is relayed as input to $\pi$. 
 %$\rho \Leftarrow \F$ channels in $\rho$ to the $\pi \Leftarrow \Z$ channel of $F$. That is, when protocol $\rho$ communicates with its ideal functionality, it is is relayed as subroutine input to $\pi$.
-\begin{theorem}[Composition]\label{thm:singlecomp}
+\begin{theorem}[Simplified Composition]\label{thm:singlecomp}
 \begin{mathpar}
 \inferrule*[right=single-compose]
 {
@@ -63,9 +67,27 @@ distinguisher $Z^*$ for either $\pi$ or $\rho$ individually.
 Although the proof is straightforward, the precise statement of it in our framework serves as good validation for the expressiveness
 of our framework: our theorem and proof are parametric in the session type of the protocol, i.e., the theorem places no restrictions
 on the communication pattern used by the underlying protocol and functionalities.
-We further validate our approach by expressing the multi-session extension $!\F$, of \F that allows \Z to spawn arbitrary parallel
-sessions of \F and its corresponding composition theorem: 
+
+The transitive relation in Theorem~\ref{thm:singlecomp} allows for replacement of a single instance of $\F_2$ with $\pi$.
+UC composition in Theorem~\ref{thm:composition}, which is realized using Theorem~\ref{thm:singlecomp}, allows for replaces an arbitrary number of instances of $\F_2$ running concurrently using the $!$ operator. 
+We elide the details of this composition theorem until we have introduced the $!$ operator and it's corresponding composition theorem: 
 $!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$.
+
+\begin{theorem}[Composition]\label{thm:composition}
+\vspace{-0.5em}
+\begin{mathpar}
+\inferrule*[right=compose]
+{
+	%(\pi, !\F_1) \sim (\idealP, F_2) \semi (\rho, !\F_2) \sim (\idealP, \F_3) \\ 
+	!\F_1 \xrightarrow{\pi} \F_2 \and !\F_2 \xrightarrow{\rho} \F_3 \\
+	%\Rightarrow \exists \Sim(\A) \vdash (\rho^{!\F_2 \rightarrow (!\pi \, \circ \, \msf{squash})}, !\F_1) \sim (\idealP, \F_3)
+}
+{
+	!\F_1 \xrightarrow{\rho \, \circ !\pi \circ \, \msf{squash}} \F_3
+	%(\rho \, \circ \, !\pi \circ \msf{squash}, !\F_1) \sim (\idealP, \F_3)
+}
+\end{mathpar}
+\end{theorem}
 
 %The flexibility of the UC framework extends to allow \Z to spawn an arbitrary number of sessions of some \F, denoted $!\F$, in parallel, and the theorem 
 %$!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$ ensures that composition holds even in this setting.
@@ -101,6 +123,8 @@ In this model, we say ITM $P$ is \emph{locally polynomial time} if for \emph{any
 \#\textsf{stepsTaken}(e[P])_{t} \le T(n_{\textsf{in}} - n_{\textsf{out}})
 \]
 where $n_{\textsf{in}}$ is the import received by $P$ whereas $n_{\textsf{out}}$ is the import sent by $P$, and $T$ is an arbitrary polynomial.
+The runtime budget of an ITM is accounted for by \emph{potential} which represents the amount of available runtime remaining.
+We realize potential and cap the potential used by a NomosUC term by $T(n_\textsf{in}-n_\textsf{out})$.\footnote{We do not motivate the distinction between import and potential here and refer the reader to the UC framework~\cite{uc} for a detailed discussion of this polynomial time notion.}
 This immediately ensures that if the system initiates with a fixed number of tokens $n \in poly(k)$, then the total execution time
 of all the processes in the system combined is also $poly(k)$.
 The arbitrary polynomial $T$ serves as a \emph{slack parameter} that allows, for example,
