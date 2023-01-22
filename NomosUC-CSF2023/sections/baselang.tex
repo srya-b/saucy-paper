@@ -272,12 +272,13 @@ The communicator has the following polymorphic type:
 {\centering
 \parbox{0cm}{
 \begin{tabbing}
-$\m{comm[\tau]} = \up \echoice{$\=$\mb{push}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
-\>$\mb{poll}: \ichoice{$\=$\mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},$\\
-\>\>$\mb{no}: \; \down \m{comm[\tau]}}}$
+$\m{comm[\tau]\{n\}} = \up \echoice{$\=$ \textcolor{red}{\getpot^n} \mb{push}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
+\>$\textcolor{red}{\getpot^0} \mb{poll}: \ichoice{$\=$\textcolor{red}{\paypot^{n-1}} \mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},$\\
+\>\>$\textcolor{red}{\paypot^0} \mb{no}: \; \down \m{comm[\tau]}}}$
 \end{tabbing}}
 %\end{center}
 \par}
+\todo{can we do $n-1$ in the session type like this?}
 
 
 The communicator type relies on shared type constructors $\up$ and $\down$.
@@ -286,10 +287,10 @@ Because the channel has two clients (the sender and the receiver), either of the
 but in mutual exclusion, i.e., they both cannot acquire the channel simultaneously.
 The sender only interacts with the communicator on the $\mb{push}$ branch, while the receiver only uses
 the $\mb{poll}$ branch.
-Once acquired, the sender sends $\mb{push}$ along with the actual message of type $\tau$.
+Once acquired, the sender sends $\mb{push}$ along with the actual message of type $\tau$ and some amoutn of import tokens $n$. 
 On the other hand, the receiver, after the acquire, sends the $\mb{poll}$ message and gets a $\mb{yes}$ 
 or $\mb{no}$ reply depending on whether there is a pending message for it.
-If yes, the receiver gets the message of type $\tau$ using the $\times$ constructor, otherwise it gets nothing.
+If yes, the receiver gets the message of type $\tau$ using the $\times$ constructor with the import tokens accompanying the message, otherwise it gets nothing.
 Then, in all cases, the type transitions to $\down$, meaning the sender (or receiver) \emph{release} the acquired
 channel detaching from the communicator.
 % Then the sender releases the channel so that the receiver can interact with the communicator and check, with $\mb{RECV}$ whether 
