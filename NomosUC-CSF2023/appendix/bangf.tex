@@ -3,40 +3,50 @@ We also explore Theorems \ref{thm:squash} and \ref{thm:functor} in greater detai
 
 \subsection{!\F}
 The multisession extension runs instances of the wrapped functionality in a sandbox much like the \partywrapper.
+Its type is simple and just sends functionally typed messages back and forth between the wrapper and the \partywrapper/\Adv. 
+The internal intances of the wrapped f
 Its type is simple and relies on a simple send/poll message passing introduced in the linear type \inline{comm}.
 The reason for such a simple type (below) for the operator is that it needs to be agnostic to the underlying session types 
 of the functionality. All it does it route messages and forward them to the shared part of the providerless channel
 connecting to the internal instances of \F.
 
-\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
-$\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
-$\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
-\end{lstlisting}
+\begin{mathpar}
+	\mi{type} \; \m{msp2f}[s,a]\{n\} = \textcolor{red}{\paypot^n} \ichoice{ \mb{p2mf}: \m{PID} \product \m{SID}[s] \product \m{b} \product \m{msp2f}[s,a]\{n\}} \\
+	\mi{type} \; \m{msf2p}[s,a]\{n\} = \textcolor{red}{\getpot^n} \ichoice{ \mb{mf2p}: \m{PID} \arrow \m{SID}[s] \arrow \m{b} \arrow \m{msf2p}[s,a]\{n\}}
+\end{mathpar}
+
+%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
+%$\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
+%$\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
+%\end{lstlisting}
 
 Like the \partywrapper virtualizaton is achieved just by spawnig functionalities with the virtual token type \inline{K1}.
 From the code below for accepting messages fro the \partywrapper, we can see that the operator's code is alost identical the code in Appendix~\ref{app:arbparties}.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
+$\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn,f2an} :
   $\tg{(* args *)}$
-  ($\$$p2f: comm[p2ms[s][p2f]][K]), 
-  ($\$$f2p: comm[ms2p[s][f2p]][K]),
-  ($\$$a2f: comm[a2ms[s][a2f]][K]), 
-  ($\$$f2a: comm[ms2a[s][f2a]][K]),
+  ($\$$p2f: msp2f[s][p2f]), 
+  ($\$$f2p: msf2p[s][f2p]),
+  ($\$$a2f: msa2f[s][a2f]), 
+  ($\$$f2a: msf2a[s][f2a]),
   (lp2f: [(SID[s], comm[P2F[p2f]][K1])]), 
   (lf2p: [(SID[s], comm[F2P[f2p]][K1])]),
-  (la2f: [(SID[s], comm[a2f][K1])]), 
-  (lf2a: [(SID[s], comm[f2a][K1])]) |- ($\$$ch: 1) =
+  (la2f: [(SID[s], comm[A2F[a2f]][K1])]), 
+  (lf2a: [(SID[s], comm[F2A[f2a]][K1])]) |- ($\$$ch: 1) =
 {
   $\nmatch$ $\$$p2f, $\$$a2f (
     P2F(pid, P2MS(ssid, m)),* =>
-      $\nget$ {p2msn} K $\$$p2f ;
+    p2mf,* => 
+      pid = $\nrecv$ $\$$p2ms ; ssid = $\nrecv$ $\$$p2f ;
+	  m = $\nrecv$ $\$$p2f ;
+      $\nget$ {p2fn} K $\$$p2f ;
       $\nif$ not exists ssid lp2f $\nthen$
         #p2f' $\leftarrow$ channel_init[K1][P2F[p2f]] ;
         #f2p' $\leftarrow$ channel_init[K1][F2P[f2p]] ;
         #a2f' $\leftarrow$ channel_init[K1][a2f] ;
         #f2a' $\leftarrow$ channel_init[K1][f2a] ;
-        $\$$c' $\leftarrow$ Func[K][K1] $\leftarrow$ k rng sid #p2f' #f2p' 
-                                 #a2f' #f2a'
+        $\$$c' $\leftarrow$ gen_f_wrapper[K][K1] $\leftarrow$ 
+		  k rng sid #p2f' #f2p' #a2f' #f2a'
         lp2f $\leftarrow$ append (ssid, #p2f') lp2f; 
         lf2p $\leftarrow$ append (ssid, #f2p') lf2p;
         la2f $\leftarrow$ append (ssid, #a2f') la2f; 
@@ -46,7 +56,9 @@ $\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
       $\nwithdraw$ K K1 p2fn ;
       #p2f'.SEND ; $\nsend$ #p2f' P2F(pid, m) ; 
       $\npay$ {p2fn} K1 #p2f' ;
-    *,A2MS(ssid, m) => 
+    *,a2mf => 
+      ssid = $\nrecv$ $\$$a2f ;
+      m = $\nrecv$ $\$$a2f ;
       $\tg{(* identical case *)}$
   )
 }

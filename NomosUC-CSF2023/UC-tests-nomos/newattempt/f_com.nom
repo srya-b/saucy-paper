@@ -26,8 +26,9 @@ stype receivedf2p[a] = &{ opened: Bit -> donep2f[a],
 stype donep2f[a] = +{ sendmsg: a * donep2f[a] }
 
 
-
-
+(* TODO add message send to this
+   and commit to random not just a bit *)
+(* genericize serialization *) 
 type comp2f = Commit of Bit | Open ;
 type comf2p = Commit | Open of Bit ;
 
