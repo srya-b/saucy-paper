@@ -7,16 +7,21 @@
 
 %Just like distributed protocols, cryptographic protocols follow a predefined communication pattern.
 The central focus of our work is to explore the role that \emph{session types} can play in defining and analyzing ideal functionalities.
-We illustrate the usefulness of session types for annotating functionalities through our running example: the cryptographic commitment.
+In this section we illustate the usefulness of session types in describing protocol interfaces, what information  is availabel to the adversary, and, as we'll see in later sections
+what its runtime requirements are. 
+We do so through our running example: the cryptograhic commitment. 
 %Our view is that session types are especially useful as ways of annotating or analyzing the ideal functionality.
 %To illustrate, we use cryptographic commitment as our main running example.
 %The commitment functionality \Fcom encapsulates the security properties of a two-phase, two-party commitment,
 %which, given its simplicity is an ideal learning example.
-The functionality consists of a \emph{sender} ITM $S$ and a \emph{receiver} ITM $R$ connected to 
-the ideal functionality ITM $\Fcom$.
-Figure~\ref{fig:fcomideal}(a) provides the implementation of $\Fcom$ in pseudocode, and 
-it captures two security properties: (\emph{binding}) committer cannot change what they committed to, and (\emph{hiding}) the receiver cannot
-open the commitment themselves. 
+
+A cryptographic commitment is a protocol consisting of a sender that knows some witness $x$ and sends a commitment message $C = f(x)$ that is
+some function of the witness such that $f^{-1}(C) \neq x$ with negligible probability. 
+The ideal functionality \Fcom in Figure~\ref{fig:fcomideal}(a) describes the properties of the commiemtn
+It consits of a  \emph{sender} ITM $S$ and a \emph{receiver} ITM $R$ connected to 
+the ideal functionality ITM $\Fcom$. It enforces that the committer can not equivocate on the witness $x$ once it creates a commitment.
+This property is called \emph{hiding}.
+Similarly, the receiveer can not learn the witness from just the commitment, which we call the \emph{binding} property.
 %\Fcom encapsulates the security properties of a two-phase, two-party commitment: (\emph{binding}) committer can't change what they committed to, and (hiding) the receiver can't open the commitment itself. 
 
 The communication pattern outlined in Figure~\ref{fig:fcomideal} between the sender $S$ and $\Fcom$ (and also the receiver $R$
@@ -55,7 +60,7 @@ Local session types also do not directly capture \Fcom's security property that 
 complicate the type system.}
 
 In tihs work \emph{import session types} extend the above session type $\m{sender}$ with annotations that express import tokens, which act as runtime budgets, passed over a channel between processes. 
-Though a trivial example of import given that $\Fcom$ is a one-shot functionality which requies only a constant amount of work, the import session type for $\m{sender}$ is given below.
+Though a trivial example of import, given that $\Fcom$ is a one-shot functionality which does only a constant amount of work, the import session type for $\m{sender}$ is given below.
 \begin{mathpar}
   \mi{type} \; \m{sender} = \textcolor{red}{\paypot^{0}} \ichoice{\mb{Commit}: \m{bit} \product \textcolor{red}{\paypot^{0}} \ichoice{\mb{Open}: \one}}
 \end{mathpar}
