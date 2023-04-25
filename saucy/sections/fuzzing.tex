@@ -1,0 +1,67 @@
+\todo{Still need to mention that we use it to test protocol properties and simulator proofs.}
+We rely on fuzz testing as our chosen method of informal protocol analysis for a few critical reasons. 
+First, there is a wealth of prior work outlinin the success of fuzz testing techniques, even again program verification, for discovering unintended behavior in code.
+Second, existing work in fuzz testing often focuses purely on program binaries that do not concurrently communicate with other processes aside from system calls.
+A related work to our own, by Jepsen, takes a novel direction by creating a fuzz testing framework for testing the Tendermint byzantine-fault tolerant consensus protocol. 
+Here, several nodes communicate with each other through tcp/ip connections and come to consensus on the ordering of messages sent by all the nodes (refer to Section~\ref{sec:relatedworks} for a more in-depth analysis of the work). 
+In this work, we attempt a similar mechanism but constrain ourselves to evaluating protocols expressed in the UC framework.
+Furthermore, we replicate the work done by jepsen in our framework as a baseline validation for its capabilities. 
+
+\subsection{QuickCheck in with UC}
+The QuickCheck module provides primitives for generating input according to some rules. 
+The advatage of modelling protocols within the UC framework is that the interface for the adversary's input to the protocol, and any underlying assumptions or network primitives, is made explicit from the start.
+This helps constrain the set of possible inputs give to the adversary and make the framework amenable to fuzzing.
+
+\paragraph{Always Enabled Actions}
+Part of defining protocols for fuzz testing in \us requires borrowing an idea from Iron Fleet~\cite{ironfleet}.
+In standard UC when ITMs normally halt when something goes wrong.
+In agreement protocols, a protocol might ensure distinguishability by simply halting when something incorrect happens such as, for example, receiving a broadcast from a part that isn't the sender or running out of import. 
+When writing a protocol in \us it is critical that programs don't throw errors or simply stop accepting messages from others, because such situations lead to test runs that hang indefinitely. 
+Instead, all prorams need to ensure that all inputs received from other ITMs result in control being passed to another ITM.
+In the case of faults, or halting, this simplifies to passing control back to the environment on any input.  \todo{make this better}
+
+
+\subsection{Discovering Safety Bugs in Protocols}
+We examine fuzz testing by implementing some classical and a moden byzantine agreement protocol and injecting faults into them.
+Most injected bugs arise from misplaces thresholds for parties to take some action.
+For example, a protocol that designed to handle $\frac{n}{2}$  
+
+Most injected bugs arise from misplaced thresholds and incorrect assumptions about corrupt party threstholds. 
+
+
+
+\subsection{Analyzing Liveness in Distributed Protocols}
+Analysis, even informal, about liveness in protocols is a hard problem.
+A large body of existing works, like IronFleet, that uses temporal logic to reason 
+about some positive actions happening in a distributed protocol, but this comes at 
+the cost of significant user.
+In this section we explore to what extend our informal analysis of consensus and agreement
+protocols, and our implementation of the import mechanism, can discover and give meaningful
+feedback about liveness issues to a protocol analyst.
+
+There are some critical limitations in what an informal analysis can achieve.
+With the import mechanism, the most interest kinds are evident when the execution runs out
+of import, and this leads to a problem of juggling false negatives and false positives when
+asking the question: is this protocol live?
+Imagine a probabilistic protocol that makes random decisions
+and terminates in some expected number of rounds with byzantine agreement. 
+For example, say some execution among the generated test cases outputs an error
+that some ITM in the execution is out of import. The error can be explained in one of 
+two ways:
+\begin{enumerate}
+	\item The protocol, as defined, does not get enough import from the environment,  or it doesn't pass around enough import between the parties to achieve the desired functionality. It is a randomized protocol and there may be some sequence of random choices that delays termination by a large enough amount (or for many rounds) that the import provided is insufficient. 
+	\item The protocol does have a fault, and there is some sequence of random decisions the parties can make which results in the protocol no terminating in a polynomial amount of time. In reality, regardless of the polynomial import provided, there will always be some sequence of decisions that prevents poly-time termination. 
+\end{enumerate}
+In fact, it may even be the case that in $n$ generate test cases the faulty traces of an incorrect protocol may never be triggered.  
+
+\paragraph{False Negatives}
+False negatives occur when a truly live protocol runs out of import trying to terminate. 
+In such cases, the natural next analysis step is increasing the polynomial import given
+to the protocol until suc 
+\todo{hypothesis is that increasing the polynomial and number of test cases reduces false negatives towards zero at the limit}
+
+\paragraph{False Positives}
+individual generated executions that report failures may be false negatives for the reasons above.
+A fuzz testing run that returns no failure can be false positive as the failure trace hasn't been discovered. 
+\todo{hypothesis is that increasing the polynomial and number of test cases approaches a constant upper bound in the limit as the actual traces with never terminate happen infinitely often}
+

@@ -1,0 +1,49 @@
+In this section we outline our realization of the UC framework in Haskell.
+For the sake of space we limit the presentation here to the minimum required to illusrate the construction of the asynchronous wrapper and our fuzz testing tooling. 
+
+\subsection{Communication Between ITMs}
+ITMS are realized in \us as probabilistic, polynomial time, channel passing processes. 
+The are similar in spirit to ITMs, however rely on channels from the Hasjel \texttt{Control.Concurrent} library as opposed to the tapes used by ITMs. 
+\todo{Make a clear distinction between this and ILC?}
+
+Processes in \us are provided several programming abstractions through the Monad typeclass \texttt{MonadITM}. 
+These abstractions allow for random coin clips (\texttt{?getBit}), import tokens (\texttt{?getTokens}), and a security parameter (\texttt{?secParam}).
+These are all defined as implicit parameters so tha they can be set concretely at runtime. 
+The typeclass \texttt{MonadITM} is parameteric in each of these abstraction, allowing other processes to sandbox any other process and replace them with custom implementations.
+For example, a simulator may want to rewing a proodf replay a particular stream of random bits.
+
+The same design principle extends to typeclasses for functionalities, environments, adversaries, and protocol parties. 
+Critically, this gives access to a set of corrupt parties for only environments, adversaries and ideal functionalities, but, it also allows processes to sandbox them with custom SIDs (which often provide execution parameters such as the IDs of other protocol parties, corruption thresholds for distributed protocols, or even a CRS).
+
+\todo{How much should we explain the monad typeclasses themselves?}
+
+A simple example of an ITM is given in the code listing below. We explicitly give types for clarity.
+The process \texttt{exampleITM} takes in no parameters but spawn a new process that it communicates with through a read cannel \texttt{a} and a wite channel \texttt{b}.
+Throughout \us we distinguish channels are read/write channels rather than allowing two-way communication over them. 
+
+\begin{lstlisting}
+{-- Ping Pong and channel params --}
+doubler i o = do
+  x !\la! readChan i
+  writeChan o (x*2)
+
+exampleITM :: MonadITM m !\Ra! m ()
+exampleITM = do
+  a !\la! (newChan :: Int)
+  b !\la! (newChan :: Int)
+  fork $ doubler a b
+  (writeChan a 15) :: m ()
+  (output :: Int) !\la! readChan b
+  liftIO $ putStrLn $ "Output: " ++ show output
+  return ()
+\end{lstlisting}
+
+\begin{lstlisting}
+type MonadITM m = (HasFork m,
+                   ?getBit :: m Bool,
+                   ?secParam :: Int,
+                   ?getTokens :: m Int,
+                   ?tick :: m ())
+\end{lstlisting}
+
+\paragraph{The Party Wrapper}

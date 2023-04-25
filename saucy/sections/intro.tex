@@ -1,0 +1,28 @@
+Universal Composability (UC)~\cite{canettiUC} is the leading framework for defining security properties of cryptographic protocols.
+It is considered the strongest definitional model since it guarantees the security properties hold even when the protocol is arbitrarily composed with
+multiple concurrently-executing sessions of other protocol.
+UC has gained popularity for analyzing cryptographic protocols due to its \emph{ideal world/real world} simulation mechanism.
+In contrast to game-based cryptography where security properties are defined via attack games,
+UC defines the \emph{ideal functionality}, a trusted third party that serves as the \emph{protocol specification}.
+A core feature of the frameowk is its modularity where complex protocols are defined in terms of simple, ideal functionality building blocks that are secure by definition. 
+A major drawback of UC is that security proofs can be quite complicated and difficult to analyze. 
+Many related works \cite{ilc, easyuc, ipdl, etc} attempt to formalize UC security through a new programming language or defining UC security in an existing formal verification lanuage, and,  
+although useful, such tools frequently never make their way to software engineering practice because 1. niche programming languages aren't suited to large scale development and can be difficult to use, and 2. the added proof obligations on the programmer can be extensive~\cite{ironfleet}.
+Utimately, UC-secure prtocols end up being implemented in software frameworks that do not replicate UC, and, therefore, my invalidate on-paper proofs without further security proofs of the code.
+
+We address the state of software development around UC by exploring the extent to which informal security analysis of UC definitions, in our UC implementation can identify, and aid in elminiating, security vulnerabilities such as safety, correctness, and liveness in distributed systems .\todo{this first line needs to be better}.  
+A key contribution of our software development framework around UC begins with proposing a novel abstraction for capturing different network models.
+Prior attempts to capture, for example, asynchronous communication focus primarily on adversarial delay of messages between parties. 
+Such notions can require protocols to encode significant model-specifi behavior in their definition which lutters definitions, places unecessary restrictions on protocol design, and is counter-productive for modular and reusable code. 
+Our abstraction, on the other hand, acts as a wrapper around ITMs and extends the abstraction to asynchronous \emph{computation}: adverasrially delayed code rather than messages.  
+Not only is this abstraction more natural for a software setting, but it also reduces functionalities and protocols to become almost model-agnostic in their definition. 
+For asynchronous networks we dub our construction the \emph{asynchronous wrapper}. 
+It uses the import mechanism introduced in UC to provide \emph{eventual} deliver guarantees.
+To the best of our knowledge, it is the first concretization of the import mechanism with eventual delivery. 
+
+
+Our approach, rather than formally proving UC-security in code alone, is complementary to on-paper proofs, but, as we show with a case study of a modern asynchronous byzantine agreement protocol, our software approach can identify indistinguishability problems between the ideal/real worlds in UC through fuzz testing. 
+We can specifically target and test for security violations such as aggreement, reliability, and safety. 
+Furthermore, we explore to what extent our wrappers and fuzz testing can identify liveness failures.
+
+\todo{a statement wrapping all this up in a key takeaway and positive result of this work in the context of the state of UC}.

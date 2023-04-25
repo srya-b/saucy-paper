@@ -1,0 +1,62 @@
+What have we done:
+- implemented UC in haskell with our computation model abstraction 
+- implemented some example broadcast primitives: simple bracha, and more complex ABA
+- what kind of automated testing can we achieve for UC definitions --> being explicit about polynomials in runtime analysis allows checking of liveness guarantees
+- allow UC definitions to be tested/falsified especially for liveness especially where formal verification tools aren't able to do that
+
+
+State of UC research
+	Andrew: "i think it counts as a meta research Q about the state of UC research as it exists today (as opposed to the platonic ideal of the UC topic itself) to ask whether UC papers have errors in their presentation that can be caught by fuzzing"  
+	- state of UC research is that protocols/proofs exist only on paper and although formal verification tools exist, they are often quite limited and require specialized knowledge to implement/write (easycrypt, F*, ILC, etc.)
+	- Can we define the UC framework in a mainstream programming language and achieve automated testing/gurantees/analysis of ideal functionalities and protocols? Even formal verification tools can not reasn about polynoial time but with the computations models implemented here, having to define an explicity polynomial creates a falsifiable proofs/definition.  
+	- We want to bring UC definitions out of the journals and into use as software artefacts. Not only do they encourage modular, and reusable code, but make creating complex protocols easy with fuzz testing tools. Furthermore they allow UC definitions to be falisied/tested by forcing authors to be explicit about assumptions/contexts (monads).
+	- TODO: some point about examining the breadth of UC functionalities and whether they have faults that can be caught by fuzzing (NEED to get a handful of diverse examples of protocols where bugs CAN be caught rather than actually trying to implement them all) --> maybe unique to consensus/broadcast protocols where thresholds matter + we have already implemented ABA
+	- This leads to a classification of what bugs can and can't be caught by fuzzing --> where do we go for the bugs that can't be caught by fuzzing 
+
+
+Andrew: "like you shouldn't need to "roll your own" consensus protocol, so for that raeson formally verifying a small number of essetnial protocols is perhaps more approrpiate than building a software framework for easier programming of protocols using async/sync/partial networks"
+	- There is some value in this but only as a side story to the main research questions as a cool thing we also did which is helpful to the broader community.  
+	- can we really even formally verify these protocols? we can do quick check to insect some checkable properties but we can't formally say that these protocols terminate
+
+
+TODO: concretize research questions into words
+Possible Outline:
+I. State of Affairs in UC proofs/definitions (sounds more like the intro of the paper)
+	A. Paper proofs suck / can't be checked / falsifiability is gone / the modular principle of reuse is gone
+	B. Formal verification tools are limited in capturing UC / they can't say anything about liveness / require learning some esoteric language or tools / no one will ever use them again / basically an exercise in doing it for the sake of it
+
+II. Haskell Saucy
+	A. Implementation of the UC framework with our implementation of computation models with import
+	B. Not sure what to highlight about haskell saucy rather than it is an implementation that is validated by composition operators and the standard lemmas
+	C. unlike verification tools there's hope of reusing existing definitions and building on top of them 
+	D. actually usable as code rather than just a formal model in easyuc or something similar
+
+III. Fuzz Testing
+	A. What fuzz testing tecniques do we use: quick check. What are the limitations of quick check ==> what can and can't it do in terms of checks (even for safety maybe we find it's not as expressive as once thought)
+	B. What do we do about things we can't catch like liveness? Making polynomials and code explicit at least tests and environments can be created to test liveness and find environment counter examples
+	C. Maybe a nice classification of what we can achieve and that Modal Logic may be the next step in trying to capture liveness checks as well.
+
+IV. Something Empirical about existing functionalities
+	A. Maybe we can look at the all functionalities doc and say somethin abouve what kind of coverage our approach could achieve on exisint UC definitions.
+	B. Make the argument that we don't need to go to fancy formal verification frameworks and can instead rely on simple tools in a mainstream language and create tested/ready-to-use software artefacts.
+	C. Propose this as the standard for UC definitions going forward. Discuss about possibilities in other, more mainstream and easy to use, languages like Python or another strongly typed language.
+
+V. Case Studies
+	A. Provide some fundametal protocols are implemented in UC, and correct, and reusable
+	B. Bracha broadcast, enumerating the subset of bugs possible here and validate with quick check.
+	C. ABA more complicated agreement protocol, validate with _________________________
+
+VI. Discuss 
+	A. Come back and address the RQs (or goals)  we're formulated at the beginning
+
+
+-----------------------------------
+okay so they aren't concurrency issues but composition issues that aren't captured by ironfleet 
+fundamentally we want to 
+
+RQ1: 
+
+
+
+
+

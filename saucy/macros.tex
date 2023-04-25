@@ -1,0 +1,183 @@
+\newcommand{\mc}[1]{\ensuremath{\mathcal{#1}}}
+\newcommand{\msf}[1]{\ensuremath{{\mathsf {#1}}}}
+\newcommand{\mathc}[1]{\ensuremath{\mathcal{#1}}}
+\newcommand{\tsc}[1]{\textsc{#1}}
+\newcommand{\f}[1]{\ensuremath{\mathcal{#1}}\xspace}
+\newcommand{\F}{\f{F}}
+\newcommand{\PI}{\ensuremath{\pi}\xspace}
+\newcommand{\RHO}{\ensuremath{\rho}\xspace}
+\newcommand{\achan}{\ensuremath{\F_{\msf{achan}}^{p_r,p_s}}}
+%\newcommand{\C}{\mathcal{C}}
+\newcommand{\con}[1]{\msf{Contract_{#1}}}
+%\newcommand{\Fsync}[2]{\ensuremath{\F_{\msf{sync},#1,#2}}}
+\newcommand{\Fsync}[2]{\ensuremath{\F_{\msf{BD-SEC}}(#1,#2)}}
+\newcommand{\Fchan}{\ensuremath{\F_{\msf{chan}}}\xspace}
+%\newcommand{\Fchan}[2]{\ensuremath{\F_{\msf{chan}}(#1,#2)}}
+\newcommand{\Fbdsec}{\ensuremath{\F_{\msf{BD-SEC}}^{\delta,\ell}}}
+\newcommand{\Fbc}{\ensuremath{\F_{\msf{broadcast}}}}
+\newcommand{\Fsfe}{\ensuremath{\F_{\msf{SFE}}}}
+\newcommand{\Fstate}{\ensuremath{\F_{\msf{state}}}}
+\newcommand{\Fclock}{\ensuremath{\F_{\msf{clock}}}}
+\newcommand{\Frbc}{\ensuremath{\F_{\msf{rbc}}}}
+\newcommand{\Fpay}{\ensuremath{\F_{\msf{pay}}}}
+\newcommand{\Fcom}{\ensuremath{\F_{\msf{com}}}\xspace}
+\newcommand{\Fauth}{\ensuremath{\F_{\msf{auth}}}\xspace}
+\newcommand{\Fflip}{\ensuremath{\F_{\msf{coinflip}}}\xspace}
+\newcommand{\Fro}{\ensuremath{\F_{\msf{RO}}}\xspace}
+\renewcommand{\O}[1]{\ensuremath{\mathcal{O}(#1)}\xspace}
+\newcommand{\bits}[1]{\ensuremath{\{0,1\}^{#1}}\xspace}
+\newcommand{\kbits}{\ensuremath{\bits{k}}\xspace}
+\newcommand{\sample}{\ensuremath{\xleftarrow{\$}}\xspace}
+\newcommand{\samplek}{\ensuremath{\sample \kbits}\xspace}
+\newcommand{\Fsmc}{\ensuremath{\F_{\msf{SMC}}}\xspace}
+\newcommand{\Fropp}{\ensuremath{\F_{\msf{P2P\hyp RO}}}\xspace}
+\newcommand{\Gledger}{\ensuremath{\f{G}_{\msf{ledger}}}}
+\newcommand{\Wsync}{\ensuremath{\mathcal{W}_{\msf{sync}}}}
+\newcommand{\Wasync}{\ensuremath{\mathcal{W}_{\msf{async}}}}
+\newcommand{\Ssyncbracha}{\ensuremath{\mathc{S}_{\msf{sbracha}}}}
+\newcommand{\Fbracha}{\ensuremath{\mathcal{F}_{\msf{bracha}}}}
+\newcommand{\Schedule}{\tsc{Schedule}}
+\newcommand{\Delay}{\tsc{Delay}}
+\newcommand{\Advance}{\tsc{Advance}}
+\newcommand{\Exec}{\tsc{Exec}}
+%\newcommand{\Adversary}{\ensuremath{\mathcal{A}}\xspace}
+\newcommand{\A}{\ensuremath{\mathcal{A}}\xspace}
+\newcommand{\DummyAdv}{\ensuremath{\mathcal{A}_\mathcal{D}}\xspace}
+\newcommand{\DA}{\ensuremath{\A_\mathcal{D}}\xspace}
+\newcommand{\Sim}{\ensuremath{\mathcal{S}}\xspace}
+\newcommand{\SIM}[1]{\ensuremath{\mathcal{S}_{#1}}\xspace}
+\newcommand{\simcom}{\SIM{\msf{com}}}
+\newcommand{\cf}{\ensuremath{\mathcal{C}}\xspace}
+\newcommand{\ID}[1]{\ensuremath{\mathcal{I}(#1)}\xspace}
+\newcommand{\matched}[2]{\ensuremath{\langle #1 \leftrightarrow #2 \rangle}\xspace}
+%\newcommand{\Sim}[1][]{\ifthenelse{\equal{#1}{}}{\ensuremath{\Simulator}}{\ensuremath{\Simulator_{#1}}}}
+\newcommand{\DS}{\SIM{D}\xspace}
+%\newcommand{\Environment}{\ensuremath{\mathcal{Z}}\xspace}
+\newcommand{\Z}{\ensuremath{\mathcal{Z}}\xspace}
+\newcommand{\Partyi}{\ensuremath{P_i}}
+\newcommand{\Partyj}{\ensuremath{P_j}}
+\newcommand{\partywrapper}{Multiplexer\xspace}
+\newcommand{\pw}{\PI}
+\newcommand{\fwrapper}{\todo{fwrappername}\xspace}
+
+\newcommand{\dealer}{\ensuremath{\mathcal{D}}}
+\newcommand{\globalf}[1]{\ensuremath{{\overline{\mathcal{#1}}}}}
+\newcommand{\todo}[1]{\textcolor{Red}{todo: #1}}
+\newcommand{\edict}{\{\}}
+\newcommand{\lar}{\leftarrow}
+\newcommand{\rar}{\rightarrow}
+\newcommand{\Init}{{\bf \color{NavyBlue} Init}~}
+\newcommand{\OnInput}{{\bf \textcolor{Black} On input}~}
+\newcommand{\Allinputs}{{\bf \color{Cerulean} All other input~}}
+\newcommand{\OnAdvInput}{{\bf \color{BrickRed} On input}~}
+\newcommand{\heading}[1]{\textbf{#1}}
+\newcommand{\Type}{\ensuremath{\yo{type}}}
+\newcommand{\Stype}{\ensuremath{\yo{stype}}}
+\newcommand{\bangf}{\ensuremath{!\F}}
+\newcommand{\execuc}{\ensuremath{\msf{execUC}}}
+\newcommand{\iexecuc}{\inline{execUC}}
+\newcommand{\UC}[4]{\ensuremath{\execuc #1  #2  #3  #4}}
+\newcommand{\idealP}{\ensuremath{\mathbbm{1}_d}\xspace}
+%\newcommand{\prot}[1][]{\ifthenelse{\equal{\ensuremath{#1}}{}}{\ensuremath{\Pi}}{\ensuremath{\Pi_{X #1}}}}
+\newcommand{\prot}[1]{\ensuremath{\pi_{\msf{#1}}}}
+\newcommand{\lla}{\leftarrow}
+\newcommand{\lvd}{\vdash}
+\newcommand{\tb}[1]{\text{\color{royalblue}{#1}}}
+\newcommand{\tgr}[1]{\text{\color{forestgreen}{#1}}}
+\newcommand{\tm}[1]{\text{\color{magenta}{#1}}}
+\newcommand{\tg}[1]{\text{\color{gray}{#1}}}
+\newcommand{\tp}[1]{\text{\color{purp}{#1}}}
+\newcommand{\nparam}[1]{\tp{#1}}
+\newcommand{\tr}[1]{\text{\color{Red}{#1}}}
+\newcommand{\yo}[1]{\text{\color{YellowOrange}{#1}}}
+\newcommand{\inline}[1]{\lstinline[basicstyle=\footnotesize\BeraMonottFamily, mathescape]!#1!}
+\newcommand{\la}{\ensuremath{\leftarrow}}
+\newcommand{\La}{\ensuremath{\Leftarrow}}
+\newcommand{\ra}{\ensuremath{\rightarrow}}
+\newcommand{\Ra}{\ensuremath{\Rightarrow}}
+
+\newcommand{\nrecv}{\tb{recv}}
+\newcommand{\nsend}{\tb{send}}
+\newcommand{\nget}{\tb{get}}
+\newcommand{\npay}{\tb{pay}}
+\newcommand{\nsimget}{\tm{simget}}
+\newcommand{\nsimpay}{\tm{simpay}}
+\newcommand{\ncase}{\tgr{case}}
+\newcommand{\nmatch}{\tgr{match}}
+\newcommand{\nproc}{\tm{proc}}
+\newcommand{\nwithdraw}{\tm{withdrawTokens}}
+\newcommand{\nif}{\yo{if}}
+\newcommand{\nelse}{\yo{else}}
+\newcommand{\nthen}{\yo{then}}
+\newcommand{\nend}{\yo{end}}
+\newcommand{\nwhile}{\yo{while}}
+\mathchardef\d="2D
+\newcommand{\us}{\msf{Haskell\d Saucy}\xspace}
+
+%\newcommand{\pluseq}{\mathrel{+}=}
+%\newcommand{\minuseq}{\mathrel{-}=}
+\newcommand{\Assert}{{\bf \color{BrickRed} Assert }}
+\newcommand{\Require}{{\bf \color{BrickRed} Require }}
+
+%\theoremstyle{acmdefinition}
+%\newtheorem{definition}{Definition}[section]
+\newtheorem{ddef}{Definition}
+%\newtheorem{theorem}{Theorem}
+\newtheorem{claim}{Claim}
+%\newtheorem{lemma}{Lemma}
+
+%\newlist{renumerate}{enumerate}{1}
+%\setlist[renumerate]{before=\setlength{\baselineskip}{20pt}, itemsep=-2ex, topsep=-2ex}
+%\newenvironment{renumerate}{\begin{enumerate}[before=\setlength{\baselineskip}{20pt},itemsep=-2ex,topsep=0pt]}{\end{enumerate}}
+\newenvironment{renumerate}{\begin{enumerate}[nosep]}{\end{enumerate}}
+%\newenvironment{ritemize}{\begin{itemize}[before=\setlength{\baselineskip}{20pt},itemsep=-2ex,topsep=0pt]}{\end{itemize}}
+\newenvironment{ritemize}{\begin{itemize}[nosep] \renewcommand\labelitemi{--}}{\end{itemize}}
+
+%\newenvironment{mylst}{\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, frame=single, mathescape]}{\end{lstlisting}}
+
+\makeatletter
+\newcommand{\inmsg}[1]{%
+(#1\checknextarg}
+\newcommand{\checknextarg}{\@ifnextchar\bgroup{\gobblenextarg}{)~}}
+\newcommand{\gobblenextarg}[1]{, #1\@ifnextchar\bgroup{\gobblenextarg}{)~}}
+\makeatother
+
+
+\newcommand{\transfermsg}{\inmsg{transfer}{to}{val}{data}{from}}
+\newcommand{\createmsg}{\inmsg{contract \ create}{addr}{val}{data}{private}{from}}
+\newcommand{\reject}{\textbf{reject}~}
+\newcommand{\ignore}{\textbf{ignore}~}
+%\newcommand{\For}{\textbf{For}~}
+\newcommand{\Env}{\ensuremath{\mathcal{Z}}}
+%\newcommand{\While}{\textbf{While}~}
+\newcommand{\Buffer}{\textbf{Buffer}~}
+\newcommand{\Send}{\textbf{Send}~}
+\newcommand{\Output}{\emph{Output}~}
+\newcommand{\Leak}{\textbf{Leak}}
+\newcommand{\Eventually}{\textbf{Eventually}~}
+\newcommand{\In}{\textbf{in}~}
+\newcommand{\If}{\textbf{If}~}
+\newcommand{\Else}{\textbf{Else}~}
+%\newcommand{\Return}{\textbf{Return}~}
+
+\newcommand{\pluseq}{\ensuremath{\mathrel{+}=}}
+\newcommand{\minuseq}{\ensuremath{\mathrel{-}=}}
+\newcommand{\Adv}{\ensuremath{\mathcal{A}}}
+%\newcommand{\Partyi}{\ensuremath{\mathbf{P_i=(sid,pid)}}}
+\newcommand{\sid}{\ensuremath{\msf{sid}}\xspace}
+\newcommand{\pid}{\ensuremath{\msf{pid}}\xspace}
+\newcommand{\dquad}{\quad \quad}
+\newcommand{\qqquad}{\qquad \quad}
+\newcommand{\qqqquad}{\qqquad \quad}
+\newcommand{\qqqqquad}{\qqqquad \quad}
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
+
+\newcommand*\token{~\circled{t}}
+
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+
+
+\newcommand{\spheading}[1]{ %
+	\rotatebox{60}{\parbox{2.5cm}{\raggedright #1}}}
