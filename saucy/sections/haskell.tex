@@ -2,7 +2,7 @@ In this section we outline our realization of the UC framework in Haskell.
 For the sake of space we limit the presentation here to the minimum required to illusrate the construction of the asynchronous wrapper and our fuzz testing tooling. 
 
 \subsection{Communication Between ITMs}
-ITMS are realized in \us as probabilistic, polynomial time, channel passing processes. 
+ITMs are realized in \us as probabilistic, polynomial time, channel passing processes. 
 The are similar in spirit to ITMs, however rely on channels from the Hasjel \texttt{Control.Concurrent} library as opposed to the tapes used by ITMs. 
 \todo{Make a clear distinction between this and ILC?}
 
@@ -47,3 +47,168 @@ type MonadITM m = (HasFork m,
 \end{lstlisting}
 
 \paragraph{The Party Wrapper}
+
+\subsection{Token Implementation}
+At a high level, imports in this work are used primarily to demonstrate the difference between eventual delivery and no delivery in the simulated world. The simulator internally emulates the real-world protocol and uses its control over network delays to align delivery of ideal-world outputs with the real world. More specifically, given some imports, we show how much progress the real-world protocol can make and how long the simulator can delay the ideal-world output so that the transcripts remain indistinguishable. Unrelated details of program execution are omitted for simplicity of implementation.
+
+\begin{lstlisting}
+data CarryTokens a = SendTokens a 
+                      deriving (Show, Eq)
+data TransferTokens a = DeliverTokensWithMessage a 
+                         deriving (Show, Eq)
+\end{lstlisting}
+
+Our implementation makes use of two data types. The \texttt{CarryTokens} type specifies the number of imports a message carries. The \texttt{TransferTokens} type lets a protocol party specify to a Functionality the number of imports it wants to deliver to the receiver. The \texttt{TransferTokens} type itself does not carry imports, rather it only denotes the number of imports the sender intended to send. We rely on the \texttt{CarryTokens} type to show what the sender was able to send given the imports it had. When a protocol party wants to send imports to other parties, it must use the \texttt{TransferTokens} type to specify the amount and include imports in the \texttt{CarryTokens} type. We realize this import transfer with a multicast Functionality. The Functionality accepts imports included in the \texttt{CarryTokens} type, reads the amount specified by \texttt{TransferTokens} on its input tape, and sends the specified amount to the receiving party in a best-effort attempt. That is, the Functionality sends as many imports as possible in case of import shortage.
+
+Below shows the multicast Functionality type before and after the inclusion of imports. The \texttt{TokenFunctionality} type enables import transfer between protocol parties and functionalities by appending to the p2f and f2p channels the \texttt{CarryTokens} type. \texttt{fMulticastToken} additionally includes the \texttt{TransferTokens} type in its messages so that it is notified of the number of imports protocol parties want to transfer.
+
+\begin{lstlisting}
+fMulticast :: MonadFunctionalityAsync m t => 
+  Functionality t (MulticastF2P t) 
+                (MulticastA2F t) 
+                (MulticastF2A t) Void Void m
+\end{lstlisting}
+
+\begin{lstlisting}
+type TokenFunctionality p2f f2p a2f f2a z2f f2z m 
+  = MonadFunctionality m => 
+    (Chan (PID, (p2f, CarryTokens Int)), 
+     Chan (PID, (f2p, CarryTokens Int))) -> 
+    (Chan a2f, Chan f2a) -> 
+    (Chan z2f, Chan f2z) -> 
+    m ()
+
+fMulticastToken :: MonadFunctionalityAsync 
+                     m ((t, TransferTokens Int), 
+                        CarryTokens Int) => 
+  TokenFunctionality (t, TransferTokens Int) 
+                     (MulticastF2P t) 
+                     (MulticastA2F t, 
+                      TransferTokens Int) 
+                     (MulticastF2A t, 
+                      TransferTokens Int) 
+                     Void Void m
+\end{lstlisting}
+
+Below is a code snippet from \texttt{fMulticastToken}. The multicast sender leaks the message, the number of imports it carries, and the number of imports the send operation forwards to each receiver to the adversary. Multicast receivers obtain the message and imports from the Functionality so that they can initiate their own multicast operations.
+
+\begin{lstlisting}
+if pid == pidS then do
+  ?leak ((m, DeliverTokensWithMessage st), 
+         SendTokens a)
+  forMseq_ parties $ \pidR -> do
+    eventually $ do
+      tk <- readIORef tokens
+      if tk >=1 then do
+        writeIORef tokens (max 0 (tk-1-st))
+        writeChan f2p (pidR, 
+                       (MulticastF2P_Deliver m, 
+                        SendTokens (min st 
+                                        (tk-1))))
+      else ?pass
+  writeChan f2p (pidS, (MulticastF2P_OK, 
+                        SendTokens 0))
+\end{lstlisting}
+
+For each send, the Functionality burns 1 import as delivery cost and sends as many requested imports to the receiver as possible. Specifically, given a request \texttt{TransferTokens} \texttt{tk}, the Functionality includes in the message either exactly \texttt{tk} imports or, in case of insufficient reserves, all imports it had left. The send operation can only be initiated when the ITM holds at least enough imports to pay for the delivery cost.
+
+\subsection{Overview of Bracha's Protocol}
+The reliable broadcast protocol involves a single sender and a set of $N$ servers(receivers). The sender receives an input($v$) and broadcasts to the receivers, which either all output the same value or output nothing. At most $f$ receivers can be Byzantine corrupt, with $N\geq 3f+1$. When the sender is honest, the receivers' output should match the value $v$.
+
+\subsubsection{Properties}
+\begin{figure}
+    \centering
+    \begin{bbox}[title={$\mathcal{F}_\msf{RBC}(\mathcal{P})$}]
+
+    {\bf \color{Black} On first input}~ \inmsg{\tsc{input}}{msg} from $\mathcal{D}$:
+
+    \quad \Leak (\textsc{input}, msg) to \Adv
+    
+    \quad For $p_i$ in $\mathcal{P}$ :
+    
+        \qquad \Eventually Send msg to $p_i$
+
+\end{bbox}
+    \caption{Ideal functionality for reliable broadcast.}
+    \label{fig:f_code}
+\end{figure}
+The ideal functionality for reliable broadcast is shown in Figure \ref{fig:f_code}. The protocol must satisfy three important properties:
+
+\textbf{Agreement}: If any two honest servers output $v$ and $v^{\prime}$, then $v = v^{\prime}$.
+
+\textbf{Validity}: If the sender is honest and receives input($v$), then every server outputs $v$.
+
+\textbf{Reliability}: If any honest server outputs $v$, then every server outputs some $v^{\prime}$.
+
+The pseudo-code for reliable broadcast is shown in Figure \ref{fig:pi_code}.
+\begin{figure}
+    \centering
+    \begin{bbox}[title={$\mathbf{\Pi}_\msf{RBC}(\mathcal{P})$}]
+
+{\bf \color{Black} On receiving}~ \inmsg{\tsc{input}}{msg} from $\mathcal{D}$:
+
+    \quad For $p_i$ in $\mathcal{P}$ :
+    
+        \qquad Send (\textsc{echo}, msg) to $p_i$
+
+{\bf \color{Black} On receiving}~ \inmsg{\tsc{echo}}{msg} from at least $(N+f+1)/2$ processes in $\mathcal{P}$:
+
+    \quad If \tsc{ready} has not been sent:
+
+        \qquad For $p_i$ in $\mathcal{P}$ :
+    
+            \quad \qquad Send (\textsc{ready}, msg) to $p_i$
+
+{\bf \color{Black} On receiving}~ \inmsg{\tsc{ready}}{msg} from at least $(f+1)$ processes in $\mathcal{P}$:
+
+    \quad If \tsc{ready} has not been sent:
+
+        \qquad For $p_i$ in $\mathcal{P}$ :
+    
+            \quad \qquad Send (\textsc{ready}, msg) to $p_i$
+
+{\bf \color{Black} On receiving}~ \inmsg{\tsc{ready}}{msg} from at least $(2f+1)$ processes in $\mathcal{P}$:
+
+    \quad Output msg
+\end{bbox}
+    \caption{Pseudo-code for Bracha's protocol.}
+    \label{fig:pi_code}
+\end{figure}
+
+\subsubsection{Achieving Agreement and Validity}
+\textsc{echo} messages guarantee Agreement and Validity for the protocol.
+
+A corrupt sender may send different values to the receivers, who must output the same value. This results in an "Echo" phase, where receivers asynchronously attempts to agree on an output. More specifically, receivers echo their received value, and once a party has received more than a threshold number of echoes for some value $v$, it sets $v$ to be its output.
+
+The echo threshold must be no less than $\lceil \frac{N+f+1}{2} \rceil$ so that it can be reached by at most one candidate value. This makes sure that participating parties cannot decide on different outputs. For any pair of distinct values $v_1$ and $v_2$, each of the $N-f$ honest parties will only echo one of them, while the $f$ corrupt parties can potentially echo both. This will result in a total of at most $(N-f)*1+f*2=N+f$ echoes. $\lceil \frac{N+f+1}{2} \rceil$ is more than half of the maximum number of echoes, and thus is a correct quorum and a sufficient threshold.
+
+\subsubsection{Achieving Reliability}
+A second round of communication (i.e., \textsc{ready} messages) is added to let the parties agree on whether an output is decided and thus achieve Reliability.
+
+The attacker may try to send just enough echoes to let honest party $p_1$ decide on a value without letting another honest party $p_2$ do so. Suppose $N=4$ and $f=1$, in a case where the sender $p_4$ is corrupt. The corrupt sender sends $v$ to honest parties $p_1$ and $p_2$ and nothing to $p_3$. The parties will eventually receive 2 echoes for $v$ from $p_1$ and $p_2$, who need $\lceil \frac{N+f+1}{2} \rceil = \frac{4+1+1}{2}=3$ echoes to decide on an output. Without the \textsc{ready} round, if the corrupt party sends an echo for $v$ to $p_1$ but not to $p_2$, $p_1$ will eventually output $v$ but $p_2$ will not. This violates Reliability.
+
+The \textsc{ready} round ensures Reliability since when $(2f+1)$ \textsc{ready}s are received by a party, at least $(f+1)$ honest parties must have sent \textsc{ready} to be eventually delivered. All $(N-f)$ honest parties will therefore eventually qualify to multicast their \textsc{ready}, and at least $(2f+1)$ \textsc{ready} will be eventually delivered to all parties. This guarantees that every honest party will eventually output a value.
+
+Agreement and Validity from the \textsc{echo} round are not changed by the additional \textsc{ready} messages. A party can only send \textsc{ready} in two ways:
+
+$\mathbf{}{1}$. A party sends \textsc{ready} after receiving enough \textsc{echo} messages. The quorum still applies and Agreement and Validity still hold.
+
+$\mathbf{2}$. A party sends \textsc{ready} after receiving at least $(f+1)$ \textsc{ready}. At least $1$ of the \textsc{ready} messages must come from an honest party, and so the party's \textsc{ready} must contain the same value as some honest party that had previously sent \textsc{ready}. We can backtrack the honest \textsc{ready} messages, and the root \textsc{ready} had to be triggered by some \textsc{echo}. This implies that the quorum still applies and Agreement and Validity still hold.
+
+\subsubsection{UC Simulator for Bracha’s Protocol}
+The simulator $\mathcal{S}$ can be designed as the following:
+
+$\mathcal{S}$ locally emulates the real-world Bracha's protocol and $\mathcal{F}_{auth}$ in a sandbox. Since the ideal $\mathcal{F}$ leaks all information (i.e., input), $\mathcal{S}$ can run $\mathbf{\Pi}$ locally in a blackbox manner. $\mathcal{S}$ forwards messages from corrupt parties into the sandbox. Delivery instructions are processed in the sandbox.
+
+If the sender is honest, when $\mathcal{S}$ sees an input $v$, it passes $v$ to the sandbox.
+
+If the sender is corrupt, whenever a (simulated) honest party in the sandbox outputs $v$, $\mathcal{S}$ sends input $v$ to the ideal functionality $\mathcal{F}_{RBC}$. Since everything inside the sandbox is deterministic and uses the same inputs as the real world, this ensures that the value $v$ sent to the ideal functionality will be exactly the same as the real world output.
+
+\subsubsection{Effects of Wrong Thresholds}
+Violating any of the three properties causes the protocol to be distinguished by the environment.
+
+Agreement can be broken by an insufficient threshold in the \textsc{echo} round, as the lowered threshold is no longer a quorum. The parties can therefore reach split decisions.
+
+Validity can be broken by an insufficient threshold in the \textsc{ready} round, as the lowered threshold can no longer guarantee that at least one message comes from an honest party. That is, messages from corrupt parties alone can make an honest party decide on its output. Therefore the eventual output can be potentially any arbitrary value from the adversary.
+
+Reliability can be broken, for example, by an insufficient output threshold in the \textsc{ready} round. Alternatively, it can be broken by an insufficient threshold in the \textsc{echo} round together with a large enough output threshold in the \textsc{ready} round that prevents a second message from being output. Note that showing broken Reliability in UC requires distinguishing eventual output and no output. The simulator, while still holding imports, is able to repeatedly delay an eventually delivered output and maintain an indistinguishable view.
