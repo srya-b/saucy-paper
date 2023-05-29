@@ -11,58 +11,90 @@ of the functionality. All it does it route messages and forward them to the shar
 connecting to the internal instances of \F.
 
 \begin{mathpar}
-	\mi{type} \; \m{msp2f}[s,a]\{n\} = \textcolor{red}{\paypot^n} \ichoice{ \mb{p2mf}: \m{PID} \product \m{SID}[s] \product \m{b} \product \m{msp2f}[s,a]\{n\}} \\
-	\mi{type} \; \m{msf2p}[s,a]\{n\} = \textcolor{red}{\getpot^n} \ichoice{ \mb{mf2p}: \m{PID} \arrow \m{SID}[s] \arrow \m{b} \arrow \m{msf2p}[s,a]\{n\}}
+	\mi{type} \; \m{msp2f}[s,a]\{n\}\{m\} = \ichoice{ \textcolor{red}{\paypot^n} \mb{p2mf}: \m{PID} \product \m{SID}[s] \product \m{b} \product \m{msp2f}[s,a]\{n\}\{m\}} \\
+	\mi{type} \; \m{msf2p}[s,a]\{n\}\{m\} = \echoice{ \textcolor{red}{\getpot^m} \mb{mf2p}: \m{PID} \arrow \m{SID}[s] \arrow \m{a} \arrow \m{msf2p}[s,a]\{n\}\{m\}}
 \end{mathpar}
-
-%\begin{lstlisting}[basicstyle=\small\BeraMonottFamily, mathescape]
-%$\yo{type}$ p2ms[a] = P2MS of ssid ^ a ;
-%$\yo{type}$ ms2p[b] = MS2P of ssid ^ b ;
-%\end{lstlisting}
 
 Like the \partywrapper virtualizaton is achieved just by spawnig functionalities with the virtual token type \inline{K1}.
 From the code below for accepting messages fro the \partywrapper, we can see that the operator's code is alost identical the code in Appendix~\ref{app:arbparties}.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
-$\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn,f2an} :
+$\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
   $\tg{(* args *)}$
-  ($\$$p2f: msp2f[s][p2f]), 
-  ($\$$f2p: msf2p[s][f2p]),
-  ($\$$a2f: msa2f[s][a2f]), 
-  ($\$$f2a: msf2a[s][f2a]),
-  (lp2f: [(SID[s], comm[P2F[p2f]][K1])]), 
-  (lf2p: [(SID[s], comm[F2P[f2p]][K1])]),
-  (la2f: [(SID[s], comm[A2F[a2f]][K1])]), 
-  (lf2a: [(SID[s], comm[F2A[f2a]][K1])]) |- ($\$$ch: 1) =
+  ($\$$p2f: msp2f[s][p2f]), ($\$$f2p: msf2p[s][f2p]),
+  ($\$$a2f: msa2f[s][a2f]), ($\$$f2a: msf2a[s][f2a]),
+  (lp2f: [(SID[s],comm[K1][p2f]])), 
+  (lf2p: [(SID[s],comm[K1][f2p]])), 
+  (la2f: [(SID[s],comm[K1][a2f]])), 
+  (lf2a: [(SID[s],comm[K1][f2a]])) |- ($\$$ch: 1) =
 {
   $\nmatch$ $\$$p2f, $\$$a2f (
-    P2F(pid, P2MS(ssid, m)),* =>
-    p2mf,* => 
-      pid = $\nrecv$ $\$$p2ms ; ssid = $\nrecv$ $\$$p2f ;
-	  m = $\nrecv$ $\$$p2f ;
-      $\nget$ {p2fn} K $\$$p2f ;
-      $\nif$ not exists ssid lp2f $\nthen$
-        #p2f' $\leftarrow$ channel_init[K1][P2F[p2f]] ;
-        #f2p' $\leftarrow$ channel_init[K1][F2P[f2p]] ;
-        #a2f' $\leftarrow$ channel_init[K1][a2f] ;
-        #f2a' $\leftarrow$ channel_init[K1][f2a] ;
-        $\$$c' $\leftarrow$ gen_f_wrapper[K][K1] $\leftarrow$ 
-		  k rng sid #p2f' #f2p' #a2f' #f2a'
-        lp2f $\leftarrow$ append (ssid, #p2f') lp2f; 
-        lf2p $\leftarrow$ append (ssid, #f2p') lf2p;
-        la2f $\leftarrow$ append (ssid, #a2f') la2f; 
-        lf2a $\leftarrow$ append (ssid, #f2a') lf2a;
-      $\nelse$ ()
-      #p2f' $\leftarrow$ search ssid lp2f ;
+    p2bf,* =>
+      pid = $\nrecv$ $\$$p2ms ; ssid = $\nrecv$ $\$$p2ms ;
+      m = $\nrecv$ $\$$p2ms ;
+      $\nget$ {p2msn} K $\$$p2f ;
+      $\nif$ not exists ssid lp2f then
+        #p2f' <- channel_init[K1][P2F[p2f]] ;
+        #f2p' <- channel_init[K1][F2P[f2p]] ;
+        #a2f' <- channel_init[K1][a2f] ;
+        #f2a' <- channel_init[K1][f2a] ;
+        $\$$c' <- gen_f_wrapper[K][K1] <- 
+          k rng sid #p2f' #f2p' #a2f' #f2a'
+        lp2f <- append (ssid, #p2f') lp2f; lf2p 
+          <- append (ssid, #f2p') lf2p;
+        la2f <- append (ssid, #a2f') la2f; lf2a 
+          <- append (ssid, #f2a') lf2a;
+      else ()
+      $\$$p2f' <- search ssid lp2f ;
       $\nwithdraw$ K K1 p2fn ;
-      #p2f'.SEND ; $\nsend$ #p2f' P2F(pid, m) ; 
-      $\npay$ {p2fn} K1 #p2f' ;
-    *,a2mf => 
-      ssid = $\nrecv$ $\$$a2f ;
-      m = $\nrecv$ $\$$a2f ;
+      #p2f'.SEND ; send #p2f' P2F(pid, m) ; 
+      pay {p2fn} K1 #p2f' ;
+    *,a2bf => 
+      ssid = $\nrecv$ $\$$a2ms ;
+      m = $\nrecv$ $\$$a2ms ;
       $\tg{(* identical case *)}$
   )
-}
+} 
 \end{lstlisting}
+%$\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a]{p2fn,f2pn,a2fn,f2an} :
+%  $\tg{(* args *)}$
+%  ($\$$p2f: msp2f[s][p2f]), 
+%  ($\$$f2p: msf2p[s][f2p]),
+%  ($\$$a2f: msa2f[s][a2f]), 
+%  ($\$$f2a: msf2a[s][f2a]),
+%  (lp2f: [(SID[s], comm[P2F[p2f]][K1])]), 
+%  (lf2p: [(SID[s], comm[F2P[f2p]][K1])]),
+%  (la2f: [(SID[s], comm[A2F[a2f]][K1])]), 
+%  (lf2a: [(SID[s], comm[F2A[f2a]][K1])]) |- ($\$$ch: 1) =
+%{
+%  $\nmatch$ $\$$p2f, $\$$a2f (
+%    P2F(pid, P2MS(ssid, m)),* =>
+%    p2mf,* => 
+%      pid = $\nrecv$ $\$$p2ms ; ssid = $\nrecv$ $\$$p2f ;
+%	  m = $\nrecv$ $\$$p2f ;
+%      $\nget$ {p2fn} K $\$$p2f ;
+%      $\nif$ not exists ssid lp2f $\nthen$
+%        #p2f' $\leftarrow$ channel_init[K1][P2F[p2f]] ;
+%        #f2p' $\leftarrow$ channel_init[K1][F2P[f2p]] ;
+%        #a2f' $\leftarrow$ channel_init[K1][a2f] ;
+%        #f2a' $\leftarrow$ channel_init[K1][f2a] ;
+%        $\$$c' $\leftarrow$ gen_f_wrapper[K][K1] $\leftarrow$ 
+%		  k rng sid #p2f' #f2p' #a2f' #f2a'
+%        lp2f $\leftarrow$ append (ssid, #p2f') lp2f; 
+%        lf2p $\leftarrow$ append (ssid, #f2p') lf2p;
+%        la2f $\leftarrow$ append (ssid, #a2f') la2f; 
+%        lf2a $\leftarrow$ append (ssid, #f2a') lf2a;
+%      $\nelse$ ()
+%      #p2f' $\leftarrow$ search ssid lp2f ;
+%      $\nwithdraw$ K K1 p2fn ;
+%      #p2f'.SEND ; $\nsend$ #p2f' P2F(pid, m) ; 
+%      $\npay$ {p2fn} K1 #p2f' ;
+%    *,a2mf => 
+%      ssid = $\nrecv$ $\$$a2f ;
+%      m = $\nrecv$ $\$$a2f ;
+%      $\tg{(* identical case *)}$
+%  )
+%}
+%\end{lstlisting}
 
 \subsection{Squash} \label{sec:squash}
 Recall that the Theorem~\ref{thm:squash} realizes !!\F, a functionality wrapped twice in the multisession operator an indexed by a pair of ssids $(\m{ssid}_1 \product \m{ssid}_2)$ instead of a single \msg{ssid}.

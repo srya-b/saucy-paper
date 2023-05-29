@@ -4,7 +4,7 @@ However, unlike our work, many of them only do so in the standalone setting with
 They also do not completely capture a robust polynomial-time notion or realize generalized composition. 
 
 Canetti et al.~\cite{easyuc} and Barbosa et al.~\cite{barbosa} both build off EasyCrypt's game-based security definitions to reach UC-like simulation-based definitions.
-They both mechanisze security proof generation and allow more complicated reasoning for indistinguishability given a formal term capping the environments capabilities. Out work, like ILC defines indistinguishability in terms of a security parameter $k$, but without any program logic for security. 
+They both mechanize security proof generation and allow more complicated reasoning for indistinguishability given a formal term capping the environments capabilities. Out work, like ILC defines indistinguishability in terms of a security parameter $k$, but without any program logic for security. 
 Barbosa introduces a limited polynomial time notion for its definitions, whereas EasyUC~\cite{easyuc} does not encode any runtime guarantees in its programs. 
 For example, it cannot detect indefinite message passing between \A and \F. Neither, however, capture full UC composition.
 Barbosa realizes simplified UC~\cite{suc}, and, like EasyUC, does not capture dynamic party creation or the multisession operator.
@@ -96,7 +96,7 @@ Resource-aware session types~\cite{das2018work} add potential annotations to ses
 of distributed protocols.
 More related to security, recent work has integrated session types with information flow type systems, both
 in the binary~\cite{Derakhshan21LICS} and multiparty~\cite{Capecchi10CONCUR} setting.
-The former uses logical relations to define non-intereference while the latter
+The former uses logical relations to define non-interference while the latter
 guarantees a form of access control and secure information flow.
 
 %There is large body of similar work that introduces process calculi, some extensions of $\pi$-calculus, like ILC.

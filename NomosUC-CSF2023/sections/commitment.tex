@@ -1,16 +1,16 @@
 In this section we show how virtual tokens are used to construct a simulator for the running example, \Fcom, in this work.
-The design pattern is identical to the simulator proofs of Theorems~\ref{thm:dummythicclemma}, \ref{thm:singlecomp}, and \ref{thm:functor}, and it highlights the simplicity of our encoding and token heirarchy.
+The design pattern is identical to the simulator proofs of Theorems~\ref{thm:dummythicclemma}, \ref{thm:singlecomp}, and \ref{thm:functor}, and it highlights the simplicity of our encoding and token hierarchy.
 
 \paragraph*{\textbf{Commitment Protocol}}
 The commitment protocol realizes \Fcom in the \Fropp-hybrid world.
 \Fropp is a combination of a random oracle \Fro (idealized hash function) and a one-way channel \Fauth.
 We depart slightly from the standard formulation of \Fauth. Normally \Fauth receives a message to send and it leaks it to the adversary and then sends it to the receiving party.
-This design, and similar design patterns in general, assumes additional behavior on the part of the adverasry giving control back to \Fauth. 
+This design, and similar design patterns in general, assumes additional behavior on the part of the adversary giving control back to \Fauth. 
 We prefer to remove such assumptions and only rely on a process writing to one other process. In this case, \Fauth stores the message which the adversary can 
 ask for, and we send the message to the receiving party only.
 Let the output of the function $\O{x}$ be the hash reply of \Fropp on query $x$ with 1 import token.
 On input \mb{commit(b)} and 1 import from \Z, the committer chooses a random blind $n \sample \bits{k-1}$ and sends $h = \O{b || n}$ to the receiver. 
-On \mb{open} from \Z, the commiter sends $b,n$ and the receiver checks $h \equiv \O{b || n}$ and outputs \mb{opened} and $b$ if true. 
+On \mb{open} from \Z, the committer sends $b,n$ and the receiver checks $h \equiv \O{b || n}$ and outputs \mb{opened} and $b$ if true. 
 
 % \paragraph*{\textbf{A Simulator for \Fcom}}
 A common strategy for simulators is to run the real world in a sandbox and give the parties in it the same input as the ideal world. 
@@ -66,7 +66,7 @@ The import tokens that \simcom receives ensures that it can make a polynomial nu
 
 When a message is sent to the receiver from \Z, \simcom checks whether a pre-image exists in the sandboxed \Fro. 
 If so, it begins the commitment in \Fcom. 
-For the open message, if the same bit is being opened too, then the commitement is correct and should open. 
+For the open message, if the same bit is being opened too, then the commitment is correct and should open. 
 Otherwise, \simcom aborts again.
 
 More precisely, \simcom always checks whether collisions occur (as above). 
@@ -133,7 +133,7 @@ Finally, correct commitments proceed unhindered.
 \subsection{ZK from \Fcom}
 In order to show the modularity of our approach we discuss briefly here realizing a zero-knowledge functionality $\F_\msf{zk}$ with a protocol $\pi_\msf{zk}$ in the $!\Fcom$-hybrid world.
 We then show composition for protocols where $!\Fropp \xrightarrow{\pi_\msf{zk} \circ !\pi_\msf{com}} \F_\msf{zk}$.
-We specifically realize the zero-knowledge protocol for the hamiltonion cycle in a graph from ~\cite{uccommitents}.
+We specifically realize the zero-knowledge protocol for the Hamiltonian cycle in a graph from ~\cite{uccommitments}.
 $\F_\msf{zk}$ is easily defined in our framework as shown below:
 
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em, firstnumber=8]
@@ -144,9 +144,9 @@ $\nproc$ f_zk[a][b]{na,nb,nadv} :
 {
   case $\$$v (
     commitment => x = $\nrecv$ $\$$v ;
-      $\nget$ {nb} $\$$v$ ;
+      $\nget$ {nb} $\$$v ;
       $\$$a.commitment; $\nsend$ $\$$a x ;
-      $\ncase $\$$p (
+      $\ncase$ $\$$p (
         witness => w = $\nget$ $\$$p; x' = $\nget$ $\$$p ;
           $\nif$ x == x' $\nthen$
             $\$$R $\leftarrow$ NP_rel $\leftarrow$ ;

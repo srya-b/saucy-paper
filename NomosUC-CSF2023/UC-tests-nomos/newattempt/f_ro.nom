@@ -1,51 +1,61 @@
-stype party[a] = +{ hash: pid ^ int -> hashing[a],
-                    sendmsg: pid ^ pid ^ a -> party[a],
-                    recvmsg: pid -> newmsg[a] }
-stype hashing[a] = &{ shash: pid ^ int -> party[a] }
-stype newmsg[a] = &{ yes: pid ^ pid ^ a -> party[a],
-                     no: pid ^ party[a] }
+--stype party[a]{n}{m} = +{ |{1}> hash: pid ^ int -> hashing[a],
+--                          |{n}> sendmsg: pid ^ pid ^ a -> party[a],
+--                          |{0}> recvmsg: pid -> newmsg[a] }
+--stype hashing[a] = &{ <{0}| shash: pid ^ int -> party[a] }
+--stype newmsg[a]{n}{m} = &{ <{m}| yes: pid ^ pid ^ a -> party[a],
+--                           <{0}| no: pid ^ party[a] }
+--
+stype rop2f[a]{n}{m} = +{ |{1}> hash: pid ^ int ^ rop2f[a]{n}{m},
+													|{n}> sendmsg: pid ^ pid ^ rop2f[a]{n}{m} }
+stype rof2p[a]{n}{m} = &{ <{0}| shash: pid -> Int -> rof2p[a]{n}{m},
+													<{m} | recvmsg: pid -> pid -> a -> rof2p{n}{m} } 
 
 type rop2f[a] = QHash of Int | Send of pid ^ a | Recv ;
 type rof2p[a] = RHash of Int | Yes of pid ^ a | No ;
 
-proc F_ro[K]:
+proc F_ro[K]{n,m}:
   (k: Int), (rng: [Bit]), (sid: session[1]),
-  ($p: party[a]), ($t: table[??]), (rpid: Int),
+  ($p: party[a]{n}{m}), (t: dict[(int,int)]), (rpid: Int),
   (msg: a)  |- ($ch: 1) =
 {
   case $p (
     hash =>
+			get {1} $p ;
       p = recv $p ;
       i = recv $p ;
-      if i in $table
+      if i in t
       then
-        h = get $t i ;
+        h = query rt i ;
         $p.shash ;
         send $p p ;
         send $p h ;
-        $ch <- F_ro[K] <- k rng sid $p $t (* todo: some defaul value for `msg` *)
+        $ch <- F_ro[K] <- k rng sid $p t (* todo: some defaul value for `msg` *)
       else
         h = sample r k ;
-        $t' <- add $t i h ;
+        t' <- add t i h ;
         $p.shash ;
         send $p p ;
         send $p h ;
-        $ch <- F_ro[K] <- k rng sid $p $t' 
+        $ch <- F_ro[K] <- k rng sid $p t' 
   | sendmsg =>
+      get {n} $p ;
       spid, rpid, msg = recv $p ;
-      $ch <- F_ro_w_msg[K] <- k rng sid $p $t rpid msg ;
+      $ch <- F_ro_w_msg[K] <- k rng sid $p t rpid msg ;
   | recvmsg => 
+			get {0} $p ;
       rpid = recv $p ;
       if msg != (* default value *)
       then
         $p.yes ;
+				pay {m} $p ;
         send $p rpid ;
         send $p msg ;
-        $ch <- F_ro[K] <- k rng sid $p $ -1 None ;
+        $ch <- F_ro[K] <- k rng sid $p t -1 None ;
       else
         $p.no ;
+				pay {0} $p ;
         send $p rpid ;
-        $ch <- F_ro[K] <- k rng sid $p $ -1 None ;
+        $ch <- F_ro[K] <- k rng sid $p t -1 None ;
       end
   )
 }

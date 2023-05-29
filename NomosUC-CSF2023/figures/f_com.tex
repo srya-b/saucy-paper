@@ -18,6 +18,7 @@ then \OnInput \inmsg{Open} from $S$:
 $\nproc$ Fcom: (S: sender), (R: receiver)  |- (fc: 1) =
   $\ncase$ S (
     Commit => b = $\nrecv$ S ;
+              $\nget$ {2} S ;
               R.Committed ;
               $\ncase$ S (
                 Open => R.Opened ;

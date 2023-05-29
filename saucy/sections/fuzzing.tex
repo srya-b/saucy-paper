@@ -21,6 +21,23 @@ Instead, all prorams need to ensure that all inputs received from other ITMs res
 In the case of faults, or halting, this simplifies to passing control back to the environment on any input.  \todo{make this better}
 
 
+\subsection{Creating Test Cases}
+
+\paragraph{Unstructured Environments}
+Creating generative environments that follow some type of protocol ordering requires considerable effort and isn't easily done for protocols that take an arbitrary number of rounds.
+For example, a structure protocol like the one described for Braca Broadcast necessarily encodes some number of rounds of inputs that are generated. 
+A protocol like ABA or the BenOr protocol break this limitation. 
+Therefore, we make a more generalized approach to your fuzz testing were we define try to minimize the protocol assumptions made in our generators and determine
+whether we can still capture the same bugs in a reasonable amount of time.
+Specifically, we examine whether how ``unstructured`` the generator can be and still produce interesting cases (i.e. those where at least some parties decide on a value) and 
+how the weight assigned to different inputs in the generator impact this.
+We hypothesized that inputs to our asynchronous wrapper (\texttt{ClockA2F_Deliver} and \texttt{ClockA2F_MakeProgress} commands) must be significantly more frequently generates
+than honest party input or corrupt party input in order to ensure that the protocol has a high change of making progress.
+
+
+
+
+
 \subsection{Discovering Safety Bugs in Protocols}
 We examine fuzz testing by implementing some classical and a moden byzantine agreement protocol and injecting faults into them.
 Most injected bugs arise from misplaces thresholds for parties to take some action.

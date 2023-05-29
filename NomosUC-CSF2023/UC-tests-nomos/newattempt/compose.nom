@@ -27,7 +27,7 @@ proc sim_compose_init[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
 	#spi_to_f <- channel_init[K1][a2f2] <- ;
 	#spi_to_srho <- wrap_sim[K1][pi2f,a2f2] <- ;
   #p_to_spi <- channel_init[K1[f2pi,
- 	#srho_to_spi <- channl_init[K1][f2pi,f22a] <- ; 
+ 	#srho_to_spi <- channel_init[K1][f2pi,f22a] <- ; 
 	#p_to_spi <- channel_init[K1][
 }
 

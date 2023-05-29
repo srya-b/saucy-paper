@@ -4,7 +4,7 @@ binary session types.
 We will introduce this calculus in two phases.
 In this section, we discuss the base system of session types, whereas the next section
 will introduce the import annotations.
-We note that some of the base system rules carry over from existing work by Das et al.~\cite{rast}, and we add to them new features like the write token and import token typing rules in the following section. 
+We note that some of the base system rules carry over from existing work by Das et al.~\cite{Das20FSCD}, and we add to them new features like the write token and import token typing rules in the following section. 
 Session types are derived from a Curry-Howard interpretation of intuitionistic linear logic~\cite{girard1987linear}.
 Under this correspondence, a process term $P$ is assigned the following typing judgment
 \[
@@ -15,10 +15,10 @@ of session type $C$ along channel $z$, \emph{using} the services of session
 types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$ respectively.
 For a \emph{well-formed} judgment, all channel names need to be distinct.
 The linear antecedents are often abbreviated to $\D$.
-The \Fcom process from Figure~\ref{fig:fcomideal} offers an unused channel, but communicates
-only over its linear antecedents: the channels to the sender and receiver. 
-In general througout this work we don't use the offered channels of processes 
-aside from the \emph{providerless channels} which we disuss in detail later in this
+The sender and receiver channels are the antecedents of \Fcom in Figure~\ref{fig:fcomideal}(b) 
+and its offered channel \inline{fc} unused.
+In general throughout this work we don't use the offered channels of processes 
+aside from the \emph{providerless channels} which we discuss in detail later in this
 section. 
 
 The NomosUC judgment has some additional components
@@ -36,7 +36,7 @@ $\Psi$ represents the functional data structures and $\D$ collects the
 session-typed channels along with an optional \emph{write token} $\wt$
 (to resolve non-determinism in the semantics) used by the process.
 Intuitively, the sender must possess the write token before it can 
-send a commitment to \Fcom. The token is tranferred to \Fcom which then 
+send a commitment to \Fcom. The token is transferred to \Fcom which then 
 gives it to the receiver along with the \m{Commit} message.
 %Intuitively, the process sending a message \emph{must possess} the write
 %token which is then transferred to the receiver along with the message.
@@ -100,9 +100,9 @@ execution.
 
 \paragraph{Message Ordering}
 Communication in NomosUC is asynchronous, and the process $P$ sends a message $l$
-aling $c$ and continues as a $P$ substituting $c$ for a new channel $c'$. Creating a new
+along $c$ and continues as $P$ substituting $c$ for a new channel $c'$. Creating a new
 channel $c'$ ensures that messages arrive in order. 
-Naturally, a message send doesn't consume work but, as we'll see later, can 
+Naturally, a message send doesn't consume work ($q,q'$) but, as we'll see later, can 
 transfer import between processes. 
 %Operationally, since communication is asynchronous, the process
 %$(\esendl{c}{l} \semi P)$ sends a message $l$
@@ -159,7 +159,7 @@ when sending the label $\m{Committed}$ to the receiver.
 %   {\B{k \semi \Tokens \semi \Psi} \semi \D, (x : A_k) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
 % \end{mathpar}
 Dual to internal choice, the client \Fcom contains the write token which is
-sent to the chanel provider, the receiver in this case, along with the label.
+sent to the channel provider, the receiver in this case, along with the label.
 The typing and semantics rules for external choice are just the inverse of internal choice,
 and presented in Appendix~\ref{app:typing_rules}.
 
@@ -247,9 +247,9 @@ where the client of a channel is the parent, while the provider is the child.
 These endpoints are fixed, i.e., a process cannot transition from being a client of
 a channel to its provider, or vice-versa.
 This means that even simple configurations in UC can't be realized directly with session types.
-For example, imagine a simple UC executin with an environment \Z, two parties $P_1$ and $P_2$, and some ideal functionality \F.
-Normally, we would like a channel between \Z and each of $P_1$/$P_2$, and a channel between \F and each of $P_1$/$P_2$. 
-If we rely purely on offered linear channels, one of the four connections we want can not exist. as it would require one provided channel to have two clients. 
+For example, imagine a simple UC executing with an environment \Z, two parties $P_1$ and $P_2$, and some ideal functionality \F.
+We would expect a channel between \Z and each of $P_1$/$P_2$, and a channel between \F and each of $P_1$/$P_2$. 
+If we rely purely on offered linear channels, one of the four connections we want can not exist, as it would require one provided channel to have two clients. 
 
 %Unfortunately, this places a strong restriction on the expressiveness of the language and precludes practical
 %programming scenarios where a cyclic topology is required.
@@ -309,12 +309,12 @@ $\m{comm[\tau]\{n\}} = \up \echoice{$\=$ \textcolor{red}{\getpot^n} \mb{push}: \
 
 The communicator type uses the type constructions $\up$ and $\down$ to indicate that 
 access to the channel must be \emph{acquired} and eventually \emph{released}, respectively.
-The acquire-release paradigm, along with the wirte token, is necessary for shared session types to prevent non-determinism 
-Communicators are written to be a sender that acquires the channel and $\mb{push}$es a functionally 
+The acquire-release paradigm, along with the write token, is necessary for shared session types to prevent non-determinism.
+Communicators are written to by a sender that acquires the channel and $\mb{push}$es a functionally 
 typed message along with some amount of import indicated as a parameter. A receiver acquires the 
 channels and asks the communicator for new messages with $\mb{poll}$ if there is a message it is returned with some import
 otherwise the channels takes the $\mb{no}$ branch.
-We peovide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
+We provide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
 
 %The communicator type relies on shared type constructors $\up$ and $\down$.
 %The type initiates with an $\up$ indicating that the communicator channel must be \emph{acquired} to interact with it.
@@ -385,11 +385,11 @@ We peovide the full typing rule of shared session types in Appendix~\ref{app:typ
 A major constraint of communicators is that the $\tau$ parameter in their type is a functional type
 and not a session type. This means that even if we can realize cyclic topologies, we lose the protocol and message ordering
 that session types give us. 
-For exampe, in place of channels typed with \m{receiver} or \m{sender} from the commitment example communicator channels would be typed \m{comm}[\m{sender2f}] where 
-\inline{type sender2f = Commit of Bit | Open}
+For example, in place of channels typed with \m{receiver} or \m{sender} from the commitment example, communicator channels would be typed \m{comm}[\m{sender2f}], where 
+\inline{type  sender2f = Commit of Bit | Open},
 resembling a typical functional data type.
 It's obvious here that the ordering of messages that \m{sender} provided is lost with the communicator.
-We overcome this constraint by abstracting channels in NomosUC into higher-level consructs called \emph{providerless channels}.
+We overcome this constraint by abstracting channels in NomosUC into higher-level constructs called \emph{providerless channels}.
 First, we wrap processes in shell code that creates dummy intermediaries ($a_Q$ and $a_P$ in Figure~\ref{fig:newpandq}) which
 create channels with the desired session type (for example \m{sender} in the case of \Fcom). The shell processes, however, still communicate through communicators without ordering. 
 The shell code relies on processes $a_P$ and $a_Q$ (and $b_Q$ and $b_P$) to convert messages from the session types to 
@@ -437,7 +437,7 @@ We call this intermediate sub-configuration as \emph{communicator wrapper} (box 
 	\begin{subfigure}{0.5\textwidth}
 	\begin{center}
 	\includegraphics[scale=0.5]{figures/p_and_q.pdf}
-	\caption{Goal: $P$, $Q$ connected by channels labelled with their types.}
+	\caption{Goal: $P$, $Q$ connected by channels labeled with their types.}
 	\label{fig:pandq}
 	\end{center}
 	\vspace{0.1em}
@@ -446,7 +446,7 @@ We call this intermediate sub-configuration as \emph{communicator wrapper} (box 
 	\begin{center}
 	\includegraphics[scale=0.4]{figures/newPandQ.pdf}
 	\caption{Internal implementation of channels using communication\\wrapper
-	with channels labelled with their session types.}
+	with channels labeled with their session types.}
 	\label{fig:newpandq}
 	\end{center}
 	\end{subfigure}
