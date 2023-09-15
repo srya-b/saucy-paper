@@ -13,6 +13,7 @@
 \usepackage[shortlabels]{enumitem}
 \usepackage{xspace}
 \usepackage{listings}
+\usepackage{fontenc}
 
 
 %% PL packages
@@ -46,8 +47,9 @@
   % firstnumber=1000,                % start line enumeration with line 1000
   % frame=tb,                        % adds a frame around the code
   % keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
-  keywordstyle=\color{darkblue},     % keyword style
+  keywordstyle=\color{blue},     % keyword style
   language=Haskell,                  % the language of the code
+  morekeywords={ forMseq_, generate, forAllM, fork, forever }
   %morekeywords={ Set, Tree, Leaf, Node, Applicative, fmap, liftA2, bimap, foldMap
   %             , traverse, mappend, pure, Foldable, Traversable, zero, one
   %             , Semiring, Semigroup, NonEmpty, sconcat, TSet,
@@ -119,17 +121,17 @@ In this work we aim to further bridge the gap between UC theory and software imp
 component, formatting, style, styling, insert
 \end{IEEEkeywords}
 
-%\section{Introduction}
-%\input{sections/intro}
-%
-%\section{Related Works}
-%\input{sections/relatedworks}
-%
-%\section{Background} \label{sec:background}
-%\input{sections/background}
-%
-%\section{Computation Models} \label{sec:wrappers}
-%\input{sections/wrappers}
+\section{Introduction}
+\input{sections/intro}
+
+\section{Related Works}
+\input{sections/relatedworks}
+
+\section{Background} \label{sec:background}
+\input{sections/background}
+
+\section{Computation Models} \label{sec:wrappers}
+\input{sections/wrappers}
 
 \section{Haskell Saucy}
 \input{sections/haskell}

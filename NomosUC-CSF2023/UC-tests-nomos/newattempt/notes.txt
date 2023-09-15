@@ -1,3 +1,17 @@
+Section 3
+=========
+no typing rules and noe import
+here we only want to introduce the functionality and explain the process code
+we only do the ideal functionality here an talk about the proram constructs
+-- makes sense that it's only communication between processes over channels
+
+Section 4
+=========
+
+
+
+
+
 F_coinflip:
 * on input (fllip) from P_f:
 	- b <-$- {0,1}^1
