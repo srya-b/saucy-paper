@@ -1,3 +1,9 @@
+So far we have introduced a type system and process calculus for writing and checking runtime that conforms to the import mechanism for polynomial runtime.
+In this section, we show that NomosUC can realize any arbitrary ITM configuration, as possible in UC, and that we can easily encode the set of fundamental proofs and lemmas of the framework and a generic composition operator.
+The main challenges we overcome in realizing arbitrary ITM systems is grappling with the parent-child relationship between processes (and the provider-client reationship in channels) that prevents cyclical topologies in the normal case. 
+We introduce a simple construction called \emph{providerless channels} which relies on shared session types and uses our virtual token construction. 
+Second we discuss how the dummy lemma, a composition operator, and the composition theorem can be realized by the introduction of \emph{providerless channels}.
+
 In this section we highlight how \m{execUC} is encoded in NomosUC.
 Recall from Section~\ref{sec:basic} that linear session types impose constraints on what forms of communication can be captured, and pose challenges to supporting 
 a dynamic number of protocol parties, or functionalities, at runtime. 
