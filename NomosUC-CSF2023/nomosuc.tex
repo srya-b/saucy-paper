@@ -148,31 +148,31 @@
 \maketitle
 
 \begin{abstract}
-  Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography
-  and broadly in computer security.
-  However, compared with traditional game-based definitions, UC has been less studied from the viewpoint
-  of programming language semantics and formal methods.
-  This work introduces a novel programming abstraction called \emph{import
-  session types} (IST) to express UC functionalities and protocols.
-  This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
-  for analyzing execution cost of concurrent message-passing systems.
-  Session types are a typed framework for describing bi-directional communication protocols in a distributed system
-  that are statically enforced via type-checking.
-  Rast enhances this framework by adding \emph{potential annotations} to these communication protocols
-  that modularly describe their abstract execution cost.
-  IST establishes a close correspondence between Rast and UC where session types can be used
-  to describe the communication patterns of the Interactive Turing Machines in a UC protocol.
-  Moreover, IST can be used to encode and statically enforce the \emph{import mechanism} in UC used to
-  ensure polynomial-time computation.
-  We therefore combine Nomos, an existing language based on Rast, with ILC, a process-based core calculus for UC,
-  to build a new language called NomosUC.
-  Designing NomosUC required solving a range of technical challenges.
-  While session types are naturally linear and prevent cyclic topologies, UC 
-  allows adversaries the freedom to adaptively steer the communication.
-  Also, since UC makes use of sandbox execution and other generic composition operations,
-  reconciling UC \emph{import} with Rast \emph{potential} required introducing a hierarchy of virtual tokens.
-  To validate our design, we work through the standard theory of UC composition operators, and complete
-  a UC proof of security for the cryptographic commitment. 
+Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography
+and broadly in computer security.
+However, compared with traditional game-based definitions, UC has been less studied from the viewpoint
+of programming language semantics and formal methods.
+This work introduces a novel programming abstraction called \emph{import
+session types} (IST) to express UC functionalities and protocols.
+This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
+for analyzing execution cost of concurrent message-passing systems.
+Session types are a typed framework for describing bi-directional communication protocols in a distributed system
+that are statically enforced via type-checking.
+Rast enhances this framework by adding \emph{potential annotations} to these communication protocols
+that modularly describe their abstract execution cost.
+IST establishes a close correspondence between Rast and UC where session types can be used
+to describe the communication patterns of the Interactive Turing Machines in a UC protocol.
+Moreover, IST can be used to encode and statically enforce the \emph{import mechanism} in UC used to
+ensure polynomial-time computation.
+We therefore combine Nomos, an existing language based on Rast, with ILC, a process-based core calculus for UC,
+to build a new language called NomosUC.
+Designing NomosUC required solving a range of technical challenges.
+While session types are naturally linear and prevent cyclic topologies, UC 
+allows adversaries the freedom to adaptively steer the communication.
+Also, since UC makes use of sandbox execution and other generic composition operations,
+reconciling UC \emph{import} with Rast \emph{potential} required introducing a hierarchy of virtual tokens.
+To validate our design, we work through the standard theory of UC composition operators, and complete
+a UC proof of security for the cryptographic commitment. 
 \end{abstract}
 
 
