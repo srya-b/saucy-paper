@@ -37,6 +37,28 @@ typed message along with some amount of import indicated as a parameter. A recei
 channels and asks the communicator for new messages with $\mb{poll}$ if there is a message it is returned with some import
 otherwise the channels takes the $\mb{no}$ branch.
 We provide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
+\begin{figure}
+	\begin{subfigure}{0.5\textwidth}
+	\begin{center}
+	\includegraphics[scale=0.5]{figures/p_and_q.pdf}
+	\caption{Goal: $P$, $Q$ connected by channels labeled with their types.}
+	\label{fig:pandq}
+	\end{center}
+	\vspace{0.1em}
+	\end{subfigure}
+	\begin{subfigure}{0.5\textwidth}
+	\begin{center}
+	\includegraphics[scale=0.4]{figures/newPandQ.pdf}
+	\caption{Internal implementation of channels using communication\\wrapper
+	with channels labeled with their session types.}
+	\label{fig:newpandq}
+	\end{center}
+	\end{subfigure}
+	\caption{Two ITM configurations. One possible with ITMs (top) and one realized in NomosUC (bottom). Arrows indicate direction of messages
+	and labels indicate types.}
+	\vspace{-1em}
+\end{figure}
+
 
 All processing communication through communicators are relgeated to using the same session type. 
 Even if we can realize cylcical topologies, we lose protocol/functionality-specific session types.
@@ -54,6 +76,7 @@ $\m{db}[k][v]$ remains the same and $\tau_\m{db[k][v]} =$ \inline{Store of PID k
 
 Intuitively, this construction lets us show a bisimulation between NomosUC terms and ITMs.
 We conclude in Appendix~\ref{app:itm} that we can realize any NomosUC configuration as a sytem of ITMS and that any ITM system can be realized as a Nomos UC configuration (NomosUC $C' \Leftrightarrow$ ITMs $M'$).
+\todo{maybe we should have a few lines here, or a paragraph, making clear that providereless channels are generated at compile-time given the session types and $\tau$ functional message types by the programmer.}
 
 \paragraph*{\textbf{Dynamic Parties}}
 A major limitation of prior UC formalisms is supporting a subset of UC where only a static number of parties is allowed.
@@ -67,23 +90,26 @@ For example, communication from \partywrapper to \Fdb is mediated by a providerl
 \end{tabbing}
 where $\tau =$ \inline{Store $\tg{ of }$ k v | Get $\tg{ of }$ k} and $n = 1$, and the opposite direction is intuitive. 
 
-Internally, the \partywrapper reads the message, creates a virtual protocol parties if the \m{PID} doesn't already exist, created virtual tokens to send to it, and waits for a message back from the party. 
-It then forwards that, externally, wherever it's intended to go.
-We provide an example of the \partywrapper in Appendix~\ref{app:arbparties} 
+New parties are spawned the first time they're sent a message.
+First the \partywrapper creates providerless channels to communicate with them, and then it passes them as parameters to the new protocol party--all with a virtual token type.
+When a message arrives, the \partywrapper chooses the correct channel from a list, withdraws the necessary virtual tokens, and forwards the message.
+It waits on all of the outgoing channels of that party for a new message and forwards it externally.
+An example of message routing that the \partywrapper does is given in Appendix~\ref{app:arbparties}.
+\todo{if we have space we should put that example here.}
 
-
-In this section we highlight how \m{execUC} is encoded in NomosUC.
-Recall from Section~\ref{sec:basic} that linear session types impose constraints on what forms of communication can be captured, and pose challenges to supporting 
-a dynamic number of protocol parties, or functionalities, at runtime. 
-We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper,
-and validate our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
-These three results allow us to ultimately conclude that NomosUC realizes full UC composition.
+\subsection{The UC Experiment}
+%In this section we highlight how \m{execUC} is encoded in NomosUC.
+%Recall from Section~\ref{sec:basic} that linear session types impose constraints on what forms of communication can be captured, and pose challenges to supporting 
+%a dynamic number of protocol parties, or functionalities, at runtime. 
+%We detail how our encoding realizes dynamic parties through the use of virtual tokens in our \partywrapper,
+%and validate our encoding by realizing a few critical results from the UC literature: the Dummy Lemma, a composition operator, and a multisession operator. 
+%These three results allow us to ultimately conclude that NomosUC realizes full UC composition.
 %We also run through a case of a coin-flip protocol, composed with the cryptographic commitment, in the Appendix. 
 
 % \subsection{The UC Experiment}
 The definition of \m{execUC} is straightforward owing to our mechanism of providerless channels. 
-\m{execUC} is parameterized by at least one virtual token type to allow for sandboxing
-(usually by the adversary or environment) and message type parameters for the protocol in question. 
+\m{execUC} is aways parameterized by at least one virtual token type to allow for sandboxing (specifically for the \partywrapper)
+and message type parameters for the protocol in question. 
 It also takes in a security parameter $k$ and a random bit string $r$ that is used as a source of
 randomness for all future processes.
 \m{execUC} offers the following type:

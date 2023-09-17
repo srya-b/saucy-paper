@@ -433,27 +433,27 @@ We call this intermediate sub-configuration as \emph{communicator wrapper} (box 
 %%The two processes, call them $a$ and $b$, perform two tasks. First $a$ and $b$ offer, say to $P$, the desired session types of \m{PtoQ} and \m{QtoP}.\anote{This is an awkward explanation, more iteration to make it simpler would help}
 %%Second, $a$ and $b$ each communicate with one communicator and convert functionally typed messages received from them to ones that are send along their session typed channels to $P$ (and vice versa).
 %Although the process code for terms $a$ and $b$ differ based on the session type being used, they can be systematically generated as a case switch between functional and session typed messages.
-\begin{figure}
-	\begin{subfigure}{0.5\textwidth}
-	\begin{center}
-	\includegraphics[scale=0.5]{figures/p_and_q.pdf}
-	\caption{Goal: $P$, $Q$ connected by channels labeled with their types.}
-	\label{fig:pandq}
-	\end{center}
-	\vspace{0.1em}
-	\end{subfigure}
-	\begin{subfigure}{0.5\textwidth}
-	\begin{center}
-	\includegraphics[scale=0.4]{figures/newPandQ.pdf}
-	\caption{Internal implementation of channels using communication\\wrapper
-	with channels labeled with their session types.}
-	\label{fig:newpandq}
-	\end{center}
-	\end{subfigure}
-	\caption{Two ITM configurations. One possible with ITMs (top) and one realized in NomosUC (bottom). Arrows indicate direction of messages
-	and labels indicate types.}
-	\vspace{-1em}
-\end{figure}
+%\begin{figure}
+%	\begin{subfigure}{0.5\textwidth}
+%	\begin{center}
+%	\includegraphics[scale=0.5]{figures/p_and_q.pdf}
+%	\caption{Goal: $P$, $Q$ connected by channels labeled with their types.}
+%	\label{fig:pandq}
+%	\end{center}
+%	\vspace{0.1em}
+%	\end{subfigure}
+%	\begin{subfigure}{0.5\textwidth}
+%	\begin{center}
+%	\includegraphics[scale=0.4]{figures/newPandQ.pdf}
+%	\caption{Internal implementation of channels using communication\\wrapper
+%	with channels labeled with their session types.}
+%	\label{fig:newpandq}
+%	\end{center}
+%	\end{subfigure}
+%	\caption{Two ITM configurations. One possible with ITMs (top) and one realized in NomosUC (bottom). Arrows indicate direction of messages
+%	and labels indicate types.}
+%	\vspace{-1em}
+%\end{figure}
 
 % Splitting communication over two channels in this way also imposes constraints on the expressiveness of session types. 
 % An example of the motivating case is a two-way communication channel \Fauth.
