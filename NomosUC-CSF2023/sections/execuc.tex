@@ -4,6 +4,74 @@ The main challenges we overcome in realizing arbitrary ITM systems is grappling 
 We introduce a simple construction called \emph{providerless channels} which relies on shared session types and uses our virtual token construction. 
 Second we discuss how the dummy lemma, a composition operator, and the composition theorem can be realized by the introduction of \emph{providerless channels}.
 
+\subsection{Expressivity}
+The first thing we need to show, to argue that NomosUC can realize the full expressivity of UC. 
+The ITM computational model is extremeley flexible to capture as universal a setting as possible.
+Channels in NomosUC are linear, created by some process known as the provider, and impose a strict parent-child relationship. 
+Unlike the ITM model, this model prohibits cyclical topologies: a process $A$ offers a channel to $C$, which offers a channel to $B$, which offers a channel to $A$ can not be realize by NomosUC.
+
+To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce
+the concept of \emph{providerless channels} using \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
+Communicators act as a buffer between two processes allowing them to exchange messages via the communicator.
+Communicators also break the parent-child relationship by offering a \emph{shared channel that can have multiple clients}
+(unlike linear channels that can have only one client) that is then used by both the sender and receiver processes.
+
+The communicator has the following polymorphic type:
+%\begin{center}
+\vspace{-1mm}
+{\centering
+\parbox{0cm}{
+\begin{tabbing}
+$\m{comm[\tau]\{n\}} = \up \echoice{$\=$ \textcolor{red}{\getpot^n} \mb{push}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
+\>$\textcolor{red}{\getpot^0} \mb{poll}: \ichoice{$\=$\textcolor{red}{\paypot^{n-1}} \mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},$\\
+\>\>$\textcolor{red}{\paypot^0} \mb{no}: \; \down \m{comm[\tau]}}}$
+\end{tabbing}}
+%\end{center}
+\par}
+
+The communicator type uses the type constructions $\up$ and $\down$ to indicate that 
+access to the channel must be \emph{acquired} and eventually \emph{released}, respectively.
+The acquire-release paradigm, along with the write token, is necessary for shared session types to prevent non-determinism.
+Communicators are written to by a sender that acquires the channel and $\mb{push}$es a functionally 
+typed message along with some amount of import indicated as a parameter. A receiver acquires the 
+channels and asks the communicator for new messages with $\mb{poll}$ if there is a message it is returned with some import
+otherwise the channels takes the $\mb{no}$ branch.
+We provide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
+
+All processing communication through communicators are relgeated to using the same session type. 
+Even if we can realize cylcical topologies, we lose protocol/functionality-specific session types.
+Providerless channels connecting some processes $P$ and $Q$ consist of shared channels and dummy processes that speak to $P$ (and $Q$) with the session type they expect and send messages to the communicator. 
+In Figure~\ref{fig:newpandq} we show an illustration of a providerless channel between the two processes. 
+Here, the processes intend to communicate through two unidiretional channels (a cycle) with the session types \m{PtoQ} and \m{QtoP}.
+The dummy processes $a_P$ and $a_Q$ offer the channels to $P$ with the session requisite session types.
+On message from $P$, $a_P$ case matches on the label in the session type and sends a functionally typed message of type $\tau_\m{PtoQ}$ to the communicator. 
+Similarly, when $a_Q$ receives a message from the communicator, it case matches on the message in the buffered message and sends the corresponding label on the linear channel, with type \m{PtoQ}, to $Q$. 
+The dummy processes consist only of case matches and, therefore, given some mapping between the labels of \m{PtoQ} and $\tau_\m{PtoQ}$, $a_P$ is trivially generated. 
+
+The advantage of this construction is that it is simple, the dummy processes are trivial, the type system can enforce message ordering (as well as the $\paypot{R}$ and $\getpot{R}$ type constructors), and a system of processes can be arbitrarily connected. 
+For example, if \Fdb from the previous section is connected to a party with a providerless channel, 
+$\m{db}[k][v]$ remains the same and $\tau_\m{db[k][v]} =$ \inline{Store of PID k v |} \inline{OK of PID |} \inline{Get of PID k |} \inline{Yes of v | No}. 
+
+Intuitively, this construction lets us show a bisimulation between NomosUC terms and ITMs.
+We conclude in Appendix~\ref{app:itm} that we can realize any NomosUC configuration as a sytem of ITMS and that any ITM system can be realized as a Nomos UC configuration (NomosUC $C' \Leftrightarrow$ ITMs $M'$).
+
+\paragraph*{\textbf{Dynamic Parties}}
+A major limitation of prior UC formalisms is supporting a subset of UC where only a static number of parties is allowed.
+Providerless channels and sandboxing allow NomosUC to support dynamic party creation, at runtime, by \Z and \A.
+Rather than create new linear channels on the fly and connect new parties to \Z and \A, we create a \emph{party wrapper}: a single endpoint that communicates with \Z, \A and the functionality and manages the creation and communication or protocol parties.
+We reuse the labelling from Figure~\ref{fig:newpandq}.
+The \partywrapper communicates with generic session types where messages are multiplexed by \m{PID}.
+For example, communication from \partywrapper to \Fdb is mediated by a providerless channel where the session type is
+\begin{tabbing}
+	$\mi{type} \; \m{P2F[\tau]\{n\}} = \ichoice{\textcolor{red}{\paypot{n}} \; \mb{p2f}: \m{PID} \arrow \m{\tau} \arrow \m{P2F[\tau]\{n\}}}$
+\end{tabbing}
+where $\tau =$ \inline{Store $\tg{ of }$ k v | Get $\tg{ of }$ k} and $n = 1$, and the opposite direction is intuitive. 
+
+Internally, the \partywrapper reads the message, creates a virtual protocol parties if the \m{PID} doesn't already exist, created virtual tokens to send to it, and waits for a message back from the party. 
+It then forwards that, externally, wherever it's intended to go.
+We provide an example of the \partywrapper in Appendix~\ref{app:arbparties} 
+
+
 In this section we highlight how \m{execUC} is encoded in NomosUC.
 Recall from Section~\ref{sec:basic} that linear session types impose constraints on what forms of communication can be captured, and pose challenges to supporting 
 a dynamic number of protocol parties, or functionalities, at runtime. 
