@@ -1,0 +1,42 @@
+The usual structure of modelling asynchronous communication is thorugh adversarial
+delay of messages between parties. This commonly takes the form of the functinality
+passing control to the adversary and waiting for it to deliver the message, like the
+simple \Fchan functionality in Figure~\ref{fig:fchanadv}, or a functionality that 
+maintains counters for adverasrial delay and requires parties to repeatedly query for
+new messages like the \Fchan varianed in \ref{fig:fchanpoll}. 
+
+The former approach gives the adversary too much power in the execution. A naive adversary
+can take control from \Fchan, never do anything else, and make it impossible to provide
+a termination guarantee for a protocol in ths model. The latter approach requires protocols
+to written to handle the specifics of the communication model, such as polling and waiting
+for message retrieval. From a programming point of view it complicates environments
+with repeated inputs to honest parties, and from a theoretical point of view it clouds 
+protocol specifications with unecessary model-specific code. We see this in the example in
+Figure~\ref{fig:protpoll}. 
+
+Asynchronous communcation in UC aims to achieve \emph{eventual delivery} guarantees by 
+using a polynomial time notion to conclude an adversary can only impose polynomial delay and 
+thus messages are deliever \emph{eventually}. In the first model described above an adversary
+that does nothing when handed control decidedly make it impossible for the protocol to
+terminate. Similarly, the second model of delay counting and polling relies on an outdated
+polynomial time notion that is known to have issues enabling non-polynomial behavior 
+from a system of ITMs~\ref{uc}. 
+
+In this section, we introduce a new method of capturing comuniation and \emph{computation} 
+models in UC. Our method uses wrappers to encode all model-specific behavior, uses keywords
+in both sofware and on-paper that compile to and abstract away the model, and we use
+the import mechanism to achieve polynomial guarantees like eventual delivery. We point 
+out that the abstraction presented here implements adversarially delayed computation
+rather than just communication, and it can be used to abstract arbitrarily complicated
+computation models like multi-party computation \todo{throwing that in there because it's cool}. 
+
+\subsection{Asynchronous Computation}
+The asynchronous wrapper acts as a shell process $\msf{SH}(.)$ around some existing ITM $M$. 
+It maintains a queue of \emph{shceduled} code blocks that $M$ can add to, and it extends an 
+interace to \A to query the state of the queue, delay the execution 
+
+
+It accepts messages from $M$ to schedule the adversarially delayed computation, and it extends
+an interface to \A that allows it to delay code blocks, query the state of adversarial delay,
+and deliver computation at will. 
+

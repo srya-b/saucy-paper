@@ -1,13 +1,17 @@
-stype sender[a] = +{ commit: Bit * scommitted[a],
-									   sendmsg: a * sender[a]  }
-stype scommitted[a] = +{ open: sopened,
-											   sendmsg: a * scommitter[a] }
+stype sender[a] = +{ |{2}> commit: Bit * scommitted[a]{n},
+							       |{1}> sendmsg: a * sender[a]{n}  }
+stype scommitted[a] = +{ |{1}> open: sopened,
+									       |{1}> sendmsg: a * scommitter[a]{n} }
 stype sopened = 1 
 
-stype receiver[a] = &{ commit: rcommitted[a],
-											 sendmsg[a]: a * receiver[a] }
-stype rcommitted[a] = &{ open: Bit x ropened,
-											sendmsg[a]: a * rcommitted[a] }
+stype senderf2p[a] = &{ <{1}| recvmsg: a -> senderf2p[a] }
+
+stype receiverp2f[a] = +{ |{1}> sendmsg: a * receiverp2f[a] }
+
+stype receiver[a] = &{ <{0}| commit: rcommitted[a],
+								   	   <{1}| recvmsg[a]: a * receiver[a] }
+stype rcommitted[a]= &{ <{0}| open: Bit x ropened,
+											  <{1}| recvmsg[a]: a * rcommitted[a] }
 stype ropened = 1 
 
 -- comm plus a channel 
@@ -25,30 +29,86 @@ stype receivedf2p[a] = &{ opened: Bit -> donep2f[a],
 
 stype donep2f[a] = +{ sendmsg: a * donep2f[a] }
 
+stype adv[a] = +{ getleak: &{ yes: a -> adv[a],
+															no: adv[a] }}
 
-
-
+(* TODO add message send to this
+   and commit to random not just a bit *)
+(* genericize serialization *) 
 type comp2f = Commit of Bit | Open ;
 type comf2p = Commit | Open of Bit ;
 
 proc F_com[K][a] :
 	(k: Int), (rng: [Bit]), (sid: session[1]),
-	($S: sender[a]), ($R: receiver[a]), ($A: 1)  |- ($ch: 1) =
+	($S: sender[a]), ($Sf2p: senderf2p[a]),
+	($Rp2f: receiverp2f[a]),($R: receiver[a]), ($A: adv[a]),
+	(leakbuf: a)  |- ($ch: 1) =
 {
-	case $S (
-		commit => b = recv $S ;
-							get $S {0} ;
-							$R.commit ;
-							case $S (
-								open =>	$R.open ;
-												send $R b ;
-							)
-		sendmsg => m = recv $S ;
-							 get $S {1} ;
-							 $R.
+	case $S, $Rp2f, $A (
+		commit,*,* => b = recv $S ;
+							  get $S {2} ;
+							  $R.commit ;
+							  case $S (
+							  	open =>	$R.open ;
+							  					send $R b ;
+							  )
+								$ch <- F_com_committed[K][a] <- (* args *) None b
+		sendmsg,*,* => m = recv $S ;
+							   get $S {1} ;
+							   $R.recvmsg ;
+							   pay {1} K $R ;
+							   send $R m ;
+								 $ch <- F_com[K][a] <- (* args *) m ;
+		*,sendmsg,* => m = recv $R ;
+								 get $R {1} ;
+								 $Sf2p.recvmsg ;
+								 pay {1} K $Sf2p ;
+								 send $Sf2p m ;
+		*,*,getleak =>
+			if leakbuf then
+				$A.yes ; send $A leakbuf ;
+				$ch <- F_com[K][a] <- (* args *) None
+			else 
+				$A.no ;
+				$ch <- F_com[K][a] <- (* args *) leakbuf
+			end
 	)
-	
 }
+
+proc F_com_committed[K][a] :
+	(k: Int), (rng: [Bit]), (sid: session[1]),
+	($S: sender[a]), ($Sf2p: senderf2p[a]),
+	($Rp2f: receiverp2f[a]),($R: receiver[a]), ($A: adv[a]),
+	(leakbuf: a), (b: Bit)  |- ($ch: 1) =
+{
+	case $S, $Rp2f, $A (
+		open,*,* => get $S K {0} ;
+							  $R.open ;
+								send $R b ;
+							  ()
+		sendmsg,*,* => m = recv $S ;
+							     get $S {1} ;
+							     $R.recvmsg ;
+							     pay {1} K $R ;
+							     send $R m ;
+								   $ch <- F_com[K][a] <- (* args *) m ;
+		*,sendmsg,* => m = recv $R ;
+								   get $R {1} ;
+								   $Sf2p.recvmsg ;
+								   pay {1} K $Sf2p ;
+								   send $Sf2p m ;
+		*,*,getleak =>
+			if leakbuf then
+				$A.yes ; send $A leakbuf ;
+				$ch <- F_com[K][a] <- (* args *) None
+			else 
+				$A.no ;
+				$ch <- F_com[K][a] <- (* args *) leakbuf
+			end
+	)
+
+}
+	
 
 proc func_f2p_r1[K][f2p][p2f]:
 	(#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: sender) =

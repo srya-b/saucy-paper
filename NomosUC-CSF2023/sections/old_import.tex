@@ -1,0 +1,305 @@
+\section{Real One}
+A major contribution of NomosUC is its ability to ensure resource-bounded computation
+as dictated by UC guidelines.
+To this end, we introduce a static notion of \emph{import tokens} that provide a static upper
+bound on the execution cost of NomosUC programs.
+We use the exampe of a simple database functionality to explain and motivate the key design decisions around import in NomosUC.
+
+The database functionality \Fdb (below) maintains a simple list with two calls from parites: \msf{add} which appends an item to the list and \msf{get} which returns the whole list. 
+\begin{bbox}[title={Functionality $\F_{\msf{db}}$}]
+
+Initialize list $l := []$
+
+\OnInput \inmsg{add}{$x$} form $P_i$:
+    \begin{ritemize}
+        \item Append $x$ to $\ell$
+        \item \Send $ok \rightarrow P_i$
+    \end{ritemize}
+
+\OnInput \inmsg{get}from $P_i$:
+    \begin{ritemize}
+        \item \Send $\ell \rightarrow P_i$
+    \end{ritemize}
+\end{bbox}
+
+The session type can be intuitively defines follows.
+\begin{tabbing}
+    $\mi{type} \; \m{db[k][v]} = \ichoice{$\=$\textcolor{red}{\paypot{1}}$\=$ \; \mb{add}:\m{PID} \arrow \m{k} \arrow$ \\
+    \>\>$\echoice{ \mb{OK}: \m{PID} \arrow \m{db[k][v]}},$ \\
+    \>$\textcolor{red}{\paypot{1}}$\=$ \; \mb{get}: \m{PID} \arrow \m{k} \arrow$ \\
+    \>\>$\echoice{$\=$\mb{yes}: \m{v} \arrow \m{db[k][v]},$ \\
+    \>\>\>$\mb{no}: \m{db[k][v]}}}$
+\end{tabbing}
+The annotations of $\paypot{n}$ and $\getpot{n}$ define how much import is sent or received, respectively, between the two processes. The precise typing rules for the annotations is given later in the section. 
+Formally, two new type constructors are introduced for sending import (we elide details on the types $\K$ of tokens $r$ for now):
+\begin{center}
+\begin{minipage}{0cm}
+\begin{tabbing}
+$A ::= \ldots \mid \tpaypot{A}{r : \K} \mid \tgetpot{A}{r : \K}$
+\end{tabbing}
+\end{minipage}
+\end{center}
+As expected, operations over a dynamic list are non-constant and therefore require some positive maount of import to compute over.
+The code for communication over a channel adds only a new command to \msf{pay} import to the receiver, and for the receiver to \msf{get} the import.
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+$\tg{// \$dbchan :: db[k][v]}$
+$\$$dbchan.add 
+$\npay$ $\$$dbchan K {1}  $\tr{(* new instructio *)}$
+$\nsend$ $\$$dbchan key
+$\nsend$ $\$$dbchan val
+\end{lstlisting}
+The \msf{pay} operation above contains an extra unknown parameter \inline{K}. 
+This is the \emph{token type} of the tokens being sent to the process. 
+The provider of $x : \tgetpot{A}{r : \K}$ is required to receive
+$r$ import tokens 
+%of type $\K$ 
+from the client using the construct
+$\eget{x}{r : \K}$. Dually, the client needs to pay this import
+using the construct $\epay{x}{r : \K}$.
+
+%Considering only real tokens a typing rule for the $\getpot$ operator looks as expected
+Below we show the typing rule for the $\getpot$ operator without the use of token types.
+We give the full typing rule later in this section after we introduce token types. 
+\begin{mathpar} \small
+  \infer[\getpot R]
+  {(t, t') \semi \Psi \semi \D \vdash \eget{x}{r} \semi P ::
+  (x : \tgetpot{A}{r})}
+  {(t, t'+r) \semi \Psi \semi \wt, \D \vdash P :: (x : A)}
+\end{mathpar}
+In this rule, process $P$ storing $(t, t')$ import tokens receives $r$ additional tokens adding it to the current token counter, thus the continuation executes with $(t, t'+r)$ tokens. 
+
+In NomosUC, we introduce the concept of token types to distinguish between ``real'' and ``virtual'' import tokens.
+Token types are captured by the token context $\Gamma$ and consists of user-defined types
+\vspace{-0.5em}
+\begin{mathpar}
+  \mi{token types\;}\;\K_0 \to \K_1 \to ... \to \K_m
+  \vspace{-0.5em}
+\end{mathpar}
+Real tokens, type $\K_0$, are the standard UC tokens that permit all the computation in the system. 
+Unlike, real tokens, virtual tokens are used as a tool in the type system to allow processes \emph{sandboxing} processes (i.e. run them internall) and satisfy the import requiremens of their types.
+Instead of just $(t,t')$ each process has a token context $\Gamma$ which tracks the number of every token type for that process. 
+
+We frist motivate additional tokens types through an example of sandboxxing and then present the relevant typing rules.
+Sandboxing is an important and frequently occurring proof technique. 
+In particular, ``overriding'' the random coin flips for an ITM is useful in rewinding proofs, since the random bits used by the sandboxed process can be recorded and replayed.
+Consider a UC experiment with \Fdb and the dummy adversary in the real world. 
+Naturally, the dummy adversary does nothing but forward whatever messages and import it receives to \Fdb. 
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+$\nget$ K {x} $\$$z2a 
+m $\leftarrow$ $\nrecv$ $\$$z2a
+$\$$a2f.msg ; $\nsend$ $\$$a2f m
+$\npay$ K {x} $\$$a2f
+\end{lstlisting}
+
+The simulator \Sim receives the identical messages and import for any given \Z, and it runs a copy of \Fdb in order to simulate the real world, internally.
+\Sim needs to give \Fdb the same import it's given by \DA in the real world to ensure the same outputs. 
+According to the $\paypot$ rule above, \Sim ends up with tokens $(t, t') = (\_, 0)$. Regardless of the polynomial used to judge computation, this ensures \Sim can only perform a constant amount of work.
+Such a limitation on \Sim is unreasonable. We want that a sandboxed process uses \emph{the same} computation resources awarded to \S rather than using \emph{all} of it by consuming real import.
+Therefore we allow \Sim to create ``virtual'' import tokens to give to \Fdb and ensure the new tokens are bounded, polynomially, by the ``real'' import tokens \S posseses. 
+
+\paragraph{The Token Context $\Gamma$}
+The token context of a process, $\Gamma$, maintains the number of each token types stored in it. 
+Instead of $(t,t')$ as in the $\getpot$ rule above, $\Gamma$ is a set of $\gamma_i = (t_i, t_i') \in \Gamma$ to express the total and current number of each token type. 
+The total $t_i$ is the total import created of that type and the current $t_i'$ are those currently owned by the process, so whenever tokens are exchanged they only affect $t_i'$ and not $t_i$.
+We define a side condition for a process to be well-typed, and it is that its token context must always be valid \emph{w.r.t the security parameter $k$}.
+To this end we define a globally known polynomial $\GlobalF : (\msf{nat}, \msf{nat}) \rightarrow \msf{nat}$ as bound between two successive token types. UC requires this function to be \emph{super additive}, i.e. $\GlobalF(x+y,k) \geq \GlobalF(x,k) + \GlobalF(y,k)$.
+The polynomial constrains the created tokens $t_{i+1} \leq \GlobalF(t_i, k)$.
+We express this condition with the following inductive rules.
+\begin{mathpar}
+  \infer
+  {\K_0 \hookrightarrow (t_0, t_0') \;\; \m{valid}(k)}
+  {}
+  \and
+  \infer
+  {\Tokens, \K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}')\;\; \m{valid}(k)}
+  {\Tokens\;\; \m{valid}(k) \and
+  \K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and
+  t_{i+1} \leq \GlobalF(t_i',k)}
+\end{mathpar}
+We mandate that this condition is satisfied by all the process typing rules presented in this paper.
+
+\paragraph{Creating Virtual Tokens}
+The first typing rule that affects the token context creates new virtual tokens.
+We call this construct $\m{withdrawToken} \; K_i \; n \; K_{i+1}$.
+\begin{mathpar} \small
+  \inferrule*[right=$\m{tok}$]
+  {\textcolor{blue}{\Tokens, \K_{i+1} \hookrightarrow} (t_{\textcolor{blue}{i+1}} + n, t_{\textcolor{blue}{i+1}}' + n) \semi
+  \Psi \semi\wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
+  {\textcolor{blue}{\Tokens, \K_{i+1} \hookrightarrow} (t_{\textcolor{blue}{i+1}}, t_{\textcolor{blue}{i+1}}') \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} \hspace{4em} \\
+    \hspace{5em}\m{withdrawToken} \; \K_i \; n\; \K_{i+1}  \semi P :: (x : A)}
+% \vspace{-0.5em}
+\end{mathpar}
+We highlight the changes in the process definitions in \m{withdrawTokens}, from the simplified $\getpot \; R$ rule, in blue.
+Namely, the process possesses a token context and adds the $n$ newly created virtual tokens to $(t_{i+1}, t_{i+1}')$ of type $K_{i+1}$. 
+Implicitly, all processes have a ``real'' token type that they can't create more of. For \Sim in our above example, it's ``real token type'' is, in fact, the actual real tokens of type $\gamma_0$.
+It is further restricted to creating tokens only one level deeper, i.e. of type $\gamma_1$. This it the token \Fdb receives and considers its ``real token type''. 
+The side condition of token validity ensures that $t_{i+1} + n \leq \GlobalF(t_i, k)$ where $K_i \hookrightarrow (t_i, t_i') \in \Gamma$. 
+
+\paragraph{Exchanging Import Tokens}
+Here we present the full typing rule for $\getpot$ for each side of the channel.
+We highlight in blue the additions when taking token types into account.
+\begin{mathpar} \small
+  \infer[\getpot R]
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i') \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}} \eget{x}{r \textcolor{blue}{: \K_i}} \semi P ::
+  (x : \tgetpot{A}{r \textcolor{blue}{: \K_i}})}
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i'+r) \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
+  %
+  \and
+  %
+  \inferrule*[Right=$\getpot L$]
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r \textcolor{blue}{: \K_i}}) \\\ \entailpot{\B{q}}{\B{q'}} 
+  \epay{x}{r \textcolor{blue}{: \K_i}} \semi P :: (z : C)}
+\end{mathpar}
+In the rule $\getpot R$, process $P$ storing $(t_i, t_i')$ import tokens of type $\K_i$
+receives $r$ additional $\K_i$ tokens adding it to the current token counter, thus
+the continuation executes with $(t_i, t_i'+r)$ tokens of type $\K_i$.
+Note that validity of token context is trivially satisfied in this case since the
+process is gaining import tokens.
+%
+In the dual rule $\getpot L$, a process containing $(t_i, t_i'+r)$ tokens of type $\K_i$
+pays $r$ units along channel $x$ leaving $(t_i, t_i')$ import tokens of type $\K_i$ with
+the continuation.
+In this case, the validity of the token context establishes that $t_{i+1} \leq \GlobalF(t_i',k)$,
+a condition that is necessary for successful typechecking.
+The typing rules for the dual constructor $\tpaypot{A}{r : \K}$
+are the exact inverse and omitted for brevity.
+Similar to prior rules, the sender of the import tokens transfers the write token $\wt$
+along with the import to the receiver.
+
+The corresponding NomosUC process for \Sim, below, is spawned as expected, with a type parameter $K$ as its token type. 
+Every process is given a type parameter that encodes its ``real'' token type. 
+Subsequently, \Sim spawns \Fdb with type parameter \inline{K1} (\Sim's virtual token type).
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+$\nproc$ simulator[K][$\tg{other type params}$]:
+  $\tg{(* simulator params, create channels or Fdb *)}$
+  $\$$dbchan $\leftarrow$ F_db[K1] $\leftarrow$ $\tg{(*Fdb params*)}$
+  $\tg{...}$
+\end{lstlisting}
+When sending a message for \Fdb, \Sim creates the tokens it needs to sastify the type $\m{db}[k][v]$ and then sends the message:
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single]
+$\tg{...}$
+$\nwithdraw$ K 1 K1
+$\$$dbchan.add ; $\npay$ K1 {1}
+$\nsend$ $\$$dbchan key
+$\nsend$ $\$$dbchan val
+$\tg{...}$
+\end{lstlisting}
+In contrast to the previous code snippet showing how tokens are sent to \Fdb, here we only add a new \nwithdraw instruction, making virtualization, and code re-use, simple.
+
+\paragraph*{\textbf{Process Definitions and Sandboxing}}
+Process definitions in NomosUC have the form
+$\Psi \semi \D \vdash f\{t : \K\} :: (x : A) = P$ where $f$
+is the name of the process and $P$ its definition.
+In addition, $\Psi$ and $\D$ denote the functional variables and session-typed channels
+used by $f$ respectively while offering type $A$ on channel $x$.
+In addition, $\K$ is the real token type for $f$ and we need $t$ tokens of type $\K$
+to spawn $f$.
+All definitions are collected in a fixed global process signature $\Sg$.
+Also, since process definitions are mutually recursive, it is required that
+for every process in the signature is well-typed w.r.t. $\Sg$.
+This, in effect, requires us checking that each process definition obeys the type
+specified for it in its signature.
+Formally, for every definition of the form $\Psi \semi \D \vdash f\{t : \K\} :: (x : A) = P$ in $\Sg$,
+we are required to check $\K \hookrightarrow (t, t) \semi \Psi \semi \D \entailpot{0}{0} P :: (x : A)$
+Note that every process initiates with only one token type, i.e., its real token type,
+and hence, its token context is trivially valid.
+A process always starts with no potential, the reasoning for which is explained later.
+
+\todo{the way the code is written doesn't look exactly like this, unclear how to give import at spawn time in Nomos code.}
+\todo{Also below here it's back to the unmodified section from the original section}
+But how is a new process spawned and how is the real token type for a newly spawned
+process determined?
+A new instance of a defined process $f$ can be spawned with
+the expression $\procdef{f\{r : \K\}}{\overline{y}}{x} \semi Q$
+where $\overline{y}$ is a sequence of argument expressions and channels matching the
+antecedents $\Psi$ and $\D$ from the signature $\Sg$, and the real token type for $f$ is $\K$ with quantity $r$.
+Sometimes a process invocation is a \emph{tail call}, written without
+a continuation as $\procdef{f\{r : \K\}}{\overline{y}}{x}$.
+This is a short-hand for
+$\procdef{f\{r : \K\}}{\overline{y}}{x'} \semi \fwd{x}{x'}$ for a
+fresh variable $x'$, that is, a fresh channel is created and
+immediately identified with $x$.
+A process spawn is typed as follows.
+\begin{mathpar}
+\inferrule*[right = $\m{spawn}$]
+  {\Psi_1 \semi \D_1 \vdash f\{r : K\} :: (x : A) = P \in \Sg \and
+  \\\ (\Psi_1 \semi \D_1) = \overline{y} \and
+  \B{\Psi \share (\Psi_1, \Psi_2)} \\
+  \Tokens, K \hookrightarrow (t, t') \semi \Psi_2 \semi \D_2, (x : A) \entailpot{\B{q}}{\B{q'}} Q :: (z : C)}
+  {\Tokens, K \hookrightarrow (t, t'+r) \semi \Psi \semi \D_1, \D_2 \\\ \entailpot{\B{q}}{\B{q'}} \procdef{f\{r : K\}}{\overline{y}}{x} \semi Q ::
+  (z : C)}
+\end{mathpar}
+We first look up the definition of $f$ in the signature $\Sg$
+and match the arguments $\Psi$ and $\D$ with $\overline{y}$.
+Next, we deduct $r$ token units of type $K$ from the current value of $K$
+in the token context.
+Finally, spawning the new process also creates channel $x : A$
+which appears in the context for the typing of the continuation $Q$.
+
+Remarkably, we can use the same syntactic construct for spawning
+processes, whether it is a regular or sandboxed spawn.
+Semantically, they are distinguished based on the token parameter.
+For a regular spawn, the parent process passes in the real token type $\K_0$,
+while for a sandboxed call, a virtual token type $\K_i (i > 0)$ is passed in.
+We have a similar distinction for $\m{pay}$ and $\m{get}$ expressions:
+if a real token is passed into these terms, it's a regular token
+exchange; if a virtual token is passed in, it's a sandboxed $\m{pay}$
+and $\m{get}$.
+
+\paragraph*{\textbf{Potential}}
+The main purpose of introducing import tokens was to bound the execution cost of ITMs.
+But how do we connect import to the execution cost?
+To this end, we introduce the notion of \emph{potential} in NomosUC to establish this connection.
+Potential is an abstract quantity represented by a natural number stored
+within each process.
+To take an execution step, a process consumes \emph{one} unit of potential.
+Therefore, the total potential stored in a process provides an upper bound on the total
+number of execution steps that will ever be taken by the process.
+To obtain a static upper bound, we integrate potential into the process typing judgment.
+The symbol $\entailpot{q}{q'}$ denotes that the process stores $q$ and $q'$ units of
+total and current potential (similar to total and current import).
+
+Finally, the source of potential is the import tokens, completing the connection between
+import and execution cost.
+To this end, we introduce a novel construct $\m{genPot} \; r$ to generate potential
+based on how much import is stored in the process.
+\begin{mathpar}
+  \inferrule*[right=$\m{pot}$]
+  {q+r \leq \GlobalF(t_{m}',k) \and K_{m} \hookrightarrow (t_{m}, t_{m}') \in \Tokens \\\
+  k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q+r}{q'+r} P :: (x : A)}
+  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} \m{genPot} \; r \semi P :: (x : A)}
+\end{mathpar}
+A process initially storing $(q, q')$ potential units generates $r$ potential so that
+the continuation contains $(q+r, q'+r)$ potential units.
+Note, however, that the maximum potential that can be stored in a process is bounded by $\GlobalF(t_{m}',k)$
+where $\GlobalF$ is the connection rate, $m$ is the simulation depth, and $k$ is the security parameter.
+This restricts us from generating an unbounded amount of potential which could have violated the
+polynomial execution cost bound.
+
+The necessity of potential as the main accounting mechanism, rather than just a single linear quantity like import, comes from the motivation of the import mechanism for polynomial time from Canetti~\ref{uc}.
+At a high-level directly letting ITMs determine the number of steps another ITM can take provides information to the calling ITM that it should not have.
+With such a mechanism, imagine two executions (say an ideal and real world) where the environment can control exactly the number of steps the executions are allowed to take. 
+Such a mechanism allows \Z to artificially learn global information that it should not have~\footnote{The example given by Canetti~\cite{UC}: ``For instance, the initial ITI $I$ can start in a rejecting state, and then pass control to another ITI $M$. If $I$ ever gets activated again, it moves to an accepting state. Whether $I$ is activated again depends on the running time of $M$. If it exceeds the computation given to it (known by $I$) then $I$ accepts depending on information that should not be ``legitimately know'' to $I$.}
+
+We assign a cost of 1 per syntactic construct introduced so far.
+But this would cause potential to creep in all our typing rules, essentially deducting $1$ potential unit
+from the process in each rule.
+Instead, we simplify matters by introducing a $\etick{r}$ construct that consumes $r$
+potential from the current stored process potential, as described below.
+\begin{mathpar}
+  \infer[\m{tick}]
+  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'+r} \etick{r} \semi P :: (x : A)}
+  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (x : A)}
+\end{mathpar}
+Note how the process starts with $q'+r$ potential units, and executing $\etick{r}$
+consumes $r$ units leaving $q'$ potential for the continuation.
+
+Semantically, a process executing a $\etick{r}$ operation increments its work counter by $r$.
+\begin{tabbing}
+  $(\m{tick}) : \proc{c}{w, \etick{r} \semi P} \step \proc{c}{w+r, P}$
+\end{tabbing}
+Note that this is the only rule that increments the work counter of a process.
+And since this operation consumes $r$ units of potential, we can infer
+that the total sum of potential and work of a closed set of processes will always be bounded.
+

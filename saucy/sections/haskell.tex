@@ -1,0 +1,74 @@
+\begin{itemize}
+\item communicate over channels without write token semantics (programmer must ensure write after read always or there's a race condition
+\item an ideal functionality example  
+\end{itemize}
+
+In this section we cover how we realize the UC computational model (ITMs), and each of the main ITMs in a UC experiment, in Haskell.
+We do not provide any formal guarantees for what our implementation guarantees or captures, but we validate our approach by defining the canonical theorems and lemmas in UC.
+
+\subsection{Processes as ITMs}
+ITMs in \us are represented as processes with several programming abstractions through a monad typeclass \texttt{MonadITM}.
+The typeclass defines the expected functionality of generating random coin flips (ITMs reading from a random tape), accounting for import tokens, and a security parameter \texttt{?secParam}.
+We defined ITMs through a monad type class so that a well-defined ITM is always parameteric in these fundamental operations:
+\begin{lstlisting}
+type ITM a = (forall m. MonadITM m => ma)
+\end{lstlisting}
+This is a critical to allow an ITM to be ``simulated in a sandbox'', which is a frequently occurring proof technique 
+
+Processes communicate through channels offered by the Haskell library \texttt{Control.Concurrent}.
+The channels allow for asynchronous communication between processes, but do not provide a formal constraint on ITM activation rules.
+In other formal UC definitions, such as ILC or NomosUC, the notion of a \emph{write token} is used to tightly control which process is active and allowed to perform a computation or send a message.
+For example, the Haskell type system allows a process to write a message on two channels without being activated by a \emph{read} in between. 
+Invalid configurations like this reveal themselves at runtime through race conditions that the programmer must be alert to.
+
+
+
+\subsection{Communication Between ITMs}
+ITMS are realized in \us as probabilistic, polynomial time, channel passing processes. 
+The are similar in spirit to ITMs, however rely on channels from the Hasjel \texttt{Control.Concurrent} library as opposed to the tapes used by ITMs. 
+\todo{Make a clear distinction between this and ILC?}
+
+Processes in \us are provided several programming abstractions through the Monad typeclass \texttt{MonadITM}. 
+These abstractions allow for random coin clips (\texttt{?getBit}), import tokens (\texttt{?getTokens}), and a security parameter (\texttt{?secParam}).
+These are all defined as implicit parameters so tha they can be set concretely at runtime. 
+The typeclass \texttt{MonadITM} is parameteric in each of these abstraction, allowing other processes to sandbox any other process and replace them with custom implementations.
+For example, a simulator may want to rewing a proodf replay a particular stream of random bits.
+
+The same design principle extends to typeclasses for functionalities, environments, adversaries, and protocol parties. 
+Critically, this gives access to a set of corrupt parties for only environments, adversaries and ideal functionalities, but, it also allows processes to sandbox them with custom SIDs (which often provide execution parameters such as the IDs of other protocol parties, corruption thresholds for distributed protocols, or even a CRS).
+
+\todo{How much should we explain the monad typeclasses themselves?}
+
+A simple example of an ITM is given in the code listing below. We explicitly give types for clarity.
+The process \texttt{exampleITM} takes in no parameters but spawn a new process that it communicates with through a read cannel \texttt{a} and a wite channel \texttt{b}.
+Throughout \us we distinguish channels are read/write channels rather than allowing two-way communication over them. 
+
+\begin{lstlisting}
+{-- Ping Pong and channel params --}
+doubler i o = do
+  x !\la! readChan i
+  writeChan o (x*2)
+
+exampleITM :: MonadITM m !\Ra! m ()
+exampleITM = do
+  a !\la! (newChan :: Int)
+  b !\la! (newChan :: Int)
+  fork $ doubler a b
+  (writeChan a 15) :: m ()
+  (output :: Int) !\la! readChan b
+  liftIO $ putStrLn $ "Output: " ++ show output
+  return ()
+\end{lstlisting}
+
+\begin{lstlisting}
+type MonadITM m = (HasFork m,
+                   ?getBit :: m Bool,
+                   ?secParam :: Int,
+                   ?getTokens :: m Int,
+                   ?tick :: m ())
+\end{lstlisting}
+
+\paragraph{The Party Wrapper}
+
+\subsection{The Asynchronous Wrapper}
+Our encoding of the asynchronous wrapper has some subtle design decisions that did not arise in our theoretical description in Section

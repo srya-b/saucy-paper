@@ -1,20 +1,87 @@
-proc compose[K,s][z2rho,rho2z][pi2f,f2pi][rho2f,f2rho]{rho2fn,f2rhon}
-	(k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
-	(#z2p: comm[K][z2rho]{z2rhon}), (#p2z: comm[K][rho2z]{rho2zn}), (#p2f: comm[K][pi2f]{pi2fn})
-	(#f2p: comm[K][f2pi]{f2pin}) |- ($ch: 1) =
+proc compose[K,K1,s][z2rho,rho2z][pi2f,f2pi][rho2f,f2rho]{rho2fn,f2rhon}
+  (k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
+  (#z2p: comm[K][z2rho]{z2rhon}), (#p2z: comm[K][rho2z]{rho2zn}), (#p2f: comm[K][pi2f]{pi2fn})
+  (#f2p: comm[K][f2pi]{f2pin}) |- ($ch: 1) =
 {
-	#rho2pi <- channel_init[K][rho2f]{rho2fn} ;
-	#pi2rho <- channel_init[K][f2eho]{f2rhon} ;
+  #rhop2f <- channel_init[K][rho2f]{rho2fn} ;
+  #piz2p <- comp_wrap_z2p[K][rho2f]{rho2fn} <- #rhop2f ;
+  #piz2p <- channel_init[K][rho2f]{rho2fn} ;
+  #rhof2p <- comp_wrap_p2z[K][rho2f]{rho2fm <- #piz2p ;
 
-	<- rho <- k rng sid pid #z2p #p2z #rho2pi #pi2rho ;
-	<- pi <- k rng sid pid #rho2pi #pi2rho #p2f #f2p ; 
+  _ <- gen_wrapper_rho[K1] <- k rng sid pid #z2p #p2z #rho2pi #pi2rho ;
+  _ <- gen_wrapper_pi[K1] <- k rng sid pid #rho2pi #pi2rho #p2f #f2p ; 
 }
 
+(* TODO the init process for sim_comp *)
+proc sim_compose_init[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
+  (k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
+	($z_2_a: z2a[K][pi2f,a2f1]), ($a_2_z: a2z[K][f2pi,f12a]),
+	($p_to_a: p2a[K][f32p]), ($a_to_p: a2p[K][p2f3]),
+	($f_to_a: f2a[K][f32a]), ($a_to_f: a2f[K][a2f3]) |- ($ch: 1) =
+{
+	(* create channels between s_pi and s_rho *)
+	#z_to_spi <- channel_init[K1][pi2f,a2f1] <- ;
+	#spi_to_z <- channel_init[K1][f2pi,f12a] <- ;
+	
+	#spi_to_p <- channel_init[K1][pi2f] <- ;
+	#spi_to_f <- channel_init[K1][a2f2] <- ;
+	#spi_to_srho <- wrap_sim[K1][pi2f,a2f2] <- ;
+  #p_to_spi <- channel_init[K1[f2pi,
+ 	#srho_to_spi <- channel_init[K1][f2pi,f22a] <- ; 
+	#p_to_spi <- channel_init[K1][
+}
+
+proc sim_compose[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
+  (k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
+	($z_2_a: z2a[K][pi2f,a2f1]), ($a_2_z: a2z[K][f2pi,f12a]),
+	($p_to_a: p2a[K][f32p]), ($a_to_p: a2p[K][p2f3]),
+	($f_to_a: f2a[K][f32a]), ($a_to_f: a2f[K][a2f3]),
+   |- ($ch: 1) =
+{
+	match $z_to_a, $p_to_a, $f_to_a (
+		Z2A2P,*,* =>
+		Z2A2F,*,* =>
+	)
+}
+
+proc comp_wrap_z2p[K][a]{n} :
+  (#in2f: comm[K][P2F[a]]) |- (#out2p: comm[K][Z2P[a]]) =
+{
+  #in2f.RECV ;
+  case #in2f (
+    yes => 
+      get {n} #in2f ;
+      P2F(pid, m) = recv #in2f ;
+      #out2p.SEND ;
+      pay {n} #out2p ;
+      send #out2p Z2P(pid, m) ;
+      #out2p <- comp_wrap[K][a]{n} <- #in2f ;
+    no => 
+      #out2p <- comp_wrap[K][a]{n} <- #in2f ;
+  )
+}
+
+proc comp_wrap_p2z[K][a]{n} :
+  (#in2z: comm[K][P2Z[a]]) |- (#out2p: comm[K][F2P[a]]) =
+{
+  #in2z.RECV ;
+  case #in2z (
+    yes => 
+      get {n} #in2z ;
+      P2Z(pid, m) = recv #in2z ;
+      #out2p.SEND ;
+      pay {n} #out2p ;
+      send #out2p F2P(pid, m) ;
+      #out2p <- comp_wrap[K][a]{n} <- #in2z ;
+    no => 
+      #out2p <- comp_wrap[K][a]{n} <- #in2z ;
+  )
+}
 
 -- match #a, #v (
--- 	*,casea1 => foo1
+--  *,casea1 => foo1
 --   *,casea2 => foo2
--- 	caseb1,* => bar1
+--  caseb1,* => bar1
 --  caseb2,* => bar2
 -- )
 -- 
@@ -23,52 +90,53 @@ proc compose[K,s][z2rho,rho2z][pi2f,f2pi][rho2f,f2rho]{rho2fn,f2rhon}
 -- acquire #a ;
 -- #a.RECV ;
 -- case #a (
--- 	yes => m = recv #a ;
--- 				 release #a ;
--- 				 case m (
--- 				   casea1 =>  foo1 ;
--- 					 casea2 => foo2 ;
--- 				 )
--- 	no => release #a 
+--  yes => m = recv #a ;
+--         release #a ;
+--         case m (
+--           casea1 =>  foo1 ;
+--           casea2 => foo2 ;
+--         )
+--  no => release #a 
 -- )
 -- acquire #b ;
 -- #b.RECV ;
 -- case #b (
--- 	yes => m = recv #b ;
--- 				 release #b ;
--- 				 case m (
--- 				   caseb1 => bar1 ;
--- 					 caseb2 => bar2 ;
--- 				 )
+--  yes => m = recv #b ;
+--         release #b ;
+--         case m (
+--           caseb1 => bar1 ;
+--           caseb2 => bar2 ;
+--         )
 --   no => release #b ;
 -- )
 
+
 proc z2a_wrap[K][a] : 
-	(#in2p: comm[K][a]), (#in2f: comm[K][b]), (#out: comm[K][Z2A[a][b]) |- ($ch: 1) =
+  (#in2p: comm[K][a]), (#in2f: comm[K][b]), (#out: comm[K][Z2A[a][b]) |- ($ch: 1) =
 {
-	match #in2p, #in2f (
-		*,A2F(m) => #out.SEND ; send #out Z2A2F(m) ;
-		A2P(pid,m), * => #out.SEND ; send #out Z2A2P(pid, m) ;
+  match #in2p, #in2f (
+    *,A2F(m) => #out.SEND ; send #out Z2A2F(m) ;
+    A2P(pid,m), * => #out.SEND ; send #out Z2A2P(pid, m) ;
   )
   $ch <- z2a_wrap[K][a] <- #in2p #in2f #out 
 }
 
 proc sim_compose[K,K1][...]: 
-	... ($z2a: comm[K][z2a]), ($a2z: comm[K][a2z]), ($a2p: comm[K][a2p]),
-	($p2a: comm[K][p2a]), ($f2a: comm[K][f2a]), ($a2f: comm[K][a2f) |- ($ch: 1) =
+  ... ($z2a: comm[K][z2a]), ($a2z: comm[K][a2z]), ($a2p: comm[K][a2p]),
+  ($p2a: comm[K][p2a]), ($f2a: comm[K][f2a]), ($a2f: comm[K][a2f) |- ($ch: 1) =
 {
-	#z2a' <- channel_init[K1][Z2A[z2piP][z2piF]] ; 
-	#a2z' <- channel_init[K1][A2Z[z2rho]] ;
-	#a2f' <- channel_init[K1][
+  #z2a' <- channel_init[K1][Z2A[z2piP][z2piF]] ; 
+  #a2z' <- channel_init[K1][A2Z[z2rho]] ;
+  #a2f' <- channel_init[K1][
 
-	#pi2pfrho <- channel_init[K1][Z2A[z2rhoP][z2rhoF]] ;
-	#pi2prho <- channel_init[K1][A2P[z2rhoP]] ;
-	#pi2frho <- channel_init[K1][A2F[z2rhoF]] ;
-	
-	#pfrho2pi <- channel_init[K1][A2Z[rhoP2A][rhoF2A]] ;
-	#prho2pi <- channel_init[K1][P2A[rhoP2A]] ;
-	#frho2pi <- channel_init[K1][F2A[rhoF2A]] ;
+  #pi2pfrho <- channel_init[K1][Z2A[z2rhoP][z2rhoF]] ;
+  #pi2prho <- channel_init[K1][A2P[z2rhoP]] ;
+  #pi2frho <- channel_init[K1][A2F[z2rhoF]] ;
+  
+  #pfrho2pi <- channel_init[K1][A2Z[rhoP2A][rhoF2A]] ;
+  #prho2pi <- channel_init[K1][P2A[rhoP2A]] ;
+  #frho2pi <- channel_init[K1][F2A[rhoF2A]] ;
 
-	$ch <- sim_rho <- k rng sid crupt #z2a 	
-	
+  $ch <- sim_rho <- k rng sid crupt #z2a  
+  
 }

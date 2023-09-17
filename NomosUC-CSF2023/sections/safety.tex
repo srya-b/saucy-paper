@@ -164,6 +164,16 @@ inversion to show that in each
 case either $\config$ can take a step or is poised.
 \end{proof}
 
+%\todo{Not sure where to include this discussion on crytographic reductions/hardness}
+%\paragraph{Hardness Assumptions in Cryptography}
+%One of the main tools for reasoning about security in cryptography is reductions. 
+%Proving security usually relies on reducing an adversary that breaks the security of the protocol to one that breaks the security of a primitive that is assumed to be secure. 
+%In many cases, the security is reduced to a problem with no known polynomial time solution such as discrete log or computational Diffe-Hellman (DDH).
+%Although an assumption, the NomosUC model 
+%
+%For Computationsl Diffe-Hellman (CDH), for example, defining such a reduction in NomosUC means first implementing a process that attempts to tries to compute $g^{ab}$ from $g^a$ and $g^b$ for $g \in \mathsf{G}$ where $\mathsf{G}$ is cylic group, and then implementing the poynomial-time reduction itself.
+%The NomosUC type system \todo{finish}
+
 
 %\subsection{UC Communicators} \label{sec:communicators}
 %% all the processes conncted together leads to a cycle of linear channels ==> Z <--> P so here we use a communicator 

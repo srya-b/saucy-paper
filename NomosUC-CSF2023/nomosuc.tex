@@ -67,6 +67,8 @@
 
 %\citestyle{acmauthoryear}
 
+%\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+%    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
 \usetikzlibrary{matrix, arrows.meta, calc, positioning}
@@ -148,31 +150,57 @@
 \maketitle
 
 \begin{abstract}
-Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography
-and broadly in computer security.
-However, compared with traditional game-based definitions, UC has been less studied from the viewpoint
-of programming language semantics and formal methods.
-This work introduces a novel programming abstraction called \emph{import
-session types} (IST) to express UC functionalities and protocols.
-This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
-for analyzing execution cost of concurrent message-passing systems.
-Session types are a typed framework for describing bi-directional communication protocols in a distributed system
-that are statically enforced via type-checking.
-Rast enhances this framework by adding \emph{potential annotations} to these communication protocols
-that modularly describe their abstract execution cost.
-IST establishes a close correspondence between Rast and UC where session types can be used
-to describe the communication patterns of the Interactive Turing Machines in a UC protocol.
-Moreover, IST can be used to encode and statically enforce the \emph{import mechanism} in UC used to
-ensure polynomial-time computation.
-We therefore combine Nomos, an existing language based on Rast, with ILC, a process-based core calculus for UC,
-to build a new language called NomosUC.
-Designing NomosUC required solving a range of technical challenges.
-While session types are naturally linear and prevent cyclic topologies, UC 
-allows adversaries the freedom to adaptively steer the communication.
-Also, since UC makes use of sandbox execution and other generic composition operations,
-reconciling UC \emph{import} with Rast \emph{potential} required introducing a hierarchy of virtual tokens.
-To validate our design, we work through the standard theory of UC composition operators, and complete
-a UC proof of security for the cryptographic commitment. 
+  Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography
+  and broadly in computer security.
+  However, existing works that study UC from the viewpoint of programming language semantics and formal methods fall 
+  short in a few critical ways: namely, capturing an adequate polynomial time notion to express UC in its entirety.
+  Prior works provide either limited notions of runtime constraints or capture constrained variants of UC.
+  This work introduces a novel programming abstraction called \emph{import
+  session types} (IST) to express UC functionalities and protocols.
+  This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
+  for analyzing execution cost of concurrent message-passing systems.
+  Sesson types allow for describing bi-directional communication protocols in distributed systems and, Rast extends
+  that to statically checking and enforcing linear runtime constraints. 
+  Cryptographic security and UC proofs rely on probabilistic polynomial time (PPT) machines, and we use 
+  IST to push the envelop from prior work to capture the \emph{import mechanism} for polynomial time,
+  introduced by Canetti et al.~\cite{canettiUC}, to ensure polynomial-time computation.
+
+  We borrow from existing languages based on Rast, Nomos, and ILC, a process-based core calculus for UC,
+  to build a new language called NomosUC. Designing NomosUC to capture the full expressiveness of UC 
+  required solving a range of technical challenges. Notably, we overcome communication limitations imposed 
+  by linearity in session types and define a novel \emph{virtual token hierarchy} for expressing runtime. Unlike 
+  prior works, however, we do provide program logic for proving security or proof generation.
+
+  We validate our approach by running through the standard UC composition theorems, a complete specification
+  of a proof of UC security for a cryptographic commitment, and a zero-knowledge protocol composed with the commitment
+  in the appendix.
+  %and in doing so we can use IST to provide strong
+  %static polynomial time guarantees for the generic UC setting rather than limited notions of polynomial 
+  %time or constrained versions of UC that prior work realize. Namely, we define a redursive import token
+  %definition called the virtual token heirarchy and generic composition operators to reconcile IST with
+  %Rast.
+  %Unlike prior work, however, we do not provide
+  %program logic for proving security or generating proofs of security. We see import session types as a 
+  %valuable tool for realizing UC definitions and aiding paper and pencil proofs of UC security.
+  
+
+  %Session types are a typed framework for describing bi-directional communication protocols in a distributed system
+  %that are statically enforced via type-checking.
+  %Rast enhances this framework by adding \emph{potential annotations} to these communication protocols
+  %that modularly describe their abstract execution cost.
+  %IST establishes a close correspondence between Rast and UC where session types can be used
+  %to describe the communication patterns of the Interactive Turing Machines in a UC protocol.
+  %Moreover, IST can be used to encode and statically enforce the \emph{import mechanism} in UC used to
+  %ensure polynomial-time computation.
+  %We therefore combine Nomos, an existing language based on Rast, with ILC, a process-based core calculus for UC,
+  %to build a new language called NomosUC.
+  %Designing NomosUC required solving a range of technical challenges.
+  %While session types are naturally linear and prevent cyclic topologies, UC 
+  %allows adversaries the freedom to adaptively steer the communication.
+  %Also, since UC makes use of sandbox execution and other generic composition operations,
+  %reconciling UC \emph{import} with Rast \emph{potential} required introducing a hierarchy of virtual tokens.
+  %To validate our design, we work through the standard theory of UC composition operators, and complete
+  %a UC proof of security for the cryptographic commitment. 
 \end{abstract}
 
 
@@ -187,8 +215,13 @@ a UC proof of security for the cryptographic commitment.
 \section{Background on Universal Composability} \label{sec:background}
 \input{sections/background}
 
-\section{A Commitment Protocol in NomosUC} \label{sec:example}
+\section{Ideal Functionalities in NomosUC} \label{sec:example}
 \input{sections/example}
+
+\section{Adding Import to NomosUC} \label{sec:motivate}
+\input{sections/motivating}
+
+\input{sections/old_import}
 
 \section{Base System of Session Types in NomosUC} \label{sec:basic}
 \input{sections/baselang}
@@ -202,7 +235,7 @@ a UC proof of security for the cryptographic commitment.
 \section{The UC Experiment} \label{sec:execuc}
 \input{sections/execuc}
 
-\section{Sandboxing} \label{sec:commitment}
+\section{Simulators} \label{sec:commitment}
 \input{sections/commitment} 
 
 %\section{flip}
@@ -250,6 +283,9 @@ a UC proof of security for the cryptographic commitment.
 
 \section{Coin Flipping} \label{app:flip}
 \input{appendix/coinflip}
+
+\section{Zk} \label{app:zk}
+\input{appendix/zk}
 
 \section{ITM Completeness} \label{app:itm}
 \input{appendix/itmiffnomosuc}

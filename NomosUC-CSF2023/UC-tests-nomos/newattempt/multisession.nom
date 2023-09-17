@@ -4,6 +4,11 @@ type ms2p[s][a] = MS2P of SIS[s] ^ a ;
 type a2ms[s][a] = A2MS of SID[a] ^ a ;
 type ms2a[s][a] = MS2A of SID[a] ^ a ;
 
+stype msp2f[a][b]{n}{m} = +{ <{n}| p2bf: PID * SID[a] * b * msp2f } ;
+stype msf2p[a][b]{n}{m} = &{ |{m}> bf2p: PID -> SID[a] -> b -> msf2p };
+stype msa2f[a][b]{n}{m} = +{ <{n}| a2bf: SID[a] * b * msa2f };
+stype msf2a[a][b]{n}{m} = &{ |{0}> bf2a: SID[a] -> b -> msf2a };
+
 proc f_ms_init[K][K1][s,p2f,f2p,a2f,f2a] :
   (* args *)
   ($p2f: comm[P2F[p2ms[s][p2f]][K]]), ($f2p: comm[F2P[ms2p[s][f2p]][K]]),
@@ -18,29 +23,67 @@ proc f_ms_init[K][K1][s,p2f,f2p,a2f,f2a] :
         lp2f lf2p la2f lf2a 
 }
 
-proc f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
+proc f_ms[K][K1][s,s',p2f,f2p,a2f,f2a] :
   (* args *)
-  ($p2f: comm[p2ms[s][p2f]][K]), ($f2p: comm[ms2p[s][f2p]][K]),
-  ($a2f: comm[a2ms[s][a2f]][K]), ($f2a: comm[ms2a[s][f2a]][K]),
+  ($p2f: comm[p2ms[s'][p2f]][K]), ($f2p: comm[ms2p[s'][f2p]][K]),
+  ($a2f: comm[a2ms[s'][a2f]][K]), ($f2a: comm[ms2a[s'][f2a]][K]),
   (lp2f: [comm[P2F[p2f]][K1]]), (lf2p: [comm[F2P[f2p]][K1]]),
   (la2f: [comm[a2f][K1]]), (lf2a: [comm[f2a][K1]]) |- ($ch: 1) =
+
+
+(* 
+the providerless channels in the case of !F are the following:
+    - the end connected to F is, as expected, the session types channels
+    - the end connected to the ms wrapper is a generic message passing type
+      and we rely on the channel, again, to convert messages appropriately
+*)
+
+proc f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
+  (* args *)
+  ($p2f: msp2f[s][p2f]), ($f2p: msf2p[s][f2p]),
+  ($a2f: msa2f[s][a2f]), ($f2a: msf2a[s][f2a]),
+  (lp2f: [(SID[s],comm[K1][p2f]])), (lf2p: [(SID[s],comm[K1][f2p]])), 
+  (la2f: [(SID[s],comm[K1][a2f]])), (lf2a: [(SID[s],comm[K1][f2a]])) |- ($ch: 1) =
 {
   match $p2f, $a2f (
-    P2F(pid, P2MS(ssid, m)),* =>
+    --P2F(pid, P2MS(ssid, m)),* =>
+    p2bf,* =>
+      pid = recv $p2ms ; ssid = recv $p2ms ;
+      m = recv $p2ms ;
       get {p2msn} K $p2f ;
       if not exists ssid lp2f then
         #p2f' <- channel_init[K1][P2F[p2f]] ;
         #f2p' <- channel_init[K1][F2P[f2p]] ;
         #a2f' <- channel_init[K1][a2f] ;
         #f2a' <- channel_init[K1][f2a] ;
-        $c' <- Func[K][K1] <- k rng sid #p2f' #f2p' #a2f' #f2a'
-        lp2f <- append #p2f' lp2f; lf2p <- append #f2p' lf2p;
-        la2f <- append #a2f' la2f; lf2a <- append #f2a' lf2a;
+        $c' <- gen_f_wrapper[K][K1] <- k rng sid #p2f' #f2p' #a2f' #f2a'
+        lp2f <- append (ssid, #p2f') lp2f; lf2p <- append (ssid, #f2p') lf2p;
+        la2f <- append (ssid, #a2f') la2f; lf2a <- append (ssid, #f2a') lf2a;
       else ()
-      #p2f' <- search ssid lp2f ;
+      $p2f' <- search ssid lp2f ;
       withdrawtoken K K1 p2fn ;
       #p2f'.SEND ; send #p2f' P2F(pid, m) ; pay {p2fn} K1 #p2f' ;
-    *,A2MS(ssid, m) => 
+    *,a2bf => 
+      ssid = recv $a2ms ;
+      m = recv $a2ms ;
       (* identical case *)
   )
 } 
+
+stype msp2z[a][b] = +{ bp2z: PID * SID[a] * b * msp2f } ;
+stype msz2p[a][b] = &{ z2bp: PID -> SID[a] -> b -> msf2p };
+stype msp2f[a][b] = +{ bp2f: PID * SID[a] * b * msa2f };
+stype msf2p[a][b] = &{ f2bp: PID -> SID[a] -> b -> msf2a };
+
+proc bang_p[K][K1][s,z2p,p2z,p2f,f2p] :
+  (* args *)
+  ($z2p: msz2p[K1][z2p]), ($p2z: msp2z[K1][p2z]),
+  ($p2f: msp2f[K1][p2f]), ($f2p: msf2p[K1][p2z])
+  (lp2f: [(SID[s],comm[K1][p2f]])), (lf2p: [(SID[s],comm[K1][f2p]])), 
+  (la2f: [(SID[s],comm[K1][a2f]])), (lf2a: [(SID[s],comm[K1][f2a]])) |- ($ch: 1) =
+{
+  match $z2p, $f2p (
+    (* identical case *)
+          
+  )
+}

@@ -3,32 +3,103 @@ as dictated by UC guidelines.
 To this end, we introduce a static notion of \emph{import tokens} that provide a static upper
 bound on the execution cost of NomosUC programs.
 
-\paragraph*{\textbf{Import Tokens}}
+%\paragraph*{\textbf{Import Tokens}}
 The core aspect of NomosUC is the integration of import tokens with the type system
 enabling a static reasoning of the import mechanism in NomosUC.
 To this end, we introduce a novel token context $\Tokens$ in the typing judgment to
-represent the real and virtual tokens.
+represent the real and virtual tokens. ``Real'' tokens are the import tokens created
+at the start of the experiment and exchanged between the main processes: the environment,
+adverasry, protocol parties, and functionaity. When talking about a specific process 
+or type definition, we call the import tokens the processes sends/received as ``real'' tokens
+and those that it creates as ``virtual'' tokens.
 
+\paragraph*{\textbf{Motivating Virtual Tokens}}
 Before we explain the token context further, we motivate the need for virtual tokens.
 A common scenario in UC is to simulate the execution of other ITMs within a \emph{sandbox},
-where one ITM executes the code of another ITM in a controlled and enclosed environment.
+where one ITM executes the code of another ITM in a controlled and enclosed environment (i.e. internally).
 We wish to support the same sandboxed execution in NomosUC.
-However, to ensure bounded computation, we need to bound the computational cost of a
-sandboxed execution as well.
-And the only mechanism to bound the cost of an execution is via import tokens.
-However, virtual execution within a sandbox must not cost real import tokens.
-For instance, suppose a process $P$ storing $t$ real import tokens
-simulates a sandboxed execution of $Q$ such that $Q$ requires $t$
-import tokens.
-If $P$ transfers all its import to $Q$, $P$ will not be able to perform any execution of its own.
+Existing process definitions require import according to their types, and we wish to given them
+virtual import for this purpose.
+%Running existing processes means they require import tokens to satisfy their types, 
+%therefore we would like to run th
+%However, to ensure bounded computation, we need to bound the computational cost of a
+%sandboxed execution as well.
+%And the only mechanism to bound the cost of an execution is via import tokens.
 
-To address this issue, we introduce the concept of \emph{virtual tokens}.
-In the aforementioned situation, $P$ will create $t$ virtual tokens
-which can then be used to simulate the execution of $Q$, while $t$ real tokens are retained within $P$
-allowing it to have its own execution.
-In effect, the sandboxed execution is internal to a process and therefore must obey the resource (import token)
-constraints provided to it.
+A first response to this design may be that sandboxing is only a constraint
+on what the NomosUC process (or ITM) can do rather than how it interacts with 
+the polynomial time notion, so it is reasonable to run them normally as subroutines 
+that can't send messages to the rest of the UC execution. 
+We point out drawbacks in this approach through a simple example of the database
+ideal functionality \Fdb described in \cite{hofheinzpoly} and point to a general
+class of adversaries whose behavior depends precisely on the import they receive.
+\Fdb maintains a size $n$ list of (key,value) pairs, accepts new pairs along with 1 import token, and returns the value
+for a key on query. There are two relevant consequences of this design: 1. any given activation 
+of a protocol party or \Adv can result in polynomial work being performed by adding to and 
+reading from the list; 2. an adversary's ability to add to and read from the list is constrained
+directly by its import token balance, i.e. it's runtime budget. 
+%Consequently, the behavior and outputs of such an \Adv depend directly on the amount of 
+Consequently, imagine an \Adv whose outputs depends directly on the precise amount of import 
+import it receives. A simulator, for a protocol that uses \Fdb, that uses \Adv runs into a 
+problem without sandboxing it internally: in order to replicate its real world
+%behavior \Adv needs just as many import tokens, i.e. all of the import tokens that the 
+behavior \Adv needs to receive the same number of tokens as in the real world, i.e. all of the import tokens that the 
+simulator is given by \Z. Why? The types of \Adv and \Sim must be the same so they receive the 
+same amount of import from \Z.
+%\Z gives the same import to the real world \Adv as it does
+%the simulator. 
+Therefore, \Adv being run using real tokens takes them all from \Sim, leaving it with now tokens
+to perform any polynomial work of its own--rendering even such a simple example unrealizable.
+%Therefore, \Adv run by the simulator requires all of the tokens in order to 
+%ensure it produces the same outputs. This leaves the simulator with no tokens to perform
+%any poylynomial work of its own rendering it unrealizable. 
 
+This example of \Fdb points to a greater issue that results from giving sandboxed processes
+real import tokens out of the import of the ``host'' process. Adversaries, for example, whose behavior and outputs
+depend precisely on the import they receive become unecessarily difficult to run as subroutines 
+if they require real import tokens. Therefore, we create virtual tokens 
+that satisfy their type and ensure that their work done still counts against the potential
+available to the host process.
+
+%However, virtual execution within a sandbox must only cost potential (i.e. work) rather
+%than requiring the host process to cede import tokens to it. 
+%Similar to performing any other operation, sandboxing a process $Q$ should 
+%consume only the precise amount of work $Q$ requires rather than $P$ ceding its 
+%import token balance to it.
+%than impacting the amount of \emph{real} import tokens available to the host process.
+%However, virtual execution within a sandbox must not cost real import tokens.
+%For instance, suppose a process $P$ storing $t$ real import tokens
+%simulates a sandboxed execution of $Q$ such that the type $Q$ requires $t$
+%import tokens.
+%If $P$ transfers all its import to $Q$, $P$ will not be able to perform any execution of its own.
+%If $P$ gives $Q$ a different, virtual type of token, and $Q$ is token type-agnostic, then 
+%it can be used without unecessarily constraining the design of the host machine.
+
+%We elucidate this point through a simple ideal functionality and show
+%how even simple simulators for protocols that use it are not realizable without virtual tokens.
+%The database functionality $\F_\msf{database}$ described in \cite{hoffheinzpoly} 
+%maintains a list of (key, value) pairs, accepts \msf{store} inputs with 1 import tokens to add 
+%items to the list, and returns the value for the key queried with \msf{retrieve}. The two important
+%consequences of this functionality are that: 1. on any activation it may need to perform
+%$O(n^2)$ work iterating over a list of size $n$ and 2. an adversary's ability to read/write to the database is
+%determined by the net import tokens available to it, i.e. it's runtime budget. 
+%Consequently, such an adverasry's behavior/output can change depending on the import it's received. 
+%A simulator that runs the adversary (a very common UC design pattern)
+%receives the same amount of import from \Z as \Adv receives in the real world, but must give it all to \Adv in order to produce the same outputs as the real world.
+%This leaves no import for the simulator to perform any non-constant work of its own---like interacting
+%with the database itself. Therefore, such simulators simply can not be realized without virtualizing 
+%\Adv. To do so in a way that satisfies the type of \Adv we create fake virtual tokens to give it, but ensure that the work done by \Adv is constrainted as polynomial in the amount of \emph{real} tokens that host processes possesses.
+
+%To address this issue, we introduce the concept of \emph{virtual tokens}.
+%In the aforementioned situation, with the addition of virtual tokens, the simulator $\Sim$ would 
+%create $n$ virtual tokens for the $n$ tokens it receives and activate \Adv with them. 
+%In the aforementioned situation, the simulator $\Sim$ creates $t$ virtual tokens
+%which can then be used to simulate the execution of \Adv, while $t$ real tokens are retained within $\Sim$ 
+%allowing it to have its own execution.
+%In effect, the sandboxed execution is internal to a process and therefore must obey the resource (import token)
+%constraints provided to it.
+
+\subsection{Import Token Typing Rules}
 Formally, every process contains a unique real token type, which we call type $\K_0$, by default.
 There is no mechanism to create a real token; when a process is spawned (whether in a sandbox or not),
 the parent process must specify the real token type and quantity for the newly spawned process.
