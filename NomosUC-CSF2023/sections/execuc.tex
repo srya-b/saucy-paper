@@ -5,17 +5,16 @@ We introduce a simple construction called \emph{providerless channels} which rel
 Second we discuss how the dummy lemma, a composition operator, and the composition theorem can be realized by the introduction of \emph{providerless channels}.
 
 \subsection{Capturing the UC Computation Model}
-The first thing we need to show, to argue that NomosUC can realize the full expressivity of UC. 
+The first step to capturing full UC is realizing any arbitrary ITM system in NomosUC.
 The ITM computational model is extremeley flexible to capture as universal a setting as possible.
-Channels in NomosUC are linear, created by some process known as the provider, and impose a strict parent-child relationship. 
-Unlike the ITM model, this model prohibits cyclical topologies: a process $A$ offers a channel to $C$, which offers a channel to $B$, which offers a channel to $A$ can not be realize by NomosUC.
+Channels in NomosUC are linear, created by some process known as the provider, and impose a strict parent-child relationship between processes. 
+Unlike the ITM model, this model prohibits cyclical topologies: a configuration where a process $A$ offers a channel to $C$, which offers a channel to $B$, which offers a channel to $A$ can not be realize by NomosUC.
+We overcome this constraint by introducing \emph{providerless channels} using \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
+We will unpack these terms one by one.
 
-To enable arbitrary communication between two processes without forcing a parent-child relationship, we introduce
-the concept of \emph{providerless channels} using \emph{communicator processes} that rely on recently introduced shared session types~\cite{balzer2017manifest}.
 Communicators act as a buffer between two processes allowing them to exchange messages via the communicator.
-Communicators also break the parent-child relationship by offering a \emph{shared channel that can have multiple clients}
-(unlike linear channels that can have only one client) that is then used by both the sender and receiver processes.
-
+The channels that communicators offer have a shared session type meaning that multiple clients can communicat with the communicator.
+This relaxes the strict parent-child relationship by allowing processes $A$, $B$, and $C$ to communicate with each other through the same communcicator using an acquire/release mechanism. 
 The communicator has the following polymorphic type:
 %\begin{center}
 \vspace{-1mm}
@@ -29,11 +28,12 @@ $\m{comm[\tau]\{n\}} = \up \echoice{$\=$ \textcolor{red}{\getpot^n} \mb{push}: \
 %\end{center}
 \par}
 
-The communicator type uses the type constructions $\up$ and $\down$ to indicate that 
+\todo{where do we introduce the write-tokem, we must do it}
+The communicator type uses the type constructors $\up$ and $\down$ to indicate that 
 access to the channel must be \emph{acquired} and eventually \emph{released}, respectively.
 The acquire-release paradigm, along with the write token, is necessary for shared session types to prevent non-determinism.
 Communicators are written to by a sender that acquires the channel and $\mb{push}$es a functionally 
-typed message along with some amount of import indicated as a parameter. A receiver acquires the 
+typed message along with some amount of import indicated by a parameter to the type above. \todo{can we actually just create a new communicator, after every message with a new import parameter so that the import it takes changes in accordance with the session type it is mediating?} A receiver acquires the 
 channels and asks the communicator for new messages with $\mb{poll}$ if there is a message it is returned with some import
 otherwise the channels takes the $\mb{no}$ branch.
 We provide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
@@ -58,22 +58,23 @@ We provide the full typing rule of shared session types in Appendix~\ref{app:typ
 	and labels indicate types.}
 	\vspace{-1em}
 \end{figure}
-
-
-All processing communication through communicators are relgeated to using the same session type. 
+All processes communicating through communicators are relgeated to using the same session type. 
 Even if we can realize cylcical topologies, we lose protocol/functionality-specific session types.
-Providerless channels connecting some processes $P$ and $Q$ consist of shared channels and dummy processes that speak to $P$ (and $Q$) with the session type they expect and send messages to the communicator. 
+
+Providerless channels connecting some processes $P$ and $Q$ consist of communicators and dummy processes. 
+The dummy processes offer a channel of the session type expected by $P$ or $Q$ and intermediate communication between them and the communicator connecting them. 
 In Figure~\ref{fig:newpandq} we show an illustration of a providerless channel between the two processes. 
 Here, the processes intend to communicate through two unidiretional channels (a cycle) with the session types \m{PtoQ} and \m{QtoP}.
-The dummy processes $a_P$ and $a_Q$ offer the channels to $P$ with the session requisite session types.
+The dummy processes $a_P$ and $a_Q$ offer the channels to $P$ with the requisite session types.
 On message from $P$, $a_P$ case matches on the label in the session type and sends a functionally typed message of type $\tau_\m{PtoQ}$ to the communicator. 
 Similarly, when $a_Q$ receives a message from the communicator, it case matches on the message in the buffered message and sends the corresponding label on the linear channel, with type \m{PtoQ}, to $Q$. 
-The dummy processes consist only of case matches and, therefore, given some mapping between the labels of \m{PtoQ} and $\tau_\m{PtoQ}$, $a_P$ is trivially generated. 
+The dummy processes consist only of case matches and, therefore, given a simple mapping between the labels of \m{PtoQ} and $\tau_\m{PtoQ}$, $a_P$ is trivially generated at compile-time.
 
 The advantage of this construction is that it is simple, the dummy processes are trivial, the type system can enforce message ordering (as well as the $\paypot{R}$ and $\getpot{R}$ type constructors), and a system of processes can be arbitrarily connected. 
 For example, if \Fdb from the previous section is connected to a party with a providerless channel, 
 $\m{db}[k][v]$ remains the same and $\tau_\m{db[k][v]} =$ \inline{Store of PID k v |} \inline{OK of PID |} \inline{Get of PID k |} \inline{Yes of v | No}. 
 
+\todo{mention somewhere here that the type only accepts a constant import, but we don't care about precise time-bounds only as far as the import in the type tells the programmer what kind of computation the functionality/protocol expects to do.}
 Intuitively, this construction lets us show a bisimulation between NomosUC terms and ITMs.
 We conclude in Appendix~\ref{app:itm} that we can realize any NomosUC configuration as a sytem of ITMS and that any ITM system can be realized as a Nomos UC configuration (NomosUC $C' \Leftrightarrow$ ITMs $M'$).
 \todo{maybe we should have a few lines here, or a paragraph, making clear that providereless channels are generated at compile-time given the session types and $\tau$ functional message types by the programmer.}
