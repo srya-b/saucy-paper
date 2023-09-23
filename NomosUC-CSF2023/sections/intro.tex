@@ -1,6 +1,6 @@
 Universal Composability (UC)~\cite{canettiUC} is the leading framework for defining security properties of cryptographic protocols.
 It is considered the strongest definitional model since it guarantees the security properties even when the protocol is arbitrarily composed with
-multiple concurrently-executing sessions of the same (or another) protocol.
+multiple concurrently executing sessions of the same (or another) protocol.
 UC security relies on proving that a cryptographic or distributed protocol, in the presence of an adversary, is indistinguishable from an idealized version that exhibits the intended functionality.
 %The ideal version, called the \emph{ideal functionality}, runs as a trusted third party and captures the intended properties of the protocol in the simplest possible way.
 The main advantage of UC is that larger, more complex, protocols can be can be constructed out of simple ideal functionalities, and the framework guarantees that security holds when 
@@ -23,7 +23,9 @@ This encourages the modular design and realizes a powerful notion of security: u
 %provided by UC and their associated theorems.
 
 %Despite UC's appeal, programming language tools and techniques for establishing UC emulation are fairly limited with some recent efforts providing
-Despite UC's appeal, programming language tools and techniques for capturing UC or establishing UC emulation are fairly limited with some recent efforts providing
+Despite UC's modular appeal, functionalities and protocols can quickly become very large and cumbersome to understand, let alone analyze and correctly use, and definitions become prone to errors or unseen assumptions.
+Programming language tools and techniques for capturing UC or establishing emulation provide tooling for assisting paper-and-pencil proofs or even mechanizing security proofs for UC, however, existing works are fairly limited with some recent efforts providing
+%Despite UC's appeal, programming language tools and techniques for capturing UC or establishing UC emulation are fairly limited with some recent efforts providing
 partial support~\cite{ilc,easyuc,ipdl,symbolicuc,barbosa}. This is a result of two key challenges.
 The first challenge is that at the core of UC lies demonstrating emulation which relies on proving program equivalence and is undecidable in general
 and tends to be complicated even for simple programs.
@@ -62,8 +64,8 @@ Almost all prior work, however, forego the polynomial runtime analysis entirely,
 The UC computational model relies on interactive turing machines (ITMs) which perform local computation and get send messages to other ITMs, activating them.
 The polynomial-time notion used in UC is the \emph{import mechanism}. ITMs exchange a finite quantity called \emph{import}, denoted $n$, and perform computation bounded by some polynomial $T(n)$.
 %The polynomial-time notion UC adopts, the \emph{import mechanism}, allows ITMs with $n$ import to perform at most $T(n)$ computation for some polynomial $T$, and it lets them send import (i.e. runtime budgets) to each other with messages.
-Recognizing this polynomially bounded interactive nature, we propose a novel abstraction to statically express and enforce these
-communication protocols called \emph{import session types} (IST).
+Recognizing this polynomially bounded interactive nature, we propose a novel abstraction called \emph{import session types (IST)} to \emph{(i) express and enforce interactive protocols between ITMs in distributed protocols (ii) realize the import mechanism of polynomial time and (iii) make local judgements about polynomial runtime for each of \A, \F, $\pi$, and \Z.} 
+%communication protocols called \emph{import session types} (IST).
 IST is inspired from resource-aware session types~\cite{das2018work}, a type system for expressing costful communication protocols
 in concurrent message-passing processes which has been successfully employed in quantitative analysis of distributed
 protocols~\cite{dasnomos,Das20FSCD,Das22LMCS,Das20arxiv}.
