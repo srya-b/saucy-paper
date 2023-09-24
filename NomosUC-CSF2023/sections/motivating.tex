@@ -14,7 +14,7 @@ Defining potential as a resource allows us to make this judgement in the type sy
 
 \paragraph{Why another resrouce?} 
 %Why is it necessary to add another resource on top of import rather than directly account of runtime through import?
-In general, an arbitrary mechanism for bounding runtime might be realized by a linear resource (like the work by Das et al.~\cite{rast}), but the import mechanism implicitly requires us to define an additional resource and its motivation comes from Canetti~\cite{uc}.
+In general, an arbitrary mechanism for bounding runtime might be realized by a linear resource (like the work by Das et al.~\cite{rast}), but the import mechanism implicitly requires us to define an additional resource and its motivation comes from Canetti~\cite{UC}.
 %In the general case of bounding runtime, a single linear resource is sufficient to control the runtime of processes (like the work by Das et al.~\cite{rast}), however, in UC we are concerned with capturing a realistic computation model and doing so leaks information that otherwise shouldn't be known. 
 At a high-level, using import alone allows an ITM to control exactly the runtime of an ITM that it gives import to, giving it information about about the others code that, realistically, it shouldn't know.
 For example, imagine real world and an ideal world where the environment can send import and control exactly the number of steps each world is allowed to take.
@@ -190,7 +190,7 @@ In general, instead of manually inserting a \itick everywhere, NomosUC can be in
 %\end{bbox}
 
 \subsection{Virtual Tokens}
-Our realization of import so far adheres to the design specified by Canetti et al~\cite{uc}.
+Our realization of import so far adheres to the design specified by Canetti et al~\cite{UC}.
 We encounter a subtle problem when implementing simulators that internally run other ITMs, functionalities, or protocols.
 Sandboxing, as it is called, is a common design pattern for UC simulators. 
 In particular, being able to ``overriding'' the random tapes and other state of ITMs is useful for rewinding and replaying proofs.
