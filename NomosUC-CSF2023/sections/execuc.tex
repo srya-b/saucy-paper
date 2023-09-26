@@ -153,7 +153,7 @@ All \Z in NomosUC have the same type in the channel they offer to \m{execUC}:
 \end{center}
 It selects the session id (along with any protocol-specific parameters, \inline{a}) and the list of corrupt parties ([\m{PID}]).
 \m{execUC} uses these are paramters when initializing \MX, \A, and \F.
-Finally \m{execUC} $\mb{start}$s the environment with all the initial import, waits for its bit output indicating its guess for which world it is in, and forwards that bit on its own channel indicated by the type \m{execout}[a]{\n} above.
+Finally \m{execUC} $\mb{start}$s the environment with all the initial import, waits for its bit output indicating its guess for which world it is in, and forwards that bit on its own channel indicated by the type \m{execout}[a]{n} above.
 As long as the $n$ given to \m{execUC} (and so \Z) is $poly(k)$, the type system ensures the entire execution terminates in $poly(k)$.
 \todo{mention how the polynomial is specified? perhaps as a parameter to \m{execUC}?}
 

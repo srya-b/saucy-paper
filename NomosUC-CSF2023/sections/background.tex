@@ -1,21 +1,24 @@
 The UC framework~\cite{canettiUC} defines security using
 a real-world / ideal-world paradigm:
-the real world features a protocol $\pi$ and an arbitrary adversary \A that controls corrupt parties\footnote{In UC, corrupt parties are modeled as ITMs that relay messages between the functionality and the adversary, i.e. adversaries select the inputs they give to \F.};
+the real world features a protocol $\pi$ and some adversary \A that controls corrupt parties\footnote{In UC, corrupt parties are modeled as ITMs that relay messages between the functionality and the adversary, i.e. adversaries select the inputs they give to \F.};
 To achieve the ideal/real security relation, we roughly need to show that ``any possible attack in the real world can also be exhibited
 in the ideal world''.
 This means constructing an ideal world adversary, th simulator, \Sim, that commonly internally simulates (or sandboxes) the real-world adverasry or protocols) that plays the role of an adversary in the ideal world.
 What makes UC the strongest definitional model is that the inputs and number of honest parties are chosen \emph{adaptively}
 and \emph{dynamically}, by a distinguishing environment \Z, which can also communicate with the adversary and interleave its interactions with honest parties.
+\emph{Realizing this expressive framework for computation is one of the key challenges overcome in this work in Section~\ref{sec:execuc}.}
 
-The UC framework is defined on top of a communication model called interactive Turing machines (ITMs), in which multiple Turing-complete processes run concurrently in a system and communicate by exchanging messages over channels~\cite{canettiUC}.
+The UC security definition is more formally defined by the following relationship between two UC executions. 
+Here, \m{execUC} defines a UC experiment that takes four parameters: an environment \Z, a protocol $\pi$, a functionality \F, and an adversary \A.
+Then, $\m{execUC}$ creates the main ITMs for each of these parameters and the internal parties that execute the protocol $\pi$ are created when they first receive a message.
+
+%%%%%%%%%
+The UC framework is defined on top of a communication model called interactive Turing machines (ITMs), in which multiple Turing-complete processes run concurrently in a system and communicate by writing messages on each others' input tapes~\cite{canettiUC}.
+%%%%%%%%%
 %Although the Turing-complete computations can be instantiated in any reasonable core calculus, the approach to message passing in ITMs has some essential but subtle restrictions.
 %In order to do cryptographic analysis, we need to make reductions to (ordinary sequential) probabilistic polynomial time computations (PPTs).
 %This rules out, for example, the ordinary semantics of $\pi$-calculus, which introduces unbounded non-determinism with the possible scheduler choices.
 %This adversary model leads to a flexible approach to composition, which we'll say more about shortly.
-The UC security definition is more formally defined by the following relationship between two UC executions. 
-Here, \m{execUC} defines a UC experiment that takes four parameters: an environment \Z, a protocol $\pi$, a functionality \F, and an adversary \A.
-Then, $\m{execUC}$ creates the main ITMs for each of these parameters and the internal parties that execute the protocol $\pi$ are created by
-activation messages that are sent by these main ITMs.
 
 We say that a protocol $\pi$, with access to a functionality $\F_1$, realizes an ideal functionality $\F_2$
 if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal worlds are indistinguishable to any environment \Z:
@@ -26,15 +29,14 @@ if for every adversary $\A$, we can construct a simulator $\Sim$, such that the 
 We denote indistinguishability with the $\sim$ symbol, and it means that the ensembles of distributions resulting from the output of \Z
 in each execution, over all possible randomness and security parameters $k$, have \emph{statistical difference} that is negligible in $k$.
 This relationship between two \m{execUC} instances is called \emph{emulation}. 
-Generally, emulation deals with arbitrary protocols in both worlds, however, for UC realization (above) specifically the protocol in the
-real world is \idealP, or the \emph{dummy protocol}, that forwards messages between $\F_2$, \Z,  and \A. 
+For the specific case of UC realization (above) the protocol in the real world is \idealP, a \emph{dummy protocol} that relays messages between $\F_2$ and \Z.
 Similarly, the real world can also contain an ideal functionality $\F_1$ that may capture network assumptions or assumed primitives the protocol relies on. 
-This real world is also called the $\F_1$-hybrid world.
-Defining \msf{execUC} in our core calculus, and especially reconciling its dynamic nature with our static type system will be the central technical challenge
-we tackle later in Section~\ref{sec:execuc}.
+We call this the $\F_1$-hybrid world.
+%Defining \msf{execUC} in our core calculus, and especially reconciling its dynamic nature with our static type system will be the central technical challenge
+%we tackle later in Section~\ref{sec:execuc}.
 
 \paragraph*{\textbf{Composition Notation}}
-The UC framework is designed to encourage a highly compositional and modular design approach,
+The UC framework encourages a compositional and modular design approach,
 where we analyze single-instance protocols in isolation, then apply generic composition operators to build more complex systems.
 % Encoding the standard theory of UC composition in our core calculus is one of the main ways we validate the expressiveness of our language design.
 Here we summarize the main composition theorems using category notation, where objects are functionalities and arrows are protocols.
@@ -62,16 +64,18 @@ The first composition theorem we rely on, Theorem~\ref{thm:singlecomp} is a simp
 \end{mathpar}
 \end{theorem}
 Proving this theorem requires constructing a straightforward simulator that combines the underlying simulators of $\pi$ and $\rho$,
-and the complete security reduction involves translating a distinguisher $Z$ for the combined protocol $\rho \circ \pi$ to a
-distinguisher $Z^*$ for either $\pi$ or $\rho$ individually.
+and the complete security reduction involves translating a distinguishing environment $Z$ for the combined protocol $\rho \circ \pi$ to a
+distinguishing environment $Z^*$ for either $\pi$ or $\rho$ individually.
 Although the proof is straightforward, the precise statement of the simulator in our framework serves as good validation for the expressiveness
 of our framework: our theorem and proof are parametric in the session type of the protocol, i.e., the theorem places no restrictions
 on the communication pattern used by the underlying protocol and functionalities.
 
 The transitive relation in Theorem~\ref{thm:singlecomp} allows for replacement of only a single instance of $\F_2$ with $\pi$.
-UC composition in Theorem~\ref{thm:composition}, which is realized using Theorem~\ref{thm:singlecomp}, allows for replaces an arbitrary number of instances of $\F_2$ running in parallel using the $!$ operator. 
-We elide the details of this composition theorem until we have introduced the $!$ operator and it's corresponding composition theorem (and the \msf{squash} protocol): 
-$!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$.
+UC composition in Theorem~\ref{thm:composition}, which is realized using Theorem~\ref{thm:singlecomp}, allows for replaces an arbitrary number of instances of $\F_2$ running in parallel denoted by the $!$ operator. 
+Importanty, capturing the arbitrary number of instances is a limitaion of most related works. 
+We introduce the operator and its theorem later in Section~\ref{sec:execuc}.
+%We elide the details of this composition theorem until we have introduced the $!$ operator and it's corresponding composition theorem (and the \msf{squash} protocol): 
+%$!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$.
 
 \begin{theorem}[Composition]\label{thm:composition}
 \vspace{-0.5em}
