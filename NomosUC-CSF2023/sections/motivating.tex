@@ -286,7 +286,7 @@ $\nget$ {1} $\$$z2a
 msg = $\nrecv$ $\$$z2a
 $\ncase$ msg (
   Query(k) => 
-    $\nwithdraw$ K0 K1 1$
+    $\nwithdraw$ K0 K1 1
     $\$$db.query
     $\npay$ $\tm{K1}$ {1} $\$$db
     $\nsend$ $\$$db k
@@ -346,7 +346,10 @@ $\Tokens$ describes the total (ever received) and current ($=$ received - sent) 
 of each type stored in the process (explained more in Section~\ref{sec:import}).
 $\Psi$ represents the functional data structures and $\D$ collects the
 session-typed channels along with an optional \emph{write token} $\wt$
-(to resolve non-determinism in the semantics) used by the process.
+(to resolve non-determinism in the semantics) used by the process. 
+The write token globally determines which process is activated to take the next execution step.
+We borrow the concept from ILC~\cite{ilc}, and, intuitively, a process sending a message must possess the write token. 
+The typing rules below for $\getpot R$ nd $\getpot L$ specify write token ownership. \todo{somewhere say that all the typing rules of the base system as in app}
 Finally we denote the total potential created and the potential remaining for $P$ with $q$ and $q'$ above and below the turnstile.
 
 The token context $\Tokens$ tracks the number of tokens of each type from the token heirarchy decribed in the previous section.
@@ -450,18 +453,18 @@ that the total sum of potential and work of a closed set of processes will alway
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Remarks on Polynomial Time}
-\todo{ what do we want to talk about here that doesn't already exist above? }
-These are out of place remarks trying to address some comments from reviewers. There are some todo's for ankush to look over.
-
-\todo{some related work discussion from the time credits that were brought up in the latest round of reviews. like why not use those rather than import here?}
-
-\todo{should we talk about the DDH reduction here that was brought up in the first round of reviews.}
-
-We want to capture a polynomial time notion that can jugde open tersm as polynomial without factoring in what other processes they are connected to. 
-For example, we want to conclude that an adverasry is polynomial time if it performs at most polynomial work on every activation.
-Even if activated a super-polynomial number of times, the process is still considered polynomial time.
-A process providing super-polynomial activatesion of the adversary would fail to type check ensuring that this isn't a corner case which allows unbounded computation.
+%\subsection{Remarks on Polynomial Time}
+%\todo{ what do we want to talk about here that doesn't already exist above? }
+%These are out of place remarks trying to address some comments from reviewers. There are some todo's for ankush to look over.
+%
+%\todo{some related work discussion from the time credits that were brought up in the latest round of reviews. like why not use those rather than import here?}
+%
+%\todo{should we talk about the DDH reduction here that was brought up in the first round of reviews.}
+%
+%We want to capture a polynomial time notion that can jugde open tersm as polynomial without factoring in what other processes they are connected to. 
+%For example, we want to conclude that an adverasry is polynomial time if it performs at most polynomial work on every activation.
+%Even if activated a super-polynomial number of times, the process is still considered polynomial time.
+%A process providing super-polynomial activatesion of the adversary would fail to type check ensuring that this isn't a corner case which allows unbounded computation.
 
 
 

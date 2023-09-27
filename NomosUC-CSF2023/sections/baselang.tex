@@ -99,27 +99,27 @@ execution.
 \end{mathpar}
 
 \paragraph{Message Ordering}
-Communication in NomosUC is asynchronous, and the process $P$ sends a message $l$
-along $c$ and continues as $P$ substituting $c$ for a new channel $c'$. Creating a new
-channel $c'$ ensures that messages arrive in order. 
-Naturally, a message send doesn't consume work ($q,q'$) but, as we'll see later, can 
-transfer import between processes. 
-%Operationally, since communication is asynchronous, the process
-%$(\esendl{c}{l} \semi P)$ sends a message $l$
-%along $c$ and continues as $P$ without waiting for it to be received.
-%As a technical device to ensure that consecutive messages on a
-%channel arrive in order, the sender also creates a fresh continuation
-%channel $c'$ so that the message $k$ is actually represented as
-%$(\esendl{c}{l} \semi \fwd{c}{c'})$ (read: send $l$ along $c$ and
-%continue as $c'$). The provider substitutes $c'$ for $c$ enforcing
-%that the next message is sent on $c'$.
-%The work counter of the process remains unaltered, and the new message
-%is created with work $0$.
-%\begin{tabbing}
-%$(\oplus S) : \proc{c}{w, \esendl{c}{l} \semi P} \step$ \\
-%\qquad $\proc{c'}{w, [c'/c]P},
-%\msg{c}{0, \esendl{c}{l} \semi \fwd{c}{c'}} \qquad \fresh{c'}$
-%\end{tabbing}
+%Communication in NomosUC is asynchronous, and the process $P$ sends a message $l$
+%along $c$ and continues as $P$ substituting $c$ for a new channel $c'$. Creating a new
+%channel $c'$ ensures that messages arrive in order. 
+%Naturally, a message send doesn't consume work ($q,q'$) but, as we'll see later, can 
+%transfer import between processes. 
+Operationally, since communication is asynchronous, the process
+$(\esendl{c}{l} \semi P)$ sends a message $l$
+along $c$ and continues as $P$ without waiting for it to be received.
+As a technical device to ensure that consecutive messages on a
+channel arrive in order, the sender also creates a fresh continuation
+channel $c'$ so that the message $k$ is actually represented as
+$(\esendl{c}{l} \semi \fwd{c}{c'})$ (read: send $l$ along $c$ and
+continue as $c'$). The provider substitutes $c'$ for $c$ enforcing
+that the next message is sent on $c'$.
+The work counter of the process remains unaltered, and the new message
+is created with work $0$.
+\begin{tabbing}
+$(\oplus S) : \proc{c}{w, \esendl{c}{l} \semi P} \step$ \\
+\qquad $\proc{c'}{w, [c'/c]P},
+\msg{c}{0, \esendl{c}{l} \semi \fwd{c}{c'}} \qquad \fresh{c'}$
+\end{tabbing}
 When the message $l$ is received along $c$, the client selects branch
 $l$ and also substitutes the continuation channel $c'$ for $c$, thereby
 ensuring that it receives the next message on $c'$. This implicit
@@ -127,11 +127,11 @@ substitution of the continuation channel ensures the ordering of the
 messages.
 The client process also collects the work performed by the message, if
 there is any.
-%\begin{tabbing}
-%$(\oplus C) :$ \= $\msg{c}{w, \esendl{c}{l} \semi \fwd{c}{c'}},
-%\proc{d}{w', \ecase{c}{\ell}{Q_\ell}}$ \\
-%$\qquad \qquad \step \proc{d}{w+w',[c'/c]Q_l}$
-%\end{tabbing}
+\begin{tabbing}
+$(\oplus C) :$ \= $\msg{c}{w, \esendl{c}{l} \semi \fwd{c}{c'}},
+\proc{d}{w', \ecase{c}{\ell}{Q_\ell}}$ \\
+$\qquad \qquad \step \proc{d}{w+w',[c'/c]Q_l}$
+\end{tabbing}
 
 The dual of internal choice is \emph{external choice} $\echoice{\ell :
 A_\ell}_{\ell \in L}$, which reverses the role of the provider and client.
