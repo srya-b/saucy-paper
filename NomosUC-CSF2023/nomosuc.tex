@@ -159,7 +159,7 @@
   This work introduces a programming abstraction called \emph{import
   session types} (IST) to express UC functionalities and protocols.
   This new abstraction uses session types to express and enforce bi-directional communication protocols in distributed systems and
-  takes inspiration from \emph{resource-aware session types} that allow analysis of execution cost.
+  takes inspiration from \emph{resource-aware session types} (Rast) that allow analysis of execution cost.
   %This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
   %for analyzing execution cost of concurrent message-passing systems.
   %Sesson types allow for describing bi-directional communication protocols in distributed systems and, Rast extends
@@ -167,7 +167,7 @@
   
   Cryptographic security and UC proofs rely on probabilistic polynomial time (PPT) machines, and we use 
   IST to push the envelop from prior work to capture the \emph{import mechanism} for polynomial time,
-  introduced by Canetti et al.~\cite{canettiUC}, to ensure polynomial-time computation.
+  introduced by Canetti et al.~\cite{canettiUC}.
 
   We borrow from existing languages based on Rast, Nomos, and ILC, a process-based core calculus for UC,
   to build a new language called NomosUC. Designing NomosUC to capture the full expressiveness of UC 

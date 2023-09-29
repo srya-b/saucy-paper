@@ -18,7 +18,7 @@ We do so and introduce our running example throughout the paper: a simple, linea
 The database functionality, presented in Figure~\ref{fig:fdbideal}, implements a flat key-value store.
 Parties can submit key-value pairs and \Fdb stores them in an append-only list, $\ell$.
 When activated \Fdb always performs some work and returns control back to the calling party. 
-On \m{Store} \Fdb sends an acknowledgement back to $P_i$, and on \m{Get} it returns the key-value pair if the key exists in $\ell$ (or a negative acknowledgement if it doesn't).
+On \m{Store}, \Fdb sends an acknowledgement back to $P_i$, and on \m{Get} it returns the key-value pair if the key exists in $\ell$ (or a negative acknowledgement if it doesn't).
 
 \input{figures/f_db}
 
@@ -38,20 +38,21 @@ Similarly, the other endpoint of the channel, called the client, writes to it wi
 The session types defines, at any given moment, which of endpoint's turn it is to write to the channel by which type constructor is used.
 In \m{db[k][v]} at first only the party can send a message but can choose between labels \mb{store} and \mb{get}. 
 Next only \Fdb can send a message in response depending on the one received.
-In general, the provider relationship in the channel ends up being unimportant in our construction, and we arbitrarily one ITM as the provider for
+In general, the provider relationship in the channel ends up being unimportant in our construction, and we arbitrarily choose one ITM as the provider for
 the purpose of enforcing the type. 
 In the case of \m{db[k][v]}, it is implied that the party is the provider, because it uses $\ichoice$ to \mb{store} and \mb{get}, and \Fdb is the other endpoint.
+In this way the session types becomes a succint description of how a party can use a functionality, and, at a high-level, what the functionality should do.
 
 In Figure~\ref{fig:fdbideal}(b) and (c) we show the NomosUC process for \Fdb and a party that sends it messages over a channel of type $\m{db[k][v]}$. 
 At initialization, only the protocol party can send a message with \ichoice. 
-To add to the database in Line 4, the party sends the label \mb{store} over \ic{p2f} and uses \isend to send the message contents in the type: a PID and a key-value pair to store.
-On the \Fdb side, it has to wait to receive a message and performs a \icase match on its incoming channel (line 4). 
+The party stores on Line 4 and sends the label \mb{store} over \ic{p2f} using \isend to send the message contents in the type: a PID and a key-value pair to store.
+On the \Fdb side, it waits to receive a message with a \icase match on its incoming channel (line 4). 
 On \mb{store}, it \irecv s the pid and key-value pair and appends them to $\ell$. 
-The session type progresses to the external choice, and \Fdb sends an \mb{Ok} ackknowledgement back to the party (line 7) with \inline{pid}.
-The channel recurses back to type \m{db[k][v]} and the process calls itself again with a new list \inline{$\$$tb'} and waits for messages.
+The session type progresses to the external choice, and \Fdb sends the \mb{Ok} acknowledgement back (line 7) with \inline{pid}.
+The channel recurses back to type \m{db[k][v]} and the process calls itself again with a new list \inline{$\$$tb'} and waits for new messages.
 Not all session types recurse back like \inline{db[k][v]}. Some types, for example for one-shot functionalities, eventually transition to a terminating type \m{1}.
 
-Canonically in NomosUC, functionalities and parties are given two channes, here \ic{p2f} and \ic{f2p}, to allow unidirectional communication over each if desired or necessary. 
+Canonically in NomosUC, functionalities and parties are given two channels, here the two are \ic{p2f} and \ic{f2p}, to allow unidirectional communication over each if desired or necessary. 
 In Figure~\ref{fig:fdbideal}, the communication pattern is easily captured by just one channel and one type, therefore \ic{f2p} is unused and typed with the terminating \m{1}. 
 In general, a functionality can be written to accept any number of channels, even one channel per party but, as we explain in Section~\ref{sec:execuc}, this requires some additional multiplexing code which can be generated at compile-time.\todo{explain in section}
 
@@ -60,8 +61,8 @@ To complete the example, the party can query with \inline{retrieve} and get a \m
 %An functionaliy that doesn't always behave this way satisfies some other set of properties than those intutively desired from a database and would likely fail to be emulated by a correct protocol that implements a database.
 
 The type of \Fdb in Figure~\ref{fig:fdbideal} also indicates a channel with \A called \ic{a2f}. 
-We learn that \A has access to the same interface as protocol parties, and, importantly, that \Fdb doesn't leak any information to it~\footnote{The same type means the same code for handling messages on \ic{a2f} so we exclude it to save space}.
-\emph{Leaks define a crucial part of the adversarial model for functionalities, and the session type succinctly described it}.
+Given just the type we can infer that \A has access to the same interface as protocol parties, and, importantly, that \Fdb doesn't leak any information to it~\footnote{We exclude it to save space.}.
+\emph{Leaks define a crucial part of the adversarial model for functionalities, and the session type succinctly describe it}.
 %\begin{tabbing}
 %	$\mi{type} \; \m{db[k][v]} = \ichoice{$\=$\textcolor{red}{\paypot{1}}$\=$ \; \mb{store}:\m{PID} \arrow \m{k} \arrow$ \\
 %	\>\>$\echoice{ \mb{OK}: \m{PID} \arrow \m{db[k][v]}},$ \\

@@ -87,17 +87,24 @@ and full circle \fullcirc[0.5ex] indicates full support.}
 \label{fig:relatedworks}
 \end{figure}
 
+\paragraph*{\textbf{Session Types}}
 On a different thread, the core calculus of NomosUC is inspired from resource-aware session types~\cite{das2018work} which combines
 session types~\cite{HondaCONCUR1993, HondaESOP1998, HondaPOPL2008,caires2010session, ToninhoESOP2013, PfenningFOSSACS2015,
 WadlerICFP2012} and automatic amortized resource analysis~\cite{Hofmann03AARA,HoffmannW15}.
-Session types were introduced by Honda et al.~\cite{HondaCONCUR1993} to describe and enforce bi-directional communication protocols
-in message-passing systems.
-Resource-aware session types~\cite{das2018work} add potential annotations to session types for execution cost analysis
-of distributed protocols.
-More related to security, recent work has integrated session types with information flow type systems, both
-in the binary~\cite{Derakhshan21LICS} and multiparty~\cite{Capecchi10CONCUR} setting.
-The former uses logical relations to define non-interference while the latter
-guarantees a form of access control and secure information flow.
+We build off binary session types in this work, however other formuations such as multi-party session types exist that allow describing a protocol between many processes rather than bi-directional~\cite{Capecchi10CONCUR}.
+Though appearing as a better fit, multiparty session types are not well-suited for dynamic creation of parties since they require statically specifying a global communication protocol between all processes.
+This would not allow for the possibility of spawning a dynamic (or even static) number of processes in the middle of a communication, which is central to UC.
+Moreover, binary session types also provide support for cost analysis that is fundamental to the import mechanism, a core contribution of our work.
+
+%Session types were introduced by Honda et al.~\cite{HondaCONCUR1993} to describe and enforce bi-directional communication protocols
+%in message-passing systems.
+%Resource-aware session types~\cite{das2018work} add potential annotations to session types for execution cost analysis
+%of distributed protocols.
+%Another formulation of session types that aren't binary~\cite{Derakhshan21LICS} are multiparty-session types~\cite{Capecchi10CONCUR} that
+%More related to security, recent work has integrated session types with information flow type systems, both
+%in the binary~\cite{Derakhshan21LICS} and multiparty~\cite{Capecchi10CONCUR} setting.
+%The former uses logical relations to define non-interference while the latter
+%guarantees a form of access control and secure information flow.
 
 %There is large body of similar work that introduces process calculi, some extensions of $\pi$-calculus, like ILC.
 %Mateus et al.~\cite{mateus} for example introduces process calulus for simpler, sequential composition but is constraints to a schedular-based construction where probabilistic state transitions follow unifor distribution at every step.

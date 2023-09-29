@@ -60,3 +60,5 @@ proc party_wrapper_p2f[K][s][z2p,p2z][p2f,f2p]:
     $ch <- party_wrapper_p2f[K][s][z2p,p2z][f2p,p2f] <- ... (idx+1) ;
 }
 
+(* dummy and corrupt parties are handled identically: partywrapper forwards the messages without any interna shenanigans with parties *)
+

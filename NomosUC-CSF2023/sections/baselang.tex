@@ -15,8 +15,8 @@ of session type $C$ along channel $z$, \emph{using} the services of session
 types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$ respectively.
 For a \emph{well-formed} judgment, all channel names need to be distinct.
 The linear antecedents are often abbreviated to $\D$.
-The sender and receiver channels are the antecedents of \Fcom in Figure~\ref{fig:fcomideal}(b) 
-and its offered channel \inline{fc} unused.
+The channels \ic{p2f}, \ic{f2p}, \ic{a2f}, and \ic{f2a} are the antedecents of \Fdb in Figure~\ref{fig:fdbideal}
+and its offered channel \ic{c} is unused.
 In general throughout this work we don't use the offered channels of processes 
 aside from the \emph{providerless channels} which we discuss in detail later in this
 section. 
@@ -35,9 +35,8 @@ of each type stored in the process (explained more in Section~\ref{sec:import}).
 $\Psi$ represents the functional data structures and $\D$ collects the
 session-typed channels along with an optional \emph{write token} $\wt$
 (to resolve non-determinism in the semantics) used by the process.
-Intuitively, the sender must possess the write token before it can 
-send a commitment to \Fcom. The token is transferred to \Fcom which then 
-gives it to the receiver along with the \m{Commit} message.
+Intuitively, the party must possess the write token before it can 
+query or store to \Fdb. The token goes to \Fdb which then gives it back.
 %Intuitively, the process sending a message \emph{must possess} the write
 %token which is then transferred to the receiver along with the message.
 Globally, the process owning the write token is activated to take the
@@ -74,11 +73,8 @@ The internal choice $\ichoice{\ell : A_\ell}_{\ell \in L}$ constructor
 is an $n$-ary labeled generalization of the additive disjunction $A \oplus B$.
 A process that provides  $x : \ichoice{\ell : A_\ell}_{\ell \in L}$ can send
 any label $l \in L$ along $x$ and then continue by providing $x : A_l$. 
-The sender in \Fcom is the provider and has one label to chose from: \m{Commit}.
-The channel then transitions to a new type whose only available label is \m{Open}.
 %The corresponding process is written as $(\esendl{x}{l} \semi P)$, where
 %$P$ is the continuation that provides $A_l$.
-On the other end of the channel, the client \Fcom branches on the label received along $x$.
 The provider and client are typed according to the following $\oplus R$ and $\oplus L$
 rules, respectively (we omit $\Sg, k, \Psi, \Tokens$ from the rules since they are constants).
 Additionally, the provider should possess the write token to be able to send the
@@ -138,8 +134,6 @@ A_\ell}_{\ell \in L}$, which reverses the role of the provider and client.
 The provider process of $x : \echoice{\ell : A_\ell}_{\ell \in L}$ branches on receiving a label
 using the expression $\ecase{x}{\ell}{Q_\ell}_{\ell \in L}$,
 while the client sends one such label in $L$.
-\Fcom is the client for the channel with the receiver, and performs an external choice operation
-when sending the label $\m{Committed}$ to the receiver.
 % using the expression $(\esendl{x}{l} \semi P)$.
 % $k \in L$ (described in $\with R$), while the client sends this label
 % (described in $\with L$).

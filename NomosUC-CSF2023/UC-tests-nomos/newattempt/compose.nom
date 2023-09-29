@@ -40,6 +40,7 @@ proc sim_compose[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
 {
 	match $z_to_a, $p_to_a, $f_to_a (
 		Z2A2P,*,* =>
+			
 		Z2A2F,*,* =>
 	)
 }
@@ -139,4 +140,29 @@ proc sim_compose[K,K1][...]:
 
   $ch <- sim_rho <- k rng sid crupt #z2a  
   
+}
+
+proc sim_compose[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
+  (k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
+	($z_2_a: z2a[K][pi2f,a2f1]), ($a_2_z: a2z[K][f2pi,f12a]),
+	($p_to_a: p2a[K][f32p]), ($a_to_p: a2p[K][p2f3]),
+	($f_to_a: f2a[K][f32a]), ($a_to_f: a2f[K][a2f3]),
+   |- ($ch: 1) =
+{
+  (* the simulator gives Z input to S_pi and output from that to S_rho *)
+	match $z_to_a, $p_to_a, $f_to_a (
+		(* these are forwarded to s_pi without change *)
+		Z2A2P,*,* =>
+			pid,m = recv $z_to_a; get {z2an} $z_to_a ;
+			withdrawtoken K K1 z2an ;
+			$z2a'.SEND ; send $z2a' Z2A2P(pid,m) ; pay {K1} $z2a';
+		Z2A2F,*,* =>
+			m = recv $z_to_a ; get (z2an} $z_to_a ;
+			withdrawtoken K K1 z2an ;
+			$z2a'.SEND ; send $z2a' Z2A2F(pid,m) ; pay {K1} $z2a';
+		*,P2A,* => (* this goes to s_rho *)
+			pid,m = recv $p_to_a ; get {0} $p_to_a ;
+			$p2a'.SEND ; send $p2a' P2A(pid,m) ;
+		*,*,F2A => (* identical case *)
+	)
 }

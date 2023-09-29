@@ -122,9 +122,13 @@ Despite having an essentially sequential computation where only one process is a
 it is still not straightforward to define a notion of polynomial runtime for ITM systems.
 We need a way to make local judgments about each of \A, \Z, $\pi$, and \F and conclude the entire $\msf{execUC}$ overall is polynomial time. 
 Specifically, we want, for open terms, that at most polynomial work is performed per activation and, for closed terms, that the system doesn't take more than a polynomial number of steps.
+The emulation definition specifies a dependancy beteween environments and adversaries to prove security, and, without local judgements we can only show PPT emulation against specific combinations.
+Testing only specific combinations of ITMs, as ILC does, would mandate paper proofs of PPT adversaries that satisfy the $\forall$ quantifiers.
 %Looking at the order of quantifiers in the UC emulation definition from Relation~\ref{eqn:emulation}, we need a way to make local judgments about each $\A$, $\Z$, $\pi$, and $\F$ individual, and conclude that the entire $\msf{execUC} \; \Z \; \pi \; \A \; \F$ experiment overall is polynomial time as a result.
 %We follow Canetti's approach~\cite{canettiUC}, which is to keep track at runtime of quantity called ``import tokens'' and assign a runtime budget based on these.
-We rely on the ``import tokens'' notion of polynomial time and track execution time through tokens
+
+The UC framework defines the import mechanism for polynomial time to track execution through tokens that
+%We rely on the ``import tokens'' notion of polynomial time and track execution time through tokens
 are bounded by a total that is polynomial in the security parameter $K$ and that can be exchanged between processes to provide each other with a runtime budget.
 This notion of polynomial time was introduced by Canetti~\cite{canettiUC} when previous notions of polynomial time, such as polynomial in the length of input, were identified to have major flaws that allowed for super-polynomial behavior.
 %These tokens can be passed among the processes along with the messages sent on each tape, but the total amount of tokens must be conserved (neither created nor destroyed), and locally each process cannot take more steps than (a polynomial of) the amount of import tokens it has stored.

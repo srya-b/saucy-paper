@@ -1,4 +1,3 @@
-\todo{IMPORTANT: We plan to remove Figure 2 and rely on text explanations of configurations to then present progress, preservation, local/global PPT}
 The deep connection between our type system and the operational semantics are
 formalized by the standard \emph{type preservation} and \emph{progress} theorems.
 The preservation theorem also guarantees that the execution time is polynomial in the import tokens.
@@ -64,16 +63,16 @@ We use the following judgment to type a configuration w.r.t. $\Sg$
 It states that the configuration $\config$
 uses the channels in the context $\D_1$ and provides the channels in
 the context $\D_2$.
-In addition, $T$, and $W$ denotes the total sum of the number of real tokens,
-and work counter of each semantic object in a configuration respectively.
+In addition, $T$ and $W$ denotes the total sum of the number of real tokens
+and work counter of each semantic object in a configuration, respectively.
 
 \rmd{The configuration typing judgment is defined using
 the rules presented in Figure~\ref{fig:config_typing}.}
-\ins{We relegate the $\m{proc}$ and $\m{msg}$ rules to Appendix~\ref{app:someapp} to save space.
+%We relegate the $\m{proc}$ and $\m{msg}$ rules to Appendix~\ref{app:someapp} to save space.
 %
-The rule $\m{empty}$ defines that an empty configuration
-An \m{empty} configuration is well-typed with $(T, W) = (0, 0)$ and uses and
-provides the same set of channels.}
+%The rule $\m{empty}$ defines that an empty configuration
+%An \m{empty} configuration is well-typed with $(T, W) = (0, 0)$ and uses and
+%provides the same set of channels.
 The $\m{compose}$ rule combines two configurations by canceling out
 the common channels in $\D_1$ and adding the individual tokens, potential, and work.
 \rmd{To build up the configuration from processes (resp. messages), we use the $\m{proc}$ (resp. $\m{msg}$) rule.}
@@ -83,6 +82,8 @@ the common channels in $\D_1$ and adding the individual tokens, potential, and w
   {\D_0 \overset{T_1}{\underset{W_1}{\vDash}} \config_1 :: \D_1 \qquad
   \D_1 \overset{T_2}{\underset{W_2}{\vDash}} \config_2 :: \D_2}
 \end{mathpar}
+The full typing rules for a configuration (the \m{empty} configuration, \m{proc}, and \m{msg}) can be found in the Appendix and aren't necessary for understanding the theorems presented.
+
 \rmd{For a process, the configuration simply checks how many real tokens $t$ it possesses and
 uses it as the token count.
 Note that the process could be operating in a sandbox in which case it would not possess
