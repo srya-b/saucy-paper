@@ -110,11 +110,24 @@
 \maketitle
 
 \begin{abstract}
-The UC framework is the gold standard for proving the security of cryptographic and distributed protocols, however on-paper UC definitions can be long, complicated, and difficult to understand and reuse.
-Furthermore, protocols proven secure in UC exists largely on-paper and are often realized in software frameworks that depart entirely from the UC model. 
-Not only does this diminish the usefulness of the UC proof but creates a further obligation to evaluate the security of the implemenation.
-A great body of prior work attempts to provide programming support and tools for UC, but many of them propose bespoke programming languages that lack the expressiveness of more mainstream software development environments.
-In this work we aim to further bridge the gap between UC theory and software implementation by proposing a new development framework augmented with novel, software-inspired network modelling, a Haskell UC implementation, and fuzz testing as a means of informal security analysis.
+% UC standard for cryptography and used in defining distributed systems as well, especially in the current era of asynchronous blockchain protocols
+% UC is esoteric, hard to understand, and not useful to programmers despite its appeal to modularity
+% even proofs/code in literature is implemented in a non-UC way so security proofs become kind of useless
+% existing tooling makes proving easier but tranfers the problem to working with bespoke languages, foralisms, etc.
+
+The UC framework is the gold standard for proving the security of cryptographic and distributed protocols, however its highly technical nature makes it difficult to understand and use for those not already well-versed.
+This renders on-paper proofs and costructions hard to verify or understand, and it results in implementations of such protocols departing from the UC computation model alltogether rendering security prooff obsolete.
+Existing programming language tools for UC attempt to make proving and writing definitions easier through a type systems and applying formal verification, but do little to make UC more accessible by introducing bespoke programming languages and formalisms.
+
+We contend that UC has a place as software develpoment framework, and not only a theoretical proving framework.
+Specifically, its modularity and compositional security guarantees suggest it aligns well with fundamental software development principles, and it's ideal functionality model succintly captures intended properties, adversarial capabilities, and stands are a more specfic and useful analog of a software module.
+\todo{we want to show that UC is amenable to software engineering and challenge conventional wisdom and say that this avenue requires greater work/effort/investiation/research where the payoff could be great!}
+
+We validate this claim by proposing a simpler, more programmining-friendly, abstraction to network modelling in UC and through case studies to understand how well UC works with existing software practicies.
+Specifically we use fuzz testing as our experimental apparatus, and apply it to implementations of real byzantine agreement protocols ranging from simple to complex. 
+We demonstrate the usefulness of the ideal functionality definitions as a high-level property-based models, UC's adversarial modelling of scheduling and leaks for testing protocol paths, and the advantage of its modular approach on minimizing state space for fuzzers. 
+
+\todo{how to throw in that along the way we arrive at a few insights into what it means to write code or on-paper definitions in the UC-style and how it manifests itelf (like multi-threaded computation model vs ITM model)}
 \end{abstract}
 
 \begin{IEEEkeywords}

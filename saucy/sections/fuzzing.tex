@@ -1,11 +1,25 @@
-Fuzz testing is a method of property-based testing that involves generating random inputs for a program and checking the results agains some intended specification.
-We opt for fuzz testing as our informal security analysis technique because of its effectiveness at explring the state space of complex programs and the natural fit of the ideal functionality paradigm to property-based testing.
-A large body of prior work has shown that fuzzing is an effective analysis tool and can be as good, or even better, than formal analysis tools like symbolic execution.
-Most prior work in fuzzing is limited to a compiled binary of a single instance of a local program. 
-Prior work that applies fuzzing to distributed systems, such as the work by Jepsen, is relegated to working with a compiled binary of a large code-base.
-This limits the degree to which byzantine testing can take place and requires  large engineerng effort to setup a testing environment. 
-As such inputs in Jepsen actualy end up going through several layers of code for different purposes and finding a bug makes it difficult to pinpoint exactly where it is caused. 
-We intend on \us being a development framework, and, as we will show, the composable nature of UC combined with the ideal functionality paradigm resolved many of these previous drawbacks.
+The modelling of the UC framework lends itself uniquely to testing and validating distributed systems because of its handling of byzantine parties, its modelling of adversarial capabilities, and its similarity to modular softwar development.
+We validate this claim by applying fuzz testing, a method of property-based testing that involves generating random inputs and checking output against a spec, techniques to UC implementations of byzantine protocols in our implementation and showcase its compaibility with UC at a fundamental level.
+We opt for fuzz testing as our analysis technique because of its effectiveness at exploring the state space of complex programs and the natural fit of the ideal functionality paradigm to property-based testing.
+Furthermore, a large body of prior work has shown that fuzzing is an effective analysis tool and can be as good, or even better, than formal analysis tools like symbolic execution.
+Most prior work, however, is limited to testing binaries of local programs, and even applications of fuzzing to distributed systems are relegated to testing large pre-compiled binaries made up of a variety of different software modules, packages, and dependencies.
+This limits the degree to which byzantine testing can take place and requires a large engineerng effort.
+Developing code around the constraints of the UC framework complements efforts at fuzz testing by allowing easy testing of byzantine behavior, testing against an ideal functionality spec, and testing subcomponents in isolation.
+
+\subsection{Fuzzing in UC}
+% testing in UC is done through carefully constructing environments to test different conditions/edge cases/states
+% the only observation an environment can make is through leaks from the adversary and outputs from the protocol parties
+Testing UC definitions traditionally involves creating environments to explore the state space of a protocol or simulator proof.
+Environments can learn about the execution only through outputs by honest parties (usually only a single messages as a result of some computation) or leaks that the adversary receives from hybrid functionalities that capture primitives like p2p messages and other network assumptions.
+The limited information observable by environments further pushes UC definitions to be small and unifunctional so subcomponents of large protocols can be adequately tested.
+
+Manually writing test environments
+
+For complicated protocols, or protocols lasting multiple rounds, manually creating environments to test specific properties is tedious and time consuming.
+Writing environment \emph{generators} that create environments non-deterministically and explore different scheduling paths and party inputs can go a long way in remedying this situation.
+
+
+
 
 \subsection{QuickCheck in \us}
 QuickCheck is a module that allows users to perform property-based testing and generate inputs from a program.

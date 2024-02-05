@@ -1,3 +1,49 @@
+Universal Composability is the leading framework for defining security of message-passing protocols between mutually distrustful parties \todo{better wording here to not say it's only cryptography and then talk about distributes systems}.
+In recent years, blockchain protocols combine cryptographic and distributed protocols, and UC has become the preferred proving framework due to its compositional guarantees and modularity~\cite{blockchain, papers, that, do, this}
+It's core feature allows complex protocols to rely on simpler building blocks, called ideal functionalities, that act as trusted third parties. 
+The security definition ensures that protocols remain secure when the ideal functionalites they use are replaced by protocols that realize them.
+Despite modularity being a key design principle, UC proofs and definitions, in literature, are often complex and difficult to undersatand, let alone reuse or falsify.
+Furthermore, its complexity makes it difficult to penetrate by new users inundated with esoteric terminology and concepts, and ends up being used only as a reference for actual protocol implementations.
+
+Existing tools apply programming language techniques to UC and attempt to mitigate these drawbacks~\cite{ipdl,easyuc,somemore} by introducing new languages to express UC defintiisons or proposing a formal logic to express UC security. 
+Althought useful, such tools to little to make UC more approachable or usable by non-cryptography researchers because 
+\begin{enumerate}
+\item niche programming languages aren't suited to production environments and add to the already high bra for understanding UC
+\item the added obligation of using language machinery or new tooling for mechanizes proofs on the programmer can be extensive~\cite{ironfleet}.
+\end{enumerate}
+This results in implementations that often depart from the UC model entirely, making existing proofs less useful .
+
+\todo{somewhere between explain UC first?? but the issue there is we bury the lede (below) way too far into the paper}
+In this work, we contend that the UC framework can be a practical tool for protocol implementations, especially byzantine protcols, rather than a purely theoretical tool.
+Ideal functionalities behave like softare modules used during development because they concisely capture an interface, specification, and security guarantees.
+Most importantly, they concretely define adversarial capability and the domain of adversarial actions expected. 
+The UC execution model then is a clean and simple harness that allows for developing, testing, and composing together protocols under arbitrary adverasrial conditions.
+Furthremore, maintaining a symmetry between paper-and-pencil definitions and the resulting implementation solidifies the validity of existing security proofs within the implementation.\todo{i want to say how the symmetry almost makes the code more valid/secure w.r.t. the proof}
+
+We motivate our vision for UC through a realization of the framework in a mainstrain programming language: Haskell. 
+This implementation realizes the ITM computation model, and provides type checking of channel interfaces between module though we envision more descriptive type systems can be applied to this task.
+We push modular and programming-inspired UC designs further by providing a new abstraction for realizing asynchronous, and other arbitrary, networks that both greatly simplifies paper-and-pencil definitions/proofs and an \emph{asynchronous code} abstraction familiar to programmers.
+Finally, we employ fuzz testing, a critically important and highly successful testing strategy in modern software engineering, to our own implementations of canonical and modern byzantine agreement protocols and showcase
+\begin{itemize}
+\item the UC framework especially lends itself to fuzz testing by reducing complex distributed systems to a set of simple protocol and adversarial interfaces that greatly reduce the input space to be searched
+\item the real/ideal paradigm already provides a built-in specification, the ideal functionality, of the inteded protocol to test protocols properties against
+\item our novel design of asynchronous computing/networking \todo{something something}
+\end{itemize}
+
+Rough notes for the paragrapph. 
+We implement bracha, ben-or, aba and inject faults into them. show how simple fuzzers that don't target specific vulnerabilities can find bugs that violate agreement/safety/etf
+the better approach might be to idenftify only the set of bugs that would induce failures in safety and then say that those can be identified
+but what about simpler bugs? that would require more meaningful testing but not what UC is good fr
+existing fuzz testing is already good for bugs in single compiled progra like a single protocol running in isolation, so we don't think of finding those
+but finding those of a distributed nature
+
+
+Rather than bridge the gap between cryptography reserachers and protocol implementers, these approaches aid validation but accept and embrace the complexity of the framework.
+Ultimately, the advantages of the proving framework, and the paper proofs that rely on it, are lost because of code that completely departs from them. 
+
+
+
+
 Universal Composability (UC)~\cite{canettiUC} is the leading framework for defining security properties of cryptographic protocols.
 It is considered the strongest definitional model since it guarantees the security properties hold even when the protocol is arbitrarily composed with
 multiple concurrently-executing sessions of other protocol.
@@ -7,7 +53,8 @@ UC defines the \emph{ideal functionality}, a trusted third party that serves as 
 A core feature of the frameowk is its modularity where complex protocols are defined in terms of simple, ideal functionality building blocks that are secure by definition. 
 A major drawback of UC is that security proofs can be quite complicated and difficult to analyze. 
 Many related works \cite{ilc, easyuc, ipdl, etc} attempt to formalize UC security through a new programming language or defining UC security in an existing formal verification lanuage, and,  
-although useful, such tools frequently never make their way to software engineering practice because 1. niche programming languages aren't suited to large scale development and can be difficult to use, and 2. the added proof obligations on the programmer can be extensive~\cite{ironfleet}.
+although useful, such tools frequently never make their way to software engineering practice because
+1. niche programming languages aren't suited to large scale development and can be difficult to use, and 2. the added proof obligations on the programmer can be extensive~\cite{ironfleet}.
 Utimately, UC-secure prtocols end up being implemented in software frameworks that do not replicate UC, and, therefore, my invalidate on-paper proofs without further security proofs of the code.
 
 We address this gap in UC-driven software develoment by exploring how inforal security analysis of UC definitons, in our implementation of UC, can identify, and aid in eliminating, security vulnerabilities.

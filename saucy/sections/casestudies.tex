@@ -1,0 +1,19 @@
+% Emphasize that this is to assert that adapting existing dev techniques to UC is possible, can aid
+% devs, catch errors
+In this section we work through three case studies of engineering different byazntine agreement protocols, applying fuzz testing with faults injected into them, and offering insights for writing code in the UC way.
+The protocols in question are: the simple, yet very well-known, Bracha broadcast~\cite{bracha}, a toy research protocol by Ben-Or~\cite{benor}, and a modern optimization of the well-known ABA protocol by Mostefaoui, Moumen, and Raynal~\cite{mmr,aba} (referred to as MMR).
+
+% Method injecting faults
+\subsection{Fuzzing}
+Fuzz testing is our chosen apparatus for several reasons. The main reason is that it is a widely used and high successful software engineering tool.
+As mentioned previously, some existing work around tooling for UC takes advantage of symbolic execution to aid in proving security or detecting distinguishing states in a protocol.
+Fuzz testing has been shown to be as good, if not better, than such techniques at detecting bugs.
+Comparatively, it provides an informal security guarantee because it can detect bugs but not rule them out.
+Even so, showing the adaptability of UC and fuzz-testing for byzantine protocols establishes a foundation for recasting UC as useful outside of esoteric academic papers and transalatable to real implementations and engineering \todo{<< this is one of the "tag lines" of this paper and must be refined through iteration.}.
+We show in this case study that a reasonable type system goes a long way in enabling useful fuzz testing, that the environment-exection abstraction for UC experiments is a useful structure for generating test cases, and that the ideal functionality model makes state space searching more tractable while UC composition security bears the load of testing boundaries accross trust boundaries\todo{maybe get a better word to state this than "trust boundarie". I'm trying to refer to testing places where different code interats}.
+
+\paragraph{Injecting Faults}
+Our aim of this paper is not to develop a fuzz tester or fuzz testing strategy for a production environment. 
+Therefore, we evaluate UC or fuzzing by creating generators for environments (and adversarial strategies) and applying them to implementations of the protocols where programming faults are injected into them.
+The failures we introuce, we believe, are representative of real implementation and logical bugs. 
+We provide the correct implementations, validating and testing using our fuzz testing, and categorize 
