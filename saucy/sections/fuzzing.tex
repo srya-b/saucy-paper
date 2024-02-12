@@ -1,97 +1,132 @@
-The modelling of the UC framework lends itself uniquely to testing and validating distributed systems because of its handling of byzantine parties, its modelling of adversarial capabilities, and its similarity to modular softwar development.
-We validate this claim by applying fuzz testing, a method of property-based testing that involves generating random inputs and checking output against a spec, techniques to UC implementations of byzantine protocols in our implementation and showcase its compaibility with UC at a fundamental level.
-We opt for fuzz testing as our analysis technique because of its effectiveness at exploring the state space of complex programs and the natural fit of the ideal functionality paradigm to property-based testing.
-Furthermore, a large body of prior work has shown that fuzzing is an effective analysis tool and can be as good, or even better, than formal analysis tools like symbolic execution.
-Most prior work, however, is limited to testing binaries of local programs, and even applications of fuzzing to distributed systems are relegated to testing large pre-compiled binaries made up of a variety of different software modules, packages, and dependencies.
-This limits the degree to which byzantine testing can take place and requires a large engineerng effort.
-Developing code around the constraints of the UC framework complements efforts at fuzz testing by allowing easy testing of byzantine behavior, testing against an ideal functionality spec, and testing subcomponents in isolation.
+%The modelling of the UC framework lends itself uniquely to testing and validating distributed systems because of its handling of byzantine parties, its modelling of adversarial capabilities, and its similarity to modular softwar development.
+%We validate this claim by applying fuzz testing, a method of property-based testing that involves generating random inputs and checking output against a spec, techniques to UC implementations of byzantine protocols in our implementation and showcase its compaibility with UC at a fundamental level.
+%We opt for fuzz testing as our analysis technique because of its effectiveness at exploring the state space of complex programs and the natural fit of the ideal functionality paradigm to property-based testing.
+%Furthermore, a large body of prior work has shown that fuzzing is an effective analysis tool and can be as good, or even better, than formal analysis tools like symbolic execution.
+%Most prior work, however, is limited to testing binaries of local programs, and even applications of fuzzing to distributed systems are relegated to testing large pre-compiled binaries made up of a variety of different software modules, packages, and dependencies.
+%This limits the degree to which byzantine testing can take place and requires a large engineerng effort.
+%Developing code around the constraints of the UC framework complements efforts at fuzz testing by allowing easy testing of byzantine behavior, testing against an ideal functionality spec, and testing subcomponents in isolation.
 
-\subsection{Fuzzing in UC}
-% testing in UC is done through carefully constructing environments to test different conditions/edge cases/states
-% the only observation an environment can make is through leaks from the adversary and outputs from the protocol parties
-Testing UC definitions traditionally involves creating environments to explore the state space of a protocol or simulator proof.
-Environments can learn about the execution only through outputs by honest parties (usually only a single messages as a result of some computation) or leaks that the adversary receives from hybrid functionalities that capture primitives like p2p messages and other network assumptions.
-The limited information observable by environments further pushes UC definitions to be small and unifunctional so subcomponents of large protocols can be adequately tested.
+% Emphasize that this is to assert that adapting existing dev techniques to UC is possible, can aid
+% devs, catch errors
+In this section we work through three case studies of engineering different byazntine agreement protocols, applying fuzz testing (a method of property-based testing that involves generating random inputs and checking output against a spec) techniques to UC, and showing a deep and useful compatibility between UC and fuzzing.
+The protocols in question are: the simple, yet very well-known, Bracha broadcast~\cite{bracha}, a toy research protocol by Ben-Or~\cite{benor}, and a modern optimization of the well-known ABA protocol by Mostefaoui, Moumen, and Raynal~\cite{mmr,aba} (referred to as MMR).
 
-Manually writing test environments
+% Method injecting faults
+\paragraph{Why Fuzzing?}
+\todo{why did we choose fuzzing?}
+Fuzz testing is a good apparatus for testing out hypothesis for several reason.
+The main reason is that it is widely used and is a vital tool in any software engineering methodology.
+Furthermore, fuzz testing has been shown to be ass good, if not better, than symbolic execution in finding bugs~\cite{citation1}.
+Recall symbolic execution is also a tool used for formal analysis in existing UC literature \footnote{Fuzz testing can detect bugs but cannot rule them out.}
+Showing that we can apply informal analysis techniques like fuzzing to assert secure UC definitions is critical in showing UC's capability with sotware engineering and firmly establish a bridge between definitions in literature and their translation to real implementations. 
+% showing that UC and fuzz testing work together pretty easily, makes out point of thinking of UC as a dev framework and forgo formal guarantees for this
+Emulation is at the heart of UC security because it asserts indistinguishability over all possible environments. 
+Fuzz testing is natural candidate to replace cumbersome manual crafting of environments with randomized generation of environments that can cover a variety of adversarial strategies.
+Furthermore, UC's emulation definition, combined with robust informal security analysis, lets the programmer take advantage of UC composition to get strong guarantees of security accross ``trust boundaries`` in large codebases.
+% Showing the adaptability of UC and fuzz-testing for byzantine protocols establishes a foundation for casting UC as useful outside of esoteric academic use and transalatable to real implementations and engineering \todo{<< this is one of the "tag lines" of this paper and must be refined through iteration.}.
 
-For complicated protocols, or protocols lasting multiple rounds, manually creating environments to test specific properties is tedious and time consuming.
-Writing environment \emph{generators} that create environments non-deterministically and explore different scheduling paths and party inputs can go a long way in remedying this situation.
+%\subsection{Fuzzing in UC}
+%% testing in UC is done through carefully constructing environments to test different conditions/edge cases/states
+%% the only observation an environment can make is through leaks from the adversary and outputs from the protocol parties
+%Testing UC definitions traditionally involves creating environments to explore the state space of a protocol or simulator proof.
+%Environments can learn about the execution only through outputs by honest parties (usually only a single messages as a result of some computation) or leaks that the adversary receives from hybrid functionalities that capture primitives like p2p messages and other network assumptions.
+%The limited information observable by environments further pushes UC definitions to be small and unifunctional so subcomponents of large protocols can be adequately tested.
+%Furthermore, the only levers an environment can use for manipulating an execution are inputs for honest parties (usually given once at the beginning 
+%
+%Manually writing test environments
+%
+%For complicated protocols, or protocols lasting multiple rounds, manually creating environments to test specific properties is tedious and time consuming.
+%Writing environment \emph{generators} that create environments non-deterministically and explore different scheduling paths and party inputs can go a long way in remedying this situation.
 
-
+\subsection{Checking Properties}
+\todo{The goal of this subsection is to talk about what properties can be tested for and which can't. The turn here is that we aren't limited to the ideal functionality case, but, in conjunction with paper proofs can check other properties of the state of the protocol parties too. Like Lemma 17 for ABA if we can assert certain properties in proof we can check them. Liveness is hard to dowithout some other information but we can use such predicates.}
+UC limits what is learned about a protocol to what messages the environment receives from honest parties and the adversary (which is controls).
+Unlike more complicated state-aware fuzzers, there is no reference or spec to compare a protocol against other than an ideal functionality.
+For byzantine agreement protocols, the important properties are safety and liveness, however other itermediate properties are also expressible through ideal functionalities, for example:
+\begin{itemize}
+\item only values proposed by an honest party can be decided
+\item if all parties input the same value, they decide in one round 
+\end{itemize}
 
 
 \subsection{QuickCheck in \us}
-QuickCheck is a module that allows users to perform property-based testing and generate inputs from a program.
-It defines a new type \texttt{Gen a} that takes one argument \texttt{a} and generates values of the type \texttt{a}.
-For many common types the module has already defined \texttt{Gen} for, and it defines functions to generate, combine, and modify generated values. 
-As we will detail later in this section, we define a generator for our custom data type respresenting the UC execution parameters--namely the set of parties, the set of corrupt parties, and other protocol-specific parameters.
+\todo{The goal of this section is to cover how we go about using quickcheck in saucy.
+\begin{itemize}
+\item channels vs ITMs
+\item UC execution vs thread-based model
+\item What is important to know about writing protocols
+\item how are environments written/generated
+\item what are input generators for crupt inputs and adversarial scheduling?
+\end{itemize}
+}
+QuickCheck is a haskell module that allows for property-based testing through generating random input for programs.
+Programmers define a program specification through properties, and QuickCheck generates random inputs, or uses a programmer-defined generators, to test these properties and provide combinators to define new properties. 
+Like the rest of this work, we work with the monadic form of QuickCheck for testing \us ITMs.
+
+Generatin arbitrary environments starts with defining generators for messages by corrupt parties. 
+Using QuickCheck's \texttt{Arbitrary} typeclass gives a default generator, but we require a stateful approach to creating messages for a few important reasons to reduce the amount of useless inputs that are generated. 
+For example, a corrupt party sending trying to broadcast multiple messages to the same $\Fchan$ when only one message can be broadcast per instance, and choosing random indices of codeblocks to deliver rather than only ones which exist.
+
+ABA consists of two message types, \texttt{AUX} and \texttt{EST}, and generating a random message to a particular party looks like this:
 
 \todo{include a simple ITM example that does something and with small probability does something else. Like the doubler example in \texttt{Process.io}. Flip a bias coin and do triple with small probability and show a property that quickCheck uses to find the issue.}
 
-\paragraph{Writing Protocols for Fuzz Testing}
-There are a few common design patterns in UC definitions that aren't completely compatible with our approach to fuzzing.
-For example, we borrow terminology from IronFleet~\cite{ironfleet} and require that protocols, functionalities, and simulators implemented for testing in \us should consist of \emph{always-enabled actions}.
-The primary example comes from the import mechanism. When any ITM in the execution runs out of import, the entire execution is meant to halt.
-This is different from cases where an ITM naturally halts and gives control back to the environment.
-Rather, we prefer ITMs to remain active and always pass control to the environment when they are activated. 
-We assert that this is no less restrictive on the UC proofs and protocols that can be expressed in \us.
-In UC, we replace ``running out of import'' with the following simple pass-through.
-\begin{lstlisting}
-fork $ forever $ do
-  readChan f2p
-  ?pass
-\end{lstlisting}
-Though this departs from the traditional notion of runtime in UC, we do not aim to impose a strict polynomial time notion in \us
-but us import as a tool to analyze protocols.
+\subsection{Writing Environments and Generators}
+Environments define the execution parameters of any UC experiment.
+They determine which parties are corrupt, what the protocol parameters are (in synchronous protocols this may include an upper bound on the maximum delay), and when/how honest parties get input.
+The use of a type system to contrain messages, where existing fuzz testing usually delivers some string of bytes to a program via stdin, constrains the possible size of input, as does the ideal functionality model.
+Therefore, a majority of the generative inputs an environment generates goes towards sending corrupt messages to honest parties and determining a delivery schedule of waiting code blocks.
+By relying on UC composition, only the protocol at hand needs to be considered and the trust boundary between it and a protocol that might replace the ideal functionalty is assumed safe.
 
-\subsection{Writing Environment Generators for Fuzzing}
-Owing to the ideal functionality paradigm, the space of adversarial actions is greatly reduces.
-Protocols that realize them can be simple as well and reply on other ideal functionalities as assumptions.
-This works to our advantage by allowing environment generators to be relatively simple with minimal protocol-specific behavior. 
-
-Recall that in this work we focus only on modelling distributed protocols under byzanting adversaries. 
-The input space for honest parties in such agreement protocols is small and a majority of the environment's inputs are to schedule delivery of messages between parties (according to some strategy) and sending messages on behalf of corrupted parties~\footnote{Recall that we work with the dummy adversary in the real world, and the environemnt determines all adverasrial input to ideal functionalities and corrupt parties.}
 We use examples from the Ben-Or protocol as the examples in this section to illustrate common steps for all environments and differens strategies that can be applied.
 The Ben-Or protocol is a byzanting bit agreemet protocol. Although not intended to be a realistic protocol to use, in practice, it is a good example for analysis and explaining our approach to fuzzing.
+
 \paragraph{Choosing Execution Parameters}
 An important generative parameter to test against is varying the protocol parameters. Specifically, the parties, the number of corruptions, and any protocol specific parameters.
-Generating the parties in the protocol and the corruptions entirely at random is not a useful approacht to exploring a protocols.
-In the Ben-Or protocol, for example, the important constraints on the choices is the corruption threshold that it supports ($5t < N$).
-Therefore, it suffices to test the protocol under a limited set of parties and corruptions as to test the boundaries of this threshold.
-We simpy wrap our property tests in a universal quantifier and ensure what we use only non-empty PIDs
+Generating the parties in the protocol and the corruptions entirely at random is not a useful approach to exploring a protocols.
+Choosing these parameters entirely at random is not a useful strategy.
+Instead we focus on the protocol specific constraints for useful paramters: in Ben-Or the corrupt threshold is $5t < N$ so we limit our search to at and around this boundary.
+We simpy wrap our property tests in a universal quantifier to ensure we generate unique parties and a corrupt set according to some constraint:
 \begin{lstlisting}
 forAllM ( suchThat (partiesBetween x y) nonTrivial) $ \parties -> 
+  let t = length parties `div` 5
   forAllM (cruptFrom parties t) $ \crupt ->
-  -- rest of property
+  -- definition of the property
 \end{lstlisting}
-We apply the universal quantifier built into QuickCheck to generate parties, and corruptions from those parties within a corruption threshold of \texttt{t}.
-On failing test cases, QuickCheck reports the generated values from these quantifiers on which the protocol fails.
-We can also apply arbitrary predicates to generate values of a certain form. In this case we don't want to consider trivial sets of PIDs where there are duplicates or empty strings. 
-In order to test the edge conditions of the corruption threshold appropriately, we constrain our Ben-Or testing to between 6 and 25 parties. 
-Logically, errors violating the properties of an agreement protocol should present themselves independent of a large number of parties.
+On failing test cases, QuickCheck reports the parameters chosing by the quantifiers.
+We can also apply arbitrary predicates to generate values of a certain form.
+Less than 10 parties isn't useful for adversarial testing in this case, and we avoid other trivial cases of PID choices.
 
 \paragraph{Generating Honest Input}
-By convention, in UC, parties often wait to receive some input first before doing anything else. More often than not this is in the form of input from \Z.
+ITMs in UC do nothin until they are first activated.
+For protocol parties this is usually input from \Z.
+An advantage of this form of testing is that UC forces our definitions to take into account initial conditions for parties \todo{ANDREW: ask about the relevance of initial conditions}.
+Ultimately, giving input to honest parties is simple. Interleaving it with other inputs to the advrsaries and corrupt parties is interesting.
 In the case of Ben-Or, parties expect to receive a message of \texttt{BenOrP2F\_Input Bool} from \Z.
-All environments for agreement protocols first decide which honest parties to give input to:
+Most frequently, environments for agreement protocols first decide which honest parties to give input to:
 \begin{lstlisting}
 -- HONEST INPUT --
 forMseq_ honest $ \h -> do
-  -- choose a boolean
-  x <- liftIO $ generate chooseAny
+  x <- liftIO $ generate arbitrary
   writeChan z2p $ (h, ((ClockP2F_Through $ 
     BenOrP2F_Input x), SendTokens inputTokens))
 \end{lstlisting}
 Recall the extra data constructor \texttt{ClockP2F\_Through} is an implmetation artefact from how we realized our asynchronous wrapper.
-Quite simply, we rely on QuickCheck to generate the appropriate type of input without having to express it explicitly. 
-Though a simple example with only boolean input, QuickCheck can automatically create generators for more complex types by generating individual parameters. \todo{flexibility from quickcheck in what values are generated, choosing ranges, making sure edge cases are explored}
-
-For some protocol it makes sense to give input to only an arbitrary number of parties which we can speciy, easily, with 
+In this case we randomly choose inputs for parties, but the different environment generators we experiment with create specific-size partions for different inputs and generate further input according to honest input choices. 
+Intuitively, environments that deliver code blocks and generate corrupt inputs with respect to the inputs the honest party receives yields environments more likely to discover safety violations.
+For some protocols it makes sense to give input to only an arbitrary number of parties which we can speciy, easily, with 
 \begin{lstlisting}
 subHonest <- generate $ sublistOf honest
-forMseq_ (subHonest) $ \h -> do
+forMseq_ (subHonest) $ \h -> do  
+  -- give input
 \end{lstlisting}
+or split inputs in half
+\begin{lstlisting}
+pidsT <- selectPIDs parties (n `div` 2)
+forMseq_ pidsT $ \p -> do
+-- give onlt True
+\end{lstlisting}
+Though a simple example with only boolean input, QuickCheck can automatically create generators for more complex types by generating individual parameters. \todo{flexibility from quickcheck in what values are generated, choosing ranges, making sure edge cases are explored}
 
 \paragraph{Generating Adversarial Input}
 Testing protocols under byzanting behavior is a one of the key advantages of using \us to develop and test protocols. 
@@ -123,7 +158,7 @@ The full message generator used for each of the protocols we analyze can be foun
 benOrGenerator n numQueue ssid parties inputs round dts = frequency $
   if n==0 then []
   else  
- 	[ ...
+    [ ...
       (5, (:) <$> ((shuffle parties) >>= (\party -> oneof inputs >>= (\inp -> (choose (0, 999999) :: Gen Int) >>= (\sid -> 
             return (Left (CmdOne (ssid (show sid)) (party !! 0) round inp dts, 0)))))) <*> (benOrGenerator (n-1) numQueue ssid parties inputs round dts))
       ...
@@ -187,8 +222,8 @@ For example, we can allow an environment to choose between multiple options with
 \begin{lstlisting}
 frequency $ 
   [ (x, deliverFIFO arbitrary),
-  	(y, deliverRandomly arbitrary),
-	(z, deliverSome arbitrary)
+    (y, deliverRandomly arbitrary),
+    (z, deliverSome arbitrary)
   ]
 \end{lstlisting} 
 Here the different input generators are selected with probability $\frac{x}{x+y+z}$ in the case of \texttt{deliverFIFO}.
@@ -200,6 +235,17 @@ For the distributed protocols we analyze in this work, censoring parties isn't a
 $\F_\msf{multicast}$ guarantees that all messages between any two parties are eventually delivered.
 In other distributed protocols, such as those that rely on gossip protocols, choosing a network topology is within the capabilities of the adversary.
 \emph{Disconnecting} parties is easily achieve in \us \todo{finish is this even important?}
+
+\paragraph{Writing Protocols for Fuzz Testing}
+% this goes way down here it's not important to the above writeup
+We highlight a few considerations and design patterns that are important when writing code in UC versus other models.
+The biggest different is the UC execution model. 
+Unlike thread-based models where context can be switched between processes, the ITM model allows only one machine to be active at a time and \emph{let's it decide when to give up control to another process}.
+This is certainly a design constraint on protocols in UC but poses no restriction on the expressiveness of the ITM model.
+Instead, it requires protocol designers to be more precise about how inputs are delivered to the different parties, when decisions are output in relation to when messages are received, etc. \todo{ say this better, initial conditions, etc.}
+
+\todo{should include at least one pseudo-code UC version of one of the protocols, the smallest one that illustrates the differences between them}
+
 
 \paragraph{Testing Simulation Proofs}
 
@@ -252,7 +298,8 @@ In ABA, it corresponds to advancing to the next round after sufficient \texttt{E
 This category of faults broadly captures a failure in the theoritcal foundation of a protocol and its defined fault tolerance. 
 Faults of this kind present themselves as safety violations or termination failures even when corruptions fall within the intended bound. 
 
-Next we look at more fine-grained faults introduced at the implementation level.  
+
+
 
 % we describe the faults that we inject
 % first figure out whether these faults would be recognizable: do some tests
@@ -303,7 +350,7 @@ The environment gives input to honest parties:
 Here we let QuickCheck infer the input and give it to the honest party. 
 
 The first step in any saucy fuzz testing is defining an input generator for the adverasry. 
-Remember the majority of work such as adverasrial scheduling, message delay, and corrupt party input \Z is giving input to the adversary. 	
+Remember the majority of work such as adverasrial scheduling, message delay, and corrupt party input \Z is giving input to the adversary.   
 For the BenOr protocol, there are three types of messages defined by
 \begin{lstlisting}
 data BenOrMsg = One RoundNo Bool | Two RoundNo | TwoD RoundNo Bool deriving (Show, Eq, Read)
@@ -453,14 +500,14 @@ While we only tackled distributed protocols here, with limited cryptography, we 
 
 \textbf{Currently} we test simulator proofs in much the same way as protocos:
 \begin{itemize}
-	\item bad protocols with the generic simulator
-	\item correct protocol with a simulator that uses an incorrect protocol to simulate
+    \item bad protocols with the generic simulator
+    \item correct protocol with a simulator that uses an incorrect protocol to simulate
 \end{itemize}
 
 \textbf{What we can add}:
 \begin{itemize}
-	\item add simple code failures such as double counting parties (not tracking which ones have sent messagest yet)
-	\item accept messages from previous round indicating incorrect assumptions about the network or the adversary
+    \item add simple code failures such as double counting parties (not tracking which ones have sent messagest yet)
+    \item accept messages from previous round indicating incorrect assumptions about the network or the adversary
 \end{itemize}
 
 For such protocols, environments follow some generic patterns for generating input.
@@ -567,8 +614,8 @@ that some ITM in the execution is out of import. The error can be explained in o
 two ways:
 
 \begin{enumerate}
-	\item The protocol, as defined, does not get enough import from the environment,  or it doesn't pass around enough import between the parties to achieve the desired functionality. It is a randomized protocol and there may be some sequence of random choices that delays termination by a large enough amount (or for many rounds) that the import provided is insufficient. 
-	\item The protocol does have a fault, and there is some sequence of random decisions the parties can make which results in the protocol no terminating in a polynomial amount of time. In reality, regardless of the polynomial import provided, there will always be some sequence of decisions that prevents poly-time termination. 
+    \item The protocol, as defined, does not get enough import from the environment,  or it doesn't pass around enough import between the parties to achieve the desired functionality. It is a randomized protocol and there may be some sequence of random choices that delays termination by a large enough amount (or for many rounds) that the import provided is insufficient. 
+    \item The protocol does have a fault, and there is some sequence of random decisions the parties can make which results in the protocol no terminating in a polynomial amount of time. In reality, regardless of the polynomial import provided, there will always be some sequence of decisions that prevents poly-time termination. 
 \end{enumerate}
 In fact, it may even be the case that in $n$ generate test cases the faulty traces of an incorrect protocol may never be triggered.  
 
@@ -595,6 +642,6 @@ Problem is that sometimes message requests hand indefinitely and even if Jepsen 
 
 Stated difficulties to overcome:
 \begin{itemize}
-	\item hello
-	\item test
+    \item hello
+    \item test
 \end{itemize}
