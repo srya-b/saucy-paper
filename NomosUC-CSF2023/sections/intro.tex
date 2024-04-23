@@ -1,87 +1,59 @@
-Universal Composability (UC)~\cite{canettiUC} %is the leading framework for defining security properties of cryptographic protocols.
+% Notes for new arguent of "stepping stone" for formal verification --> what
+% the type system gives us already is pretty useful but rather than aim at formal
+% verification, lay the groundword for formal verification in the future 
+% TODO: ankush tal about verification for NomosUC and discussion around what's missing,
+% and what can/can't be realized.
+
+Universal Composability (UC)~\cite{canettiUC} is a proving framework for cryptographic and distributed protrocols that %is the leading framework for defining security properties of cryptographic protocols.
 %It 
-is considered the strongest definitional model since it guarantees the security properties even when the protocol is arbitrarily composed with
-multiple concurrently executing sessions of the same (or another) protocol.
-UC security relies on proving that a cryptographic or distributed protocol, in the presence of an adversary, is indistinguishable from an idealized version, called the \emph{ideal functionaity}, that exhibits the intended functionality.
+is used extensively throughout existing literature and is considered the gold standard due it's strong security definition.
+UC security relies on proving that a protocol, in the presence of an adversary, is computationally indistinguishable from an idealized version, called the \emph{ideal functionality}, that exhibits the desired properties.
 %The ideal version, called the \emph{ideal functionality}, runs as a trusted third party and captures the intended properties of the protocol in the simplest possible way.
-The main advantage of UC is that larger, more complex, protocols can be can be constructed out of simple ideal functionalities, and the framework guarantees that security holds when 
-replacing the constituent functionalities with real protocols that realize it.
-This encourages the modular design and realizes a powerful notion of security: under concurrent composition with arbitrary protocols.
-%The main advantage of the UC framework is that valid proofs of security whole when ideal functionalities running in arbitrary other protocols are replaced by the protocols that realize them. 
+The main advantage of UC is that larger, more complex, protocols can be constructed from simple ideal functionalities, and the framework guarantees that security properties holds when 
+they are replaced by protocols that realize them.
+This encourages modular design and realizes a powerful notion of security: security under concurrent composition with arbitrary protocols.
 
-%Combined with security under concurrent composition with arbitrary other protocols, the design of the framework encourages the modular de
-%This encourages the modular design of small parts that are composed together generically to build more complex systems. 
+%Despite UC's modular appeal, proofs just on paper can become large, difficult to analyze, or even error prone. 
+Existing programming language tools and techniques for capturing UC or establishing the indistinguishability notion go a long way in assisting paper proofs but fall short of realizing the full computation model of UC.
+Namely they only express a limited notion of execution cost analysis and don't realize the full dynamic nature of UC's computation model: an arbitrary number of interactive Turing machines (ITMs) that may communicate with, and spawn, each other at runtime.
+%Programming language tools and techniques for capturing UC or establishing emulation can assist paper-and-pencil proofs, mechanize security proofs for UC, or even just provide a medium for more precise and executable UC definitions.
+%Exising programming langauge tools and techniques go al ong way in assisting on-paper proofs or even mechanizing security proofs for UC, however, they are fairly limited in capturing the dynamic natur of UC communication between an arbitrary number of interactive Turing machines (ITMs) and only express a limited notion of execution cost analysis.
+%However, existing works are fairly limited in capturing the dynamic nature of UC communication between an arbitrary number of parties determined at runtime~\cite{ilc,easyuc,ipdl,symbolicuc,barbosa}, and only some express any notion of execution cost analysis that underpins UC security~\cite{ilc,ipdl,symbolicuc}.
+Execution cost analysis is central to UC security because of its reliance on proofs via reduction which are defined in relation to probabilistic polynomial time (PPT) adversaries and environments.
+%Execution cost analysis, which is \emph{the main focus of this work}, is central because UC security, and in fact many cryptographic proofs via reduction, are defined in relation to probabilistic polynomial time (PPT) adversaries and environments. 
 
-%UC has recently gained popularity for analyzing cryptographic protocols due to its \emph{ideal world/real world} simulation mechanism.
-%In contrast to game-based cryptography where security properties are defined via attack games,
-%UC defines an \emph{ideal functionality} for a protocol, i.e., a program that serves as the \emph{protocol specification}.
-%When executed by a trusted third party that communicates over secure channels, the ideal functionality exhibits all possible behaviors of the protocol.
-%Thus, a protocol without access to a trusted third-party \emph{emulates} its functionality (with access to a trusted third-party),
-%being completely indistinguishable to an external environment.
-%When analyzing \emph{composition} of protocols, we only need analyze the composition of their ideal functionalities, thus greatly
-%simplifying the analysis!
-%UC also encourages a modular design of protocols which can then be composed into larger applications by applying generic composition operators
-%provided by UC and their associated theorems.
-
-%Despite UC's appeal, programming language tools and techniques for establishing UC emulation are fairly limited with some recent efforts providing
-Despite UC's modular appeal, proofs just on paper can become large, difficult to analyze, or even error prone. 
-Programming language tools and techniques for capturing UC or establishing emulation provide tooling for assisting paper-and-pencil proofs, mechanizing security proofs for UC, or even just making definitions executable and more precise.
-However, existing works are fairly limited with some recent efforts providing
-%Despite UC's appeal, programming language tools and techniques for capturing UC or establishing UC emulation are fairly limited with some recent efforts providing
-partial support for UC~\cite{ilc,easyuc,ipdl,symbolicuc,barbosa}. This is a result of two key challenges.
-The first challenge is that at the core of UC lies demonstrating emulation which relies on proving program equivalence and is undecidable in general
+\rmd{The first challenge is that at the core of UC lies demonstrating emulation which relies on proving program equivalence and is undecidable in general
 and tends to be complicated even for simple programs.
-%Moreover, UC emulation requires designing a simulator generator such that \emph{for all} ($\forall$) adversaries, \emph{there exists} ($\exists$) a simulator (that is constructed
-%Moreover, UC emulation requires designing a simulator generator such that \emph{for all} ($\forall$) adversaries, \emph{there exists} ($\exists$) a simulator (the ideal world adversary) that emulates the protocol \emph{for all} ($\forall$) environments.
-%This sequence of quantifiers ($\forall \ \exists \ \forall$) complicates proving equivalence further, especially when the adversary and simulator can exhibit
-%probabilistic behavior.
 The second major challenge, which is \emph{the main focus of this work, is execution cost}. It plays a central role in UC since the security properties
-guaranteed only hold in the presence of PPT adversaries, and UC security proofs rely on computational indistinguishability to a PPT environment. 
+guaranteed only hold in the presence of PPT adversaries, and UC security proofs rely on computational indistinguishability to a PPT environment.}
 \rmd{Furthermore, cryptography, in general, relies heavily on computationally hard problems that can not be solved by an adversary in polynomial time, like discrete log or Diffe-Hellman. 
 Therefore, expressing security properties 
 through polynomial-time cryptographic reductions of adversaries and UC environments is of critical importance.}
 \rmd{Formally, the ideal world adversary is the proof obligation for UC security, an we need to prove that it is \emph{PPT}.}
-%More formally, we need to prove that the simulator, which usually depends on the adversary actions, is \emph{PPT} (probabilistic polynomial time)
-%if the adversary is PPT.
-Statically proving this requirement calls for devising techniques for bounding the execution cost of interactive Turing machines (ITMs) in UC,
+Statically proving this requirement for a dynamic number of ITMs, \emph{the main focus of this work}, calls for devising techniques for bounding their execution cost in UC,
 which is also an undecidable problem in general.
-Prior work such as EasyUC, and others built on top of EasyCrupt, do allow formal reasoning about an environment's power to distinguish.
-Almost all prior work, however, forego the polynomial runtime analysis entirely, while others like ILC express polynomial runtime constraints but only consider restricted subsets of the UC framework where, for example, the number of parties or subsessions is statically bounded rather than determined at runtime by an arbitrary environment.
+EasyUC~\cite{easyuc} (build on top of EasyCrypt), for example, doesn't explicitly encode any runtime notion, but is still limited by EasyCrypt requiring static upper bounds on the runtime environment.
+Others, ILC~\cite{ilc} and IPDL~\cite{ipdl} do propose a polynomial time notion, but, like EasyUC, only realize a constrained subset of the UC framework where the number of parties or subsessions of a protocol are statically determined rather than at runtime by an arbitrary environment or adversary.
 
-
-%UC relies on ITMs (interactive turing machines) as its computational model and defines the \emph{import mechanism} to restrict them to poynomial-time. 
-%The mechanism specifies that each message carries with it a special natural number field called $\mathsf{import}$ that passes runtime from one ITM to another. 
-%The run-time budget of an ITM is then defined as a polynomial in the import contained in an ITM, i.e. the sum of import received minus the sum of import sent.
-%
-%UC protocols and functionalities are expressed via Interactive Turing Machines that (i) communicate via \emph{message tapes} that ITMs can read from/write to,
-%and (ii) are polynomial-bounded, both in their communication and computation.
-%Noteworthy here is that ITMs involved in a UC protocol and its corresponding functionality exhibit the \emph{same} communication behavior even though their
-%their internal computation is different.
-%Further, ITM execution is restricted to polynomial-time using an \emph{import mechanism} where each message includes a special $\mathsf{import}$
-%field represented using a natural number.
-%The run-time budget of an ITM is then defined as a polynomial in the import contained in an ITM, i.e., sum of import received minus
-%sum of import sent.
-
-Polynomial-time in the UC computational model relies on the \emph{import mechanism} where ITMs exchange messages and a finite quantity called \emph{import}, denoted $n$, and perform computation bounded by some polynomial $T(n)$.
-%The UC computational model relies on interactive turing machines (ITMs) which perform local computation and get send messages to other ITMs, activating them.
-%The polynomial-time notion used in UC is the \emph{import mechanism}. ITMs exchange a finite quantity called \emph{import}, denoted $n$, and perform computation bounded by some polynomial $T(n)$.
-%The polynomial-time notion UC adopts, the \emph{import mechanism}, allows ITMs with $n$ import to perform at most $T(n)$ computation for some polynomial $T$, and it lets them send import (i.e. runtime budgets) to each other with messages.
-Recognizing this polynomially bounded interactive nature, we propose a novel abstraction called \emph{import session types (IST)} to \emph{(i) express and enforce interactive protocols between ITMs in distributed protocols and (ii) make local judgements about polynomial runtime for each of \A, \F, $\pi$, and \Z.} 
-Local judgement of PPT is crucial for adversaries and environments given the precise definition of UC emulation. Only checking global PPT for a specific combination of \Z, \A, $\pi$, and \F can lead to security proofs falling apart for other combinations that the type system hasn't checked. We expand on this point in Section~\ref{sec:background}.
-%communication protocols called \emph{import session types} (IST).
+The polynomial time notion that we aim to capture is defined by the \emph{import mechanism} proposed by Canetti et al.~\cite{uc} where runtime budget is exchanged, like tokens, between ITMs to allow for computation that is polynomial in the tokens held.  
+To the best of our knowledge our work is the first instantiation of import in this way, and, unlike previous works, the type system we propose isn't limited to making only global polynomial time judgements like prior work~\cite{ilc, ipdl}.
+We desire a mechanism for making this judgement \emph{locally} as it is crucial to the emulation definition that adversaries or environemnts remain PPT when connected arbitrarily to other ITMs. 
+Global judgements on the other hand only check execution cost for specific combinations of adversaries and environments, and, as we explain in the next section, emulation proofs may fall apart due to non-polynomial behavior for specific combinations of \Z and \A that aren't explicitly checked. \todo{(in general, claiming a PPT adversary in such a setting that works $\forall \Z$ would require enumerating every such \Z) put this aside later}
+Recognizing this polynomially bounded interactive nature and the need for local judgements of PPT, we propose a novel abstraction called \emph{import session types (IST)} to \emph{(i) specify and enforce interactive protocols between processes (ITMs in NomosUC)  \todo{i switch to processes here from ITMs} in distributed protocols and (ii) make local judgements about polynomial runtime for each of \A, \F, $\pi$, and \Z.} 
+\todo{we need to discuss what the future of NomosUC could look like w.r.t mechanization and some form of better automation as proving framework because then we can claim that the aim is to lay the groundwork with IST with execution cost analysis as the basis for doing UC things.}
 
 IST is inspired from resource-aware session types~\cite{das2018work}, a type system for expressing costful communication protocols
 in concurrent message-passing processes which has been successfully employed in quantitative analysis of distributed
 protocols~\cite{dasnomos,Das20FSCD,Das22LMCS,Das20arxiv}.
-Session types in IST prescribe and enforce bi-directional communication protocols between ITMs, both in the ideal-world functionalities and real-world protocols.
+Session types in IST prescribe and enforce bi-directional communication protocols between processes, both in the ideal-world functionalities and real-world protocols.
 A necessary condition then for UC emulation is that the session types in both the worlds \emph{must match exactly}.
 The import value of a message is also directly encoded in its type, thus providing a static description of the import exchange
-among ITMs.
-\rmd{Internally, an ITM uses its import to generate \emph{potential}, an abstract quantity that is consumed to perform a single
+among processes.
+\rmd{Internally, ITM uses its import to generate \emph{potential}, an abstract quantity that is consumed to perform a single
 unit of computation.
 Formally, an ITM containing $n$ units of import can generate $T(n)$ potential units (where $T$ is a ``reasonable'' polynomial function)
 and since each execution step costs 1 potential unit, we can ultimately prove that the run-time budget of an ITM is never exceeded.}
-Processes (ITMs in NomosUC) are said to be well-typed if their computation is bounded by a globally-defined polynomial in the security parameter $k$ and the import they possess.
+Processes are said to be well-typed if their computation is bounded by a globally-defined polynomial in the security parameter $k$ and the import they possess.
 
 To facilitate the implementation of UC protocols and functionalities, we propose a core calculus called NomosUC that
 internally uses IST as its main abstraction layer.
@@ -93,31 +65,51 @@ the topology of the ITM network, etc.
 Capturing these statically in the type system turns out to be quite complicated in practice.
 We solve these issues by employing \emph{shared binary session types}~\cite{balzer2017manifest} which allow sharing
 of channels. 
-%Specifically, we designed a novel \emph{shared communicator} as a communication device between two ITM parties, allowing
-%arbitrary communication topologies.
-Specifically, we design a novel abstraction, the \emph{providerless channel}, that wraps ITM processes and runs them virtually.
-The channels allow ITM parties to work with linear session types while still allowing arbitrary communication topologies.
-Third, we introduce \emph{virtual import tokens} to enable sandboxing existing processes--a criically important design pattern in UC ITMs run other ITMs internally.
+Specifically, we design a novel abstraction, the \emph{providerless channel}, that wraps processes and runs them virtually.
+The channels allow processes to work with linear session types while still allowing arbitrary communication topologies.
+Third, we introduce \emph{virtual import tokens} to enable sandboxing existing processes--a critically important design pattern in UC where ITMs run other ITMs internally.
 \rmd{Third, while Rast has only been employed to enforce linear bounds on execution cost, we enforce polynomial run-time constraints by introducing 
-%whereas UC allows for polynomial run-time budget.
-%We achieve this by introdcing a 
 \emph{virtual token hierarchy} where virtual import tokens can be created for processes (ITMs) run in a sandbox and be used to generate potential for computation.}
-%We achieve this by introducing a \emph{virtual tokens in a hierarchy} where import tokens at level $k$ can be used to generate
-%tokens at level $k+1$, which is ultimately used to generate potential.
 Finally, our main technical challenge was ensuring that the UC security definitions and generic composition operators
 can be expressed in their full generality.
-Surprisingly, even contending to the static nature of IST, we arrive at a notion of compositional security that remains expressive and generalizable.
+Surprisingly, even contending with the static nature of IST, we arrive at a notion of compositional security that remains expressive and generalizable.
 Concretely, NomosUC departs from work like \cite{easyuc}, \cite{barbosa}, and \cite{ipdl} and doesn't aim to mechanize security proof generation.
 \emph{Instead we focus on strong runtime guarantees while taking advantage of session types to aid in the design of UC protocols and paper-and-pencil proofs of UC security.}
 
-We evaluate our approach to UC by working through the canonical UC theorems and operators.\rmd{, and we show an example of a UC definition,
-the cryptographic commitment, in the form of a simulator and build a zero-knowledge protocol on top of it to showcase composition.}
-First, we present the Dummy Lemma to illustrate the modularity of NomosUC and our virtual tokens construction.\todo{if we decide to just state it rather than show the construction}
-The Lemma allows us to define a simulator, the \emph{dummy simulator}, for a single adversary and systematically generate simulators for any arbitrary adversary
-by running them virtually. Though more of a convenience for UC proofs, the lemma is crucial to show an easy to use framework.
-\rmd{The last Section~\ref{sec:commitment} details a dummy simulator, for a protocol that realizes \Fcom, which runs parts of the real world virtually.} 
-Next, we present two operators, the composition operator and the multisession operator, and we show simulators that can be constructed to provide UC security under them.
-Finally, we show that with these two theorems, a simulator for full UC composition can be reazlized by connecting the two proofs in the natural way.
+%We validate our encoding of UC and the import mechanism by first demonstrating its flexibility by realizing the Dummy Lemma. 
+%This result is a crucial in that it reduces the proof obligation of UC emulation to just the dummy advesary by encoding a simulator generator for any arbitrary \A. 
+%The lemma is a testament to the flexibility of UC and realizing it showcases the same in NomosUC.
+%We validate the claim of realizing UC emulation in the presence of arbitrary parties and functionality, created dynamicaly by demonstrating that our approach can realize and provide a simulator proof for the multisession theorem (Theorem~\ref{thm:functor} to UC-realize any number of instances of a functionality running concurrently.
+%Finally, we show a simplified composition operator for UC emulation when a single instance of a functionality is replaced, and, in combination with Theorem~\ref{thm:functor} conclude a simulator for the full composition theorem (Theorem~\ref{thm:composition}.
+%Theorems~\ref{lem:local_ppt} and Theorems~\ref{thm:global_ppt} combine with the above theorems to show that our proofs all exhibit PPT behavior with import.
 
-%\ankush{TODO Surya: add a para on evaluation, what all protocols we expressed in NomosUC}
-% %We validate Nomos-UC by working through the standard UC theory of composition operators, as well as including a modular composition case study where we show a coinflipping application based on random oracles, using commitments as an intermediate layer.
+% ilc shows dummy lemma
+% easyuc seems not 
+% ipdl not
+%\todo{uhhh}
+%We validate our approach to realizing UC and import by first demonstrating a standard set of UC lemmas and theorems, including the dummy lemma~\cite{canettiUC,ilc,easyuc}
+%First, we show the expressiveness and flexibility of our realization of UC with the Dummy Lemma, a commonly used benchmark for programming tools for UC or new UC-like formulations~\cite{ilc,easyuc,gnuc}.
+%Next we show that NomosUC realizes full composition by breaking the theorem into a few smaller theorems. 
+%Namely, we show how NomosUC can realize the composition theorems of both ILC~\cite{ilc} and SymbolicUC~\cite{symbolicuc} (Theorems~\ref{thm:singlecomp} and \ref{thm:functor}), and use them as the basis for realizing full UC composition (Theorem~\ref{thm:composition}.
+
+\todo{Update with details of the to-be-implemented examples}
+We first validate our realization of UC in several ways. First we demonstrate a standard set of UC lemmas and theorems, including the dummy lemma~\cite{ilc,gnuc,easyuc,canettiUC} and the UC composition theorem including multiple sessions with joint state~\cite{symbolicuc}. 
+We find that using providerless channels ends up requiring extra care when setting import parameters for communication between adverasries, functionalities, and protocols, but, despite that, the simulators for the lemmas and theorems remain straightforward and don't require any additional special treatment as a consequence of our design. 
+
+
+%Our validation for your encoding of UC and the import mechanism needs to demonstrate: NomosUC is as expressive as the ITM model and can realize any ITM configuration, that import session types can make local judgements about polynomial runtime for processes, and that we can capture the dynamic nature of communication and arbitrary subsesssions to realize the UC composition theorem.
+%In Section~\ref{sec:safety} we we argue that any valid NomosUC configuration is polynomial in the amount of import it possesses, and in Section~\ref{sec:execuc} we show how arbitrary communication topologies are realized in NomosUC, and demonstrate simulator proofs for the Dummy Lemma, the Multisession Theorems, and the Composition Theorem.
+%The dummy lemma showcases an important result in UC greatly that simplifies the proof obligation for emulation, and demonstrates the flexibility of the model.
+%The multisession theorem expresses emulation in the presence of a dynamicall-determined number of subsessions of a functionality or protocol
+%
+%The dummy lemma is a crticial result in UC literature that states emulation is only required w.r.t a dummy adversary, and it showcases the expressiveness of the UC computatin model.
+%
+%We evaluate our approach to UC by working through the canonical UC theorems and operators.\rmd{, and we show an example of a UC definition,
+%the cryptographic commitment, in the form of a simulator and build a zero-knowledge protocol on top of it to showcase composition.}
+%First, we present the Dummy Lemma to illustrate the modularity of NomosUC and our virtual tokens construction.\todo{if we decide to just state it rather than show the construction}
+%The Lemma allows us to define a simulator, the \emph{dummy simulator}, for a single adversary and systematically generate simulators for any arbitrary adversary
+%by running them virtually. Though more of a convenience for UC proofs, the lemma is crucial to show an easy to use framework.
+%\rmd{The last Section~\ref{sec:commitment} details a dummy simulator, for a protocol that realizes \Fcom, which runs parts of the real world virtually.} 
+%Next, we present two operators, the composition operator and the multisession operator, and we show simulators that can be constructed to provide UC security under them.
+%Finally, we show that with these two theorems, a simulator for full UC composition can be reazlized by connecting the two proofs in the natural way.
+%

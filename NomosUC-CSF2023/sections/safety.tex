@@ -1,7 +1,7 @@
 The deep connection between our type system and the operational semantics are
 formalized by the standard \emph{type preservation} and \emph{progress} theorems.
 The preservation theorem also guarantees that the execution time is polynomial in the import tokens.
-The full set of base typing rules for Nomos, which we borrow and augment with import, along with the full set of typing rules for import in processes, is in Appendices~\ref{app:basic} and Append
+The full set of base typing rules for Nomos, which we borrow and augment with import, along with the full set of typing rules for import in processes, is in Appendices~\ref{app:basic} and \ref{app:typing_rules}.
 
 To express these theorems, we introduce the semantic objects
 $\proc{c}{w, P}$ and $\msg{c}{w, M}$ describing process $P$ (or message $M$) providing service along channel $c$ and with work counter $w$ storing the work done. %of a NomosUC program.
@@ -82,7 +82,7 @@ the common channels in $\D_1$ and adding the individual tokens, potential, and w
   {\D_0 \overset{T_1}{\underset{W_1}{\vDash}} \config_1 :: \D_1 \qquad
   \D_1 \overset{T_2}{\underset{W_2}{\vDash}} \config_2 :: \D_2}
 \end{mathpar}
-The full typing rules for a configuration (the \m{empty} configuration, \m{proc}, and \m{msg}) can be found in the Appendix and aren't necessary for understanding the theorems presented.
+The full typing rules for a configuration (the \m{empty} configuration, \m{proc}, and \m{msg}) can be found in the Figure~\ref{fig:config_typing}, in the Appendix, and aren't necessary for understanding the theorems presented.
 
 \rmd{For a process, the configuration simply checks how many real tokens $t$ it possesses and
 uses it as the token count.

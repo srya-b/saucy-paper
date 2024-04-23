@@ -1,0 +1,18 @@
+\begin{bbox}[title={$\mathcal{F}_\msf{Chan}(p_s, p_r)$}]
+
+Initialize $M=\bot$ and $D := 0$
+
+\begin{ritemize}
+\item \OnInput \inmsg{\msf{m}} from $p_s$: Set $M = m$ and send $(\msf{sent}, \ell(m))$ to \A
+
+\item \OnInput \inmsg{\msf{fetch}} from $p_r$: set $D := D+1$ 
+	
+	\quad If $D = 0$: Send (\msf{sent}, $M$) to $p_r$
+
+\item \OnInput \inmsg{\msf{delay}}{t} from \A if $T$ is in unary: 
+	
+		\quad \quad $D := D+T$
+		
+		\quad \quad Send (\msf{delay-set}) to \A	
+\end{ritemize}	
+\end{bbox}

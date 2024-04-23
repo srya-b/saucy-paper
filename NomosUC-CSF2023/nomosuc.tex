@@ -89,9 +89,9 @@
 \newcommand*\fullcirc[1][1ex]{\tikz\fill (0,0) circle (#1);} 
 
 \newcolumntype{R}[2]{
-	>{\adjustbox{angle=#1, lap=\width-(#2)}\bgroup}
-	c
-	<{\egroup}
+    >{\adjustbox{angle=#1, lap=\width-(#2)}\bgroup}
+    c
+    <{\egroup}
 }
 \newcommand*\rot{\multicolumn{1}{R{30}{1.5em}}}
 
@@ -120,11 +120,11 @@
     colback=white,
     colframe=bb,
     %colbacktitle=white!90!roug,
-	colbacktitle=white!40!gg,
+    colbacktitle=white!40!gg,
     coltitle=black,
     fonttitle=\footnotesize\bfseries, 
-	fontupper=\footnotesize,
-	fontlower=\footnotesize,
+    fontupper=\footnotesize,
+    fontlower=\footnotesize,
     enhanced,
     attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
     #1,% For possible options
@@ -135,8 +135,8 @@
 
 \makeatletter
 \newcommand\BeraMonottFamily{%
-	\def\fvm@scale{0.85}%
-	\fontfamily{fvm}\selectfont
+    \def\fvm@scale{0.85}%
+    \fontfamily{fvm}\selectfont
 }
 \makeatother
 
@@ -150,34 +150,31 @@
 \maketitle
 
 \begin{abstract}
-  Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography and computer security, however on-paper UC definitions can be long, compliated, and difficut to undersatnd or reuse.
-  Existing works that study UC from the viewpoint of programming language semantics and formal methods aim to mitigate these hurdles but fall short in a few critical ways:
+  Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography and computer security, however it comes at the cost of comlexity.
+  %however on-paper UC definitions can be long, complicated, and difficult to understand or reuse.
+  Existing works that study UC from the viewpoint of programming language semantics and formal methods aim to mitigate this hurdle but fall short in a few critical ways:
   %However, existing works that study UC from the viewpoint of programming language semantics and formal methods fall 
   %short in a few critical ways: 
-  namely, capturing an adequate polynomial time notion or realizing UC in its entirety.
+  namely, capturing the UC polynomial-time notion and realizing the full expressiveness of UC.
   %Prior works provide either limited notions of runtime constraints or capture constrained variants of UC.
   This work introduces a programming abstraction called \emph{import
   session types} (IST) to express UC functionalities and protocols.
-  This new abstraction uses session types to express and enforce bi-directional communication protocols in distributed systems and
+  This new abstraction uses session types to specify and enforce bi-directional communication protocols in distributed systems and
   takes inspiration from \emph{resource-aware session types} (Rast) that allow analysis of execution cost.
   %This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
   %for analyzing execution cost of concurrent message-passing systems.
   %Sesson types allow for describing bi-directional communication protocols in distributed systems and, Rast extends
   %that to statically checking and enforcing linear runtime constraints. 
-  
-  Cryptographic security and UC proofs rely on probabilistic polynomial time (PPT) machines, and we use 
-  IST to push the envelop from prior work to capture the \emph{import mechanism} for polynomial time,
-  introduced by Canetti et al.~\cite{canettiUC}.
+
+  We do not aim for a program logic for mechanizizing proofs like other existing works, but instead focus on fully capturing the \emph{import mechanism}~\cite{canettiUC} for polynomial time and laying the foundation for future work on formal verification on top IST.
 
   We borrow from existing languages based on Rast, Nomos, and ILC, a process-based core calculus for UC,
   to build a new language called NomosUC. Designing NomosUC to capture the full expressiveness of UC 
   required solving a range of technical challenges. Notably, we overcome communication limitations imposed 
-  by linearity in session types and define a novel \emph{virtual token hierarchy} for expressing runtime. Unlike 
-  prior works, however, we do provide program logic for proving security or proof generation.
+  by linearity in session types and define a novel \emph{virtual token hierarchy} for expressing runtime.
 
-  We validate our approach by running through the standard UC composition theorems, a complete specification
-  of a proof of UC security for a cryptographic commitment, and a zero-knowledge protocol composed with the commitment
-  in the appendix.
+  We validate out approach by realizing the standard set of lemmas and theorems from UC~\cite{canettiUC,ilc,gnuc,ipdl,easyuc}
+  and showing a handful of example of UC protocols, functionalities, and simulator proofs.
 \end{abstract}
 
 
@@ -234,21 +231,23 @@
 %\appendix
 \appendices
 
-\section{Simulators} \label{sec:commitment}
-\input{sections/commitment} 
-
+%\section{Simulators} \label{app:commitment}
+%\input{sections/commitment} 
 
 \section{Emulation Continued} \label{app:emulation}
 \input{appendix/emulationcont}
 
-\section{(Unchanged) Base System of Session Types in NomosUC} \label{app:basic}
+\section{Base System of Session Types in NomosUC} \label{app:basic}
 \input{sections/baselang}
 
 \section{Selected Typing Rules for NomosUC} \label{app:typing_rules}
 \input{appendix/typing_rules}
 
-\section{Arbitrary Parties} \label{app:arbparties}
-\input{appendix/arbparties}
+\section{Import and Potential in NomosUC} \label{sec:import}
+\input{sections/importlang}
+
+%\section{Arbitrary Parties} \label{app:arbparties}
+%\input{appendix/arbparties}
 
 \section{Dummy Lemma} \label{app:dummy}
 \input{appendix/dummylemma}
@@ -256,14 +255,17 @@
 \section{Multisession Theorems} \label{app:ms}
 \input{appendix/bangf}
 
-\section{Commitment Protocol} \label{app:protcom}
-\input{appendix/protcom}
+\section{Single Composition Simulator} \label{app:simcomp}
+\input{appendix/simcomp}
 
-\section{Coin Flipping} \label{app:flip}
-\input{appendix/coinflip}
-
-\section{Zk} \label{app:zk}
-\input{appendix/zk}
+%\section{Commitment Protocol} \label{app:protcom}
+%\input{appendix/protcom}
+%
+%\section{Coin Flipping} \label{app:flip}
+%\input{appendix/coinflip}
+%
+%\section{Zk} \label{app:zk}
+%\input{appendix/zk}
 
 \section{ITM Completeness} \label{app:itm}
 \input{appendix/itmiffnomosuc}

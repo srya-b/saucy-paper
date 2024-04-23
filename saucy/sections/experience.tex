@@ -1,0 +1,106 @@
+In this section we dive into UC as a programming tool for distributed protocols.
+We first make the case that the inherent features of UC, namely the real-ideal paradigm and the UC environment and adversarial modelling, are better for specifying, modelling, implementing, and testing distributed systems.
+The added benefit of the implementation maintaining a close relationship to a powerful theoretical securuty proof system only bolsters UC's potential as a development environment.
+We then go through out process of implementing these protocols in UC and highlight the 
+
+
+\plan{Add to this first paragraph: in this section we discuss UC and it's tradeoffs/advantages when designing protocols and we leave discussion for testing/verifying implementations for the fuzzing section}
+UC is known to be a useful theoretical tool for defining distributed protocols, however crafting definitions in the UC style, whether on-paper or as an implementation, requires careful effort beyond what traditional definitions require.
+Like many existing works that have successfully proposed and developed protocols by constraining programmer or protocol behavior~\cite{mace,macemc,farsite,farsiteretro,dbug}, UC imposes a set of rules that change how protocol designers have to think. 
+The UC-style mimics maybe of the design principles highlighted by these workd, and, in some respects, takes them further to achieve the similar advantages. 
+In this section we relate out experience of translating the ABA Protocol from \cite{ABA} and identify advantages, and some trade-offs, in expressing and implementing protocols in UC.
+Namely, we connect the UC framework to existing goals such as modular design, minimization of concurrency hazards, and replayability/determinism of execution.
+Furthermore, we note that forcing a programmer or designed to think and frame the problem through this framework forces more careful thought to how protocols may be activated or used incorrectly in a deployment setting---addressing some of the concerns raised by \cite{paxosthoughts} on the usefulness of theoretical model specs and pseudo-code.
+Although other frameworks and designs, some of which we reference in this section, achieve similar goals, we argue that UC simulataneously achieves more of them than others, and, the existing gap between theory and practice demands it be taken seriously as a framework worth further exploring.
+
+\textbf{REMEMBER}: An important thing to remember for this section is that we aren't trying to motivate using UC for distributed systems modelling on-paper.
+Our point is that designing from a UC-first princiciples:
+\begin{itemize} 
+\item definitions and code are implemented in a framework that makes it easy to do theoretical work on and proving etc.. when it comes time for it in the future if you're starting with implementation
+\item if starting with definitions, UC forces designers to be precise about network assmuptions, models, properties of primitives, adversarial capabilities concretely, how protocol is activated and what happens, initial conditions, etc...
+\end{itemize}
+
+% The UC-framework can be described as an event-driven framework with execution without preemption, and a penchant for buggery mr powers\todo{finish}.
+
+% disction between changes required to pseudo code vs changes required in implementation
+% in pseudocode you still need to be clear about activations and what to do in certain cases but can be vague about concurrency structure and differen "processes" talking to each other
+% in code that has to be made explicit, but pseudocode that outlines how to handle events more specifically means implmenters aren't trying to themselves prove statements to determine what the protocol shoudl o
+% for example, a developer aims to make the code as robust as possibleunder arbitrary conditions but the consequences of such choices may be unclear and actually undermine the intent of the paper definition. 
+% TODO: the regarding the paxos paper comments on langauge specs or framework for specs are not usually useful in practice --> UC goes some of the way in forcing a designer to think about how to handle realistic scenarios of malformed input or unexpected activation by another process/ITM/message-passing functionality
+
+\subsection{Design Constraints}
+Our implementation of the UC framework, doesn't enforce a specific way to write code according to the UC rules and isn't a system that prevents writing ``bad'' code, like \cite{mace} or \cite{verdi}, but it is a set of principles that a programmer must adhere to to reap the benefits that we outline below.
+% A similar method is used by Bolosky et al.~\cite{farsite} where the authors iterate through a few design principles and methodolodies to arrive at a way of writing distributed code that maximizes maintanability and modularty and minimizes concurrency hazards and non-determinism.
+Of course, our UC implementation places some limitations on what the programmer does: enforcing message types for a protocol/functionality, forcing programmers to use the built-in typeclasses for environments/adversaries/protocols/functionalities, and limiting the ways in which these processes can communicate with each other.
+%This approach is similar to the work by Bolosky et al.~\cite{farsite} who work through different iterations of a development framework and set of rules for organizing and writing distributed systems as event handlers. 
+%The resulting framework from their efforts, and their ``pinning pattern'', bear a striking resemblance to the the communication rules that UC already implements. 
+%Furthermore, their prioritization of preventing concurrency bugs and tackling source of non-determinism are shared by the UC semantics.
+%Other works, such as Mace~\cite{mac} and dBug~\cite{dbug}, arrive at similar conclusions and try to instrument distributed code in a modular and layered way so that code is easy to maintain and parts are easy to replace or chop and change. 
+%The ideal functionality model, in UC, takes this a step further by not only cleanly abstracting away functionality from lower layers but bridges a gap to theory where many protocols that can realize the same model and interface can be proven, both through theoretical simulation proofs and informal testing of simulators in our implementation, leading to more robust and modular code. 
+%A clear example of this advantage arises in \cite{farsite} where nuanced and hard to track bugs arise from their assumptions on quick check implementations accross different operating systens.
+%While both were correct, there lacked a clear model and set of properties in mind when implementing their protocol which led to an protocol implementation based on a specific instance of quickcheck rather.
+%In the ideal functionality, model, the designer is forced to first undertake choosing an ideal functionality that \emph{succinctly captures the intended properties of a sorting algorith} and assert that the possible candidates that can replace the ideal functionality, when their code is deployed, satisfy some basic simulation properties with the ideal functionalitu or, in the best case, are proven to realize.
+
+%In our experience translating the ABA protocol from ~\cite{aba}, we identify a few key takeaways and trade-offs with expressing protocols in this way. 
+%Like existing work~\cite{farsite}, writing code in the UC-style and conforming to its execution rules is not enforced by some type system, but is instead a set of principles that programmers must adhere to.
+%Notably, writing paper definitions in the UC styles has the advantage of bringing the paper and its proof closer to the end product: the implmentation.
+%Thinking about a protocols as en \emph{event-driven} piece of code force the designed to be explicit about the precise conditions of a protocol party when a new messages is received. 
+%Finally, the \emph{write-after-read} semantics of UC ensure that on every event, there is a straight-line and deterministic execution which eliminates a large degree of concurrency hazards that arise in traditional programming. 
+%This is a dominant concern, motivation, and goal for existing works that propose frameworks for writing and/or testing code~\cite{farsite, mace, macmc, dbug}, and UC largely addresses most of them already.
+%A notable drawback, also pointed out in prior work, is that cosntraints around atomicity of action or a layered approach to programming (like UC's ideal functionality model) stand in the way of high-performance code.
+%Though true, we remark that UC is as yet unexplored as a framework for development, and we are only making its case as a candidate for further study in this new domain---challenging the convention wisdom around it.
+
+\paragraph{Modelling Assumptions} 
+% POINTS: asynchronous/network assumptions ; assumptions about primitives by using ideal functionalities 
+A key advantage of the UC model is that it forces a designer to model both their protocol and the assumed primitives it takes advantage of.
+A simple model of the Bracha protocol has to first specify and ideal functionality that exactly captures the intended properties of broadcast.
+The model-first approach to system design forces the expected safety, validity, reliability, or timing properties to be clear from the outset.
+The Bracha protocol itself exists in a world with a hybrid functionality that described the intended properties expected of the primitives that it uses.
+For Bracha broadcast this is a functionality that captures the precise definition of the \emph{asynchronous network} that the protocol assumes it is in.
+Not only are timing guaranteed captured, but the ideal functionality defines the adversary's capabilities to delay, reorder, or even modify messages. 
+
+The necessity for designing protocols in a functionality-first way is, first, critical to first ensure systems are not tied to specific implementations~\cite{farsiteretro,farsite} that may change in a different environment (or operating system, for example).
+Second, being clear about assumptions, such as precise network modelling, ensures the gap between design/theory and implemenation is minimized. 
+In our experience translating the ABA~\cite{ABA} protocol into UC, a big step was ensuring that the minimal asynchronous network asumptions that we implemented the protocol nuder continued to satisfy the intended properties, and there weren't unstated assumptions such as ``all messages in round $r$ are received before round $r+1$''.
+Third, we envision a future where there is a large corpus of ideal functionalities and protocols realizing them---proven secure both on paper and in implementations---that programmers can easily plug-in to build larger systems and fall back to UC's compositional security.
+% point: you almost end up trying to make the protocol more robust by looking at messages before input is available and you add all these extra steps to the design that are untested or unexplored on paper and you run the risk of departing from the intended behavior. With UC on paper and UC impleenetation and design the gap between the two is much smaller 
+\plan{There's something to say about existing works modelling systems in higher-level specs which can be analogous to ideal functionalities}
+
+\todo{talk about some future things in the context of related-works for model specificatios, model checking, etc...}
+
+\paragraph{Realism? (need better heading)}
+% POINTS: designs should force encapsulation of spurious events like activation before input ; reduce the gap between specs/definitions/paper and implementation ; less additional work required by programmers ; highlight the benefir in both directions theory <-> implementation
+Using UC as a starting and ending point for engineering distributed protocols also overcomes some of frequently mentioned limitations of pseudo-code or on-paper specifications~\cite{paxosthoughts}.
+A criticism of such definitions can be that they don't take into account what a program might actuall encounter in the real world.
+For example, in the real world programs may be used incorrectly by users or a node's router may temporarily go offline or the program in an agreement protocol might receive messages before it even has a value to propose. 
+
+
+\plan{Ideal functionalities can't capture any and all properties a designed might want to specify: aba has a property that if all parties have same input then they decide by round r+1. The ideal functionality on its own can't capture timing guarantees like that, so that's a downside but it is still something checkable.}
+\todo{Should this point be included in this section, the fuzzing section, or both?}
+
+
+\paragraph{drafting notes}
+There is a statement in the Paxos implementation retrospective that states that often times paper specs aren't very useful for implementation since implementation has to consider so many more things
+we state that UC formulation gets you a lot closer by having to be explicit about things like initial conditions, arbitrary message ordering and delivery
+UC is useful for theoretical results, but for these reasons that make it good for testing code as well as writing code
+it's evidenced by these related works that all attempt to do things very reminiscent of the UC framework but in an ad-hoc way
+rather we say that we should consider UC as a candidate for development frameworks rather than them because it achieves largely the same things and supports the same concurrency protection and layering of code and the ideal functionality model provides all these things
+
+
+\subsection{Implementation Constraints}
+Enforcing design and implementation constraints on programmers and designers has tradeoff's as well. 
+As referenced by existing work, forcing the programmer into a consrained set of possible designs requires more work and can be cumbersome as well.
+Even so, we believe that the advantages of the UC style of programming outweight the disadvanages
+Not all the disadvantages are inherent and some may be overcome in future with more focus on this area of research. 
+
+
+
+% making explicit the network assumptions in an ideal functionality
+%     capturing the properties expected, explicitly
+% adding additional handling for initial conditions if activated by fMulticast first
+% event-driven programming and read-after-write rules
+%     straight-line execution
+%     deterministic code path
+%     one process activates one-other process
+%     "environment activated in betwee" is related to the fuzzing section
+  

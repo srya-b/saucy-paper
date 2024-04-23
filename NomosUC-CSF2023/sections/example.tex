@@ -7,9 +7,9 @@
 
 %Just like distributed protocols, cryptographic protocols follow a predefined communication pattern.
 The central focus of our work is to explore the role that \emph{session types} can play in defining and analyzing ideal functionalities.
-In this section we illustrate the usefulness of session types in describing protocol interfaces, what information is available to the adversary, and, as we'll see in later sections,
-what its runtime requirements are. 
-We do so and introduce our running example throughout the paper: a simple, linear database functionality.
+In this section, we illustrate how session types can be used to describe protocol interfaces, what information is leaked to the adversary, and, as we'll see in a later section what its 
+what its runtime requirements are.
+We do so and introduce our running example throughout the paper: a simple, linear database functionality, \Fdb
 %Our view is that session types are especially useful as ways of annotating or analyzing the ideal functionality.
 %To illustrate, we use cryptographic commitment as our main running example.
 %The commitment functionality \Fcom encapsulates the security properties of a two-phase, two-party commitment,
@@ -17,14 +17,13 @@ We do so and introduce our running example throughout the paper: a simple, linea
 
 The database functionality, presented in Figure~\ref{fig:fdbideal}, implements a flat key-value store.
 Parties can submit key-value pairs and \Fdb stores them in an append-only list, $\ell$.
-When activated \Fdb always performs some work and returns control back to the calling party. 
 On \m{Store}, \Fdb sends an acknowledgement back to $P_i$, and on \m{Get} it returns the key-value pair if the key exists in $\ell$ (or a negative acknowledgement if it doesn't).
 
 \input{figures/f_db}
 
 The communication pattern outlined above can be enforced by a \emph{binary session type}.
 The key insight here is that we assign a session type to the communication channel connecting two processes. 
-Communication between parties and \Fdb is captured by the following session type:
+Communication between an arbitrary number of parties and \Fdb is captured by the following session type:
 \begin{tabbing}
 	$\mi{type} \; \m{db[k][v]} = \ichoice{$\=$ \; \mb{store}:$\=$\m{PID} \arrow \m{k} \arrow$ \\
 	\>\>$\echoice{ \mb{OK}: \m{PID} \arrow \m{db[k][v]}},$ \\
@@ -34,14 +33,14 @@ Communication between parties and \Fdb is captured by the following session type
 \end{tabbing}
 The session type uses two operators to distinguish which endpoint is sending or receiving the messages.
 Every linear channel has a ``provider'' (the process that spawns the channel) whose writes on the channel are denoted by the type constructor $\ichoice$. 
-Similarly, the other endpoint of the channel, called the client, writes to it with the $\echoice$ constructor. 
-The session types defines, at any given moment, which of endpoint's turn it is to write to the channel by which type constructor is used.
+Similarly, the other endpoint of the channel, the ``client'', writes to it with the $\echoice$ constructor. 
+The session types define, at any given moment, which endpoint's turn it is to write to the channel by which type constructor is used.
 In \m{db[k][v]} at first only the party can send a message but can choose between labels \mb{store} and \mb{get}. 
-Next only \Fdb can send a message in response depending on the one received.
-In general, the provider relationship in the channel ends up being unimportant in our construction, and we arbitrarily choose one ITM as the provider for
+Next only \Fdb can send a message in response depending on the label received.
+In general, the provider-client relationship in the channel ends up being unimportant in our construction, and we arbitrarily choose one ITM as the provider for
 the purpose of enforcing the type. 
 In the case of \m{db[k][v]}, it is implied that the party is the provider, because it uses $\ichoice$ to \mb{store} and \mb{get}, and \Fdb is the other endpoint.
-In this way the session types becomes a succint description of how a party can use a functionality, and, at a high-level, what the functionality should do.
+In this way the session types becomes a succinct description of how a party can use a functionality, and, at a high-level, what the functionality should do.
 
 In Figure~\ref{fig:fdbideal}(b) and (c) we show the NomosUC process for \Fdb and a party that sends it messages over a channel of type $\m{db[k][v]}$. 
 At initialization, only the protocol party can send a message with \ichoice. 
@@ -54,7 +53,7 @@ Not all session types recurse back like \inline{db[k][v]}. Some types, for examp
 
 Canonically in NomosUC, functionalities and parties are given two channels, here the two are \ic{p2f} and \ic{f2p}, to allow unidirectional communication over each if desired or necessary. 
 In Figure~\ref{fig:fdbideal}, the communication pattern is easily captured by just one channel and one type, therefore \ic{f2p} is unused and typed with the terminating \m{1}. 
-In general, a functionality can be written to accept any number of channels, even one channel per party but, as we explain in Section~\ref{sec:execuc}, this requires some additional multiplexing code which can be generated at compile-time.\todo{explain in section}
+%In general, a functionality can be written to accept any number of channels, even one channel per party but, as we explain in Section~\ref{sec:execuc}, this requires some additional multiplexing code which can be generated at compile-time.\todo{explain in section}
 
 To complete the example, the party can query with \inline{retrieve} and get a \mb{yes}, with the value, or a \mb{no} from \Fdb.
 %In fact, the session type can not enforce that \Fdb sends \mb{yes} on a hit and \mb{no} on a miss. This is only what a correct functionality \emph{should} do. 

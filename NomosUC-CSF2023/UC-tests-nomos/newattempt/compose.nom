@@ -122,21 +122,21 @@ proc z2a_wrap[K][a] :
   $ch <- z2a_wrap[K][a] <- #in2p #in2f #out 
 }
 
-proc sim_compose[K,K1][...]: 
+proc sim_compose[K,K1][z2pi,z2piP,z2piF,z2rho,z2rhoP,z2rhoF,piA2F,piA2P,rhoA2P,rhoA2F]: 
   ... ($z2a: comm[K][z2a]), ($a2z: comm[K][a2z]), ($a2p: comm[K][a2p]),
   ($p2a: comm[K][p2a]), ($f2a: comm[K][f2a]), ($a2f: comm[K][a2f) |- ($ch: 1) =
 {
-  #z2a' <- channel_init[K1][Z2A[z2piP][z2piF]] ; 
-  #a2z' <- channel_init[K1][A2Z[z2rho]] ;
-  #a2f' <- channel_init[K1][
+  $z2a' <- channel_init[K1][Z2A[z2piP][z2piF]] ; 
+  $a2z' <- channel_init[K1][A2Z[z2rho]] ;
+  $a2f' <- channel_init[K1][
 
-  #pi2pfrho <- channel_init[K1][Z2A[z2rhoP][z2rhoF]] ;
-  #pi2prho <- channel_init[K1][A2P[z2rhoP]] ;
-  #pi2frho <- channel_init[K1][A2F[z2rhoF]] ;
+  $pi2pfrho <- channel_init[K1][Z2A[z2rhoP][z2rhoF]] ;
+  $pi2prho <- channel_init[K1][A2P[z2rhoP]] ;
+  $pi2frho <- channel_init[K1][A2F[z2rhoF]] ;
   
-  #pfrho2pi <- channel_init[K1][A2Z[rhoP2A][rhoF2A]] ;
-  #prho2pi <- channel_init[K1][P2A[rhoP2A]] ;
-  #frho2pi <- channel_init[K1][F2A[rhoF2A]] ;
+  $pfrho2pi <- channel_init[K1][A2Z[rhoP2A][rhoF2A]] ;
+  $prho2pi <- channel_init[K1][P2A[rhoP2A]] ;
+  $frho2pi <- channel_init[K1][F2A[rhoF2A]] ;
 
   $ch <- sim_rho <- k rng sid crupt #z2a  
   
@@ -147,6 +147,7 @@ proc sim_compose[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
 	($z_2_a: z2a[K][pi2f,a2f1]), ($a_2_z: a2z[K][f2pi,f12a]),
 	($p_to_a: p2a[K][f32p]), ($a_to_p: a2p[K][p2f3]),
 	($f_to_a: f2a[K][f32a]), ($a_to_f: a2f[K][a2f3]),
+  (* the channels created above *)
    |- ($ch: 1) =
 {
   (* the simulator gives Z input to S_pi and output from that to S_rho *)
@@ -154,15 +155,39 @@ proc sim_compose[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
 		(* these are forwarded to s_pi without change *)
 		Z2A2P,*,* =>
 			pid,m = recv $z_to_a; get {z2an} $z_to_a ;
-			withdrawtoken K K1 z2an ;
-			$z2a'.SEND ; send $z2a' Z2A2P(pid,m) ; pay {K1} $z2a';
+			withdrawtoken K K1 z2spin ;
+			$z2a'.SEND ; send $z2a' Z2A2P(pid,m) ; pay {K1} z2spin $z2a';
+			(* go to sim_compose_from_spi *)
 		Z2A2F,*,* =>
 			m = recv $z_to_a ; get (z2an} $z_to_a ;
-			withdrawtoken K K1 z2an ;
-			$z2a'.SEND ; send $z2a' Z2A2F(pid,m) ; pay {K1} $z2a';
+			withdrawtoken K K1 z2spi ;
+			$z2a'.SEND ; send $z2a' Z2A2F(pid,m) ; pay {K1} z2spin $z2a';
+			(* go to sim_compose_from_spi *)
 		*,P2A,* => (* this goes to s_rho *)
 			pid,m = recv $p_to_a ; get {0} $p_to_a ;
 			$p2a'.SEND ; send $p2a' P2A(pid,m) ;
+			(* go to sim_compose_from_srho *)
 		*,*,F2A => (* identical case *)
+	)
+  (* now that we activate one of the simulators, case match on their outgoing channels *)
+}
+
+(* this process tries to read from s_pi *)
+proc sim_compose_from_spi[K,K1,s][...]
+ 	...
+{
+	match $pi2prho, $pi2frho, $a2z' (
+		*,A2F,* =>
+			m = recv $pi2fro ; get {K1} pi2fn ;
+			withdrawtoken K K1 z2srhon ;
+			$pi2pfrho.Z2A2F; send $pi2pfrho m;
+			pay {K1} z2srhon $pi2pfrho;
+		A2P,*,* =>
+			(pid,m) = recv $pi2prho; get {K1} pi2pn ;
+			withdrawtoken K K1 z2srhon ;
+			$pi2pfrho.Z2A2P; send $pi2pfrho m; 
+			pay {K1} z2srhon $pi2pfrho; 
+		*,*,P2A2Z =>
+		*,*,F2A2Z =>
 	)
 }

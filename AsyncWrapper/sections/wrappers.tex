@@ -64,19 +64,19 @@ n ther other hande such a translation to the wrapper-based construction is trivi
 
 \begin{figure}
 \begin{subfigure}{\columnwidth}
-	\input{figures/fatomic_old}
-	\caption{An atomic broadcast functionality in the fetch-delay model for the asynchronous world.}
-	\label{fig:atomic:old}
+    \input{figures/fatomic_old}
+    \caption{An atomic broadcast functionality in the fetch-delay model for the asynchronous world.}
+    \label{fig:atomic:old}
 \end{subfigure}
 \begin{subfigure}{\columnwidth}
-	\input{figures/fatomic_new}
-	\caption{The same atomic broadcast functionality written with our async wrapper construction using the \Eventually~syntax sugar.}
-	\label{fig:atomic:new}
+    \input{figures/fatomic_new}
+    \caption{The same atomic broadcast functionality written with our async wrapper construction using the \Eventually~syntax sugar.}
+    \label{fig:atomic:new}
 \end{subfigure}
 \begin{subfigure}{\columnwidth}
-	\input{figures/fatomic_real}
-	\caption{The final version of atomic broadcast when \Leak~and \Eventually~sugar is removed.}
-	\label{fig:atomic:real}
+    \input{figures/fatomic_real}
+    \caption{The final version of atomic broadcast when \Leak~and \Eventually~sugar is removed.}
+    \label{fig:atomic:real}
 \end{subfigure}
 \caption{Three representations of the same atomic broadcast protocol. The top is in the traditional feth-based model. The second is using our simplified wrapper construction with keywords for clarity, and the bottom the actual pseudo-code for the functionality.}
 \label{fig:fatomic}
@@ -248,17 +248,17 @@ We propose that any pair of protocols that were UC-emulatable under the balanced
 %Distinction in features and side effects
 %\begin{itemize}
 %\item Features: explicit design goals that the wrapper achieves. This includes:
-%	\begin{itemize}
-%	\item Simplifying through the removal of model-specific code in the pseudo-code. Improves using UC from people verifying proofs and creating there own. Towards the programmability we're aiming for?? but what exactly is the programmability message here
-%	\item Uses import to achieve eventual delivery in asynchronous networks and input completeness in synchronous network.
-%	\item Offloading work from protocols/functionalities to the wrapper and some work to the environment but without useless fetches.
-%	\end{itemize}
+%   \begin{itemize}
+%   \item Simplifying through the removal of model-specific code in the pseudo-code. Improves using UC from people verifying proofs and creating there own. Towards the programmability we're aiming for?? but what exactly is the programmability message here
+%   \item Uses import to achieve eventual delivery in asynchronous networks and input completeness in synchronous network.
+%   \item Offloading work from protocols/functionalities to the wrapper and some work to the environment but without useless fetches.
+%   \end{itemize}
 %
 %\item side effects:
-%	\begin{itemize}
-%	\item doesn't lose activation
-%	\item all functionalities and must give control back to caller. p2p messages go through a functionality and must be delayed in the wrapper so functionalities can only write to other functionalities after being activated. Recursively, at some ponint either a code block is schedules or some local computation is completed and the functionality halts. In both cases, wrie back to caller instead --> makes riting code better. Not necessary but reomves conditions from environment.
-%	\end{itemize}
+%   \begin{itemize}
+%   \item doesn't lose activation
+%   \item all functionalities and must give control back to caller. p2p messages go through a functionality and must be delayed in the wrapper so functionalities can only write to other functionalities after being activated. Recursively, at some ponint either a code block is schedules or some local computation is completed and the functionality halts. In both cases, wrie back to caller instead --> makes riting code better. Not necessary but reomves conditions from environment.
+%   \end{itemize}
 %\end{itemize}
 %
 %

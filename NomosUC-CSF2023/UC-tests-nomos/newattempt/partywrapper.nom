@@ -1,14 +1,14 @@
-type Z2P[a] = Z2P of PID ^ a 
-type P2Z[a] = P2Z of PID ^ a 
-type P2F[a] = P2F of PID ^ a
-type F2P[a] = F2P of PID ^ a
+stype Z2P[a] = +{ z2p: PID * a * Z2P[a]}
+stype P2Z[a] = &{ p2z: PID * a * P2Z[a]}
 
+-- ASSUMPTION: have discussed this in the past with Ankush that we can have a list that stores SHARED channels in NomosUC therefore this code assumes that we can simple store the SHARED channels in a list of dynamic size
 proc party_wrapper_init[K][s][z2p,p2z][p2f,f2p]: 
   (k: Int), (rng: [Bit]) (sid: SID[s]), 
-  ($z2p: comm[Z2P[z2p]]), ($p2z: comm[P2Z[p2z]]), ($p2f: comm[P2F[p2f]]), ($f2p: comm[F2P[f2p]]),
-  ($a2p: comm[A2P[p2f]]), ($p2a: comm[P2A[f2p]])  |- ($ch: 1) =
+  ($z2p: Z2P[z2p]), ($p2z: P2Z[p2z]), ($p2f: P2F[p2f]), ($f2p: F2P[f2p]),
+  ($a2p: A2P[p2f]), ($p2a: P2A[f2p])  |- ($ch: 1) =
 {
-  -- create list for all the parties 
+  -- a list that will store the communicator channels for each communicator channels
+  -- get channel and send the lable desired
   lz2p <- pnil[comm[Z2P[z2p]]]; lp2z <- pnil[comm[P2Z[p2z]]];
   lp2f <- pnil[comm[P2F[p2f]]]; lf2p <- pnil[comm[F2P[f2p]]];
 
@@ -16,16 +16,19 @@ proc party_wrapper_init[K][s][z2p,p2z][p2f,f2p]:
            lz2p lp2z lp2f lf2p  
 }
 
-proc party_wrapper[K][s][z2p,p2z][p2f,f2p]: 
+proc party_wrapper[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn,p2fn,f2pn}: 
   (k: Int), (rng: [Bit]) (sid: SID[s]), 
-  ($z2p: comm[Z2P[z2p]]), ($p2z: comm[P2Z[p2z]]), ($p2f: comm[P2F[p2f]]), ($f2p: comm[F2P[f2p]]),
-  ($a2p: comm[A2P[p2f]]), ($p2a: comm[P2A[f2p]]), (lz2p: [comm[K1][Z2P[z2p]]]),
+  ($z2p: Z2P[z2p]{z2pn}), ($p2z: P2Z[p2z]{p2zn}), ($p2f: P2F[a]{p2fn}), ($f2p: F2P[a]{f2pn}), 
+  ($a2p: A2P[a2p]{a2pn}), ($p2a: P2A[p2a]{p2an}), 
+  -- they are shared at this point because this is blackbox code and shared channels can be handled by many processes at the same time without any issues, which seems reasonable for a list of shared channels
+--  vvvv                         vvvv        these are the lists of the communicator channels
   (lp2z: [comm[K1][P2Z[p2z]]]), (lf2p: [comm[K1][F2P[f2p]]]), (lp2f: [comm[K1][P2F[p2f]]]) ( |- ($ch: 1) =
 {
   match $z2p, $f2p, $a2p (
     Z2P(pid,m),*,* =>
       get {z2pn} K $z2p ;
       if not exists pid then
+        -- rather than straight providerless channels juts reduce clutter with the party wrapper directly talking to the communicator in them
         #z2p' <- channel_init[K1][z2p]; #p2z' <- channel_init[K1][p2z];
         #f2p' <- channel_init[K1][f2p]; #p2f' <- channel_init[K1][p2f];
         $c' <- PS.prot <- k rng sid #z2p' #p2z' #f2p' $p2f';
@@ -43,6 +46,13 @@ proc party_wrapper[K][s][z2p,p2z][p2f,f2p]:
   --- iterate through the providerless channels and look for output to forward outside
   $ch <- party_wrapper_p2f[K][s][z2p,p2z][p2f,f2p] <- ... 0 ;
 } 
+
+-- spawn communicators
+-- spawn the protocol party process (wraps around the user-written code)
+      -- has communicators as parameters
+      -- spawns the little session types processes with communicator parameters and then progress to the actual protocol with the parameters required
+      -- TODO: what is the session type here?
+
 
 proc party_wrapper_p2f[K][s][z2p,p2z][p2f,f2p]:
   (* standard args *) (idx: Int) = ($ch: 1) =

@@ -1,3 +1,162 @@
+Wrapper Questions
+=================
+* If an ITM must ``pay'' 1 import to schedule aynchronous code does this pose a problem for environments giving enough import?
+	a protocol party can do possible a polyonomial amount of calls to eventually and pay that polynomial, call it `p` to the wrapper
+	if Z gives x import to protocol parties in the real world, then it gives x import to the ideal world parties and the simulator
+ 	if `x` is not enough import then the ideal functionality finishes but the real world doesn't finish --> these are trivial distinguishing events		
+* Aynsc functionalities can't F2A_Pass but they can do a regular ?pass to the pump channel
+
+Wrapper Writing
+===============
+-- talk about how passing works back to the environment and why?
+	> parties no longer juts give control back but go through the adversary, why?
+	> rather than the environment having to be constrained, we want the strongest adversary, one that can always preempt the environment unless a party writes from p2z, those can't be interrupted
+
+
+
+* say the party does not pay import to schedule code bloks and only the adversary schedules code blocks
+	adversary exhausts all computation by trying to delay execution and can't do any actual polynomial work
+	the point was to ensure that the adversary gets the same amount of import and therefore has as much ability 
+
+if all protocols define how much import they require for every message type:
+	* unless they receive the import required on input, they don't do anything
+	* it might not be possible for the protocol party to know a polynomial upper bound on the amount of code blocks it needs to shedule:
+		for example there is a sender and a receiver
+		the receive is activate with an input `m` and some import it asked for `n`
+		it gives the input to F along with 0 import
+		F computes and evaluates some random poynomial `T(k)`  and gives it back to `p_s`
+		`p_s` must send `T(k)` messages to `p_r` which will cost `T(k)` import in the wrapper
+		if `n` < `T(k)`, `p_r` outputs only `n` messages received
+		
+		in the ideal world:
+			F gets some input `m` with `n` import and `p_r` outputs some number `T(k)`
+			the distribution might not look the same to Z
+
+
+Andrew Meeting
+==============
+Secion on experience: translating a traditional definition first into a UC one and then implementing it in UC
+* what do we have to consider even just to realize an on-paper definition of the protocol to even go to the implementation step?
+    > what are ideal functionality assumptions (quicksort anecdote from Farsite)
+    > what are the network delivery assumptions
+    > what can the adverasry do
+    > what are the properties that the ideal functionality f_ABA should satisfy (tradeoff here of what can and can't be captured that you might want to specify => what are the implications of that OR why?
+* protocol modelling
+    > initial conditions / spurious activations / buffer messages or not: answering questions that will naturall arise if the existing definition goes to implementation
+* we force an engineer/designer to consider and define these -- a priori before implementation begins 
+    > narrows the gap bet theory / implementations
+
+
+* in a sense future-proofing code by maintaining a close resemblance to UC theory definitions --> in the future when code is developed you are already a big step along the way to performing theoretical work when you want to formally verify or prove the security of your construction in the same way that once code is implemented then you outsource security audits, try to prove things about the implementation perhaps
+
+
+Section on fuzzing: how is fuzzing done ; the benefits of fuzzing to UC and of UC to fuzzing
+    can fuzzing be done for UC and what do we learn along the way 
+UC to fuzzing / testing:
+    > modular ideal functionality design
+    > staright-line execution no concurrency path (tradeoff with efficient design but this is just the beginning)
+    > small sized code
+    > unlike in ABA a lot of questions we had to answer for what to do in this scenario and is this in line with what the paper intends or does this lead to states where it departs from the paper's design
+fuzz / testing to UC:
+    > part of the proof obligation is the forall quantifier    
+    > randomized testing helps suggest new properties or lemmas that may hold and are worth investigating 
+    > with import we can do some form of termiantion reasoning with varying import as a function of the number of parties ; act as a proxy for the number of rounds of communication it takes to terminate under different adversarial conditions
+
+
+
+* note on concurrency: waiting for view is an example of this: because of straight line execution there is no preemption of an executing activation so you don't have to play around with locks and mutexes, the framework does that for you
+
+
+New Path
+========
+can we use fuzzing for UC: yes
+are there advantages to UC: yes
+what are the advantages to 
+
+
+Questions for Andrew:
+=====================
+I was considering this idea of livelock detection and I'm torn whether there is anything here that is specific to UC? Theoretically, checking for livelocks should be straightforward in any testing mechanism that outputs a transcript of what happened. The hard part is determining the state, but given the inputs and messages sent to the party and what the party outputs it should be determinable and so checking is just a computational task. This doesn't appear to be any kind of superiority of UC.
+The approach i want to take in the writing is:
+    1. here is an advantage of using UC that we determine
+    2. traditional testing does X and can't do it like this
+    3. here is an example of where this advantage can appear in testing
+    4. we don't always have an example that showcases something that couldn't be done
+I want to combine thoughts on initial conditions and the lock-step nature of UC execution. 
+Mentally, I draw the analogy to the a debugger where the environment/programmer/debugger has a chance to react and take an action after every action take by the program (the execution reacting to an environmental input).
+There is a strict input-output correlation guarantee that UC gives you, and a thread-based model might introduce non-determinism into that. 
+
+
+A New Way to Organize 
+=====================
+* describe how we do thins in general
+* list an advantage of using UC and make that a header or emphasized text and then the subsection is something that it allows us to do with fuzzing/checking
+Q: is this lock-step way of doing tings unique for this?  
+
+
+advantage: small state -> inferring party state (by the environment) is possible from leaked information
+            -> allows us to check more specific properties like lemmas that make a statement about a particular state transition
+advantage: uc execution model gives Z a chance to take an action between every external action a proocol party makes 
+            -> protocol parties don't have running threads that are doing anything else
+            -> precise reasoing about initial conditions of when input is available and how programs react (look at HoneyBadger BFT example andrew mentioned)
+            -> observer existing code bases, inputs are generated and output is observed without any intermediate intervention
+            -> same with fuzzing in well-known protocols like geth and tendermint. Fuzzing is limied to genrating input from some corpus of test data and looking at input/output
+advanage:   
+
+
+Correct oder to talk about fuzzing
+==================================
+describe quickcheck
+writing generative test cases and explain that
+    * what choosing parameters does for testing: different corruption models
+    * choosing protocol parties + corruptions
+    * strucutred for specific failures and unstructured for general purpose fuzzing 
+    * different scheduling models
+    * the size of generative test cases and their simplicity
+        - decision making and choosing input is easy beacuse UC requires preciseness and without a thread-based model, predicting the behavior of protocol parties and their messages + knowing their initial coditions is easier, it lets you make assumptions about observed output from the adversary that testing in with a real network/thread-based model wouldn't give you
+checking properties
+    * like existing works (proverif) our fuzzing tooling outputs a transcript that provides the programmer with a trace of the failure
+    * test cases inspect the tape and attempt to assert properties like: safety, validity, additional lemmas proven on-paper
+
+
+On the wrapper
+--------------
+Like most other works that produce programming tools for UC we relax some of the rules of UC for the sake of easy of use and convenience. 
+Regardless, the relaxations we make do not affect the expressivity of the framework or the security defintion in a significant way.
+
+we have to answer validation questions and we have to be posing and answering design questions
+top-level 
+* if the wrapper is a design choice we make (could be it's useful for understanding someting) most interesting is when we reveal a fundamental challenge 
+    > work well: here are the known constraints, the known approach, how we could go about making this model in UC but then the obvious way of doing it is wrong and the space becomes complicated
+    > a wrapper is generic (which is the standard approach wrapper + operator) we can frame it as a standard thing
+    > what are the unique challenges to the wrapper that we have to solve if we have a solution and there are other ways of doing it that wouldn't be obvious then maybe cut it
+
+
+ANDREW SYNC 2/13/4
+------------------
+* what is the relevane of initial conditions? <-- towards why distributed systems
+        >> some break down with concurrent composition >> some zk is secure under sequential but fails under parallel >> 
+        >> ACS protocol from badger -->     uses binary 
+* is there value in talking about our own development process? (THE GOAL BEING CASTING THESE AS REASONABLE IMPLEMENTATION BUGS) 
+    > the story is that literature definitions that do not encompass any implementation give way to hand wavin and imprecise language/specification
+    > some of the bugs tested present themselves as failures I encountered and discovered through fuzz testing because of misunderstanding of literature
+* do we also make this a main point of our paper: implementations are an aid to literature for more recise definitions, an organized presetation with clear assumptions / adversarial capabilities, and an analyzable spec with no ambiguities that aren't discoverable by fuzzing/testing/falsifying
+* the writup i currently have goes a lot into code snippets of how different things are done in saucy like giving honest input. Is this necessary or should such things be skipped for higher-level points or snippets: what does a property look like in saucy / what is the most common and useful environent generated
+* i take liberties on code snippets like removing `liftIO` since we're going from property monad to io monad and back. is that okay? we're not too focues on the types of properties/etc...
+* maybe one thing to say is: implmenting code / software both in existing works and this is cumbersome so fuzz testing is a natural solution to resolving this annoying part of implementing UC definitions
+* DO WE TAKE A SIDE ON: this is self-contained UC implmentations that we test OR this is an aid to paper proofs and definitions in literature
+* requires some more engineering to make a simulator that can observe state directly and find livelocks: is the state space very large to check for exactly the same? look at the state of each party and what messages have been scheduled
+    >> there seems no way for one haskell function to inspet another function without a UC-breaking debug channel that allows a parent process to query for a variable. basically a shell process routes all messages and at the end of every activation of the ITM it can query all the state variables of it 
+* so what my plan is start with some metrics for ``how successful'' the different types of environments are at finding a specific bug (only bugs that we show manually to cause some violation) as some sort of indicator of success even with only simple environments or the smplicity of more structured environments 
+    >> but surely the point is that writing generative environments is simple and you can write very targetted environments 
+* (is there a use for this?) write generic ``dummy adversaries'' that automate giving relevant information to a generated Z to make writing stateful environments even easier?
+        >> like we provide some set of generic adversaries for different hybrid functionalities
+* fuzzing work right now presents numbers in comparison to existing works for know buggy protocols
+    >> saying that we find bugs quickly isn't really useful, intuitively that should be the case because these protocols aren't THAT compicated >> part of that is the UC framework makes it so >> maybe should separate the SBroadcast sub-protocol into it's own ideal functionality, talk about how to design the protocol in this way (is it simpler/easier/harder) >> PLUS we can test their properties exactly rather than trying to get a bug in SBroadcast to cascade into a bug in ABA 
+        !!!! we can compare the two impementations and use it as a PLUS for UC development style when it comes to ease of development/testing
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 What have we done:
 - implemented UC in haskell with our computation model abstraction 
 - implemented some example broadcast primitives: simple bracha, and more complex ABA
@@ -6,55 +165,55 @@ What have we done:
 
 
 State of UC research
-	Andrew: "i think it counts as a meta research Q about the state of UC research as it exists today (as opposed to the platonic ideal of the UC topic itself) to ask whether UC papers have errors in their presentation that can be caught by fuzzing"  
-	- state of UC research is that protocols/proofs exist only on paper and although formal verification tools exist, they are often quite limited and require specialized knowledge to implement/write (easycrypt, F*, ILC, etc.)
-	- Can we define the UC framework in a mainstream programming language and achieve automated testing/gurantees/analysis of ideal functionalities and protocols? Even formal verification tools can not reasn about polynoial time but with the computations models implemented here, having to define an explicity polynomial creates a falsifiable proofs/definition.  
-	- We want to bring UC definitions out of the journals and into use as software artefacts. Not only do they encourage modular, and reusable code, but make creating complex protocols easy with fuzz testing tools. Furthermore they allow UC definitions to be falisied/tested by forcing authors to be explicit about assumptions/contexts (monads).
-	- TODO: some point about examining the breadth of UC functionalities and whether they have faults that can be caught by fuzzing (NEED to get a handful of diverse examples of protocols where bugs CAN be caught rather than actually trying to implement them all) --> maybe unique to consensus/broadcast protocols where thresholds matter + we have already implemented ABA
-	- This leads to a classification of what bugs can and can't be caught by fuzzing --> where do we go for the bugs that can't be caught by fuzzing 
+    Andrew: "i think it counts as a meta research Q about the state of UC research as it exists today (as opposed to the platonic ideal of the UC topic itself) to ask whether UC papers have errors in their presentation that can be caught by fuzzing"  
+    - state of UC research is that protocols/proofs exist only on paper and although formal verification tools exist, they are often quite limited and require specialized knowledge to implement/write (easycrypt, F*, ILC, etc.)
+    - Can we define the UC framework in a mainstream programming language and achieve automated testing/gurantees/analysis of ideal functionalities and protocols? Even formal verification tools can not reasn about polynoial time but with the computations models implemented here, having to define an explicity polynomial creates a falsifiable proofs/definition.  
+    - We want to bring UC definitions out of the journals and into use as software artefacts. Not only do they encourage modular, and reusable code, but make creating complex protocols easy with fuzz testing tools. Furthermore they allow UC definitions to be falisied/tested by forcing authors to be explicit about assumptions/contexts (monads).
+    - TODO: some point about examining the breadth of UC functionalities and whether they have faults that can be caught by fuzzing (NEED to get a handful of diverse examples of protocols where bugs CAN be caught rather than actually trying to implement them all) --> maybe unique to consensus/broadcast protocols where thresholds matter + we have already implemented ABA
+    - This leads to a classification of what bugs can and can't be caught by fuzzing --> where do we go for the bugs that can't be caught by fuzzing 
 
 
 Andrew: "like you shouldn't need to "roll your own" consensus protocol, so for that raeson formally verifying a small number of essetnial protocols is perhaps more approrpiate than building a software framework for easier programming of protocols using async/sync/partial networks"
-	- There is some value in this but only as a side story to the main research questions as a cool thing we also did which is helpful to the broader community.  
-	- can we really even formally verify these protocols? we can do quick check to insect some checkable properties but we can't formally say that these protocols terminate
+    - There is some value in this but only as a side story to the main research questions as a cool thing we also did which is helpful to the broader community.  
+    - can we really even formally verify these protocols? we can do quick check to insect some checkable properties but we can't formally say that these protocols terminate
 
 
 TODO: concretize research questions into words
 Possible Outline:
 I. State of Affairs in UC proofs/definitions (sounds more like the intro of the paper)
-	A. Paper proofs suck / can't be checked / falsifiability is gone / the modular principle of reuse is gone
-	B. Formal verification tools are limited in capturing UC / they can't say anything about liveness / require learning some esoteric language or tools / no one will ever use them again / basically an exercise in doing it for the sake of it
+    A. Paper proofs suck / can't be checked / falsifiability is gone / the modular principle of reuse is gone
+    B. Formal verification tools are limited in capturing UC / they can't say anything about liveness / require learning some esoteric language or tools / no one will ever use them again / basically an exercise in doing it for the sake of it
 
 II. Haskell Saucy
-	A. Implementation of the UC framework with our implementation of computation models with import
-	B. Not sure what to highlight about haskell saucy rather than it is an implementation that is validated by composition operators and the standard lemmas
-	C. unlike verification tools there's hope of reusing existing definitions and building on top of them 
-	D. actually usable as code rather than just a formal model in easyuc or something similar
+    A. Implementation of the UC framework with our implementation of computation models with import
+    B. Not sure what to highlight about haskell saucy rather than it is an implementation that is validated by composition operators and the standard lemmas
+    C. unlike verification tools there's hope of reusing existing definitions and building on top of them 
+    D. actually usable as code rather than just a formal model in easyuc or something similar
 
 III. Fuzz Testing
-	A. What fuzz testing tecniques do we use: quick check. What are the limitations of quick check ==> what can and can't it do in terms of checks (even for safety maybe we find it's not as expressive as once thought)
-	B. What do we do about things we can't catch like liveness? Making polynomials and code explicit at least tests and environments can be created to test liveness and find environment counter examples
-	C. Maybe a nice classification of what we can achieve and that Modal Logic may be the next step in trying to capture liveness checks as well.
+    A. What fuzz testing tecniques do we use: quick check. What are the limitations of quick check ==> what can and can't it do in terms of checks (even for safety maybe we find it's not as expressive as once thought)
+    B. What do we do about things we can't catch like liveness? Making polynomials and code explicit at least tests and environments can be created to test liveness and find environment counter examples
+    C. Maybe a nice classification of what we can achieve and that Modal Logic may be the next step in trying to capture liveness checks as well.
 
 IV. Something Empirical about existing functionalities
-	A. Maybe we can look at the all functionalities doc and say somethin abouve what kind of coverage our approach could achieve on exisint UC definitions.
-	B. Make the argument that we don't need to go to fancy formal verification frameworks and can instead rely on simple tools in a mainstream language and create tested/ready-to-use software artefacts.
-	C. Propose this as the standard for UC definitions going forward. Discuss about possibilities in other, more mainstream and easy to use, languages like Python or another strongly typed language.
+    A. Maybe we can look at the all functionalities doc and say somethin abouve what kind of coverage our approach could achieve on exisint UC definitions.
+    B. Make the argument that we don't need to go to fancy formal verification frameworks and can instead rely on simple tools in a mainstream language and create tested/ready-to-use software artefacts.
+    C. Propose this as the standard for UC definitions going forward. Discuss about possibilities in other, more mainstream and easy to use, languages like Python or another strongly typed language.
 
 V. Case Studies
-	A. Provide some fundametal protocols are implemented in UC, and correct, and reusable
-	B. Bracha broadcast, enumerating the subset of bugs possible here and validate with quick check.
-	C. ABA more complicated agreement protocol, validate with _________________________
+    A. Provide some fundametal protocols are implemented in UC, and correct, and reusable
+    B. Bracha broadcast, enumerating the subset of bugs possible here and validate with quick check.
+    C. ABA more complicated agreement protocol, validate with _________________________
 
 VI. Discuss 
-	A. Come back and address the RQs (or goals)  we're formulated at the beginning
+    A. Come back and address the RQs (or goals)  we're formulated at the beginning
 
 
 -----------------------------------
 okay so they aren't concurrency issues but composition issues that aren't captured by ironfleet 
 fundamentally we want to 
 
-RQ1: 
+port existing informal analysis techniques, rather than verification, aided by on-paper proofs 
 
 
 

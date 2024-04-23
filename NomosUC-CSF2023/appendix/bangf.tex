@@ -16,7 +16,7 @@ connecting to the internal instances of \F.
 \end{mathpar}
 
 Like the \partywrapper virtualizaton is achieved just by spawnig functionalities with the virtual token type \inline{K1}.
-From the code below for accepting messages fro the \partywrapper, we can see that the operator's code is alost identical the code in Appendix~\ref{app:arbparties}.
+From the code below for accepting messages fro the \partywrapper, we can see that the operator's code is alost identical the code of the \partywrapper in Section~\ref{sec:execuc}.
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
 $\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
   $\tg{(* args *)}$
@@ -33,21 +33,21 @@ $\nproc$ f_ms[K][K1][s,p2f,f2p,a2f,f2a] :
       m = $\nrecv$ $\$$p2ms ;
       $\nget$ {p2msn} K $\$$p2f ;
       $\nif$ not exists ssid lp2f then
-        #p2f' <- channel_init[K1][P2F[p2f]] ;
-        #f2p' <- channel_init[K1][F2P[f2p]] ;
-        #a2f' <- channel_init[K1][a2f] ;
-        #f2a' <- channel_init[K1][f2a] ;
+        $\$$p2f' <- channel_init[K1][P2F[p2f]] ;
+        $\$$f2p' <- channel_init[K1][F2P[f2p]] ;
+        $\$$a2f' <- channel_init[K1][a2f] ;
+        $\$$f2a' <- channel_init[K1][f2a] ;
         $\$$c' <- gen_f_wrapper[K][K1] <- 
-          k rng sid #p2f' #f2p' #a2f' #f2a'
-        lp2f <- append (ssid, #p2f') lp2f; lf2p 
-          <- append (ssid, #f2p') lf2p;
-        la2f <- append (ssid, #a2f') la2f; lf2a 
-          <- append (ssid, #f2a') lf2a;
+          k rng sid $\$$p2f' $\$$f2p' $\$$a2f' $\$$f2a'
+        lp2f <- append (ssid, $\$$p2f') lp2f; lf2p 
+          <- append (ssid, $\$$f2p') lf2p;
+        la2f <- append (ssid, $\$$a2f') la2f; lf2a 
+          <- append (ssid, $\$$f2a') lf2a;
       else ()
       $\$$p2f' <- search ssid lp2f ;
       $\nwithdraw$ K K1 p2fn ;
-      #p2f'.SEND ; send #p2f' P2F(pid, m) ; 
-      pay {p2fn} K1 #p2f' ;
+      $\$$p2f'.SEND ; send $\$$p2f' P2F(pid, m) ; 
+      pay {p2fn} K1 $\$$p2f' ;
     *,a2bf => 
       ssid = $\nrecv$ $\$$a2ms ;
       m = $\nrecv$ $\$$a2ms ;

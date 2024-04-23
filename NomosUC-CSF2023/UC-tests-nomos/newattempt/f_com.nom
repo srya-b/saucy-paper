@@ -1,3 +1,21 @@
+(* first some pseudo code for the intended functionality
+
+f_com (S,R): msgs = []
+	
+	-- on Send,m from S/R:
+			append (S/R,m) to msgs
+			send m to ~S/~R
+
+	-- on Commit,b from S
+			store b
+			send Committed to R
+
+	-- on Open from S
+			send Open,b to R
+
+*)
+-- both parties can send messages, perhaps this is a case where we can have arbitrary channels
+-- one channel for all parties to use but that might be getting too far from the intent 
 stype sender[a] = +{ |{2}> commit: Bit * scommitted[a]{n},
 							       |{1}> sendmsg: a * sender[a]{n}  }
 stype scommitted[a] = +{ |{1}> open: sopened,
@@ -35,8 +53,9 @@ stype adv[a] = +{ getleak: &{ yes: a -> adv[a],
 (* TODO add message send to this
    and commit to random not just a bit *)
 (* genericize serialization *) 
-type comp2f = Commit of Bit | Open ;
-type comf2p = Commit | Open of Bit ;
+type comp2f[a] = Commit of Bit | Open | SendMsg a ;
+type comf2p[a] = Commit | Open of Bit | RecvMsg a ;
+type coma2f[a] =  
 
 proc F_com[K][a] :
 	(k: Int), (rng: [Bit]), (sid: session[1]),
@@ -109,7 +128,7 @@ proc F_com_committed[K][a] :
 
 }
 	
-
+(* these are the dummy processes spawned in the providerless channel for Sender *)
 proc func_f2p_r1[K][f2p][p2f]:
 	(#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: sender) =
 {

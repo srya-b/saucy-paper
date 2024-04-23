@@ -1,4 +1,4 @@
-stype modify[k][v] = <{2}| +{store: PID * k * v * modify[v][k]}
+stype modify[k][v] = <{1}| +{store: PID * k * v * modify[v][k]}
 stype search[k][v] = +{retrieve: PID * k * &{ just: PID -> v -> search[k],
                                               nothing: PID -> search[k]}}
 
@@ -16,9 +16,9 @@ proc f_database[k][v]:
 {
   match $M, $S (
     store,* => pid = recv $M ; k = recv $M, v = recv $M, get $M {2} ;
-               d' <- store d k v ;
+               d' <- store d k v ; (* does list append: n work *)
     *,retrieve => pid = recv $S ; k = recv $S ;
-                  v <- search d k ;
+                  v <- search d k ; (* n work searching *)
                   if v then
                     $S.just ; send $S pid v ;
                   else

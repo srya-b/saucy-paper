@@ -469,3 +469,29 @@ We call this intermediate sub-configuration as \emph{communicator wrapper} (box 
 % From now on we only discuss communication in the form of session types and providerless channels.
 % We encounter an example of shared channels and creating a providerless channel in Section~\ref{sec:commitment}.
 
+\begin{figure}[t]
+\begin{mathpar}
+  \vspace{-0.7em}
+  \infer[\m{empty}]
+  {\D \overset{0}{\underset{0}{\vDash}} (\cdot) :: \D}
+  {}
+  \and\vspace{-0.6em}
+  \infer[\m{compose}]
+  {\D_0 \overset{T_1+T_2}{\underset{W_1+W_2}{\vDash}} (\config_1 \; \config_2) :: \D_2}
+  {\D_0 \overset{T_1}{\underset{W_1}{\vDash}} \config_1 :: \D_1 \qquad
+  \D_1 \overset{T_2}{\underset{W_2}{\vDash}} \config_2 :: \D_2}
+  \and\vspace{-0.6em}
+  \inferrule*[right=$\m{proc}$]
+  {\Tokens, \K_0 \hookrightarrow (t, t') \semi \cdot \semi \D_1 \entailpot{q}{q'} P :: (c : A)}
+  {\D, \D_1 \overset{t}{\underset{w}{\vDash}} \proc{c}{w, P} :: (\D, (c : A) )}
+  \and\vspace{-0.6em}
+  \inferrule*[right=$\m{msg}$]
+  {\Tokens, \K_0 \hookrightarrow (t, t') \semi \cdot \semi \D_1 \entailpot{q}{q'} M :: (c : A)}
+  {\D, \D_1 \overset{t}{\underset{w}{\vDash}} \msg{c}{w, M} :: (\D, (c : A) )}
+\end{mathpar}
+\vspace{-1.2em}
+\caption{Typing rules for a configuration}
+\vspace{-1.1em}
+\label{fig:config_typing}
+%\Description{Configuration Typing Rules}
+\end{figure}

@@ -89,6 +89,7 @@
 \newtcolorbox[auto counter]{bbox}[2][]{%
     colback=white,
     colframe=bb,
+	boxrule=1pt,
     %colbacktitle=white!90!roug,
 	colbacktitle=white!40!gg,
     coltitle=black,
@@ -96,6 +97,7 @@
 	fontupper=\footnotesize,
 	fontlower=\footnotesize,
     enhanced,
+	sharp corners,
     attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
     #1,% For possible options
 }
@@ -143,11 +145,14 @@ component, formatting, style, styling, insert
 \section{Background} \label{sec:background}
 \input{sections/background}
 
-\section{Computation Models} \label{sec:wrappers}
+\section{Asynchrony and Eventual Delivery} \label{sec:wrappers}
 \input{sections/wrappers}
 
 \section{Haskell Saucy}
 \input{sections/haskell}
+
+\section{UC Programming}
+\input{sections/experience}
 
 \section{Fuzz Testing}
 \input{sections/fuzzing}

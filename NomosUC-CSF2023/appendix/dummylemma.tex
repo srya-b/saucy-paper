@@ -49,36 +49,45 @@ For example, output from \A on its channel to a party or the functionality is me
 into input from \Z for \DS.
 In the dummy simulator the channels are created as:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
-#a2ps <- channel_init[K1][p2f] ;
-#a2fs <- channel_init[K1][s2f] ;
-#z2s <- channl_init[K1][Z2A[p2f][s2f]] ;
-<- a2z_wrap[K][p2f][s2f] <- #a2ps #a2fs #z2s ;
+$\$$a2ps <- channel_init[K1][p2f] ;
+$\$$a2fs <- channel_init[K1][s2f] ;
+$\$$z2s <- channl_init[K1][Z2A[p2f][s2f]] ;
+<- a2z_wrap[K][p2f][s2f] <- $\$$a2ps $\$$a2fs $\$$z2s ;
 \end{lstlisting}
-where \inline{a2z_wrap} simply reads from \inline{#a2ps} and \inline{#a2fs} and wraps it in the type constructor for messages from \Z to \A:
+where \inline{a2z_wrap} simply reads from \inline{$\$$a2ps} and \inline{$\$$a2fs} and wraps it in the type constructor for messages from \Z to \A:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
-$\nproc$ a2s_wrap[K][a][b]:
-  (#in2p: comm[K][a]), (#in2f: comm[K][b]), 
-  (#out: comm[K][Z2A[a][b]) |- ($\$$c : 1) =
+$\nproc$ a2s_wrap[K][a][b]{an,bn,dsn}:
+  ($\$$in2p: a2p[K][a]{an}), ($\$$in2f: a2f[K][b]{bn}), 
+  ($\$$out: z2a[K][Z2A[a][b]]{dsn}) |- ($\$$c : 1) =
 {
-  $\nmatch$ #in2p, #in2f (
-    *,m => #out.SEND ; $\nsend$ #out Z2A2F(m) ;
-    A2P(pid,m),* => #out.SEND ; 
-    $\nsend$ #out Z2A2P(pid, m) ;
+  $\nmatch$ $\$$in2p, $\$$in2f (
+    *,A2F => m = $\nrecv$ $\$$in2f ; 
+	$\nget$ K {bn} $\$$in2f ;
+	$\$$out.Z2A2F ; $\nsend$ $\$$out m ;
+	$\npay$ K {dsn} $\$$out ;
+    A2P,* => (pid,m) = $\nrecv$ $\$$in2p ;
+	$\nget$ K {an} $\$$in2p ;
+	$\$$out.Z2A2P ; $\nsend$ $\$$out (pid,m) ;
+	$\npay$ K {fsn} $\$$out ;
   )
-  $\$$c <- a2s_wrap[K][a][b] <- #in2p #in2f #out 
+  $\tg{(* proceed to next reads *)}$
 }
 \end{lstlisting}
 
 On input from \Z, we simply forward the message with virtual tokens instead of real tokens and outgoing messages from \A as real output to \Z:
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
-$\nmatch$ #z2a {z2an} K, #a2z' {a2zn} K1 (
-  m,* =>
+$\nmatch$ $\$$z2a, $\$$a2z' (
+  Z2A2P,* => (pid,m) = $\nrecv$ $\$$z2a ;
+  	$\nget$ K {z2an} $\$$z2a' ;
     $\nwithdraw$ K K1 {z2an} ;
-    #z2a'.SEND; $\nsend$ #z2a' pid ; $\nsend$ #z2a' m ;
-    $\npay$ K1 {z2an} #z2a' ;
-  *,m =>
-    #z2a'.SEND; $\nsend$ #z2a' pid ; $\nsend$ #z2a' m ;
-    $\npay$ K {z2an} #z2a' ;
+    #z2a'.Z2A2P; $\nsend$ $\$$z2a' (pid, m);
+    $\npay$ K1 {z2an} $\$$z2a' ;
+  Z2A2F,*=> m = $\nrecv$ $\$$z2a' ;
+  	$\nget$ K {z2an} $\$$z2a' ;
+    $\nwithdraw$ K K1 {z2an} ;
+    $\$$z2a'.Z2A2F; $\nsend$ $\$$z2a' m ;
+    $\npay$ K1 {z2an} $\$$z2a' ;
+  $\tg{(* identical in the reverse *)}$
 )
 \end{lstlisting}
 We use the \inline{match} over shared channels as syntax sugar that abstracts away their special handling and receiving the given import and token type from them. 
