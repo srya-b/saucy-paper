@@ -2,49 +2,53 @@ stype Z2P[a] = +{ z2p: PID * a * Z2P[a]}
 stype P2Z[a] = &{ p2z: PID * a * P2Z[a]}
 
 -- ASSUMPTION: have discussed this in the past with Ankush that we can have a list that stores SHARED channels in NomosUC therefore this code assumes that we can simple store the SHARED channels in a list of dynamic size
-proc party_wrapper_init[K][s][z2p,p2z][p2f,f2p]: 
+-- TODO: put the import annotations on `party_wrapper_init` 
+proc party_wrapper_init[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn}{p2fn,f2pn}: 
   (k: Int), (rng: [Bit]) (sid: SID[s]), 
-  ($z2p: Z2P[z2p]), ($p2z: P2Z[p2z]), ($p2f: P2F[p2f]), ($f2p: F2P[f2p]),
-  ($a2p: A2P[p2f]), ($p2a: P2A[f2p])  |- ($ch: 1) =
+  ($z2p: Z2P[z2p]{z2pn}), ($p2z: P2Z[p2z]{p2zn}), ($p2f: P2F[p2f]{p2fn}), ($f2p: F2P[f2p]{f2pn}),
+  ($a2p: A2P[p2f]{p2fn}), ($p2a: P2A[f2p]{f2pn})  |- ($ch: 1) =
 {
   -- a list that will store the communicator channels for each communicator channels
   -- get channel and send the lable desired
-  lz2p <- pnil[comm[Z2P[z2p]]]; lp2z <- pnil[comm[P2Z[p2z]]];
-  lp2f <- pnil[comm[P2F[p2f]]]; lf2p <- pnil[comm[F2P[f2p]]];
+  lz2p <- pnil[(PID, comm[Z2P[z2p]])]; lp2z <- pnil[(PID, comm[P2Z[p2z]])];
+  lp2f <- pnil[(PID, comm[P2F[p2f]])]; lf2p <- pnil[(PID, comm[F2P[f2p]])];
 
-  $ch <- party_wrapper[K][s][z2p,p2z][p2f,f2p] <- k rng sid $z2p $p2z $p2f $f2p $a2p $p2a
-           lz2p lp2z lp2f lf2p  
+  $ch <- party_wrapper[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn}{p2fn,f2pn} <- k rng sid $z2p $p2z $p2f $f2p $a2p $p2a lz2p lp2z lp2f lf2p  
 }
 
-proc party_wrapper[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn,p2fn,f2pn}: 
+proc party_wrapper[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn}{p2fn,f2pn}: 
   (k: Int), (rng: [Bit]) (sid: SID[s]), 
   ($z2p: Z2P[z2p]{z2pn}), ($p2z: P2Z[p2z]{p2zn}), ($p2f: P2F[a]{p2fn}), ($f2p: F2P[a]{f2pn}), 
   ($a2p: A2P[a2p]{a2pn}), ($p2a: P2A[p2a]{p2an}), 
-  -- they are shared at this point because this is blackbox code and shared channels can be handled by many processes at the same time without any issues, which seems reasonable for a list of shared channels
---  vvvv                         vvvv        these are the lists of the communicator channels
-  (lp2z: [comm[K1][P2Z[p2z]]]), (lf2p: [comm[K1][F2P[f2p]]]), (lp2f: [comm[K1][P2F[p2f]]]) ( |- ($ch: 1) =
+  (lp2z: [(PID, comm[K1][P2Z[p2z]])]), (lf2p: [(PID, comm[K1][F2P[f2p]])]), (lp2f: [(PID, comm[K1][P2F[p2f]])]) ( |- ($ch: 1) =
 {
   match $z2p, $f2p, $a2p (
-    Z2P(pid,m),*,* =>
-      get {z2pn} K $z2p ;
-      if not exists pid then
+    Z2P,*,* =>
+      get {z2pn} K $z2p 
+      let (m,pid) = recv $z2p
+      if not (exists lp2z pid) then
         -- rather than straight providerless channels juts reduce clutter with the party wrapper directly talking to the communicator in them
         #z2p' <- channel_init[K1][z2p]; #p2z' <- channel_init[K1][p2z];
         #f2p' <- channel_init[K1][f2p]; #p2f' <- channel_init[K1][p2f];
         $c' <- PS.prot <- k rng sid #z2p' #p2z' #f2p' $p2f';
-        lz2p <- pappend lz2p #z2p'; lp2z <- pappend lp2z #p2z';
-        lp2f <- pappend lp2f #p2f'; lf2p <- pappend lf2p #f2p';
+        lz2p <- pappend lz2p (pid, #z2p'); lp2z <- pappend lp2z (pid, #p2z');
+        lp2f <- pappend lp2f (pid, #p2f'); lf2p <- pappend lf2p (pid, #f2p');
       else ()
       #z2p' <- search lz2p pid ;
       withdrawtoken K K1 z2pn
       #z2p'.SEND ; send #z2p m; pay {z2pn} K1 #z2p' ;
-    *,F2P(pid,m),* =>
+      $ch <- party_wrapper_p2f[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn}{p2fn,f2pn} <- k rng sid $z2p $p2z $p2f $f2p $a2p $p2a lz2p lp2z lp2f lf2p pid ;
+    *,F2P,* =>
       (* identical code *)
-    *,*,A2P(pid,m) =>
-      (* identical code *)
+    *,*,A2P =>
+      -- forward to the functionality
+      get {f2pn} K $a2p ;
+      $p2f.P2F ; pay $p2f K f2pn ;
+      send $p2f m 
+      -- loop back to same process
+      $ch <- party_wrapper[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn}{p2fn,f2pn} <- k rng sid $z2p $p2z $p2f $f2p $a2p $p2a lz2p lp2z lp2f lf2p  
+   
   )
-  --- iterate through the providerless channels and look for output to forward outside
-  $ch <- party_wrapper_p2f[K][s][z2p,p2z][p2f,f2p] <- ... 0 ;
 } 
 
 -- spawn communicators
@@ -53,22 +57,32 @@ proc party_wrapper[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn,p2fn,f2pn}:
       -- spawns the little session types processes with communicator parameters and then progress to the actual protocol with the parameters required
       -- TODO: what is the session type here?
 
-
+-- Only search the p2f and p2z channels of the PID that was activated
 proc party_wrapper_p2f[K][s][z2p,p2z][p2f,f2p]:
-  (* standard args *) (idx: Int) = ($ch: 1) =
+  (k: Int), (rng: [Bit]) (sid: SID[s]), 
+  ($z2p: Z2P[z2p]{z2pn}), ($p2z: P2Z[p2z]{p2zn}), ($p2f: P2F[a]{p2fn}), ($f2p: F2P[a]{f2pn}), 
+  ($a2p: A2P[a2p]{a2pn}), ($p2a: P2A[p2a]{p2an}), 
+  (lp2z: [(PID, comm[K1][P2Z[p2z]])]), (lf2p: [(PID, comm[K1][F2P[f2p]])]), (lp2f: [(PID, comm[K1][P2F[p2f]])]), (caller: PID) ( |- ($ch: 1) =
 {
-  if idx == length lz2p then
-    $ch <- party_wrapper_p2z[K][s][z2p,p2z][p2f,f2p] <- ... 0 ;
-  else
-    -- check the i'th channel in the list lp2f
-    #p2f' <- lp2f[i] ;
-    (* look at compose.nom for expansion of syntax sugar *)
-    case #p2f' (
-      m => get {p2fn} K1 #p2f' ;
-           $p2f.SEND ; send $p2f P2F(pid, m) ; pay $p2f {p2fn} K ;
-    )
-    $ch <- party_wrapper_p2f[K][s][z2p,p2z][f2p,p2f] <- ... (idx+1) ;
+  #p2f' <- search lp2f caller ;
+  #p2f'.RECV
+  case #p2f' (
+    Yes => get {p2fn} K1 #p2f'
+           let m = recv #p2f'
+           $p2f.P2F ; pay {p2fn} K $p2f 
+           send $p2f (pid, m)
+           -- loop back to main process
+           $ch <- party_wrapper[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn}{p2fn,f2pn} <- k rng sid $z2p $p2z $p2f $f2p $a2p $p2a lz2p lp2z lp2f lf2p  
+    No => -- nothing to do here just "release" and move on to p2z
+          $ch <- party_wrapper_p2z[K][s][z2p,p2z][p2f,f2p]{z2pn,p2zn}{p2fn,f2pn} <- k rng sid $z2p $p2z $p2f $f2p $a2p $p2a lz2p lp2z lp2f lf2p pid
+  )
 }
 
-(* dummy and corrupt parties are handled identically: partywrapper forwards the messages without any interna shenanigans with parties *)
-
+proc party_wrapper_p2z[K][s][z2p,p2z][p2f,f2p]:
+  (k: Int), (rng: [Bit]) (sid: SID[s]), 
+  ($z2p: Z2P[z2p]{z2pn}), ($p2z: P2Z[p2z]{p2zn}), ($p2f: P2F[a]{p2fn}), ($f2p: F2P[a]{f2pn}), 
+  ($a2p: A2P[a2p]{a2pn}), ($p2a: P2A[p2a]{p2an}), 
+  (lp2z: [(PID, comm[K1][P2Z[p2z]])]), (lf2p: [(PID, comm[K1][F2P[f2p]])]), (lp2f: [(PID, comm[K1][P2F[p2f]])]), (caller: PID) ( |- ($ch: 1) =
+{
+  (* handlede identically to p2f case above *)
+}

@@ -40,6 +40,7 @@
 \usepackage{xspace}
 \usepackage{turnstile}
 
+\setlength{\belowcaptionskip}{-10pt}
 
 
 \AtBeginDocument{%
@@ -118,15 +119,17 @@
 
 \newtcolorbox[auto counter]{bbox}[2][]{%
     colback=white,
-    colframe=bb,
+    colframe=black!75!white,
     %colbacktitle=white!90!roug,
     colbacktitle=white!40!gg,
     coltitle=black,
+    boxrule=1pt,
+    left=1mm,
     fonttitle=\footnotesize\bfseries, 
     fontupper=\footnotesize,
     fontlower=\footnotesize,
     enhanced,
-    attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
+    %attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
     #1,% For possible options
 }
 
@@ -189,6 +192,9 @@
 \section{Background on Universal Composability} \label{sec:background}
 \input{sections/background}
 
+\section{Session Types for Ideal Functionalities} 
+\input{sections/com_example}
+
 \section{Ideal Functionalities in NomosUC} \label{sec:example}
 \input{sections/example}
 
@@ -211,8 +217,8 @@
 
 %\section{Ideal Functionalities} \label{sec:idealfs}
 %\input{sections/functionalities}
-%\section{Coin Flipping and Commitment} \label{sec:commitment}
-%\input{sections/commitment}
+\section{Coin Flipping and Commitment} \label{sec:commitment}
+\input{sections/commitment}
 
 
 \section{Related Works} \label{sec:related}

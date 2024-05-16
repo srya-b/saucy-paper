@@ -1,7 +1,58 @@
 In this section we dive into UC as a programming tool for distributed protocols.
 We first make the case that the inherent features of UC, namely the real-ideal paradigm and the UC environment and adversarial modelling, are better for specifying, modelling, implementing, and testing distributed systems.
 The added benefit of the implementation maintaining a close relationship to a powerful theoretical securuty proof system only bolsters UC's potential as a development environment.
-We then go through out process of implementing these protocols in UC and highlight the 
+We then go through out process of implementing these protocols in UC and highlight the restrictions and extra effort required to define a protocol in UC, but crucially highlight a clear correspondence between the effects of the UC style of programming and the design principles and constraints employed by man existing works that aim to improve distributed system design, implementation, and testing. 
+This suggests that the extra work to realize a protocol around UC constraints follows well-cite principles of engineering better distributed systems.
+Finally, we introduce fuzz testing to our implementation and apply it to finding bugs in three case studies from simple to complex byzantine protocols.
+
+It is important to remind the reader that the implementations and testing done in this work are far from production-ready, and serve, instead to challenge the idea that UC is useful only for theoretical work and not useful as a practical development environment.
+Furthermore, we hope that our work in this area should foster more research exploring, fine-tuning, and building better ways to utilize UC in for software development.
+
+
+\subsection{The Real-Ideal Paradigm}
+The primary feature of the UC framework is the real-ideal paradigm that can be used to prove security against a computationally bounded adversary.
+Prior formalisms to UC used notions of comparison between idealized version of protocols, ideal functionalities, but UC was the first to constrain adversaries to being probilistic polynomial-time and to instroduce the PPT environment meant to capture protocol interaction with any other concurrently running protocol whose job it is to distinguish between the two worlds.
+The ideal functionality as a specification of a protocol's properties, simulation-based against computationally bounded adverasries, and the environment's ability to control both protocol parties and the adversary make the paradigm a powerful and expressive framework for development and testing.
+
+The ideal functionality as a specification allows for capturing arbitrary properties that are otherwise cumbersome and error-prone to state and prove in, say, a property-based definition.
+This is especially true for protocols where different properties aren't easy isolated, or where notions of fairness or adversarial advantage must be specified, as we see in ABA.
+Defining security of a protocol in relation to an idealized version that implicitly satisfies the desired through an idealized adversary is a simple and generalizable way to anayze the security of protocols.\todo{say something about the simulator being equivalent to an informal proof of security, it's designed to work for any possible adversary)}
+
+\paragraph{Ideal Functionalities as Specifications}
+Working with the idealize protocol and proving security in relation to it yields some critical benefits over property-based definitions.
+We first give the canonical example of for illustrating the limitations of property-based definitions.
+Consider a two-party computation where parties jointly compute a function on their inputs and desire \emph{correct} evaluation of the function and \emph{secrecy} where nothing other than the output of the function is revealed to either party.
+Defining a good meaning of correctness is complicated by additional desirable properties like fairness where the adversary can not manipulate the output of the computation too much. 
+Secrecy adds another layer into this if you take, for example, the function $f = x_1 \oplus x_2$ which xor's the inputs of the two parties. 
+Secrecy in for this function is vacuously true because the either party can determine the other's input given just the output and their own input. 
+\todo{finish this example from the previous work}
+
+In general, the ideal functionality circumvents the need to explicitly state and define the desired properties of a protocol as a laundry list that can be difficult to specify. 
+The ideal functionality avoids this pitfall by implicitly defining the desired properties, however cmplicated they may be, and proving security in relation to it avoids the cumbersome and error-prone nature of trying to analyze of prove properties individually~\cite{uc2006, definingmpc}.
+
+Specifying adverasarial information that is leaked and defining distributions from which outputs or random choices may be made (and the adversary's influence over outcomes) makes the real-ideal paradigm particulary powerful.
+Not only can we assert properties but we can additionally reason about properties like fairness or adversarial influence over computation outcomes.
+Such a definition isn't easy to formulate as a standalone property in even the above 2-PC example where secrecy and correctness are intertwined with each other and with a notion of fairness/influence.
+
+\paragraph{Modelling ABA}
+In our implementation of the ABA protocol, for example, is was necessary to additionally define adversarial influence in our ideal functionality. 
+We posit that defining software modules or packages in terms of ideal functionalities is more expressive than the current standard of property-based definitions as they capture more detailed and fine-grained information abaout the underlying protocol.
+
+\rough{is it easier for others to test additional properties that may hold with stronger ideal functionalities for the same protocol? someone using ABA or Ben-Or might care about fairness or distribution of outputs for ABA given some input distributions?}
+
+\paragraph{Simulation-based Testing}
+\rough{The plan is to talk about defining security in terms of an ideal adversary for all other adversaries whose capabiities are concretely defined. Rather than asserting every individual property, indistinguishability becomes the single sole assertion that needs to be made.}
+
+\plan{In addition to this, we point out that the combination of our async model and UC provides a framework with the strongest possible adversary that gets activated automatically between every activation of a protocol party and so has the most capability to force faults compared. Not neessarily an advantage but as mentioned this is a direct correspondence to additional work and automatng it rather than requiring environment/protocol parties to force it (like we mention in the wrapper section) permits an a simpler method of adversarial testing.}
+
+\subsection{Relation To Existing Work}
+Utilizing UC adds a fair bit of work to conform to the communication pattern it defines as well as write a proocol around the activation rules.
+This extra effort is evident in our implementation of the ABA protocol and attepting handle arbitrary activation throughout different stages of the protocol and the straight-line execution on every activation.
+In this section we briefly review existing literature whose aim it is to improve the quality of implementation and testing of distributed systems, and show a direct correspondence between the principles they propose/encourage/successfully employ and the side-effects of the UC style of programming.
+We find that many of the UC principles result in code that minimizes concurrency, avoids a complicated locking structure, allows an adverasry to inject messages and execution between every activation of a protocol party, etc \todo{refer to the table from before}.
+
+
+
 
 
 \plan{Add to this first paragraph: in this section we discuss UC and it's tradeoffs/advantages when designing protocols and we leave discussion for testing/verifying implementations for the fuzzing section}
