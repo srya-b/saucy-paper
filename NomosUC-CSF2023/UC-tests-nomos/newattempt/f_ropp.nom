@@ -1,0 +1,58 @@
+-- committer p2f
+stype sender[a] = +{ {2} query: PID x Int x sender[a]},
+									  {1} sendmsg: PID x a x sender[a] } 
+stype hash = &{ hash: PID -> Int -> hash } 
+
+(*z2pw: 4 tokens
+pw2z: 0 tokens
+
+pw2f: 2 tokens
+f2pw: 1 token
+
+a2f: 1 token
+f2a: 0 tokens
+
+a2pw: 3 tokens
+pw2a: 0 tokens
+*)
+-- receiver p2f
+stype query = +{ {1} query: PID x Int x query }
+-- receiver f2p
+stype receive[a] = &{ hash: PID -> Int -> receive[a],
+								      {1} msg: PID -> a -> receive[a]}
+
+-- adv type a2f 
+stype advhash = +{ {2} query: Int x &{ hash: Int -> advhash }} 
+
+
+Fcom
+----
+takes 4 unit of import with the commit message and sendmsg
+and gives 0 out
+
+committer
+----------
+committer sends 2 to F_ro for hash and gets 1 back
+party wrapper now has 3 tokens
+committer sends 2 out again with the message receiver gets 1 back
+party wrapper now has  2 token
+
+receiver
+--------
+queries with 2 tokens to check the hash and returns to Z with 0 tokens
+
+
+adversary
+----------
+receives 3 import uses 2 to query the hash table
+A has 1 tokens
+
+
+
+
+
+
+receives 3 tokens to send a message for crupt committer
+sends 3 tokens to partywrapper which sends 2 tokens to Fro
+party wrapper now has 2 tokens
+receiver uses 2 tokens to query hash and we're all gucci
