@@ -3,6 +3,7 @@ stype committerp2f[a] = +{ |{2}> commit: Bit * commmitedp2f[a],
                            |{1}> sendmsg: a * committerp2f[a]}
 stype sender = +{ |{2}> commit: Bit * +{ |{0}> open: 1}
 stype receiver = &{ <{1} committed: &{ <{0}| opened: Bit} }
+stype adv = &{ committed: +{ ok: &{ opened: +{ okopen: 1 }}}}
 
 -- open or send a message
 stype committedp2f[a] = +{ |{1}> open: donep2f[a],
@@ -49,10 +50,16 @@ proc F_com[K][a] :
 {
   case $S (
     commit => b = recv $S ;
-              get $S K {1}
-              $A.committed
-              case $A ( ok =>
-              $R.committed; 
+      get $S K {1}
+      $A.committed
+      case $A ( ok =>
+      $R.committed;
+      case $S (
+        Open => $A.opened 
+          case $A ( ok =>
+          $R.Open ; send $R b )
+      )
+  )
 }
 
 (* fcom with a channel *)

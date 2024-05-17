@@ -34,7 +34,7 @@ proc sim_com_sender[K][K1] :
       pid = recv $z_to_a ;
       m = recv $z_to_a ;
       case m (
-        Send(2, Commit x) =>
+       Send(2, Commit x) =>
           if first_input then
             require pid == 1;
             for p in l then

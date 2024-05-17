@@ -20,7 +20,7 @@
 \hspace{3em}
 \begin{minipage}{0.5\textwidth}
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
-$\nproc$ protCom : (k: Int), (sid: SID[a]), (pid: Int),
+$\nproc$ protCom[K] : (k: Int), (sid: SID[comSid]), (pid: Int),
   ($\$$z2p: sender[b]), ($\$$p2z: 1), ($\$$p2f: rop2f[(Bit,Int)]), 
   ($\$$f2p: 1) |- ($\$$c: 1) =
 {
