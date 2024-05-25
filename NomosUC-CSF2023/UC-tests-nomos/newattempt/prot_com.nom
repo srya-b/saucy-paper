@@ -1,102 +1,244 @@
-stype sender = +{ commit: Bit x scommitted }
-stype scommitted = +{ open: sopened }
-stype sopened = 1 
-
-stype receiver = &{ commit: rcommitted }
-stype rcommitted = &{ open: Bit x ropened }
-stype ropened = 1 
-
+--stype sender = +{ commit: Bit x scommitted }
+--stype scommitted = +{ open: sopened }
+--stype sopened = 1 
+--
+--stype receiver = &{ commit: rcommitted }
+--stype rcommitted = &{ open: Bit x ropened }
+--stype ropened = 1 
+--
 type commsg[a] = Commit of Int | Open of Bit ^ Int | Msg a ;
-
-type comp2f = Commit of Bit | Open ;
-type comf2p = Commit | Open of Bit ;
-
-type comsid = SID of PID ^ PID
+--
+--type comp2f = Commit of Bit | Open ;
+--type comf2p = Commit | Open of Bit ;
+--
+--type comsid = SID of PID ^ PID
 
 --proc prot[K]:
---	(k: Int), (rng: [Bit]), (sid: session[comsid]), (pid: PID),
---	(#z2p: comm[....]), (#p2z: comm[....]), (#f2p: comm[....]), (#p2f: comm[....]) |- ($ch: 1) = 
+--  (k: Int), (rng: [Bit]), (sid: session[comsid]), (pid: PID),
+--  (#z2p: comm[....]), (#p2z: comm[....]), (#f2p: comm[....]), (#p2f: comm[....]) |- ($ch: 1) = 
 --{
---	case sid (
---		SID(c, r) => 
---			if pid == c then
---				$com_z2p <- com_z2p_r1[K] <- k rng sid pid #z2p #p2z ;
---			  $com_p2f <- prot_f2p[K] <- k rng sid pid #p2f #f2p ;
---			  $c <- prot_com_sender[K] <- k rng sid pid $com_z2p $com_f2p ;
---			else if pid == r then
---				$com_z2p <- com_z2p_r2[K] <- k rng sid pid #z2p #p2z ;
---			  $com_p2f <- prot_f2p[K] <- k rng sid pid #p2f #f2p ;
---			  $c <- prot_com_receiver[K] <- k rng sid pid $com_z2p $com_f2p ;
---			end
+--  case sid (
+--    SID(c, r) => 
+--      if pid == c then
+--        $com_z2p <- com_z2p_r1[K] <- k rng sid pid #z2p #p2z ;
+--        $com_p2f <- prot_f2p[K] <- k rng sid pid #p2f #f2p ;
+--        $c <- prot_com_sender[K] <- k rng sid pid $com_z2p $com_f2p ;
+--      else if pid == r then
+--        $com_z2p <- com_z2p_r2[K] <- k rng sid pid #z2p #p2z ;
+--        $com_p2f <- prot_f2p[K] <- k rng sid pid #p2f #f2p ;
+--        $c <- prot_com_receiver[K] <- k rng sid pid $com_z2p $com_f2p ;
+--      end
 --  )
 --}
-			
+
+type SID[a] = Sid of a 
+type comsid = (PID, PID)
+
+proc prot_com[K][a] : 
+  (k: Int), (rng: [Bit]), (sid: SID[comsid]), (pid: Int), ($z2p: _z2p) ($p2z: _p2z) 
+  ($p2f: rop2f[ Either a commsg ]{1}) ($f2p: rof2p[ Either a commsg ]{1}) |- ($c: 1) =
+{
+  let Sid((pidS, pidR)) = sid
+  if pid == pidS then
+    $c <- prot_com_sender[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p 
+  else if pid == pidR then
+    $c <- prot_com_receiver[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p
+  else error "neither of the parties"
+}
+
+(* just prot com without the channel for composition *)
+proc prot_com_sender[K]:
+  (k: Int), (rng: [Bit]), (sid: SID[comsid]), (pid: Int),
+  ($z2p: sender[a]), ($p2z: senderf2p[a]),
+  ($p2f: rop2f[commsg]{1}) ($f2p: rof2p[commsg]{1}) |- ($c: 1) =
+{
+  case $z2p (
+    commit,* =>
+      get {2} K $z2p ;
+      bit = recv $z2p ;
+      h = sample k rng ;
+      $p2f.hash ;
+      pay {1} K $p2f ;
+      send $p2f pid ;
+      send $p2f (h,bit) ;     
+      case $p2f ( shash =>
+        h = recv $p2f 
+        $p2f.sendmsg ;
+        pay {1} K $p2f ;
+        send $p2f (Commit h)
+        $c <- prot_com_sender_committed[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p 
+      )
+  )
+}
+
+macro chansend := 
+      get {1} K $z2p ;  
+      m = recv $z2p ;
+      $p2f.sendmsg ;
+      pay {0} K $p2f ;
+      send $p2f  
+macro chanrecv := 
+      -- forward to Z because no messages needed by sender
+      get {1} K $f2p
+      mf = recv $f2p
+      let Left m = mf
+      $p2z.msg ; pay {0} K $f2p ; 
+      send $p2z m 
 
 proc prot_com_sender[K][a] :
-	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
-	($z2p: sender[a]), ($p2z: senderf2p[a]),
-	($p2f: rop2f[commsg[a]]{1}), ($f2p: rof2p[commsg[a]]{1}) |- ($c: 1) =
+  (k: Int), (rng: [Bit]), (sid: SID[comsid]), (pid: Int),
+  ($z2p: commit2pf[a]), ($p2z: commitf2p[a]),
+  ($p2f: rop2f[ Either a commsg ]{1}) ($f2p: rof2p[ Either a commsg ]{1}) |- ($c: 1) =
 {
-	match $z2p,$p2f (
-		commit,* =>	
-			get {2} K $z2p ;
-			bit = recv $z2p ;
-			h = sample k rng ;
-			$p2f.hash ;
-			pay {1} K $p2f ;
-			send $p2f pid ;
-			send $p2f (bit+h) ;
-			case $p2f (
-				shash => 
-					recv $p2f ;
-					h = recv $p2f ;
-					$p2f.sendmsg ;
-					pay {1} K $p2f ;
-					send $p2f (Commit h) ;
-					$c <- prot_com_sender_committed[K] <- (* args *)
-			)
-		sendmsg,* =>
-			get {1} K $z2p ;
-			m = recv $z2p ;
-		  $p2f.sendmsg ;
-			pay {0} K $p2f ;
-			send $p2f pidr ; 
-			send $p2f (Msg m) ;
-		*,recvmsg =>
-			get {1} K $f2p ;
-			let Msg m = recv $f2p ;
-			$p2z.recvmsg ;
-			pay {1} K $p2z ;
-			send $p2z m ;
-	)	
+  match $z2p, $p2f (
+    commit,* =>
+      get {2} K $z2p ;
+      bit = recv $z2p ;
+      n = sample k rng ;
+      $p2f.hash ;
+      pay {1} K $p2f ;
+      send $p2f pid ;
+      send $p2f (n,bit) ;     
+      case $p2f ( shash =>
+        h = recv $p2f 
+        $p2f.sendmsg ;
+        pay {1} K $p2f ;
+        send $p2f (Right (Commit h))
+        $c <- prot_com_sender_committed[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p bit n
+      )
+    -- TODO: change the import amounts so that on sengmsg the party always has 1 left over
+    sendmsg,* =>
+      macro chansend
+      $c <- prot_com_sender[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p
+    *,recvmsg =>
+      macro chanrecv
+      $c <- prot_com_sender[K][a] <- k rng sid pid $z2p $p2z $f2p
+  )
+}
+
+proc prot_com_sender_committed[K][a] :
+  (k: Int), (rng: [Bit]), (sid: SID[comsid]), (pid: Int),
+  ($z2p: commitp2f[a]), ($p2z: commitf2p[a]),
+  ($p2f: rop2f[ Either a commsg ]{1}) ($f2p: rof2p[ Either a commsg ]{1}),
+  (b: Bit), (nonce: Int) |- ($c: 1) =
+{
+  match $z2p, $f2p (
+    open,* =>
+      h = recv $p2f 
+      $p2f.sendmsg ;
+      send $p2f (Right (Open b nonce))
+      -- DONE
+    sendmsg,* =>
+      macro chansend
+      $c <- prot_com_sender_committed[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p b nonce 
+    *,recvmsg =>
+      macro chanrecv
+      $c <- prot_com_sender_committed[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p b nonce
+  )
+}
+  
+
+proc prot_com_receiver[K][a] : 
+  (k: Int), (rng: [Bit]), (sid: SID[comsid]), (pid: Int),
+  ($z2p: receiverp2f), ($p2f: receivef2p),
+  ($p2f: rop2f[ Either a commsg]{1}), ($f2p: rof2p[ Either a commsg]{1}) |- ($r: 1) = 
+{
+  match $z2p, $f2p (
+    sendmsg,* =>
+      macro chansend
+      $r <- prot_com_receiver[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p
+    *,recvmsg => 
+      -- discern between messages
+      get {1} K $f2p
+      mf = recv $f2p
+      case mf of
+        Left m -> -- give this to Z
+          $p2z.msg ; send $p2f m
+          $r <- prof_com_receiver[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p
+        Right m ->  
+          let Commit h =  m
+          $p2z.committed 
+          $r <- prot_com_receiveri_committed[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p h
+  )
+}
+
+proc prot_com_receiver_committed[K][a] : 
+  (k: Int), (rng: [Bit]), (sid: SID[comsid]), (pid: Int),
+  ($z2p: receiverp2f), ($p2f: receivef2p),
+  ($p2f: rop2f[ Either a commsg]{1}), ($f2p: rof2p[ Either a commsg]{1}),
+  (h: Int) |- ($r: 1) = 
+{
+  match $z2p, $f2p (
+    sendmsg,* =>
+      macro chansend
+      $r <- prot_com_receiver_committed[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p h 
+  
+
+proc prot_com_sender[K][a] :
+  (k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
+  ($z2p: sender[a]), ($p2z: senderf2p[a]),
+  ($p2f: rop2f[commsg[a]]{1}), ($f2p: rof2p[commsg[a]]{1}) |- ($c: 1) =
+{
+  match $z2p,$p2f (
+    commit,* => 
+      get {2} K $z2p ;
+      bit = recv $z2p ;
+      h = sample k rng ;
+      $p2f.hash ;
+      pay {1} K $p2f ;
+      send $p2f pid ;
+      send $p2f (bit+h) ;
+      case $p2f (
+        shash => 
+          recv $p2f ;
+          h = recv $p2f ;
+          $p2f.sendmsg ;
+          pay {1} K $p2f ;
+          send $p2f (Commit h) ;
+          $c <- prot_com_sender_committed[K] <- (* args *)
+      )
+    sendmsg,* =>
+      get {1} K $z2p ;
+      m = recv $z2p ;
+      $p2f.sendmsg ;
+      pay {0} K $p2f ;
+      send $p2f pidr ; 
+      send $p2f (Msg m) ;
+    *,recvmsg =>
+      get {1} K $f2p ;
+      let Msg m = recv $f2p ;
+      $p2z.recvmsg ;
+      pay {1} K $p2z ;
+      send $p2z m ;
+  ) 
 }
 
 proc prot_com_sender_committed[K]
-	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
-	($z2p: sender[Int]), ($p2f: party[Int]{0}),
-	(h: Int), (r: [Bits])  |- ($c: 1) =
+  (k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
+  ($z2p: sender[Int]), ($p2f: party[Int]{0}),
+  (h: Int), (r: [Bits])  |- ($c: 1) =
 {
-	match $z2p,$p2f (
-		open,* =>
-			get {1} K $z2p ;
-			$p2f.sendmsg ;
-			pay {1} K $p2f ;
-			send $p2f (Open x r) ;
-			()
-		sendmsg,* =>
-			get {1} K $z2p ;
-			m = recv $z2p ;
-		  $p2f.sendmsg ;
-			pay {0} K $p2f ;
-			send $p2f pidr ; 
-			send $p2f (Msg m) ;
-		*,recvmsg =>	
-			get {1} K $f2p ;
-			let Msg m = recv $f2p ;
-			$p2z.recvmsg ;
-			pay {1} K $p2z ;
-			send $p2z m ;
-	)
+  match $z2p,$p2f (
+    open,* =>
+      get {1} K $z2p ;
+      $p2f.sendmsg ;
+      pay {1} K $p2f ;
+      send $p2f (Open x r) ;
+      ()
+    sendmsg,* =>
+      get {1} K $z2p ;
+      m = recv $z2p ;
+      $p2f.sendmsg ;
+      pay {0} K $p2f ;
+      send $p2f pidr ; 
+      send $p2f (Msg m) ;
+    *,recvmsg =>  
+      get {1} K $f2p ;
+      let Msg m = recv $f2p ;
+      $p2z.recvmsg ;
+      pay {1} K $p2z ;
+      send $p2z m ;
+  )
 }
 
 
@@ -104,102 +246,102 @@ proc prot_com_sender_committed[K]
 
 
 proc prot_com_receiver[K] :
-	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
-	($z2p: receiver) |- ($p2f: party[a]) =
+  (k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
+  ($z2p: receiver) |- ($p2f: party[a]) =
 {
-	$p2f.recvmsg ;
-	case $p2f (
-		yes =>
-			recv $p2f ;
-			p = recv $p2f ;
-			m = recv $p2f ;
-			if p == 1
-			then
-				$z2p.commit ;
-				$p2f <- prot_com_receiver_committed[K] <- k rng sid pid $z2p m 
-			end
-	| no =>
-			$p2f <- prot_com_receiver[K] <- k rng sid pid $z2p
-	)
+  $p2f.recvmsg ;
+  case $p2f (
+    yes =>
+      recv $p2f ;
+      p = recv $p2f ;
+      m = recv $p2f ;
+      if p == 1
+      then
+        $z2p.commit ;
+        $p2f <- prot_com_receiver_committed[K] <- k rng sid pid $z2p m 
+      end
+  | no =>
+      $p2f <- prot_com_receiver[K] <- k rng sid pid $z2p
+  )
 }
 
 proc prot_com_receiver[K] :
-	(k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
-	($z2p: rcommitted), (msg: Int) |- ($p2f: party[a]) =
+  (k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),
+  ($z2p: rcommitted), (msg: Int) |- ($p2f: party[a]) =
 {
-	$p2f.recvmsg ;
-	case $p2f (
-		yes =>
-			recv $p2f ;
-			p = recv $p2f ;
-			m = recv $p2f ;
-			if p == 1
-			then
-				(b,h) = m ;
-				$p2f.hash ;
-				send $p2f pid ;
-				send $p2f (b+h) ;
-				case $p2f (
-					shash => 
-						recv $p2f ;
-						h = recv $p2f ;
-						if h == msg
-						then
-							$z2p.open ;
-							send $z2p b ;
-						end
-				)
-			end
-	| no =>
-			$p2f <- prot_com_receiver[K] <- k rng sid pid $z2p msg 
-	)
+  $p2f.recvmsg ;
+  case $p2f (
+    yes =>
+      recv $p2f ;
+      p = recv $p2f ;
+      m = recv $p2f ;
+      if p == 1
+      then
+        (b,h) = m ;
+        $p2f.hash ;
+        send $p2f pid ;
+        send $p2f (b+h) ;
+        case $p2f (
+          shash => 
+            recv $p2f ;
+            h = recv $p2f ;
+            if h == msg
+            then
+              $z2p.open ;
+              send $z2p b ;
+            end
+        )
+      end
+  | no =>
+      $p2f <- prot_com_receiver[K] <- k rng sid pid $z2p msg 
+  )
 }
 
 (* ----------------------------------- *)
 (* START: generated z2p code for role1 *)
 (* ----------------------------------- *)
 proc prot_z2p_r1[K][z2p][p2z]:
-	(#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: sender) =
+  (#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: sender) =
 {
-	$z2p <- acquire #z2p ;
-	$z2p.RECV ;
-	case $z2p (
-		yes =>
-			msg = recv $z2p ;
-			case msg (
-				Commit =>
-					b = recv $z2p ;
-					#z2p <- release $z2p ; 
-					$z2p.commit ;
-					send $z2p b ;
-					$z2p <- prot_z2p_r1_2[K][z2p] <- #z2p 
-			)
-	| no =>
-			$z2p <- prot_z2p_r1[K][z2p] <- #z2p ;
-	)
+  $z2p <- acquire #z2p ;
+  $z2p.RECV ;
+  case $z2p (
+    yes =>
+      msg = recv $z2p ;
+      case msg (
+        Commit =>
+          b = recv $z2p ;
+          #z2p <- release $z2p ; 
+          $z2p.commit ;
+          send $z2p b ;
+          $z2p <- prot_z2p_r1_2[K][z2p] <- #z2p 
+      )
+  | no =>
+      $z2p <- prot_z2p_r1[K][z2p] <- #z2p ;
+  )
 }
 
 proc prot_z2p_r1_2[K][z2p]:
-	(#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: scommitted) =
+  (#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: scommitted) =
 {
-	$z2p <- acquire #z2p ;
-	$z2p.RECV ;
-	case $z2p (
-		yes =>
-			msg = recv $z2p ;
-			case msg (
-				Open =>
-					#z2p <- release $z2p ;
-					$z2p.open ;
-					$z2p <- prot_z2p_r1_3[K][z2p] <- #z2p 	
-			)
-	| no =>
-			$z2p <- prot_z2p_r1_2[K][z2p] <- #z2p
-	)
+  $z2p <- acquire #z2p ;
+  $z2p.RECV ;
+  case $z2p (
+    yes =>
+      msg = recv $z2p ;
+      case msg (
+        Open =>
+          #z2p <- release $z2p ;
+          $z2p.open ;
+          $z2p <- prot_z2p_r1_3[K][z2p] <- #z2p   
+      )
+  | no =>
+      $z2p <- prot_z2p_r1_2[K][z2p] <- #z2p
+  )
 }
  
 proc prot_z2p_r1_2[K][z2p]:
-	(#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: sopened) =
+  (#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: sopened) =
 { }
 (* ----------------------------------- *)
 (* END: generated z2p code for role1   *)
@@ -209,44 +351,44 @@ proc prot_z2p_r1_2[K][z2p]:
 (* START: generated z2p code for role2 *)
 (* ----------------------------------- *)
 proc prot_z2p_r2[K][z2p][p2z]: 
-	(#z2p: comm[z2pmsg[z2p]]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: receiver)  =
+  (#z2p: comm[z2pmsg[z2p]]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: receiver)  =
 {
-	case $z2p (
-		commit =>
-			$p2z <- acquire #p2z ;
-			$p2z.SEND ;
-			send $p2z Commit ;
-			#p2z <- release $p2z ;
-			$z2p <- prot_z2p_r2_2[K][z2p][p2z] <- #z2p #p2z ;
-	)
+  case $z2p (
+    commit =>
+      $p2z <- acquire #p2z ;
+      $p2z.SEND ;
+      send $p2z Commit ;
+      #p2z <- release $p2z ;
+      $z2p <- prot_z2p_r2_2[K][z2p][p2z] <- #z2p #p2z ;
+  )
 }
 
 proc prot_z2p_r2_2[K][z2p][p2z]:
-	(#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: receiver) =
+  (#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: receiver) =
 {
-	case $z2p (
-		open =>
-			b = recv $z2p ;
-			$p2z <- acquire #p2z ;
-			send $p2z Open(b) ;
-			#p2z <- release $p2z ;
-			$z2p <- prot_z2p_r2_3[K][z2p][p2z] <- #z2p #p2z 
-	)
+  case $z2p (
+    open =>
+      b = recv $z2p ;
+      $p2z <- acquire #p2z ;
+      send $p2z Open(b) ;
+      #p2z <- release $p2z ;
+      $z2p <- prot_z2p_r2_3[K][z2p][p2z] <- #z2p #p2z 
+  )
 }
 
 proc prot_z2p_r2_3[K][z2p][p2z]:
-	(#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: ropen) =
+  (#z2p: comm[z2pmsg[z2p]][K]), (#p2z: comm[p2zmsg[p2z]][K]) |- ($z2p: ropen) =
 { }
 (* ----------------------------------- *)
 (* END: generated z2p code for role1   *)
 (* ----------------------------------- *)
 
 stype party[a] = +{ hash: pid ^ int -> hashing[a],
-									  sendmsg: pid ^ pid ^ a -> party[a],
-										recvmsg: pid -> newmsg[a] }
+                    sendmsg: pid ^ pid ^ a -> party[a],
+                    recvmsg: pid -> newmsg[a] }
 stype hashing[a] = &{ shash: pid ^ int -> party[a] }
 stype newmsg[a] = &{ yes: pid ^ pid ^ a -> party[a],
-										 no: party[a] }
+                     no: party[a] }
 
 type rop2f[a] = QHash of Int | Send of pid ^ a | Recv ;
 type rof2p[a] = RHash of Int | Yes of pid ^ a | No ;
@@ -255,75 +397,75 @@ type rof2p[a] = RHash of Int | Yes of pid ^ a | No ;
 (* START: generated f2p code for all roles   *)
 (* ----------------------------------------- *)
 proc prot_f2p[K][f2p][p2f]:
-	(#f2p: comm[f2pmsg[f2p]][K]), (#p2f: comm[p2fmsg[p2f]][K])
-	($p: party[a]) |- ($ch: 1) =
+  (#f2p: comm[f2pmsg[f2p]][K]), (#p2f: comm[p2fmsg[p2f]][K])
+  ($p: party[a]) |- ($ch: 1) =
 {
-	case $p (
-		hash =>
-			p = recv $p ;
-			$p2f <- acquire #p2f ;
-			$f2p.SEND ;
-			send $p2f QHash(p) ;
-			#p2f <- release $p2f ;
-			$ch <- prot_f2p_hash[K][f2p][p2f] <- #f2p #p2f $p
-	| sendmsg =>
-			sp = recv $p ;
-			rp = recv $p ;
-			msg = recv $p ;
-			$p2f <- acquire #p2f ;
-			$p2f.SEND ;
-			send $p2f Send(sp, rp, msg) ;
-			#p2f <- release $p2f ;
-			$ch <- prot_f2p[K][f2p][p2f] <- #f2p #p2f $p
-	| recvmsg =>
-			p = recv $p ;
-			$p2f <- acquire #p2f ;
-			$p2f.SEND ;
-			send $p2f Recv(p)	;
-			#p2f <- release $p2f ;
-			$ch <- prot_f2p_newmsg[K][f2p][p2f] <- #f2p #p2f $p 
-	)
+  case $p (
+    hash =>
+      p = recv $p ;
+      $p2f <- acquire #p2f ;
+      $f2p.SEND ;
+      send $p2f QHash(p) ;
+      #p2f <- release $p2f ;
+      $ch <- prot_f2p_hash[K][f2p][p2f] <- #f2p #p2f $p
+  | sendmsg =>
+      sp = recv $p ;
+      rp = recv $p ;
+      msg = recv $p ;
+      $p2f <- acquire #p2f ;
+      $p2f.SEND ;
+      send $p2f Send(sp, rp, msg) ;
+      #p2f <- release $p2f ;
+      $ch <- prot_f2p[K][f2p][p2f] <- #f2p #p2f $p
+  | recvmsg =>
+      p = recv $p ;
+      $p2f <- acquire #p2f ;
+      $p2f.SEND ;
+      send $p2f Recv(p) ;
+      #p2f <- release $p2f ;
+      $ch <- prot_f2p_newmsg[K][f2p][p2f] <- #f2p #p2f $p 
+  )
 }
 
 proc prot_f2p_hash[K][f2p][p2f]:
-	(#f2p: comm[f2pmsg[f2p]][K]), (#p2f: comm[p2fmsg[p2f]][K])
-	($p: hashing[a]) |- ($ch: 1) =
+  (#f2p: comm[f2pmsg[f2p]][K]), (#p2f: comm[p2fmsg[p2f]][K])
+  ($p: hashing[a]) |- ($ch: 1) =
 {
- 	$f2p <- acquire #f2p ;
-	$f2p.RECV ;
-	case $f2p (
-		yes =>
-			pid = recv $f2 ;
-			RHash(h) = recv $f2p ;
-			#f2p <- release $f2p ;
-			$p.shash ;
-			send $p pid ;
-			send $p h ;
-			$ch <- prot_f2p[K][f2p][p2f] <- #f2p #p2f $p ;
-	| no =>
-			$ch <- prot_f2p_hash[K][f2p][p2f] <- #f2p #p2f $p ;
-	)	
+  $f2p <- acquire #f2p ;
+  $f2p.RECV ;
+  case $f2p (
+    yes =>
+      pid = recv $f2 ;
+      RHash(h) = recv $f2p ;
+      #f2p <- release $f2p ;
+      $p.shash ;
+      send $p pid ;
+      send $p h ;
+      $ch <- prot_f2p[K][f2p][p2f] <- #f2p #p2f $p ;
+  | no =>
+      $ch <- prot_f2p_hash[K][f2p][p2f] <- #f2p #p2f $p ;
+  ) 
 }
 
 proc prot_f2p_newmsg[K][f2p][p2f]:
-	(#f2p: comm[f2pmsg[f2p]][K]), (#p2f: comm[p2fmsg[p2f]][K])
-	($p: hashing[a]) |- ($ch: 1) =
+  (#f2p: comm[f2pmsg[f2p]][K]), (#p2f: comm[p2fmsg[p2f]][K])
+  ($p: hashing[a]) |- ($ch: 1) =
 {
- 	$f2p <- acquire #f2p ;
-	$f2p.RECV ;
-	case $f2p (
-		yes =>
-			F2P(pid, m) = recv $f2p ;
-			case m (
-				Yes(rp, msg) =>
-					$p.yes ;
-					send $p rp msg 
-			| No =>
-					$ch <- prot_f2p[K][f2p][p2f] <- #f2p #p2f $p 
-			)
-	| no =>
-		$ch <- prot_f2p_newmsg[K][f2p][p2f] <- #f2p #p2f $p
-	)
+  $f2p <- acquire #f2p ;
+  $f2p.RECV ;
+  case $f2p (
+    yes =>
+      F2P(pid, m) = recv $f2p ;
+      case m (
+        Yes(rp, msg) =>
+          $p.yes ;
+          send $p rp msg 
+      | No =>
+          $ch <- prot_f2p[K][f2p][p2f] <- #f2p #p2f $p 
+      )
+  | no =>
+    $ch <- prot_f2p_newmsg[K][f2p][p2f] <- #f2p #p2f $p
+  )
 } 
 
 
@@ -332,57 +474,57 @@ proc prot_f2p_newmsg[K][f2p][p2f]:
 (* ----------------------------------------- *)
 
 proc prot_wrapper[K][K1] :
-	(k: Int), (rng: [Bit]), (sid: session[1]),
-	(#z_to_pw <- comm[z2pmsg[comp2f]][K]), (#pw_to_z <- comm[p2zmsg[comf2p]][K]),
-	(#f_to_pw <- comm[f2pmsg[rof2p[Int]]][K]), (#pw_to_f <- comm[p2fmsg[rop2g[Int]]][K]),
-	(#a_to_pw <- comm[a2pmsg[???][K]), (#pw_to_a <- comm[p2amsg[???]][K]), (#z: pump)  |- ($ch: 1) =
+  (k: Int), (rng: [Bit]), (sid: session[1]),
+  (#z_to_pw <- comm[z2pmsg[comp2f]][K]), (#pw_to_z <- comm[p2zmsg[comf2p]][K]),
+  (#f_to_pw <- comm[f2pmsg[rof2p[Int]]][K]), (#pw_to_f <- comm[p2fmsg[rop2g[Int]]][K]),
+  (#a_to_pw <- comm[a2pmsg[???][K]), (#pw_to_a <- comm[p2amsg[???]][K]), (#z: pump)  |- ($ch: 1) =
 {
-	
-	#ds <- control ;	
-	$lz2pcomm <- pnil[comm[z2pmsg[comp2f]]] <- ;
-	$lp2zcomm <- pnil[comm[p2zmsg[comf2p]]] <- ;
-	$lf2pcomm <- pnil[comm[f2pmsg[rof2p]]] <- ;
-	$lp2fcomm <- pnil[comm[p2fmsg[rop2f]]] <- ;
+  
+  #ds <- control ;  
+  $lz2pcomm <- pnil[comm[z2pmsg[comp2f]]] <- ;
+  $lp2zcomm <- pnil[comm[p2zmsg[comf2p]]] <- ;
+  $lf2pcomm <- pnil[comm[f2pmsg[rof2p]]] <- ;
+  $lp2fcomm <- pnil[comm[p2fmsg[rop2f]]] <- ;
 
-	(* construct for p1 *)
-	#z2pcommp1 <- communicator_init[K1] <- ;
-	#p2zcommp1 <- communicator_init[K1] <- ;
-	#f2pcommp1 <- communicator_init[K1] <- ;
-	#p2fcommp1 <- communicator_init[K1] <- ;
-	$z2p_p1 <- prot_z2p_r1[K1][comp2f][comf2p] <- #z2pcommp1 #p2zcommp1 ;
-	$p1 <- prot_com_sender[K1][ <- k rng sid 1 $z2p_p1 ;
-	<- prot_f2p[K1][rof2p][rop2f] <- #f2pcommp2 #p2fcommp2 $p1
+  (* construct for p1 *)
+  #z2pcommp1 <- communicator_init[K1] <- ;
+  #p2zcommp1 <- communicator_init[K1] <- ;
+  #f2pcommp1 <- communicator_init[K1] <- ;
+  #p2fcommp1 <- communicator_init[K1] <- ;
+  $z2p_p1 <- prot_z2p_r1[K1][comp2f][comf2p] <- #z2pcommp1 #p2zcommp1 ;
+  $p1 <- prot_com_sender[K1][ <- k rng sid 1 $z2p_p1 ;
+  <- prot_f2p[K1][rof2p][rop2f] <- #f2pcommp2 #p2fcommp2 $p1
 
-	(* construct for p2 *)
-	#z2pcommp2 <- communicator_init[K1] <- ;
-	#p2zcommp2 <- communicator_init[K1] <- ;
-	#f2pcommp2 <- communicator_init[K1] <- ;
-	#p2fcommp2 <- communicator_init[K1] <- ;
-	$z2p_p2 <- prot_z2p_r2[K1][comp2f][comf2p] <- #z2pcommp2 #p2zcommp2 ;
-	$p2 <- prot_com_receiver[K1] <- k rng sid 2 $z2p_p2 
-	<- prot_f2p[K1][rof2p][rop2f] <- #f2pcommp2 #p2fcommp2 $p2 
-	
-	$lz2pcomm' <- append $lz2pcomm #z2pcommp1 #z2pcommp2 ;
-	$lp2zcomm' <- append $lp2zcomm #p2zcommp1 #p2zcommp2 ;
-	$lf2pcomm' <- append $lf2pcomm #f2pcommp1 #f2pcommp2 ;
-	$lp2fcomm' <- append $lp2fcomm #p2fcommp1 #p2fcommp2 ;
+  (* construct for p2 *)
+  #z2pcommp2 <- communicator_init[K1] <- ;
+  #p2zcommp2 <- communicator_init[K1] <- ;
+  #f2pcommp2 <- communicator_init[K1] <- ;
+  #p2fcommp2 <- communicator_init[K1] <- ;
+  $z2p_p2 <- prot_z2p_r2[K1][comp2f][comf2p] <- #z2pcommp2 #p2zcommp2 ;
+  $p2 <- prot_com_receiver[K1] <- k rng sid 2 $z2p_p2 
+  <- prot_f2p[K1][rof2p][rop2f] <- #f2pcommp2 #p2fcommp2 $p2 
+  
+  $lz2pcomm' <- append $lz2pcomm #z2pcommp1 #z2pcommp2 ;
+  $lp2zcomm' <- append $lp2zcomm #p2zcommp1 #p2zcommp2 ;
+  $lf2pcomm' <- append $lf2pcomm #f2pcommp1 #f2pcommp2 ;
+  $lp2fcomm' <- append $lp2fcomm #p2fcommp1 #p2fcommp2 ;
 
-	(* TODO wrapper reads/writes from all items of these three lists and forwards them *)	
+  (* TODO wrapper reads/writes from all items of these three lists and forwards them *) 
 }
 
 proc control :
-	(#reald: pump)  |- (#d: pump) =
+  (#reald: pump)  |- (#d: pump) =
 {
-	$d <- acquire #d ;
-	case $d (
-		dump =>
-			$d.reset ;
-			#d <- release 
-			$reald <- acquire #reald ;
-			$reald.dump ;
-			#reald <- release $reald ;
-			$c <- party_wrapper_1[K] <- ....
-	)
+  $d <- acquire #d ;
+  case $d (
+    dump =>
+      $d.reset ;
+      #d <- release 
+      $reald <- acquire #reald ;
+      $reald.dump ;
+      #reald <- release $reald ;
+      $c <- party_wrapper_1[K] <- ....
+  )
 } 
 
 

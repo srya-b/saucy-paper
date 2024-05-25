@@ -6,20 +6,30 @@
 %             (i).  Fuzz testing is widely used, is a successful analysis tool, and is itself an engineering undertaking. Can we successful apply fuzzing to UC?
 %             (ii).  Does the ideal functionality model and out realization of import aid in analyzng liveness in distributed protocols?
 
-Universal composability is the leadeding framework for defining the security of message-passing cryptographic protocols between mutuall distrustful parties.
-In recent years it increasingly been used to analyze asynchronous distributed protocols as well due to the rise of decentralized systems where parties interact and execute complex protocols running on top of, and making use of, many layers of interactive distributed protocols, and the protocols themselves are often combinations of of existing, untrusted, and publically shared/available code.
-At its code, the framework is useful because it allows the analysis and proving of protocols in isolation such that their security is guaranteed in any arbitrary execution environment and composed with arbitrary other protocols.
-It also allows for highly modular code, because complex protocols can be realized by arbitrarily and concurrently composing ideal functionalities that define the desired security properties through a simple trust third party computation. 
+Universal composability is the leadeding framework for defining the security of message-passing cryptographic protocols between mutually distrustful parties.
+Though largely used for cryptography, it has seem a reemergence in asynchronous distributed systems literature, especially due to the rise of decentralized protocols where applications are a composition of many interacting layers of other asynchronous distributed systems with different fault models and properties.
+This highly compositional nature, combined with a new setting where financial incentives make properties like fairness, output distribution, and adversarial influence more relevant, have led to increasing interest in UC for distributed protocols.
+At its core the framework's appeal is that it allows protocols to be designed in isolation and rely on idealized versions of other subprotocols and assumptions that behave like trusted third parties--called \emph{ideal functionalities}. 
+It security definition allows proving of protocols, also in isolation, while ensuring that the proof holds when ideal functionalities are replaced with real protocols and the protocol is composed with arbitrarhy other protocols. 
+Far from only a theoretical framework, this form of design and security definition lends itself well to the this setting.
 %The UC composition operator and security definition allows replacing ideal functionalities with protocols that realize them (in isolation) to realize a larger protocol. 
 
-Despite its use as purely a theoretical tool, these features and advantages of UC modelling are closely aligned with good software engineering principles, yet little to no work has explored UC's viabilutues as such.
-Even distributed protocols modelled in UC in literature~\cite{some of them} are often implemented in software frameworks that bare little resemblance to UC, making existing proofs somewhat obsolete. 
-To a greater extend, the advantages of definint protocol properties as a relation to the ideal functionality, which we discuss later, are lost in normal property-based testing. 
+The ideal functionality and the real-ideal paradigm also enable a far more expressive and generalizable way to specify the properties and prove them for a protocol as a relation to an idealized version that implicitly exihibits the desired properties.
+Defining and analyzing protocols this way lends itself to properties not easily expressed as a set of independent properties by existing property-based definitions.
+Even for simple protocols, as we discuss later in this work, specifying these properties as independent asserts can be cumbersome and error-prone. 
+We believe that these advantages and features of UC mdoelling are specifically advantageous for asynchronous distributed protocol, and, in this work, we explore whether they can be realized as a software development framework using informal analysis techniques.
+The primary reason for this
 The primary reason for this \emph{gap between research and software engineering} is that UC's complex and nuanced execution model, necessary for guaranteeing compositional security, makes it esoteric and understood by only seasoned academics. 
 In this work we explore UC as a software development tool for distributed protocols through the following research questions:
 \begin{enumerate}[label=(RQ\arabic*).,leftmargin=*]
-\item Can UC be a suitable as a development framework for asynchronous distributed protocols, and to what degree can informal implementation and analysis realize its clear advantages?
-\item Can existing software engineering tools be realized and simply applied to UC implementations of protocols? Can a UC realization of asynchrony and eventual delivery aid in liveness checking?
+\item Can we use UC as a development framework and capture, or take advantage of, the myriad benefits but through informal analysis?
+\item Can we adapt existing techniques for engineering and analysis to the UC setting, and can our modelling provide insight into liveness analysis?
+\end{enumerate}
+Our belief is that the UC as a development framework is uniquely suited to the asynchronous distributed systems setting, and that alond with our new proposed model for capturing asynchronous network assumption we can make protocols simpler to define, easier to analyze, and allow fundamental components of modern protocols to be realized.
+In this work, we propose a new model for asyncronous modelling, with eventual delivery, that greatly improves upon existing definitions that unnecessarily constrain protocol design or make testing more cumbersome.
+We implement a fuzz testing mechanism to generate environments and adversaries for testing protocols, and we believe that fuzzing and the UC security definition are a strong match that complement each other well in an engineering setting. 
+
+
 %\item Is UC suitable and practical as a development framework rather than only a theoretical one?
 %    \begin{itemize}
 %        \item [(i)] Can existing UC models/techniques be improved for easy of development?
@@ -29,21 +39,20 @@ In this work we explore UC as a software development tool for distributed protoc
 %    \begin{itemize}
 %        \item [(i)] Does the ideal functionality model and UC's polynomial time notion aid in reasoning about liveness in implementations?
 %    \end{itemize}
-\end{enumerate}
-\todo{Hypotheses: why UC for async protocols and distributed systems are where this matters the most}
+%\todo{Hypotheses: why UC for async protocols and distributed systems are where this matters the most}
+%
+%\todo{maybe something along these lines: good as a dev framework for analyzing security and better researcher tooling for analyzing definitions without cumbersome extra work}.
 
-\todo{maybe something along these lines: good as a dev framework for analyzing security and better researcher tooling for analyzing definitions without cumbersome extra work}.
-
-There is a large amount of exsisting literature proposing programming language (PL) and formael verification tools for expressing UC security in limited, but useful ways~\cite{.}.
+There is a large amount of exsisting literature proposing programming language (PL) and formal verification tools for expressing UC security in limited, but useful ways~\cite{.}.
 Contrary to our goal, working with new process calculi, a new domain-specific language, or a proving framework do little to make UC more accessible to non-cryptography researchers because 
 \begin{enumerate}
 \item Niche programming languages aren't well-suited to production environments and add to the already high learning curve.
 \item The added obligations of using PL machinery for mechanizing proofs can add significant work for researchers as well~\cite{ironfleet,easycryptuc} \plan{easycrypt requires a whole new method of communication that makes translating definitions annoying} \todo{saying ``can add burden'' is an unproven claim but maybe still okay?}
 \end{enumerate}
 
-For researchers: software artefacts are a crucial for establighin more precise definitions that a broader audience can interact with, resuse, and rigorously test. 
+For researchers, software artefacts are a crucial for establishing more precise definitions that a broader audience can interact with, resuse, and rigorously test. 
 Engineering aside, opening research up to broader falsiability of definitions/proofs is important.
-For software engineers: there is a clear advanage to implementing code that matches academic definitions, the ideal functionality models provides a clear interface (specification, adversarial capabilities, and security guarantees) for software modules, and a UC environment facilitates more sophisticated protocol analysis because of its exposure to both honest party input/output and adversarial action.\todo{the point is along the lines mentioned that both scheduling and inputs/outputs allow more intelligent choice of actions for testing more interesting conditions...}
+For software engineers, there is a clear advanage to implementing code that matches academic definitions, the ideal functionality models provides a clear interface (specification, adversarial capabilities, and security guarantees) for software modules, and a UC environment facilitates more sophisticated protocol analysis because of its exposure to both honest party input/output and adversarial action.\todo{the point is along the lines mentioned that both scheduling and inputs/outputs allow more intelligent choice of actions for testing more interesting conditions...}
 Simply put, UC is an efficient \todo{efficient?} harness for developing and testing protocos under byzantine conditions.
 Furthremore, maintaining a symmetry between paper definitions and the resulting implementation solidifies the validity of existing security proofs.
 

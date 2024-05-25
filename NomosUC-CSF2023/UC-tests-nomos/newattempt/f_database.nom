@@ -16,12 +16,13 @@ proc f_db_init[k][v] :
 
 proc f_db[k][v]: 
   (* params *)
-  ($p2f: db[k][v]), ($f2p: 1), ($a2f: adv[k][v]), ($f2a: 1) 
+  ($p2f: db[k][v]), ($f2p: 1), -- ($a2f: adv[k][v]), ($f2a: 1) 
   ($tb: [(k,v)]) |- ($c: 1) =
 {
   case $p2f (
     store => pid = get $p2f;
       k' = get $p2f; v' = get $p2f; get {1} $p2f;
+			-- vvvv genpot (length f list )
       $tb' <- pappend[(k,v)] <- $tb k' v' ;
       $p2f.OK; send $p2f pid;
       $c <- f_db[k][v] <- (* args *) $tb'
