@@ -1,0 +1,16 @@
+The emulation definition introduces the notation for two NomosUC terms being well-matched. 
+It refers to terms that, when connected by a shared channel, results in a well-typed configuration.
+The formal definition of \emph{well-matched} is given below.
+
+\begin{ddef}[Well-Matched]\label{def:wellmatched}
+\begin{mathpar}
+\footnotesize
+\inferrule*[right=Well-matched]
+{\Tokens_1, K \semi \Delta_1 \vdash e :: \Delta_1' \semi 
+\Tokens_2, K \semi \Delta_2 \vdash e' :: \Delta_2' \\ \\
+ S \equiv \Delta_1 \bigcap \Delta_2 \neq \emptyset}
+%{\Delta_1 \leftrightarrow \Delta_2}
+{\Delta_1 \equiv_{S} \Delta_2 \semi e \leftrightarrow e'} 
+\end{mathpar}
+\end{ddef}
+

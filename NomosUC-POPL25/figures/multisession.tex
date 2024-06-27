@@ -1,0 +1,31 @@
+\begin{bbox}[title={Multisession $!\F$}]
+
+Initialize $\msf{Fs} = \emptyset$
+
+\vspace{2mm}
+\hrule
+\vspace{2mm}
+
+\OnInput \inmsg{m} from \color{red} $1 \token$ \color{black} $\Partyi$:
+\begin{renumerate}
+\item (\msf{ssid}, $msg$) $\leftarrow$ m
+\item If exists $\F$ with \msf{ssid} in \msf{Fs}:
+
+	\qquad $\F^{\msf{ssid}} \leftarrow \msf{Fs}[\msf{ssid}]$
+
+	\qquad Route $msg$ to $\F^{\msf{ssid}}$.
+
+\item Else:
+
+	\qquad Initialize a copy $\F^{\msf{ssid}}$ and add it to $\msf{Fs}$
+
+	\qquad Route $msg$ to $\F^{\msf{ssid}}$
+\end{renumerate}
+
+\OnInput \inmsg{m} \color{red} $d \token$ \color{black} from $\F^{\msf{ssid}}$:
+\begin{renumerate}
+\item $((sid,pid), msg) \leftarrow$ m
+\item Send $msg$, \color{red} $d \token$ \color{black} to ITM $(sid,pid)$
+\end{renumerate}
+
+\end{bbox}
