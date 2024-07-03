@@ -1,0 +1,162 @@
+The UC framework defines security using a real/ideal paradigm.
+The real world consists of the protocol in question $\pi$ that can use any number of additional ideal functionalities $\F$ as assumed pritimitives or subprotocols like authenticated communiation or an idealized hash function.
+In literature this is called ``$\pi$ in the $\F$-hybrid world'', but cacnonically it is referred to as the real world and $\F$ the hybrid functionality.
+The real world also consists of a computationally bounded adversary $\A$ that can corrupt and control protocol parties, as well as receiving leaks from \F and performing the actions that it allows such as reordering messages in the case of the authenticated channel.
+
+An ideal functionality is a single computational unit that acts a trustes third party that exhibits some desired properties. 
+It defines the inputs it receives, how it computes output, and what power the adversary has to influence it.
+For example, a reliable broadcast functionality accepts an input message and outputs it to each of the parties when the adversary tells it to.
+The ideal world consists of an ideal adversay, a simulator \Sim, that whose goal is to show that ``any possible attack in the real world can also be performe din the ideal world'' against an idealized version of the protocol.
+If the worlds are computationally indistiginshuishable to an environment that controls hones input and gives input to the adversary, then we can concude that the real world is at least as secure as the ideal world.
+
+What makes UC the strongest definitional model is that the inputs and number of honest parties are chosen \emph{adaptively}
+and \emph{dynamically}, by a distinguishing environment \Z, which can run arbitrary other protocols inernally, can give inputs to both worlds, and can also communicate with the adversary and interleave its interactions with honest parties.
+\emph{Realizing this expressive framework for computation is one of the key challenges overcome in this work in Section~\ref{sec:execuc}.}
+
+%The UC security definition is more formally defined by the following relationship between two UC executions. 
+%Here, \m{execUC} defines a UC experiment that takes four parameters: an environment \Z, a protocol $\pi$, a functionality \F, and an adversary \A.
+
+%The UC framework~\cite{canettiUC} defines security using
+%a real-world / ideal-world paradigm:
+%the real world features a protocol $\pi$ and some adversary \A that controls corrupt parties\footnote{In UC, corrupt parties are modeled as ITMs that relay messages between the functionality and the adversary, i.e. adversaries select the inputs they give to \F.};
+%To achieve the ideal/real security relation, we roughly need to show that ``any possible attack in the real world can also be exhibited
+%in the ideal world''.
+%This means constructing an ideal world adversary, the simulator, \Sim, (that commonly internally simulates, or sandboxes, the real-world adverasry or protocols) that plays the role of an adversary in the ideal world.
+%What makes UC the strongest definitional model is that the inputs and number of honest parties are chosen \emph{adaptively}
+%and \emph{dynamically}, by a distinguishing environment \Z, which can also communicate with the adversary and interleave its interactions with honest parties.
+%\emph{Realizing this expressive framework for computation is one of the key challenges overcome in this work in Section~\ref{sec:execuc}.}
+
+The UC security definition is more formally defined by the following relationship between two UC executions. 
+Here, \m{execUC} defines a UC experiment that takes four parameters: an environment \Z, a protocol $\pi$, a functionality \F, and an adversary \A.
+We say that a protocol $\pi$, with access to a functionality $\F_1$, realizes an ideal functionality $\F_2$
+if for every adversary $\A$, we can construct a simulator $\Sim$, such that the real and ideal worlds are indistinguishable to any environment \Z:
+\begin{equation}
+  \label{eqn:emulation}
+  \forall \A \; \exists \Sim \; \forall \Z, \; \; \msf{execUC} \; \Z \, \idealP \, \F_2 \, \Sim \sim_k \msf{execUC} \; \Z \, \pi \, \F_1 \, \A
+\end{equation}
+We denote indistinguishability with the $\sim$ symbol, and it means that the ensembles of distributions resulting from the output of \Z
+in each execution, over all possible randomness and security parameters $k$, have \emph{statistical difference} that is negligible in $k$.
+This relationship between two \m{execUC} instances is called \emph{emulation}. 
+For the specific case of UC realization (above) the protocol in the ideal world is \idealP, a \emph{dummy protocol} that relays messages between $\F_2$ and \Z.
+The functionality $\F_1$ represents any ideal functionality the real protocol may rely on.
+
+%%%%%%%%%
+%The UC framework is defined on top of a communication model called interactive Turing machines (ITMs), in which multiple Turing-complete processes run concurrently in a system and communicate by writing messages on each others' input tapes~\cite{canettiUC}.
+%%%%%%%%%
+%Although the Turing-complete computations can be instantiated in any reasonable core calculus, the approach to message passing in ITMs has some essential but subtle restrictions.
+%In order to do cryptographic analysis, we need to make reductions to (ordinary sequential) probabilistic polynomial time computations (PPTs).
+%This rules out, for example, the ordinary semantics of $\pi$-calculus, which introduces unbounded non-determinism with the possible scheduler choices.
+%This adversary model leads to a flexible approach to composition, which we'll say more about shortly.
+%Defining \msf{execUC} in our core calculus, and especially reconciling its dynamic nature with our static type system will be the central technical challenge
+%we tackle later in Section~\ref{sec:execuc}.
+
+\paragraph*{\textbf{Composition Notation}}
+The UC framework encourages a compositional and modular design approach,
+where we analyze single-instance protocols in isolation, then apply generic composition operators to build more complex systems.
+% Encoding the standard theory of UC composition in our core calculus is one of the main ways we validate the expressiveness of our language design.
+Here we summarize the main composition theorems using category notation akin to ILC~\cite{ilc}, where objects are functionalities and arrows are protocols.
+If $\pi$ realizes $\F_2$ in the $\F_1$-hybrid world (as defined in Equation~\ref{eqn:emulation}), we use the notation:
+\[
+    \F_1 \xrightarrow{\pi} \F_2
+\]
+%This means in the real world $\pi$ makes use of a single instance of $\F_1$, and the ideal world consists of a single instance of $\F_2$.
+
+In this work, we realize UC composition, Theorem~\ref{thm:composition}, by defining simpler composition theorems and combining them.
+The first composition theorem we rely on, Theorem~\ref{thm:singlecomp}, is a simplified version of composition and states that the relation define above for \emph{realizing a functionality} is transitive for only a single instance of $\F_2$, where $\rho \circ \pi$ is a generic composition operator that combines two protocols by connecting $\rho$ to $\pi$ where $\rho$'s communication with $\F_2$ is relayed as input to $\pi$. 
+
+%The first composition theorem states that this relation is transitive, where $\rho \circ \pi$ is a generic composition operator that
+%combines two protocols by connecting $\rho$ to $\pi$ where $\rho$'s communication with $\F_2$ is relayed as input to $\pi$. 
+%$\rho \Leftarrow \F$ channels in $\rho$ to the $\pi \Leftarrow \Z$ channel of $F$. That is, when protocol $\rho$ communicates with its ideal functionality, it is is relayed as subroutine input to $\pi$.
+\begin{theorem}[Simplified Composition]\label{thm:singlecomp}
+\begin{mathpar}
+\inferrule*[right=single-compose]
+{
+    \F_1 \xrightarrow{\pi} \F_2 \semi \F_2 \xrightarrow{\rho} \F_3 \\
+}
+{
+    \F_1 \xrightarrow{\rho \circ \pi} \F_3
+}
+\end{mathpar}
+\end{theorem}
+Proving this theorem requires constructing a straightforward simulator that combines the underlying simulators of $\pi$ and $\rho$,
+and the complete security reduction involves translating a distinguishing environment $Z$ for the combined protocol $\rho \circ \pi$ to a
+distinguishing environment $Z^*$ for either $\pi$ or $\rho$ individually.
+Although the proof is straightforward, the precise statement of the simulator that is parametric in the session type of the protocol in our framework serves as good validation for the its expressiveness. %: our theorem and proof are parametric in the session type of the protocol, i.e., the theorem places no restrictions
+%on the communication pattern used by the underlying protocol and functionalities.
+
+%The transitive relation in Theorem~\ref{thm:singlecomp} allows for replacement of only a single instance of $\F_2$ with $\pi$.
+UC composition in Theorem~\ref{thm:composition}, which is realized using Theorem~\ref{thm:singlecomp}, allows for replaces an arbitrary number of instances of $\F_2$ running in parallel denoted by the $!$ operator. 
+Importantly, capturing the arbitrary number of instances is a limitation of most related works. 
+We introduce the operator and its theorem later in Section~\ref{sec:execuc}.
+%We elide the details of this composition theorem until we have introduced the $!$ operator and it's corresponding composition theorem (and the \msf{squash} protocol): 
+%$!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$.
+
+\begin{theorem}[Composition]\label{thm:composition}
+\vspace{-0.5em}
+\begin{mathpar}
+\inferrule*[right=compose]
+{
+    %(\pi, !\F_1) \sim (\idealP, F_2) \semi (\rho, !\F_2) \sim (\idealP, \F_3) \\ 
+    !\F_1 \xrightarrow{\pi} \F_2 \and !\F_2 \xrightarrow{\rho} \F_3 \\
+    %\Rightarrow \exists \Sim(\A) \vdash (\rho^{!\F_2 \rightarrow (!\pi \, \circ \, \msf{squash})}, !\F_1) \sim (\idealP, \F_3)
+}
+{
+    !\F_1 \xrightarrow{\rho \, \circ !\pi \circ \, \msf{squash}} \F_3
+    %(\rho \, \circ \, !\pi \circ \msf{squash}, !\F_1) \sim (\idealP, \F_3)
+}
+\end{mathpar}
+\end{theorem}
+
+%The flexibility of the UC framework extends to allow \Z to spawn an arbitrary number of sessions of some \F, denoted $!\F$, in parallel, and the theorem 
+%$!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$ ensures that composition holds even in this setting.
+%This theorem allows analysis of a single protocol in isolation to guarantee security under parallel composition, and it is crucial in proving full UC composition that ensures security under composition 
+%with parellel sessions of arbitrary protocols.
+
+%The next generic operation is the multi-session extension of $\F$, denoted $!\F$, which provides $\pi$ with an arbitrary number of instances of $\F$, each tagged with a separate \textsf{sid} (for \emph{session identifier}).
+%Here is a central aspect of UC's flexibility, that the environment gets to determine at runtime the exact number and values of \textsf{sid}'s, with no static bound required.
+%The Universal Composition theorem says that composition even holds in this setting, which we state as
+%$!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$.
+%This theorem is essential to the appeal of UC as a framework because it encourages simple analysis of a single protocol in isolation (the proof that $\pi$ realizes one instance of $\F_2$), which is then safe to use in protocols like $\phi$ that rely on multiple concurrently-running subsessions of it.
+
+\paragraph*{\textbf{Polynomial Time ITMs}}
+
+%Our approach, following ILC~\cite{ilc}, is to encode the ITMs framework as faithfully as possible.
+%%This is because the final step in a UC proof is to show that a distinguishing environment Z can be leveraged to construct a polynomial time solution to a hard problem like Discrete Log.
+%The basic rule that ITMs follow is that only one process is active at a given time. 
+%Specifically whenever a process writes to one of its outgoing channels, the unique process that holds the read end of that channel is immediately activated next.
+%In this way the message scheduling is essentially deterministic so it can be easily simulated by a sequential computation.
+%This discipline means that modeling inherently non-deterministic phenomena, like network schedulers, requires us to explicitly offer choices to an adversary process defined in our model.
+% The ITM model has the advantage that only one process is active at a given time. It results in message scheduling that is essentially deterministic and easily simulated by sequential computation. 
+UC protocols and functionalities are expressed via Interactive Turing Machines that (i) communicate via \emph{message tapes} that ITMs can read from/write to,
+and (ii) are polynomial-bounded, both in their communication and computation.
+ITMs write to one another, activating each other, such that only one ITM is activate at any given time.
+%Noteworthy here is that ITMs involved ina UC protocol and its corresponding functionality exhibit the \emph{same} communication behavior even though their internal computation is different.
+
+Despite having an essentially sequential computation where only one process is active at any time,
+it is still not straightforward to define a notion of polynomial runtime for ITM systems.
+We need a way to make local judgments about each of \A, \Z, $\pi$, and \F and conclude the entire $\msf{execUC}$ overall is polynomial time. 
+%Specifically, we want, for open terms, that at most polynomial work is performed per activation and, for closed terms, that the system doesn't take more than a polynomial number of steps.
+The emulation definition specifies a dependency between environments and adversaries to prove security, and, without local judgements we can only show PPT emulation against specific combinations of \Z and \A, as ILC does.
+%Testing only specific combinations of ITMs, as ILC does, would mandate paper proofs of PPT adversaries that satisfy the $\forall$ quantifiers.
+%Looking at the order of quantifiers in the UC emulation definition from Relation~\ref{eqn:emulation}, we need a way to make local judgments about each $\A$, $\Z$, $\pi$, and $\F$ individual, and conclude that the entire $\msf{execUC} \; \Z \; \pi \; \A \; \F$ experiment overall is polynomial time as a result.
+%We follow Canetti's approach~\cite{canettiUC}, which is to keep track at runtime of quantity called ``import tokens'' and assign a runtime budget based on these.
+
+The UC framework defines the import mechanism for polynomial time to track execution through tokens that
+%We rely on the ``import tokens'' notion of polynomial time and track execution time through tokens
+are bounded by a total that is polynomial in the security parameter $K$ and that can be exchanged between processes to provide each other with a runtime budget.
+This notion of polynomial time was introduced by Canetti~\cite{canettiUC} as an alternative to the falwed length-of-input notion. 
+%when previous notions of polynomial time, such as polynomial in the length of input, were identified to have major flaws that allowed for super-polynomial behavior.
+%These tokens can be passed among the processes along with the messages sent on each tape, but the total amount of tokens must be conserved (neither created nor destroyed), and locally each process cannot take more steps than (a polynomial of) the amount of import tokens it has stored.
+In this model, we say ITM $P$ is \emph{locally polynomial time} if for \emph{any} evaluation context $e[\_]$, at any step $t$ during its execution,
+\[
+\#\textsf{stepsTaken}(e[P])_{t} \le T(n_{\textsf{in}} - n_{\textsf{out}})
+\]
+where $n_{\textsf{in}}$ is the import received by $P$ whereas $n_{\textsf{out}}$ is the import sent by $P$, and $T$ is an arbitrary polynomial.
+The runtime budget of an ITM is accounted for by \emph{potential} which represents the amount of available runtime remaining.
+We realize potential and cap the potential used by a NomosUC term by $T(n_\textsf{in}-n_\textsf{out})$.\footnote{We do not motivate the distinction between import and potential here and refer the reader to the UC framework~\cite{canettiUC} for a detailed discussion of this polynomial time notion.}
+This immediately ensures that if the system initiates with a fixed number of tokens $n \in poly(k)$, then the total execution time
+of all the processes in the system combined is also $poly(k)$.
+The arbitrary polynomial $T$ serves as a \emph{slack parameter} that allows, for example,
+the emulation of a universal Turing machine program (which may incur up to quadratic overhead).
+Our approach, described in Section~\ref{sec:motivate}, is to encode this notion directly into the type system, by tracking import tokens and statically enforcing this polynomial runtime constraint.
+

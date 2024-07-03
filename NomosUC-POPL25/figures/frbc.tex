@@ -1,0 +1,23 @@
+\begin{bbox}[title={Functionality $\mathcal{F}_\msf{RBC} (\mathcal{D}, \mathcal{P})$}]
+
+\OnInput \inmsg{\textsc{input}}{$m$} \color{blue} {\bf $n(4n+1) \token$} \color{Black} from $\mathcal{D}$:
+
+	\begin{renumerate}
+
+		\item {\bf Leak} \inmsg{\textsc{input}}{$m$}
+		
+		\item {\bf For} each $P_i \in \mathcal{P}$:
+		\begin{renumerate}
+
+			%\item \Send \inmsg{\textsc{schedule}}{\textsc{send}}{($m$, $P_i$)} $\rightarrow \mathcal{W}_\msf{async}$		
+			\item \Eventually: \Send ($m$) $\rightarrow P_i$
+
+		\end{renumerate}
+	\end{renumerate}
+
+%{\bf Code} $\textsc{send}(m, P_i)$:
+%	\begin{renumerate}
+%
+%		\item \Send $m \rightarrow P_i$
+%	\end{renumerate}
+\end{bbox}
