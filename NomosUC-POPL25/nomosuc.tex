@@ -10,7 +10,7 @@
 % \usepackage[dvipsnames]{xcolor}
 %\usepackage{cite}
 \usepackage[most]{tcolorbox}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{amsmath,amsfonts,amsthm}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{subcaption}
@@ -154,30 +154,35 @@
 \input{st-macros}
 
 \begin{abstract}
-  Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography and computer security, however it comes at the cost of comlexity.
+  Universal Composability (UC) is a leading definitional framework for secure protocols used in
+  cryptography and computer security, however it comes at the cost of complexity.
   %however on-paper UC definitions can be long, complicated, and difficult to understand or reuse.
-  Existing works that study UC from the viewpoint of programming language semantics and formal methods aim to mitigate this hurdle but fall short in a few critical ways:
+  Existing works that study UC from the viewpoint of programming language semantics and formal
+  methods aim to mitigate this hurdle but fall short in a few critical ways:
   %However, existing works that study UC from the viewpoint of programming language semantics and formal methods fall 
   %short in a few critical ways: 
   namely, capturing the UC polynomial-time notion and realizing the full expressiveness of UC.
   %Prior works provide either limited notions of runtime constraints or capture constrained variants of UC.
   This work introduces a programming abstraction called \emph{import
   session types} (IST) to express UC functionalities and protocols.
-  This new abstraction uses session types to specify and enforce bi-directional communication protocols in distributed systems and
-  takes inspiration from \emph{resource-aware session types} (Rast) that allow analysis of execution cost.
+  This new abstraction uses session types to specify and enforce bi-directional communication protocols
+  in the full UC generality and takes inspiration from \emph{resource-aware session types} that allow analysis of execution cost.
   %This new abstraction is inspired by \emph{resource-aware session types} (Rast), a recently designed type system
   %for analyzing execution cost of concurrent message-passing systems.
   %Sesson types allow for describing bi-directional communication protocols in distributed systems and, Rast extends
   %that to statically checking and enforcing linear runtime constraints. 
-
-  We do not aim for a program logic for mechanizizing proofs like other existing works, but instead focus on fully capturing the \emph{import mechanism}~\cite{canettiUC} for polynomial time and laying the foundation for future work on formal verification on top IST.
-
-  We borrow from existing languages based on Rast, Nomos, and ILC, a process-based core calculus for UC,
-  to build a new language called NomosUC. Designing NomosUC to capture the full expressiveness of UC 
-  required solving a range of technical challenges. Notably, we overcome communication limitations imposed 
-  by linearity in session types and define a novel \emph{virtual token hierarchy} for expressing runtime.
-
-  We validate out approach by realizing the standard set of lemmas and theorems from UC~\cite{canettiUC,ilc,gnuc,ipdl,easyuc}
+  % We do not aim for a program logic for mechanizing proofs like other existing works,
+  % but instead focus on fully capturing the \emph{import mechanism}
+  % for polynomial time and laying the foundation for future work on formal verification on top of IST.
+  We design a core calculus called NomosUC which centers around IST and fully captures the UC \emph{import mechanism}
+  for polynomial time reasoning.
+  Designing NomosUC to capture the full expressiveness of UC required solving a range of technical challenges.
+  First, we needed to relax the communication limitations imposed by linearity in session types.
+  Second, we generalized the cost analysis technique from resource-aware, which was restricted to linear bounds,
+  to express polynomial cost bounds that are crucial to the import mechanism.
+  Finally, we have implemented our core calculus that relies on the z3 SMT solver in its backend
+  to validate complexity bounds.
+  We validate our approach by realizing the standard set of lemmas and theorems from UC
   and showing a handful of example of UC protocols, functionalities, and simulator proofs.
 \end{abstract}
 
@@ -232,7 +237,7 @@
 \section{Conclusions and Future Work}
 \input{sections/future}
 
-\bibliographystyle{IEEEtran}
+\bibliographystyle{ACM-Reference-Format}
 \bibliography{nomosuc}
 
 \newpage
@@ -240,47 +245,47 @@
 %input{figures/asyncwrapper}
 
 %\appendix
-\appendix
+% \appendix
 
-%\section{Simulators} \label{app:commitment}
-%\input{sections/commitment} 
+% %\section{Simulators} \label{app:commitment}
+% %\input{sections/commitment} 
 
-\section{Emulation Continued} \label{app:emulation}
-\input{appendix/emulationcont}
+% \section{Emulation Continued} \label{app:emulation}
+% \input{appendix/emulationcont}
 
-\section{Base System of Session Types in NomosUC} \label{app:basic}
-\input{sections/baselang}
+% \section{Base System of Session Types in NomosUC} \label{app:basic}
+% \input{sections/baselang}
 
-\section{Selected Typing Rules for NomosUC} \label{app:typing_rules}
-\input{appendix/typing_rules}
+% \section{Selected Typing Rules for NomosUC} \label{app:typing_rules}
+% \input{appendix/typing_rules}
 
-\section{Import and Potential in NomosUC} \label{sec:import}
-\input{sections/importlang}
+% \section{Import and Potential in NomosUC} \label{sec:import}
+% \input{sections/importlang}
 
-%\section{Arbitrary Parties} \label{app:arbparties}
-%\input{appendix/arbparties}
+% %\section{Arbitrary Parties} \label{app:arbparties}
+% %\input{appendix/arbparties}
 
-\section{Dummy Lemma} \label{app:dummy}
-\input{appendix/dummylemma}
+% \section{Dummy Lemma} \label{app:dummy}
+% \input{appendix/dummylemma}
 
-\section{Multisession Theorems} \label{app:ms}
-\input{appendix/bangf}
+% \section{Multisession Theorems} \label{app:ms}
+% \input{appendix/bangf}
 
-\section{Single Composition Simulator} \label{app:simcomp}
-\input{appendix/simcomp}
+% \section{Single Composition Simulator} \label{app:simcomp}
+% \input{appendix/simcomp}
 
-%\section{Commitment Protocol} \label{app:protcom}
-%\input{appendix/protcom}
-%
-%\section{Coin Flipping} \label{app:flip}
-%\input{appendix/coinflip}
-%
-%\section{Zk} \label{app:zk}
-%\input{appendix/zk}
+% %\section{Commitment Protocol} \label{app:protcom}
+% %\input{appendix/protcom}
+% %
+% %\section{Coin Flipping} \label{app:flip}
+% %\input{appendix/coinflip}
+% %
+% %\section{Zk} \label{app:zk}
+% %\input{appendix/zk}
 
-\section{ITM Completeness} \label{app:itm}
-\input{appendix/itmiffnomosuc}
+% \section{ITM Completeness} \label{app:itm}
+% \input{appendix/itmiffnomosuc}
 
-\pagebreak
+% \pagebreak
 
 \end{document}

@@ -333,7 +333,7 @@ It is statically defined to prevent infinite type creation at runtime, and we be
 Processd definitions all include a type parameter, \inline{K}, that they refer to as their ``real token type'' (seen in the definition of \m{protcom} above).
 The main processes in the execution, the ``real processes'' such as \Z and \A, are obviously spawned with parameter $K_0$ and all sandboxes processes with $K_{i > 0}$.
 Definint different token types also creates additional guard rails for sandboxxed programs: they can't communicate with process outside the sandbox, and the type system enforces it through a token type mismatch.
-\plan{There used to be a code snippet here showing a process definition with the toke type paramter but it's useless we just point to the process definition of procom above}
+% \plan{There used to be a code snippet here showing a process definition with the toke type paramter but it's useless we just point to the process definition of procom above}
 %For example, the simulator above is now given the parameter $K_0$ (for real), and type $K_1$ as the virtual type to sandbox with:
 %\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
 %$\$$c $\leftarrow$ sim_db$\tr{[K0,K1]}$[k][v] $\tg{(* the usual params *)}$
