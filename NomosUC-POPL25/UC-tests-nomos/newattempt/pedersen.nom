@@ -1,0 +1,245 @@
+
+stype sender = +{ commit: Int * scommitted }
+stype scommitted = +{ open: sopened }
+stype sopened = 1;
+
+stype receiver = &{ commit: rcommitted }
+stype rcommitted = &{ open: Int * ropened }
+stype ropened = 1 
+
+stype adv = +{ getx: &{ yes: Int -> adv,
+											  no: Adv }}
+proc f_com[K] : 
+	(* args *)
+	($S: sender), ($R: receiver, ($A: adv) |- ($c: 1) =
+{
+	case $S (
+		commit => 
+			x = recv $S ;
+			$R.commit ;
+			match $S, $A (
+				Open,* =>
+					$R.open ; send $R x ;
+				*,getx =>
+					$A.yes ; send $A x ;
+			)
+	)
+}
+
+type comp2f = Commit of Int | Open ;
+type comf2p = Commit | Open of Int ;
+type coma2f = GetX ;
+type comf2a = Yes of Int | No ;
+
+
+proc sim_com_sender[K][K1] :
+  (k: Int), (rng: [Bit]), (sid: session[1]),
+  ($z_to_a: z2a[K][mcrsp2f][mcrsa2f]), ($a_to_z: a2z[K][mcrsf2p][mcrsf2a]),
+  ($p_to_a: p2a[K][comf2p]), ($a_to_p: a2p[K][comf2p]),
+  ($f_to_a: f2a[K][comf2a]), ($a_to_f: a2f[K][coma2f]),
+  (l: [Bit]), (first_input: Bool), 
+	(failed: Bool) |- ($ch: 1) =
+{ 
+  match $z_to_a, $p_to_a, $f_to_a (
+    Z2A2P,*,* =>
+      pid = recv $z_to_a ;
+      m = recv $z_to_a ;
+      case m (
+        Send(2, Left C) =>
+          if first_input then
+            require pid == 1;
+            for p in l then
+              $s_to_ro.hash ; send $s_to_ro p ;
+              h = recv $s_to_p ;
+              if h == x then
+                (b: n) = h ;
+                $a_to_p.A2P ; send $a_to_p Commit(b) ;
+                break ;
+              else () 
+            end
+            $ch <- sim_com_sender[K][K1] <- (* args *) l False failed ;
+          else 
+            (b : n) = x ;
+            t = search l x ;
+            if t then 
+              $a_to_p.A2P ; send $a_to_p 1 ;
+              send $a_to_p Open ;
+            else
+              (* bad open *)
+              ()
+            end
+          end 
+        QHash(x) =>   
+          t = search l x ;
+          if t then
+            $a_to_z.P2A2Z ; send $a_to_z 1 ;
+            (* failed abort *)
+            --$ch <- sim_com_sender[K][K1] <- (* args *) l first_input True ; 
+          else  
+            withdrawtoken K K1 1 ;
+            l' <- append l x ;
+            $s_to_ro.hash ; send $s_to_ro x ;
+            pay {1} K1 $s_to_ro ;
+            case $s_to_ro (
+              hash => h = recv $s_to_ro ;
+                $a_to_z.F2A2Z ; send $a_to_z RHash(h) ; 
+            )
+            $ch <- sim_com_sender[K][K1] <- (* args *) l' first_input failed ;
+          end   
+    Z2A2F,*,* =>
+      QHash(x) = recv $z_to_a ;
+      t = search l x ;
+      if t then
+        (* collision no commitment so distinguish *)
+        $a_to_z.P2A2Z ; send $a_to_z 1 ;
+        $ch <- sim_com_sender[K][K1] <- (* args *) l first_input True ; 
+      else 
+        withdrawtoken K K1 1 ;
+        l' <- append l x ;
+        $s_to_ro.hash ; send $s_to_ro x ;
+        pay {1} K1 $s_to_ro ;
+        case $s_to_ro (
+          hash => h = recv $s_to_ro ;
+            $a_to_z.F2A2Z ; send $a_to_z RHash(h) ; 
+        )
+        $ch <- sim_com_sender[K][K1] <- (* args *) l' first_input failed ;
+      end
+    *,P2A,* =>
+    *,*,F2A =>
+  )
+
+
+stype crsp2f = +{ pGET: PID * &{pCRS: PID -> GElement -> GElement -> GET},
+									Send: PID * PID * Either[GElement][(Int,Int)] * crsp2f }
+stype crsf2p = &{ Msg: PID * Either[Gelement][(Int.Int)] * crsf2p }
+
+stype crsa2f = +{ aGET: * &{aCRS: GElement -> GElement -> GET},
+									getMsg: &{ Yes: PID -> Either[GElement][(Int,Int)] -> crsa2f,
+														 No:  crsa2f } }
+
+type crs_ssid = SID[Int] ;
+
+type mcrsp2f = pGet | Send of PID (Either GElement (Int,Int))| ;
+type mcrsf2p = pCRS of GElement GElement | Msg of (Either Gelement (Int, Int)) ;
+type mcrsa2f = aGet | getMsg ;
+type mcrsf2a = aCRS of GElement GElement | Yes of PID GElement | No ;
+
+proc f_crs[K] :
+  (sid: SID[Int), (* args *)
+	($parties: crsp2f), ($f2p: crsf2p),
+	($adv: crsa2f), (first: Bool),
+	(buf: (PID, Either[GElement][Int,Int]))  |- ($c: 1) =
+{
+	match $parties, $adv (
+		pGET,* =>
+			if first then
+				$G <- group <- ;
+				$G.sample ; let g = recv $G ;
+				$G.sample ; let h = recv $G ;
+			  first = False ;
+			else ()
+			pid = recv $parties
+			require (pid == 1 || pid == 2) (* short hand garbage output fail *)
+			$parties.pCRS ; send $parties (g,h) ;
+	    $c <- f_crs[K] <- sid (* args *) $parties $adv first buf ;
+		Send,* =>
+	    require (pid == 1 || pid == 2) ;
+			let pid,msg = recv $parties (* shorthand *)
+			$f2p.MSG ; send $f2p rpid ; send $f2p msg ;
+			$c <- f_crs[K] <- (* args *) $parties $adv first (rpid, msg) ;
+		*,aGET => 
+			if first then
+				$G <- curve <- ;
+				$G.sample ; let g = recv $G ;
+				$G.sample ; let h = recv $G ;
+			  first = False ;
+			else ()
+  		$adv.aCRS : send $adv (g,h) ;	
+	    $c <- f_crs[K] <- sid (* args *) $parties $adv first buf ; 
+    *,GetMsg =>
+			if buf then $adv.Yes ; send $adv buf[0] ; send $arg buf[1] ;
+			else $adv.No ;
+	    $c <- f_crs[K] <- sid (* args *) $parties $adv first ; 
+	)
+}
+
+proc prot_com_sender[K]: 
+	(* args *) 
+	($z2p: sender), ($p2f: p2ms[Int][mcrsp2f]), ($f2p: ms2p[Int][mcrsf2p]),	
+	(ssid: Int), (first: Bool)  |- ($c: 1) =
+{
+	case $z2p (
+		commit =>
+			if first then
+				$p2f.p2bf ; send $p2f 1 ; send $p2f pGet ;
+				_ = recv $f2p ; let pCRS(g,h) = recv $f2p ; (* shorthand *)
+			else ()
+			x = recv $z2p ;
+			r = sample Bits k ;
+			$G <- curve <- ;
+			$G.pow ; send $G g ; send $G x ;
+			let gx = recv $G ;
+			$G.pow ; send $G h ; send $G r ;
+			let hr = recv $G ;
+			$G.op ; send $G gx ; send $G hr ;
+			let C = recv $G ;
+			$p2f.p2bf ; send $p2f (ssid+1) ;; send $p2f Send(2, Left C) ;
+			$c <- prot_com_sender_committed <- (* args *)
+							$z2p $p2f $f2p (ssid+1) first x r  ;
+	)
+}
+
+	--($z2p: sender), ($p2f: crsp2f) ($f2p: crsf2p),
+proc prot_com_sender_committed[K] : 
+	(* args *) 
+	($z2p: scommitted), ($p2f: p2ms[Int][mcrsp2f]), ($f2p: ms2p[Int][mcrsf2p]),	
+	(ssid: Int), (first: Bool), (x: Int), (r: Int)
+{
+	case $z2p (
+		open =>
+			$p2f.p2bf ; send $p2f (ssid+1) ; send $p2f Send(2, Right x r) ;
+		  () ;
+	)
+}
+
+proc prot_com_receiver[K]:
+	(* args *) 
+	($p2z: receiver), ($p2f: p2ms[Int][mcrsp2f]), ($f2p: ms2p[Int][mcrsf2p]),
+	(first: Bool) |- ($c: 1) =
+{
+  match $f2p (
+		bf2p =>
+			_ = recv $f2p ; let Send(1, Left C) = recv $f2p ;
+			$prot_com_committed[K] <- (* args *)
+				$p2z $p2f $f2p first C ;
+	)
+}
+
+proc prot_com_receiver[K]:
+	(* args *) 
+	($p2z: receiver), ($p2f: p2ms[Int][mcrsp2f]), ($f2p: ms2p[Int][mcrsf2p]),
+	(first: Bool), (C: GElement) |- ($c: 1) =
+{
+	match $p2f (
+		bf2p =>
+			_ = recv $f2p ; let Send(1, Right x r) = recv $f2p ;	
+			$p2f.p2bf ; send $p2f 2 ; send $p2f pGet ;
+			_ = recv $f2p ; let pCRS(g,h) = recv $f2p ; (* shorthand *)
+			$G <- curve <- ;
+			$G.pow ; send $G g ; send $G x ;
+			let gx = recv $G ;
+			$G.pow ; send $G h ; send $G r ;
+			let hr = recv $G ;
+			$G.op ; send $G gx ; send $G hr ;
+			let C' = recv $G ;
+			if C' == C then
+				$p2z.Open ; send $p2z x ; 
+			else ()
+	)
+}
+				
+			
+
+(* multisession of F_crs + F_auth *)
+f_ms[K][K1][(PID,PID),Int][mcrsp2f,mcrsf2p,mcrsa2f,mcrsf2a]
+

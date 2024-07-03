@@ -1,0 +1,68 @@
+proc a2s_wrap[K][a][b]:
+  (#in2p: comm[K][a]), (#in2f: comm[K][b]), (#out: comm[K][Z2A[a][b]) |- ($c : 1) =
+{
+  match #in2p, #in2f (
+    *,m => #out.SEND ; send #out Z2A2F(m) ;
+    A2P(pid,m),* => #out.SEN ; send #out Z2A2P(pid, m) ;
+  )
+  $c <- a2s_wrap[K][a][b] <- #in2p #in2f #out 
+}
+
+proc dummy_lemma_sim[K][K1][(* A and sim's type params *)]: 
+  (* default args *)
+  (#z2a: comm[K][z2a), (#a2z: comm[K][a2z]),
+  (#a2p: comm[K][A2P[s2p]]), (#p2a: comm[K][P2A[p2s]]), 
+  (#a2f: comm[K][s2f]), (#f2a: comm[K][f2s]) |- ($ch: 1) =
+{
+  #z2a' <- channel_init[K1][z2a] ; 
+  #a2z' <- channel_init[K1][a2z] ;
+  #a2ps <- channel_init[K1][p2f] ;
+  #a2fs <- channel_init[K1][s2f] ;
+  #z2s <- channl_init[K1][Z2A[p2f][s2f]] ;
+  <- a2z_wrap[K][p2f][s2f] <- #a2ps #a2fs #z2s ;
+
+
+  #s2z <- channel_init[K1][A2Z[f2p][f2s]] ; 
+  #s2ap <- channel_init[K1][f2p] ;
+  #s2af <- channel_init[K1][f2a] ;
+  (* opposite of the wrap above *)
+
+  
+  #p2s <- channel_init[K1][P2A[f2p]] ;
+  #f2s <- channel_init[K1][f2a] ;
+
+  $a <- Adv[K1] <- k rng sid #z2a' #a2z' #a2ps #s2ap #a2fs #s2af
+  $s <- DSim[K1] <- k rng sid #s2z #s2z #s2p #p2s #s2f #f2s
+
+  $ch <- dummy_lemm_sim_run[K][K1] <- (* all the above channels *)
+}
+
+proc dummy_lemma_sim_run[K][K1]:
+  (* args *) |- ($ch: 1) =
+{
+  match #z2a {z2an} K, #a2z' {a2zn} K1 (
+    m,* =>
+      withdrawtoken K K1 {z2an} ;
+      #z2a'.SEND; send #z2a' pid ; send #z2a' m ;
+      pay K1 {z2an} #z2a' ;
+    *,m =>
+      #z2a'.SEND; send #z2a' pid ; send #z2a' m ;
+      pay K {z2an} #z2a' ;
+  )
+  $ch <- dummy_lemma_sim_dsim[K][Ka] <- (* same args *)
+}
+
+proc dummy_lemma_sim_pf2dsim[K][K1]: (* args *) |- ($ch: 1) =
+{
+  match #f2a, #p2a (
+    *,m =>  
+      withdrawtoken K K1 {p2an} ;
+      #p2s.SEND ; send #p2s m ; pay {p2an} K1 #p2s 
+    m,* =>
+      withdrawtoken K K1 {f2an} ;
+      #f2s.SEND ; send #f2s m ; pay {f2an} K1 #f2s ;
+  )
+}
+
+(* the rest procede exactly the same way *)
+

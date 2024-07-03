@@ -1,0 +1,9 @@
+stype msg[a] = +{ sendmsg: a -> &{ newmsg: a -> msg[a]}}
+stype adv[a] = &{ leakmsg: PID -> a -> +{ deliver: adv[a]}}
+
+proc f_chan : 
+	($p1: msg[a]), ($p2: msg[a]), ($a: adv[a]) = 
+{
+	match $p1, $p2 (
+		*, sendmsg -> m = recv $p2
+											

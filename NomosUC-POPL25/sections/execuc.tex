@@ -1,0 +1,469 @@
+So far we have covered how import session types can describe communication protocols and allow processes to exchange runtime through import tokens.
+In this section, we come back to UC and illustrate how NomosUC can be used to realize any any arbitrary configuration of ITMs in UC by proposing an abstract channel design, called \emph{providerless channels}, that overcome a communication limitation of binary session types.
+Next, we cover how NomosUC can support an arbitrary number of parties by using sandboxing and providerless channels. 
+Finally, we describe how a simulator is constructed in NomosUC, and the composition operators that we realize.
+
+%So far we have introduced a type system and process calculus for writing and checking runtime that conforms to the import mechanism for polynomial time.
+%In this section, we show how NomosUC processes overcome a limitation of binary session types to realize any arbitrary configuration of ITMs, and describe how \emph{providerless channels} and sandboxing enable an arbitrary number of protocol parties. 
+%Next, we realize the Dummy Lemma (sometimes described as completeness of the dummy adversary~\cite{gnuc}), an important result in used as a standard result intended to show the expressiveness of new UC programming tools or formulations~\cite{ilc,easyuc,gnuc}.
+%Despite the machinery required to realize import, our approach yields a surprisingly simple simulator proof.
+%Finally, we realize UC composition by first realizing a simpler composition operator~\cite{ilc}, a multisession theorem with join state~\cite{symbolicuc,juc}, and combine them in a natural way to state the full composition theorem in NomosUC.
+
+\subsection{Capturing the UC Computation Model}
+An limitation of binary session types is the communication topologies that they can realize.
+When a linear channel is created, it is offered by a process called the ``provider'' and given to a process called the ``client'', and impose a strict parent-child relationship between processes.
+The process configuration in Figure~\ref{fig:pandq} is not realizable, because of the circular dependency. 
+$P$ must be spawned by $Q$, giving $Q$ its channel, and $Q$ must be spawned by $P$ in order to give it its channel.
+We overcome this limitation by using shared session types to create a new abstract channel called a \emph{providerless channel}.
+Shared channels allow us to define a message buffer called a communictor, that lets multiple other processes use its channel and use it to send messages.
+The communicator can be thought of as a message buffer, and any process can attempt to \emph{acquire} its channel, check for new messages with \mb{poll}, and place another message in the bugger with \m{push}(similar to shared memory accessed via a lock).
+The session type of the communicator is given below, along with operators to acquire ($\up$) and release ($\down$) operators, below, and the full typing rules of shared session types is given in Appendix~\ref{app:typing_rules}.
+We provide the full typing rule of shared session types and the communicator in the Appendix.
+
+The resulting construction of a providerless channel between $P$ and $Q$ is shown in Figure~\ref{fig:newpandq}.
+Each providerless channel has a communicator process in between them, and dummy processes are defined an spawnes that communicate with the communicator and offer the desired session type fo $P$ or $Q$.
+In the figure, the dummy process \m{a_P} offers session type \m{PtoQ} to $P$ and \m{a_Q} offers the dual of \m{PtoQ} where ther internal and external choice operators are swapped, beacuse \m{a_P} and \m{a_Q} are both providers of the channel to $P$ and $Q$. 
+All internal choice operators correspond to messages from the dummy operator.
+We don't lose expressivity by doing this, but it does require the programmer to arbitrarily select one process to see a type $T$ and the other to see its dual. 
+The dummy programs are simple case statements that translate between the type offered by the communicator to the type that they offer to the actual process (the desired session type).
+Owing to their simplicity, given a specification of the two types and a mapping between them, these process are easily generated at compile-time, and the programmer can ignore them entirely.
+
+Using communicators imposes constraints on the amount of import that can be sent over a providerless channel.
+The communicator type allows only a constant amount of import to be sent with every message. In our channels, each direction of communication carries its own constant amount of import.
+When defining processes, the programmer must be aware of this constraint and set the import amounts in their session types to ensure that a process has enough import to do what it needs. 
+We refer the reader to Appendix~\ref{app:itm} for an example of what the generated code for a providerless channel looks like for our running commitment example, an example of a cyclic topology of processes and how it is realized by providerless channels, and an argument of why we can use this construction to realized any arbitrary ITM topology as a process configuration.
+
+\vspace{-1mm}
+{\centering
+\scalebox{0.9}{
+\parbox{0cm}{
+\begin{tabbing}
+$\m{comm[\tau]\{n\}} = \up \echoice{$\=$ \textcolor{red}{\getpot^n} \mb{push}: \m{\tau} \arrow \m \down \m{comm[\tau]},$\\
+\>$\textcolor{red}{\getpot^0} \mb{poll}: \ichoice{$\=$\textcolor{red}{\paypot^{n}} \mb{yes}: \m{\tau} \;\product \down \m{comm[\tau]},$\\
+\>\>$\textcolor{red}{\paypot^0} \mb{no}: \; \down \m{comm[\tau]}}}$
+\end{tabbing}}}
+\par}
+
+%The new constructors $\up$ and $\down$ indicate an acquire-release paradigm to prevent non-determinism, along with the write token, when both $P$ or $Q$ attempt to write.
+%A sender $P$ acquires the communicator's channel, $\#c$, and $\mb{push}$es a functionally 
+%typed message along with some import $\textcolor{red}{\getpot^n}$.
+%The receiver $Q$ waits for $\#c$ to be released and asks for a new message with $\mb{poll}$. 
+%If a new message was written, $Q$ receives label $\mb{yes}$ on $\#c$, the message, and the import.
+%Otherwise the channel takes the $\mb{no}$ branch.
+%We provide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
+\begin{figure}
+    \begin{subfigure}{0.5\textwidth}
+    \begin{center}
+    \includegraphics[scale=0.5]{figures/p_and_q.pdf}
+    \caption{ITMs can communicate like this. NomosUC processes can't offer their channels to each other.}
+    \label{fig:pandq}
+    \end{center}
+    \vspace{1em}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+    \begin{center}
+    \includegraphics[scale=0.4]{figures/newPandQ.pdf}
+    \caption{Processes that make up providerless channels.}
+    \label{fig:newpandq}
+    \end{center}
+    \vspace{0.5em}
+    \end{subfigure}
+    \caption{Channels are labeled with their types.}
+\end{figure}
+
+%\plan{Right here was a more in depth about providerless channel constructions and how the different processes are spawned, but we move that to the appendix. Describing it here concisely only makes it more confusing rather than less. In the appendix they can be presented with a full descriptive example of a cycle of three ITMs.}
+%Communicators alone, however, would constraint all processes in NomosUC to communicate through the same type $\m{comm[m]\{n\}}$, negating the descriptive session types we want from using session types.
+%
+%We abstract channels into \emph{providerless channels}: a channel implemented by a communicator and some dummy processes whose code is generated at compile-time.
+%In Figure~\ref{fig:newpandq}, we show an illustration of a providerless channel. The dummy processes $a_P$ and $b_P$ offer the linear session types that $P$ expects and communicates with $Q$ through the communicator.
+%Process $a_P$ case matches on the labels in type \m{PtoQ} and sends the analogous, functionally-typed $\tau_{\m{PtoQ}}$ message to the communicator, and vice-versa for receiving from \m{C}.
+%For example for \Fdb and a party (in relation to Figure~\ref{fig:newpandq}), $\m{QtoP} := \m{db}[k][v]$ and $\tau_\m{QtoP} :=$ Store \inline{of PID k v |} OK \inline{of PID |} Get \inline{of PID k |} Yes \inline{of v |} No.
+%
+%Spawning the processes in a providerless channel must be done in a specific order given the linearity of the channels that $a_P$ and $b_P$ offer. 
+%The communicator, $C$, is spawned first. The party $P$ must be a client of $a_P$ and $b_P$ and, therefore, its initialization code spawns them first, gives them the shared  $\#c$, and begins communication.  
+%In general, every process using providerless channels must have initialization code like this. 
+%The intitialization is trivial and the dummy processes simple case statements.
+%\emph{Therefore, generating their code at compile-time given the only the relevant types relieves a big burden on the programmer.}
+%We given an example of a NomosUC process, it's session types, and show what $a_P$, $b_P$, and the wrapped process look like in Appendix~\ref{app:expand}.
+%In Appendix~\ref{app:itm} we use prodiverless channels to show that \emph{NomosUC processes can realize any ITM system and vice versa (NomoUC $C' \Leftrightarrow$ ITMs $M'$)}.
+
+%A important consequence of providerless channels is that the session type of communicators accepts a \emph{constant} amount of import on every message.
+%It means that in addition to specifying $\tau_\m{PtoQ}$ the user must also specify the constant import parameter given to the providerless channel.
+%For example for a session type with two labels, one sending $n$ import and one $m$, the communicator in the providerless channel is parameterized with \emph{at least} $max(n,m)$ import to ensure sufficient runtime.
+%In general, this doesn't restrict what NomosUC can realize but does mean the programmer must take care when setting import values for protocols and functionalities.
+%Fortunately, this doesn't affect the Theorems we prove in this section as they are agnostic of the types of the processes they use.
+%Furthermore, precise runtime constraints or reasoning about efficient algorithms is not an intended goal of UC, and functionality and protocol code are still written according to the more descriptive session types they use.
+
+%\paragraph{\textbf{Dynamic Parties and Functionalities}}
+\subsection{Dynamic Parties and Functionalities}
+One of our main contributions over previous work performing execution cost analysis while allowing dynamic creation of protocol parties and ideal functionalities.
+The key design challenge in realizing this feature is resolved by providerless channels.
+We introduce a new construct, the \partywrapper \MX, which marshals the protocol parties in a particular execuition.
+When another main party, say \Z, sends a message to a particular party with \m{pid}, it sends a generic message to \MX through type:
+\begin{tabbing}
+    $\mi{type} \; \m{P2F[\tau]\{n\}} = \ichoice{\textcolor{red}{\paypot{n}} \; \mb{p2f}: \m{PID} \arrow \m{\tau} \arrow \m{P2F[\tau]\{n\}}}$
+\end{tabbing}
+The \partywrapper reads the message, creates an instance of the party with \m{pid} if it doesn't already exist, and spawns it using providerless channels.
+Although the generic type \m{P2F} above doesn't express any specific message ordering, the providerless channel that connects \MX, internally, to party \m{pid}, uses the session type of the protocol party.
+This ensures that the type system still enforces the protocol ordering required. 
+For example, \Z sends a message to the sender of \protcom by sending label $\m{P2F[\tau]\{n\}}$ where $\tau$ is the functional type equivalent of the session types \m{sender} and \m{receiver}: \inline{type comp2f = Commit of Bit | Open}.
+After spawning the protocol party with its channels, \MX first must withraw virtual tokens in the amount specified by the sender session type, and then send the messae with the virtual tokens along the channel.
+
+Its communication with \A and \F is similarly handled.
+The generic communication types, \m{P2Z} and \m{Z2P}, also imply that there is some constant amount of import sent with the single label in the type, \mb{p2f} and \mb{f2p} respetively.
+Setting this import is up to the programmer who can define any parameter as the import send from \MX to all other entities as long as \MX always has enough import.
+This is not a retriction as emulation and indistinguishabiliy only care that the amounts sent/received by \Z are the same in both worlds.
+In general, we're not concerned with reasoning about efficiency or minimizin import requirements for a protocol in UC.
+
+In summation, the \partywrapper is a (de)multiplexer that uses the \m{PID} of the part as the index. 
+(De)multiplexing is critical to easily realizing a dynamic number of parties, and providerless channels overcome the limitations of linear channel ownership and the provider-client relationship.
+
+%Prior works that create security proofs or attempt some form of UC runtime analysis only do so for a statically defined number of instances of a protocol or functionality, \cite{ilc,ipdl,easyuc,barbosa}.
+
+%With providerless channels and sandboxing, NomosUC is able to overcome these limitations.
+%For protocol parties, we define a \partywrapper, \MX, which internally creates and runs all the protocol parties, and it acts as a single endpoint for communication with \Z, \F, and \A through two unidirectional channels each.
+%As such, the channel from \MX to \F is typed with a generic type
+%\begin{tabbing}
+%    $\mi{type} \; \m{P2F[\tau]\{n\}} = \ichoice{\textcolor{red}{\paypot{n}} \; \mb{p2f}: \m{PID} \arrow \m{\tau} \arrow \m{P2F[\tau]\{n\}}}$
+%\end{tabbing}
+%Despite \MX exchanging functionally typed messages, like communicators, it is internally connected to parties via providerless channels that use the intended session type.
+%%The protocol/functionality messages above are functionally typed, as in providerless channels, but even so, protocols parties and functionalities are written using their specific session type (due to the internal providerless channels from \MX to a party), and \MX takes care of the rest. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\rmd{A text snippet of the party wrapper}
+%On a message from \Z, for example, \MX creates parties with:
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, numbers=left, mathescape, frame=single, xleftmargin=2em, xrightmargin=2em]
+%$\nmatch$ $\$$z2p, $\$$f2p, $\$$a2p (
+%  Z2P(pid,m),*,* =>
+%    $\nget$ {z2pn} K $\$$z2p ;
+%    $\nif$ not exists pid $\nthen$
+%      $\$$z2p' $\leftarrow$ channel_init[K1][z2p]; 
+%      $\tg{... rest of the channels ...}$
+%      $\$$c' $\leftarrow$ PS.prot $\leftarrow$ k rng sid 
+%               $\$$z2p' $\$$p2z' $\$$f2p' $\$$p2f';
+%      $\tg{(* store the channels in lists *)}$
+%      lz2p $\leftarrow$ append lz2p (pid, $\$$z2p'); 
+%      $\tg{...}$
+%    $\nelse$ ()
+%    $\$$z2p' $\leftarrow$ search lz2p pid ;
+%    $\nwithdraw$ K K1 z2pn
+%    $\$$z2p'.Z2P ; $\nsend$ $\$$z2p m; 
+%    $\npay$ {z2pn} K1 $\$$z2p' ;
+%  *,F2P(pid,m),* => $\tg{(* identical case *)}$
+%  *,*,A2P(pid,m) => $\tg{(* identical case *)}$
+%)
+%\end{lstlisting}
+%Parties are created when some \m{PID} receives its first message (lines 4-10). 
+%We reference the protocol through a module \inline{PS} in line 7, and, as mentioned above, the providerless channels indicated by \inline{channel_init} and the initialization code for the protocol party are generated and replaced by their constituent processes before being compiled.
+%Finally, \MX forwards the message to the sandboxed party by creating virtual tokens and sending on its channel. 
+%%The session type that the party uses within \MX still  ensures that protocol ordering and import descriptions are preserved. 
+%This design require that the token hierarchy always have at least one virtual token type to enable \MX.
+%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\rmd{comparing partywrapper to bangf}
+%Like EasyUC (and EasyCrypt), the \partywrapper acts almost like an addressing interface where messages include the receipient's \inline{PID}.
+%We reuse the labelling from Figure~\ref{fig:newpandq}. \todo{check}
+%The \partywrapper construction is nearly identical to how we realize $!\F$ and $!\pi$, the multisession extensions of functionalities and parties, respectively. 
+%$!\F$ internally runs arbitrarily many instances of \F and multiplexes message to/from them via a subsession ID (ssid) of type \m{SID[a]} where \m{a} is functionality-specific type often used to encode parameters. 
+%Instead of $m$, $!\F$ receives $\m{sid},m)$, using \m{sid} to route the message.
+%The code to spawn new functionalities is identical: providerless channels and initialization code around \F.
+%Due to the close resemblance, we do not insert the code for $!\F$ here.
+%Multisession protocols, $!\pi$, behave as protocol parties within \MX but internally run arbitrary many subsessions pertaining to their specific \m{PID}.
+%Later in this section, we realize an important theorem for the multisession operator.
+
+%%%%%%%%%%%%%%%%%%
+\rmd{no more channels vs tapes}
+%\paragraph*{\textbf{On Channels vs Tapes}}
+%\todo{This is the passage from the paper: this modeling does not allow representing realistic
+%situations where the number and makeup of components changes as the system evolves. It also does
+%not capture commonplace situations where the sender has only partial information on the identity
+%or code of the recipient. It also doesn’t account for the cost of message addressing and delivery; in
+%a dynamically growing systems this complexity may be an important factor. Finally, it does not
+%account for dynamic generation of new programs.}
+%The UC framework specifically addresses prior models of distributed computation that model communication through names channels, as we do in NomosUC.
+%The work suggests that though such a model is clean an elegant it doesn't allow scenarios where a sender may not have complete information about the identity or code of the receiver.
+%Furthermore, it doesn't account for situations where the components in a system of ITMs evolves and changes, for example dynamic generation of new programs.
+%%%%%%%%%%%%%%%%%%
+
+\subsection{Commitment Example}
+The commitment example is the running one use to explain different parts of NomosUC process code and our typing rules. 
+Here we present the simple way in which the protocol and simulator proof are defined. 
+For brevity, we confine our presentation here to the case of the corrupt sender, and relegate the rest of the presentation to the appendix.
+
+Recall that the honest protocol has the sender using \Fro to commit to a bit $b$ by hashing $(b, nonce)$, where $nonce$ is a blinding factor, and sends the hash to the receiver with a \inline{Commit(b)} message.
+The honest protocol for the case of the honest sender is shown in Section~\ref{sec:example} and contains a call to the ideal functionality that lets it send a message with the label \mb{sendmsg}. 
+We augment the standard \Fro to also allow message passing between the two parties.
+Rather than a single channel we split the communication among two channels with the following sessioin type:
+\scalebox{0.9}{
+\parbox{0cm}{
+\begin{tabbing}
+$\m{rop2f[a]{n}} = \ichoice{$\=$\textcolor{red}{\getpot^1} \mb{hash}: \m{pid} \product \m{(Bit,Int)} \ \tensor \m{rop2f[a]{n}},$ \\
+\>$\textcolor{red}{\getpot^n} \mb{sendmsg}: \m{pid} \product \m{a} \tensor \m{rop2f[a]{n}{m}}}$ \\
+$\m{rof2p[a]{n}} = \echoice{$\=$\textcolor{red}{\paypot^0} \mb{shash}: \m{pid} \product \m{Int} \ \tensor \m{rof2p[a]{n}},$ \\
+\>$\textcolor{red}{\paypot^n} \mb{recvmsg}: \m{pid} \product \m{a} \ \tensor \m{rof2p}[a]{n}}$
+\end{tabbing}
+}}
+
+We define a simulator for \Fcom for the dummy adversary in the real world.
+The dummy adversary suffices for an emulation proof, because it's the strongest possible adversary and there is a deterministic function for adapting a simulator for the dummy adversary to a simulator for any other adversary.
+In the real world with a corrupt sender, \Z observes no messages received from the receiver, and tries to create a commitment and open it to the receiver.
+The ideal world simulator \Sim must ensure that the ideal world opens only if the real world succesfully opens and ensures that the ideal world commits to the same bit as the real world.
+This is done by \Sim by sandboxing \Fro, reading \Z's requests to compute hashes on behalf of the corrupt sender, and peeking at the bit that was committed to.
+
+Like the \partywrapper, \Sim presents a generic interface to \Z where there is no message ordering with a type \m{Z2A[a]\{n\}} and \m{A2Z[a]\{n\}}. 
+Like the real world, messages for \Sim on channels \inline{$\$$z2a} and \inline{$\$$a2z} are indicate messages for \Fro. 
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0em]
+$\nproc$ sim_com[K][K1] : $\tg{(* standard args *)}$ 
+  ($\$$z2a: Z2A[K][rop2f[commsg][roa2f]{1}), 
+  ($\$$a2z: A2Z[K][ro2fp[commsg][rof2a]{0}),
+  $\tg{(* other channels removed for brevity *)}$ = {
+  $\$$s2roRO, $\$$s2roSIM $\leftarrow$ chan_init[K1][RoP2F[commsg]]
+    [rop2f[commsg]]
+  $\$$r2soRO, $\$$ro2sSIM $\leftarrow$ chan_init[K1][RoF2P[commsg]]
+    [rof2p[commsg]]
+  l <- list[((Bit,Int),Int)]
+  $\$$ro $\leftarrow$ Fro $\leftarrow$ k rng sid $\$$ro2sRO $\$$s2roRO l
+  $\tg{(* ... *)}$
+  match $\$$z2a, $\$$p2a, $\$$f2a (
+    Z2A2F,*,* => get {2} K $\$$z2a ;
+      m = $\nrecv$ $\$$z2a ;
+      $\ncase$ m ( QHash(x) =>
+        $\nwithdraw$ K K1 1 ; $\$$s2roSIM.hash 
+        $\npay$ K1 {1} $\$$s2roSIM ; $\nsend$ $\$$s2roSIM pidS
+        $\nsend$ $\$$s2roSIM x ;
+        $\ncase$ $\$$ro2sSIM ( shash =>
+          $\nrecv$ $\$$s2roSIM ; h = $\nrecv$ $\$$s2roSIM 
+          $\$$a2z.F2A2Z ; $\nsend$ $\$$a2z RHash(h)
+  )
+}
+\end{lstlisting}
+
+\subsection{The UC Experiment}
+The UC experiment, \m{execUC}, is a process, like any other, that takes in a security parameter $k$, a random bit string $r$ to be used by all other processes, and offers a linear channel of type
+\begin{center}
+\vspace{-2mm}
+\parbox{0cm}{
+\begin{tabbing} 
+ $\m{execout}[\K][a]\{n\} = \echoice{ \textcolor{red}{\getpot^{\{n : \K\}}}\mb{exec}: $\=$ \ \ichoice{ \mb{out}: \m{Bit} \product 1}}$ 
+ \end{tabbing}}
+\vspace{-2mm}
+\end{center}
+It starts on \mb{exec} with some amount of import $n$ that it gives to \Z, the first process it spawns.
+All \Z in NomosUC offer the same type channel to \m{execUC}:
+\begin{center}
+\vspace{-2mm}
+\parbox{0cm}{
+\begin{tabbing}
+ $\m{EtoZ}[a]$ = $\ichoice{\m{SID}[a] \arrow [\m{PID}] \arrow \echoice{\textcolor{red}{\getpot^n} \mb{start}: \m{Bit} \arrow 1}}$
+ \end{tabbing}}
+\vspace{-2mm}
+\end{center}
+It selects the session id (along with any protocol-specific parameters, \inline{a}) and the list of corrupt parties ([\m{PID}]).
+\m{execUC} uses these are parameters for initializing \MX, \A, and \F.
+Finally \m{execUC} $\mb{start}$s the environment with all the initial import, waits for its bit output indicating its guess for which world it is in, and forwards that bit \mb{out} on its own channel indicated by the type \m{execout[a]\{n\}} above.
+We can now assert the following about \m{execUC}:
+\textbf{As long as the $n$ given to it (and to \Z) is $poly(k)$, the Theorems \ref{lem:local_ppt} and \ref{thm:global_ppt} ensure the entire execution terminates in $poly(k)$}
+
+%As described in the providerless channels paragraph, \m{execUC} calls a \inline{channel_init} and connects them to wrapped processes such as \inline{wrap_adv}.
+%The providerless channel construction replaces these calls, with the generated portions of providerless channels.
+
+%\m{execUC} only spawns processes already wrapped according to the providerless channel specification in Section~\ref{sec:basic}.
+%Therefore, it only has to spawn the part of the channel that connects wrapped processes.
+%We make this separation because the wrapped processes code is autogenerated given a specification of the session type and functional
+%type associated with the process.
+
+%All main processes in NomosUC are wrapped according to the providerless channel specification in Section~\ref{sec:basic}. 
+%Therefore, \m{execUC} creates only the part of the providerless channel (e.g. $\m{PtoQ}$ channel from Figure~\ref{fig:newpandq})
+%and passes them as input to the communicator wrappers.
+%The wrapper creates the intermediate processes and the shared session types providing the linear channel to \m{execUC}.
+%For example \Z and \A are connected by the following channels:
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape]
+%$\$$ztoa $\leftarrow$ channel_init[$\tp{G}$][$\tp{z2a}$]{$\tp{z2an}$}
+%$\$$atoz $\leftarrow$ channel_init[$\tp{G}$][$\tp{a2z}$]{$\tp{a2zn}$}
+%$\tg{...}$
+%$\$$z <- env[G] k rng $\$$ztop $\$$ptoz $\$$ztoa $\$$atoz ;
+%\end{lstlisting}
+
+%\paragraph*{\textbf{Emulation}}
+%The central security definition in UC is indistinguishability between the real and ideal world experiments.
+%It is defined in terms of the ensemble of distributions created by the output bits from the partial term
+%$(\m{execUC}\ \pi\ \F)$ over all possible random inputs and security parameters. 
+%We say that two worlds are indistinguishable if $\forall \A\ \exists \Sim\ \forall Z$
+%the \emph{statistical difference} in ensembles from the two worlds is negligible in $k$ (see
+%Definition~\ref{def:emulation} below).
+%
+%\begin{definition}[Emulation]\label{def:emulation}
+%If two protocols $(\pi, \F_1)$ and $(\phi, \F_2)$, which we refer to only
+%by \PI and $\phi$, emulated each other, then $\forall \A$ of type $\Delta_3'$ well-matched with \PI, there must $\exists \Sim$ of the same type,  well-matched with $\phi$, s.t. $\forall \Z$ : $\msf{execUC}(\pi, \F_1, \Z, \A)$ $\approx$ $\msf{execUC}(\phi, \F_2, \Z, \Sim)$:
+%
+%\begin{mathpar}
+%    \footnotesize
+%    \inferrule*[right=emulate]
+%    {
+%        \F_1 : \Delta_{\F_1}', \F_2 : \Delta_{\F_2}' \semi
+%        \Delta_{\F_1}' \vdash \pi : \Delta_1' \semi \Delta_{\F_2}' \vdash \phi : \Delta_2' \semi \\
+%        \forall \A \ . \ \Delta_4, \Delta_1' \vdash \A :: \Delta_3', \matched{\A}{\pi}, \matched{\A}{\F_1} \\
+%        \Rightarrow \exists \Sim_\A \ . \ (\Delta_3, \Delta_2' \vdash \Sim_\A :: \Delta_3'), \matched{\Sim_\A}{\phi}, \matched{\Sim_\A}{\F_2} \semi \\
+%        \forall \Z \ . \ \matched{\Z}{\pi}, \matched{\Z}{\phi} \Rightarrow \\
+%        \msf{execUC} \ \pi\ \F_1\ \Z\ \A \sim \msf{execUC} \ \phi\ \F_2\ \Z\ \Sim_\A
+%    }
+%    {
+%        % EMULATION DEFINITION
+%        \lambda \A \, . \, \Sim_\A \vdash (\pi, \F_1) \sim (\phi, \F_2)
+%    }
+%\end{mathpar}
+%\end{definition}
+%The notation $e \leftrightarrow e'$ is used to denote two \emph{well-matched} process terms meaning
+%that they have the \emph{same type on all the channels} used and provided.
+%Without a formal logic for security proofs, we rely on session types being well-matched in both executions to ensure some basic form of emulation of import usage and protocol behavior.
+
+% \paragraph*{\textbf{Dummy Lemma}}
+
+
+% introduce composition and show how providerless channels easily connect two processes
+% this should elucidate how connections happen and then the dummy lemma is equivalent just connecting simulators
+% 
+\paragraph*{\textbf{Single Composition}}
+Single composition, defined in Theorem~\ref{thm:singlecomp}, shows that protocols remain secure when a single instance of a functionality is replaced with a protocol that realizes it. 
+It is the composition theorem that is also realized by ILC.
+For example, this theorem suffices for a protocol $\rho$ that uses $\Fcom$ and replaces it with $\protcom$. 
+Ensuring security when a protocol uses multiple instances of the commitment, $!\Fcom$, requires an additional multisession theorem, Theorem~\ref{thm:functor}. 
+It and the single composition theorem presented here suffice to realize UC composition theorem.
+It is important to reiterate that we do not aim any mechanization of UC proofs in this work, therefore, our goal is here to demonstrate that proofs can be specified in NomosUC as a means of validating that we can realize the full expressiveness of UC.
+
+The single composition operator shows how easy it is to arbitrarilty connect parties regardless of the session type.
+The composition operator combines a protocol party of $\rho$ and a protocol party of $\pi$ (which realizes $\F_2$) by piping output from $\rho$ to $\pi$ as if it came from \Z. 
+The result of the operator is a new protocol definition that the party wrapper spawns instances of.
+The code of the operator is shown below
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0em]
+$\nproc$ compose[K,K1] 
+  (k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
+  ($\$$z2ro: z2roS), ($\$$ro2z: ro2zS), ($\$$pi2f: pi2fS), 
+  ($\$$f2pi: f2piS) |- ($\$$cmp: 1) = {
+  $\$$r2p4r, $\$$r2p4p <- channel_init[ro2fS][r2fF]{r2fn}
+  $\$$p2r4r, $\$$p2r4r <- channel_init[f2roS][f2rF]{f2rn}
+  $\$$ro <- rho[K] <- k rng sid pid $\$$z2ro $\$$ro2z 
+    $\$$r2p4r $\$$p2r4r 
+  $\$$pi <- pi[K] <- k rng sid pid $\$$r2p4p $\$$p2r4p 
+    $\$$pi2f $\$$f2pi
+}
+\end{lstlisting}
+Like any other protocol party, the composition operator accepts linear channels of the required type.
+It's channels from \Z are the same type as $\rho$'s communication with \Z, and its channel with the ideal functionality is typed the same as the protocol $\pi$'s session type communicating with its hybrid functionality.
+
+\begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
+If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1$ 
+\end{theorem}
+The dummy lemma is an important result in UC and states that proving emulation w.r.t. a single adversary, the dummy adversary, \DA, is sufficient for emulation.
+The intuition is that \Z can do anything that any \A does by running it internally, and giving its input to \DA.
+The simulator proof for any other \A is a generic simulator constructor that sandboxes \A and \DS and connects them by passing output from \A to \DS.
+It is a straightforward theorem to prove and it useful as validation for the expressiveness of our formulation, and our realization of sandboxing, akin to existing work~\cite{ilc,easyuc,gnuc}.
+Our emulation definition alone ensures that the message and import types align, and our typing rules for virtual tokens ensure that both processes can be correctly simulated. 
+The construction, explained in more detail in Appendix~\ref{sec:dummy}, follows the pattern of the explanatory simulator in Section~\ref{sec:motivate} for routing external message internally with virtual import. The simulator only performs additional work in making inputs from \A to \DS appear as if they are from \Z and vice versa.
+%\todo{without showing the construction it shoulf suffice just to state that we can realize it earlier in the section and point to existing snippets}
+
+%\paragraph*{\textbf{Single Composition}}
+%Recalling Theorem~\ref{thm:singlecomp}, the single composition theorem allows replacement of a \emph{single instance} of an ideal functionality $\F_2$ with a protocol $\pi$ that realizes it in the $\F_1$-hybrid world. 
+%This is a simpler version of composition (than Theorem~\ref{thm:composition}) that is also realized by ILC, and we use it to realize full composition later.
+%The code generation from the providerless channels construction, and the resulting processes introduced earlier in this section make the operator simpler to express.
+%The protocol party $\rho_i$ is connected directly to the analogous party $\pi_i$ inside as a single party inside \MX.
+%%\todo{make sure it's clear that the only things genrated are some process definitions not spawned processes, it's not static. The only challenge is making the process types right for the execution.}
+%\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0em]
+%$\nproc$ compose$\tb{[K,K1,s][z2rho,rho2z][pi2f,f2pi]}$
+%  $\tb{[z2pi,pi2z]\{z2rhon,rho2zn\}\{z2pin,pi2zn\}}$
+%  $\tb{\{pi2fn\}\{f2pin\}}$ :
+%  $\tg{(* standard args for all ITMs: k, rng,...*)}$
+%  ($\$$z_to_p: z2p[K][z2rho]{z2rhon}), $\tg{...}$
+%  ($\$$p_to_f: p2f[K][pi2f]{pi2fn}, $\tg{...}$
+%    $\vdash$ ($\$$ch: 1) =
+%{
+%  $\$$z2p' $\leftarrow$ channel_init[K1][z2rho]{z2rhon}
+%  $\$$p2z' $\leftarrow$ channel_init[K1][rho2z]{rho2zN[
+%$\tg{(* ^^ virtual versions of all channels not listed *)}$
+%  $\$$rhop2f $\leftarrow$ channel_init$\tb{[K1][rho2f]\{rho2fn\}}$ ;
+%  $\$$piz2p $\leftarrow$ wrapz2p$\tb{[K1][rho2f]\{rho2fn\}}$ $\leftarrow$ $\$$rhop2f 
+%  $\$$pip2z $\leftarrow$ channel_init$\tb{[K1][f2rho]\{f2rhon\}}$ ;
+%  $\$$rhof2p $\leftarrow$ wrapf2p$\tb{[K1][f2rho]\{f2rhon\}}$ $\leftarrow$ $\$$pip2z;
+%$\tg{(* channels sending rho2f to z2pi *)}$
+%
+%  $\$$crho $\leftarrow$ PS.rho[K1] $\leftarrow$ 
+%    k rng sid pid $\$$z2p' $\$$p2z'$\$$rhop2f $\$$rhof2p;
+%  $\$$cpi $\leftarrow$ PS.pi[K1] $\leftarrow$ 
+%    k rng sid pid $\$$piz2p $\$$pip2z $\$$p2f' $\$$f2p';
+%  $\$$c <- compose_virtualize[K,K1,s][z2rho,rho2z]
+%    $\tg{(*identical type parameters*)}$ $\leftarrow$
+%    $\$$rhop2f $\$$piz2p $\$$rhof2p $\$$pip2z
+%}
+%\end{lstlisting}
+%The operator is parameterized with a virtual token type, the \m{SID} type $s$, the
+%functional message types for the protocols (in \inline{[]}) and their import parameters (in \inline{\{\}}). These correspond to the types that the providerless channels of $\rho$ or $\pi$ use internally.
+%The session types that \inline{compose} uses (as a protocol) are the same generic types \MX uses to communicate with \Z, \F, or \A.
+%Like \MX it runs the parties internally with virtual providerless channels (lines 9-10) that offer the appropriate session types to $\rho$ and $\pi$, and it routes messages from \MX internally to the channels of $\rho$ and $\pi$ (function \inline{compose_virtualize} on line 22).
+%In this way, its session types makes it easy to use, it reuses the generated providerless channels from the two protocols, and the real session typed channels for the two protocols exist in a sandbox within the \inline{compose} operator process (which itself is in a sandbox inside \MX).
+%Finally, the channels on lines 12-15 connect $\rho$ and $\pi$ together via providerless channels (as $\rho$ would with \F) with \inline{wrap} processes making output from $\rho$ appear as input from $\Z$, to $\pi$ (and vice versa).
+%The emulation definition, but mainly the providerless channels construction, ensures that the import amounts and messages types align between $\rho$ and $\pi$ and between \MX and \Z/$\F_1$.
+
+%The operator interacts with the wrapped versions of the constituent protocols $\rho$ and $\pi$, and its parametric type ensures that even multisession versions of a protocol $\pi$ can be composed with $\rho$.
+%It creates channels between the two parties and wraps the message sent from $\rho$ to appear as input from \Z to $\pi$. 
+%
+%In the next section we talk briefly about building a zero-knowledge UC experient by applying the multisession extension of $!\Fcom$ used throughout this work.
+%We talk about it at a high-level and relegate a more detailed specification of the protocol in the appendix.
+
+Proving UC security under composition requires creating a simulator for $\rho \circ \pi$ that realizes $\F_3$ in Theorem~\ref{thm:singlecomp}. 
+This is done by connecting the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
+Also like the Dummy Lemma, the simulator construction provided in Appendix~\ref{app:simcomp} is agnostic to the types of the composed protocols and can be easily specified thanks to our token hierarchy. 
+
+% \paragraph*{\textbf{UC Composition}}
+\paragraph*{\textbf{Parallel Composition}}
+The multisession operator $!$ when applied to a functionality ($!\F$) or protocol ($!\pi$), allows for the creation of arbitrary many instances of the \F or $\pi$ as described earlier.
+%Messages from a protocol to $!\F$ include an additional user-defined session id that distinguishes different instances. 
+The associated theorem, Theorem~\ref{thm:functor}, is another constrained composition theorem (also realized in SymbolicUC~\cite{symbolicuc} and GNUC~\cite{gnuc}).
+It states that multiple concurrently running instances of $(\pi, F_1)$, run as $!\pi$ and $!\F_1$, can UC realize $!\F_2$. The intuition is basic: the instances of $(\pi,\F_1)$ do not share any state 
+with each other, therefore, simulating $!\F_2$ boils down to running many concurrent simulators in the ideal world. 
+In other words, the simulator for this theorem is simply $!\Sim_\pi$, and its construction is identical to \MX (and $!\F$/$!\pi$) above except the \inline{PID} is replaced by \inline{SID[a]}. 
+\begin{theorem}[Multisession Composition]\label{thm:functor}
+\vspace{-0.5em}
+    \begin{mathpar}
+        \inferrule*[right=MultiComp]
+        {
+            \F_1 \xrightarrow{\pi} \F_2
+        }
+        {
+            !\F_1 \xrightarrow{!\pi} !\F_2
+        }
+    \end{mathpar}
+\end{theorem}
+The last, intermediate theorem we use is called the squash theorem which states: $!!\F \xrightarrow{\msf{squash}} !\F$. Simply put, the \m{squash} protocol squashes two layers of multisession, $(\m{sid}_2, (\m{sid}_2, m))$, into a single $(\m{sid}_2 \times \m{sid}_1, m)$. 
+This is the simplest theorem stated so far and its simulator, that only demultiplexes \m{sid}s for $!!\F$ needs no explanation.
+We use Theorem~\ref{thm:functor}, whose simulator is found in Appendix~\ref{app:ms} and Theorem~\ref{thm:squash}
+to show that the UC composition Theorem~\ref{thm:composition} holds below.
+%\begin{theorem}[Composition]\label{thm:composition}
+%\vspace{-0.5em}
+%\begin{mathpar}
+%\inferrule*[right=compose]
+%{
+%   %(\pi, !\F_1) \sim (\idealP, F_2) \semi (\rho, !\F_2) \sim (\idealP, \F_3) \\ 
+%   !\F_1 \xrightarrow{\pi} \F_2 \and !\F_2 \xrightarrow{\rho} \F_3 \\
+%   %\Rightarrow \exists \Sim(\A) \vdash (\rho^{!\F_2 \rightarrow (!\pi \, \circ \, \msf{squash})}, !\F_1) \sim (\idealP, \F_3)
+%}
+%{
+%   !\F_1 \xrightarrow{\rho \, \circ !\pi \circ \, \msf{squash}} \F_3
+%   %(\rho \, \circ \, !\pi \circ \msf{squash}, !\F_1) \sim (\idealP, \F_3)
+%}
+%\end{mathpar}
+%\end{theorem}
+
+Using the simpler composition theorems above, we can show that a simulator proof for full composition (Theorem~\ref{thm:composition}) can be easily constructed using the proofs of Theorems~\ref{thm:singlecomp}, \ref{thm:functor}, and \ref{thm:squash}.
+\begin{proof}
+The two preconditions of this theorem imply two simulators: $\Sim_{\pi}$ and $\Sim_{\rho}$.
+By applying Theorem~\ref{thm:functor} to the first precondition, we have $!!\F_1 \xrightarrow{!\pi} !\F_2$ with simulator $!\Sim_\pi$. 
+The next precondition implies $!!\F_1 \xrightarrow{\rho \circ !\pi} !\F_3$, by replacing $!\F_2$ with $(!\pi, !!\F_1)$ resulting in simulator $!\Sim_\pi \circ \Sim_\rho$ (by Theorem~\ref{thm:singlecomp}).
+We can squash the double $!!\F_1$ into $!\F_1$ by composing \m{squash} with $\rho \circ !\pi$ resulting in $!\F_1 \xrightarrow{\rho \circ !\pi \circ \m{squash}} \F_2$ (by Theorem~\ref{thm:squash}).
+This final form, the composition we desire, has simulator $\Sim_\m{squash} \circ (!\Sim_\pi \circ \Sim_\rho)$ where $\circ$ for simulators means connecting them in the natural way as in Theorems~\ref{thm:singlecomp}.
+\end{proof}
+
+
+%$!\F_1 \xrightarrow{\pi} \F_2, \, !\F_2 \xrightarrow{\rho} \F_3 \xRightarrow[\left( !!\F_2 \xrightarrow{!\pi} !\F_2 \right)]{\textsc{Multi-Comp}} \; !!\F_1 \xrightarrow{\rho \circ !\pi} \F_3$ \\ \\
+%
+%$\xRightarrow[\left( !\F_1 \xrightarrow{\msf{squash}} !!\F_1 \right)]{\textsc{Squash}} \; !\F_1 \xrightarrow{\rho \circ !\pi \circ \msf{squash}} \F_3$
+%

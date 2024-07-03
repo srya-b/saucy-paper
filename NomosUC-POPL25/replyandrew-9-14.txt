@@ -1,0 +1,89 @@
+-- "#stepsTaken formalization"
+	> this term is not formalized, per se, but we do have a typing rule that captures this inequality it's called the token validity context
+
+-- 	"Finally, the type 1 indicates the session terminates" In UC, we would say, this is a "One Shot" functionality that terminates after one instance. Otherwise we have "Reactive Functionalities" that run many times, possibly forever.
+	> agree this description is worth including
+
+-- "Nomos also allows processes to store functional data"  Is functional data basically everything except channels and special tokens? Should this be Nomos or NomosUC?
+	> for Ankush: i think this is part of what can be stripped from this section as we're trying to drop 1 page from the base language and type system
+
+-- "Write token" clarify that the write token comes from ILC.
+	> done
+
+-- "In this formulation, a message is just a particular form of process, thereby not requiring any special rules for typing" 
+	I don't understand the point of this. Aren't messages things that can be sent over tapes, yet processes in general contain channels and those can't be sent over tapes?
+
+	> for Ankush
+
+-- "Since communication is asynchronous" This paragraph of NomosUC seems mismatched to the UC setting. In UC communication is NOT asynchronous, since processes can't do anything until they are activated again. "As a technical device to ensure that consecutive messages…." This should be not needed in our framework.
+	
+	> for Ankush: I think this will likely also be removed as part of section trimming and agreed on the consecutive message comment
+
+-- 	Shared session types seem complicated. Do we use them for anything except providerless channels?  "Shared channels can introduce non-determinism."
+	
+	> the providerless channels basically offer shared channels to the shell processes that execUC spawns. In order to be explicit about channel creation, even with syntax sugar we are required to end up with a term that looks like:
+		
+		` #p2z <- channel[p2z][K]{n}` 
+	  and then pass it as a parameter to the resulting processes. I just don't see away around execUC using them, but outside of execUC the programmer never has to create/deal with shared channels.
+
+-- This PtoQ / QtoP example is inscrutable. I think it's a correct example, it's just unclear from the writing and looking at it what point it is trying to make. It jumps to "if we try to resolve this by splitting…" without explaining why there's a problem to resolve. "Just a single session type –- " why only use a single type?
+	The Fig 2 example is not bad. There are multiple channels with the name PtoQ, if they are distinct channels could you label them PtoQ and PtoQ' or something.
+	It seems like this example isn't finished, whats the conclusion? What is the resulting type for it?
+	
+	> will refactor first
+
+-- 	"Shell codes". This phrase is too imprecise to use. Shell code usually means something else in security. Pick something else?
+	
+	> by shell code in security i assume you're referring to shell programming. If so, I think this is an okay overloading of that term into a literal because there's no way to confuse the two 
+	  if you mean some other shell code, then maybe wrapper code?
+
+-- "A common scenario in UC is to simulate the execution of other ITMs within a sandbox" This deserves an example.
+	
+	> there was an example of the party wrapper internall sandboxing the protocol parties and showing a code snippet doing `withdrawTokens` but it was removed for space reasons.
+ 	  We could put it back in? or just have it was part of the simulator section I'm writing
+
+-- 	"And the only mechanism to bound the cost of an execution is via import tokens" This isn't true, we could come up with other mechanisms
+	
+	> Agreed this is an incorrect statement, will refactor
+
+-- "P will not be able to perform any execution of its own" This example is too unclear to be illustrative, make it more concrete?
+	
+	> yes this ptoq is unclear I'll change all of it
+
+-- 	Theorem 4 proof. "Multiple steps of inversion" This seems too abrupt.
+	
+	> for Ankush
+
+-- Therefore "ExecUC is defint in terms of a imported user module PS."  Does PS show up anywhere else in the paper? It's not clear why this important to mention.
+
+	> it's important to at least mention why the protocol, enviroment, adversary arent parameters to execUC. Maybe we don't need to say PS but just say it's an imported module in one line.
+
+-- Ideal functionalities subsection, why do we switch to FAuth instead of FCommitment? If it is just to describe this polymorphism trick, we should put that in a different section.
+
+	> yes it's only to highlight a limitation in expressability with session types for F_auth-type communication, to highlight an example of why we need to split communication between two channels instead of using juts one, and that polymorphism can mitigate it. Don't know where would be a better place to put it and we definitely want to be upfront about what limitations session types have for certain kinds of communication patterns.
+
+-- "As a consequence of our design, the multiplexer construction must extend to F as well" It's unclear the main point of this paragraph, try to rephrase.
+
+	> the main point is that we must also run the functionality in a shell process that multiplexes messages from the party wrapper
+
+-- "negl(k) for all k" the forall k is redundant.
+
+	> notes, removed
+
+-- "We do not deal directly with ITMs" not clear, rephrase?
+
+	> we're not reasoning about ITMs with tapes and moving tape head that lets us easily count computational steps, something to that affect I think?? but will remove doens't seem  necessary
+
+-- Given two protocols (pi,F1) which we refer to only by "pi". Let's not use this
+
+	> i assume you mean the latter part "which we refer to only by". If so, yeah i'll remove it
+
+-- Composition theorems. The "For this we can define simulator composition operation…" description seems like it's not insightful, let's reclaim the space. In general this section is very wordy without clear takeaways worth the space. We should state *what* we prove, and describe the parts that are interesting or challenging.
+
+	> Part of cutting this section down by 3/4 page meant we just state what has happened / what we've done. Perhaps the interesting parts are connecting protool parties with the composition operators given how providerless channels work
+
+-- The contrived example with role1_p2f is too abstract.
+
+	> already discussed with Andrew about making the last section about virtual tokens and sandboxing with a simulator exmaple rather than this example and other points about writing ideal functinalities 
+
+

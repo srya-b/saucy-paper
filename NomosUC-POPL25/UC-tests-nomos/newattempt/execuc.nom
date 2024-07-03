@@ -1,0 +1,75 @@
+-- execUC <=> Z
+-- execUC waits for init from Z with SID and a crupt list
+--   --> execUC spawns other parties and tells Z to start
+--         --> execUC wait for Z to send it's output bit and termiantes
+stype EtoZ[a]{n} = +{ init: a ^ list[Int] -> &{ |{n}> start: +{ out: Bit -> 1} }
+
+-- main <=> execUC
+-- experiment gets n import with `exec`
+--   --> waits for output bit and terminates
+stype execout{n} = <{n}| &{ exec: +{ out: Bit -> 1 }} ;
+
+-- execUC program
+-- spawn channels, then spawn Z and then the rest then wait for Z output
+proc execUC[K][K1][p2f,f2p][z2p,p2z][a2p,p2a],[f2a,a2f]{p2fn,f2pn}{z2pn,p2zn}{a2pn,p2an}{f2an,a2fn}{n}:
+  (k: Int), (rng: [Bit]) |- ($d: execout{n}) =
+{
+  case $d (
+    exec => get $d {n} ;
+      --#z_to_pw <- channel_init[K][z2p]{z2pn} ; 
+      --#pw_to_z <- channel_init[K][p2z]{p2zn} ; 
+
+      --#pw_to_f <- channel_init[K][p2f]{p2fn} ; 
+      --#f_to_pw <- channel_init[K][f2p]{f2pn} ; 
+
+      --#a_to_pw <- channel_init[K][a2p] ; 
+      --#pw_to_a <- channel_init[K][p2a] ; 
+
+      --#a_to_f <- channel_init[K][a2f][K] ; 
+      --#f_to_a <- channel_init[K][f2a][K] ; 
+      --
+      --#z_to_a <- channel_init[K][z2a][K] ; 
+      --#a_to_z <- channel_init[K][a2z][K] ; 
+  
+      -- communication with the party wrapper is always a simple
+      -- session type to allow multiplexing
+      $pw2z <- pl_channel[K][P2Z[p2z]]{p2zn} <- k rng ;
+      $pw2f <- pl_channel[K][P2F[p2f]]{p2fn} <- k rng ;
+      $pw2a <- pl_channel[K][P2A[p2a]]{p2an} <- k rng ;
+      $z2pw <- pl_channel[K][Z2P[z2p]]{z2pn} <- k rng ;
+      $f2pw <- pl_channel[K][F2P[f2p]]{f2pn} <- k rng ;
+      $a2pw <- pl_channel[K][A2P[a2p]]{a2pn} <- k rng ;
+      -- communication between Z and A also has a generic type
+      -- to allow for arbitrary A to be connected to Z
+      $z2a <- pl_channel[K][Z2A[z2a]]{z2an} <- k rng ;
+      $a2z <- pl_channel[K][A2Z[a2z]]{a2zn} <- k rng ;
+      -- messages between A to F can have a specific session type
+      -- defined by the functionality
+      --              functional  session
+      --                     vvv  vvv
+      $f2a <- pl_channel[K][f2af,f2as]{f2an} <- k rng ;
+      $a2f <- pl_channel[K][a2ff,a2fs]{a2fn} <- k rng ;
+
+      -- spawn Z and get the experiment paramters from it
+      $z <- PS.env <- k rng $z2pw $pw2z $z2a $a2z
+
+      case $z (
+        init =>
+          sid = recv $z ;
+          clist = recv $z ;
+          $pw <- party_wrapper[K][K1][p2z,z2p][p2f,f2p][p2a,a2p] <- 
+                  k rng sid clist $pw2z $z2pw $pw2f $f2pw $pw2a $a2pw
+
+          $f <- f_wrapper[K][K1][f2p,p2f][f2a,a2f] <-
+                  k rng sid clist #f_to_pw #pw_to_f #f_to_a #a_to_f ;
+
+          $a <- PS.adv[K] <- k rng sid clist #a_to_z #z_to_a #a_to_pw #pw_to_a #a_to_f #f_to_a ;
+          
+          -- give Z all the initial import and let it run
+          pay $z K {n}
+          $z.start ;
+
+          $d <- $z ;
+      )
+}
+

@@ -1,0 +1,42 @@
+proc env_ro[K] :
+	(k: Int), (rng: [Bit]), (sid: session[a]),
+	(#z_to_pw: comm[z2pmsg[rop2f]][2]), (#pw_to_z: comm[p2zmsg[rof2p]][0]),
+	(#z_to_a: comm[z2amsg[roa2f]][1]), (#a_to_a: comm[a2zmsg[roz2a]][0]) |- (#ch: EtoZ[a]) =
+{
+	sid = SID("test")
+	clist = pnil[pid] <- ;
+	
+	#ch.init ;
+	send #ch sid ;
+	send #ch clist ;
+
+	b <- sample rng 5 ;
+
+	i = 0
+	while i < b {
+		p <- sample rng k ;
+		#z_to_pw.SEND ;
+		pay #z_to_pw {2} ;
+		send #z_to_pw Z2P(i, QHash(p))
+
+		$ch <- env_receive 
+		while True {
+		  #pw_to_z.RECV 
+		  case #pw_to_z (
+		  	yes =>
+		  		msg = recv #pw_to_z ;
+		  		case msg (
+		  			F2P(i, RHash(hash)) =>
+		  				print "hash {}", hash
+		  		)
+					break ;
+				no =>
+		  )
+		}
+
+	$ch.output ;
+	send $ch 1 ;
+}
+					
+
+}

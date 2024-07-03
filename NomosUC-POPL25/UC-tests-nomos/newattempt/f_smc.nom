@@ -1,0 +1,26 @@
+stype sender[a] = +{ sendmsg: PID * a * 1 }
+stype receiver[a] = &{ recvmsg: PID -> a -> 1}
+stype adv[a] = &{ leakmsg: a -> +{ deliver: 1 }}
+
+(* or we can actually achieve this via one channel *)
+stype smc[a] = +{ sendmsg: pid * a * &{ recvmsg: pid -> a -> 1 }}
+
+type smc_sid = SMC of PID ^ PID ;
+
+proc f_smc[K][a] : 
+  (k: Int), (rng: [Bit]), (sid: SID[smc_sid]), 
+  ($S: sender[a]), ($R: receiver[a]), ($A: adv[a]) |- ($ch: 1) = 
+{
+  let pidS :: PID, pidR :: PID = sid ;
+  case $S (
+    sendmsg => pid = recv $S ; m = recv $S ;
+               if pid == pidS then
+                 $A.leakmsg ; send $A m ;
+                 case $A (
+                   deliver => $R.recvmsg ;
+                              send $R m ;
+                 )
+               else error "bad sender " ++ pid 
+  )
+               
+}

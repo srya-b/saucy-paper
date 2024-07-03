@@ -1,0 +1,167 @@
+--stype party[a]{n}{m} = +{ |{1}> hash: pid ^ int -> hashing[a],
+--                          |{n}> sendmsg: pid ^ pid ^ a -> party[a],
+--                          |{0}> recvmsg: pid -> newmsg[a] }
+--stype hashing[a] = &{ <{0}| shash: pid ^ int -> party[a] }
+--stype newmsg[a]{n}{m} = &{ <{m}| yes: pid ^ pid ^ a -> party[a],
+--                           <{0}| no: pid ^ party[a] }
+--
+stype rop2f[a]{n}{m} = +{ |{1}> hash: pid ^ int ^ rop2f[a]{n}{m},
+                          |{n}> sendmsg: pid ^ pid ^ rop2f[a]{n}{m} }
+stype rof2p[a]{n}{m} = &{ <{0}| shash: pid -> Int -> rof2p[a]{n}{m},
+                          <{m} | recvmsg: pid -> pid -> a -> rof2p{n}{m} } 
+
+type rop2f[a] = QHash of Int | Send of pid ^ a | Recv ;
+type rof2p[a] = RHash of Int | Yes of pid ^ a | No ;
+
+proc F_ro_init[K]{n,m}:
+  (k: Int), (rng: [Bit]), (sid: session[1]),
+  ($p: party[a]{n}{m}), (t: dict[(int,int)]), (rpid: Int),
+-- TODO: this is the process execUC calls and below is the process that this calls after creating the list 
+
+proc F_ro[K]{n,m}:
+  (k: Int), (rng: [Bit]), (sid: session[1]),
+  ($p: party[a]{n}{m}), (t: dict[(int,int)]), (rpid: Int),
+  (msg: a)  |- ($ch: 1) =
+{
+  case $p (
+    hash =>
+      get {1} $p ;
+      p = recv $p ;
+      i = recv $p ;
+      if i in t
+      then
+        h = query rt i ;
+        $p.shash ;
+        send $p p ;
+        send $p h ;
+        $ch <- F_ro[K] <- k rng sid $p t (* todo: some defaul value for `msg` *)
+      else
+        h = sample r k ;
+        t' <- add t i h ;
+        $p.shash ;
+        send $p p ;
+        send $p h ;
+        $ch <- F_ro[K] <- k rng sid $p t' 
+  | sendmsg =>
+      get {n} $p ;
+      spid, rpid, msg = recv $p ;
+      $ch <- F_ro_w_msg[K] <- k rng sid $p t rpid msg ;
+  | recvmsg => 
+      get {0} $p ;
+      rpid = recv $p ;
+      if msg != (* default value *)
+      then
+        $p.yes ;
+        pay {m} $p ;
+        send $p rpid ;
+        send $p msg ;
+        $ch <- F_ro[K] <- k rng sid $p t -1 None ;
+      else
+        $p.no ;
+        pay {0} $p ;
+        send $p rpid ;
+        $ch <- F_ro[K] <- k rng sid $p t -1 None ;
+      end
+  )
+}
+
+proc func_f2p[K][f2p][p2f]:
+  (#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: party[a]) =
+{
+  $p2f <- acquire #p2f ;
+  $p2f.RECV ;
+  case $p2f (
+    yes =>
+      P2F(pid, m) = recv $p2f ;
+      #p2f <- release $p2f ;
+      case m (
+        QHash(b) => 
+          $p.hash ;
+          send $p pid ;
+          send $p msg ;
+          $p <- func_f2p_2[K][f2p][p2f] <- #p2f #f2p 
+      | Send(r, msg) =>
+          $p.sendmsg ;
+          send $p pid ;
+          send $p r ;
+          send $p msg ;
+          $p <- func_f2p[K][f2p][p2f] <- #f2p #p2f
+      | Recv =>
+          $p.recvmsg ;
+          send $p pid ;
+          $p <- func_f2p_3[K][f2p][p2f] <- #p2f #f2p
+    )
+  | no =>
+    #p2f <- release $p2f ;
+    $p <- func_f2p[K][f2p][p2f] <- #p2f #f2p 
+  )
+} 
+
+proc func_f2p_2[K][f2p][p2f]:
+  (#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: hashing[a]) =
+{
+  case $p (
+    shash =>
+      pid = recv $p ;
+      h = recv $p ;
+      $p2f <- acquire #p2f ;
+      $p2f.SEND ;
+      send $p2f F2P(pid, h) ;
+      #p2f <- release $p2f ;
+      $p <- func_f2p[K][f2p][p2f] <- #f2p #p2f 
+  )
+}
+
+stype party[a] = +{ hash: pid ^ int -> hashing[a],
+                    sendmsg: pid ^ pid ^ a -> party[a],
+                    recvmsg: pid -> newmsg[a] }
+stype hashing[a] = &{ shash: pid ^ int -> party[a] }
+stype newmsg[a] = &{ yes: pid ^ pid ^ a -> party[a],
+                     no: pid ^ party[a] }
+
+type rop2f[a] = QHash of Int | Send of pid ^ a | Recv ;
+type rof2p[a] = RHash of Int | Yes of pid ^ a | No ;
+
+
+proc func_f2p_3[K][f2p][p2f]:
+  (#p2f: comm[p2fmsg[p2f]][K]), (#f2p: comm[f2pmsg[f2p]][K]) |- ($p: newmsg[a]) =
+{
+  case $p2f (
+    yes =>
+      spid, rpid, msg = recv $p ; 
+      $p2f <- acquire #p2f ;
+      $p2f.SEND ;
+      send $p2f F2P(rpid, Yes(spid, msg)) ;
+      #p2f <- release $p2f ;
+      $p <- func_f2p[K][f2p][p2f] <- #f2p #p2f 
+  | no =>
+      pid = recv $p ;
+      $p2f <- acquire #p2f ;
+      $p2f.SEND ;
+      send $p2f F2P(pid, No) ;
+      #p2f <- release $p2f ;
+      $p <- func_f2p[K][f2p][p2f] <- #f2p #p2f 
+  )
+}
+
+proc f_wrapper[K][K1][f2p][p2f]:
+  (k: Int), (rng: [Bit]), (sid: session[1]),
+  (#pw_to_f: comm[p2fmsg[p2f]][K]), (#f_to_pw: comm[f2pmsg[f2p]][K]),
+  (#a_to_f: comm[a2fmsg[a2f]][K]), (#f_to_a: comm[f2amsg[f2a]][K])  |- ($ch: 1) =
+{
+  $lp2fcomm <- pnil[comm[p2fmsg[p2f]]][K1] <- ;
+  $f2pcomm <- pnil[comm[f2pmsg][f2p]][K1] <- ;
+  
+  #p2fcomm <- communicator_init[K1] <- ;
+  #f2pcomm <- communciator_init[K1] <- ;
+
+  $p <- func_f2p[K][f2p][p2f] <- #f2pcomm #p2fcomm ;
+  $f <- F_ro[K1] <- k rng sid $p ;
+
+  $lp2fcomm' <- append $lp2fcomm #p2fcomm ;
+  $lf2pcomm' <- append $lf2pcomm #f2pcomm ;
+
+  (* Iterate over communicators in the list and the real communicators and forward messages *)
+  
+}
+      

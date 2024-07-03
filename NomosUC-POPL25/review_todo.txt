@@ -1,0 +1,25 @@
+Surya
+======
+* on non-standard fCom: it's to show programming in UC does it really matter?
+* on not simulating message passing: maybe the right wording here is not sandboxing f_chan, we can jut do that code manually. I think the point is missed and the reviewer things we don't simulate ths part of the real world when really we mean we don't sandbox f_chan
+* why can't we unify import potential?
+	first, that's not how the import mechanism works, you could do it this way to realize a notion of polynomial time, but import doesn't let how much polynomial work a process can do, it's just a loose constraight
+* include more meaningful composition example like a zk protocol on top of commitment
+* explore difference between sandboxing and just running parties really:
+	in reality this is a a convenience instead of giving import away
+    furthermore imagine a simulator that has to make a polynomial number of calls to a simulated process, if it was a real process it ends up being the environment just fucks up giving not enough import. Before it's juts the user-define polynomial that determines what the simulator can do now it's the environment contorlling that
+* actually capturing a hard problem like D-H in NomosUC. What would the type be, how would type system judge ths?
+- reviewer 2 wants a better example than commitment. D-H might be the one to aim for or comosed zk proof
+
+reviewer3:
+- doesn't seem to undersatnd what import is still. We didn't choose the term that' sjust what it's called in UC
+- asks is semantic steps consumes import or potential. It's in the paper but maybe this hints at too much detail in those sections for a non-pl person?
+- communicators: they are concretely implemented as an abstract channel and the nomosuc system creates them based on the types being connected
+- wasn't clear that the red annotations were import annotations, should probably state that earlier in an example with f_com rater than later in execuc
+
+
+
+Ankush
+=======
+- Cut down on Nomos type system and we can devote more to the UC part of it
+

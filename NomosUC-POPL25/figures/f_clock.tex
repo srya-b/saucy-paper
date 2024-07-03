@@ -1,0 +1,21 @@
+\begin{bbox}[title={Functionality $\F_{\msf{clock}}(\mathcal{P})$}]
+
+Initialize for each $p_i \in \mathcal{P}$ a bit $d_i := 0$
+
+\OnInput \inmsg{RoundOK} \color{red} $1 \token$ \color{black} from $P_i$:
+	\begin{renumerate}
+	\item Set $d_i = 1$
+	\item If for all $p_j \in \mathcal{H} : d_j = 1$ then reset $d_i := 0$ for all $p_j \in \mathcal{P}$
+	\item \Send (switch, $p_i$) $\rightarrow \Adversary$
+	\end{renumerate}
+
+\OnInput \inmsg{RequestRound} \color{red} $0 \token$ \color{black} from $P_i$:
+	\begin{renumerate}
+	\item \Send $d_i \rightarrow P_i$
+	\end{renumerate}
+
+\OnInput \inmsg{corrupt}{$p_i$} \color{red} $0 \token$ \color{black} from \Adversary:
+	\begin{renumerate}
+	\item Set $\mathcal{H} := \mathcal{H} - p_i$
+	\end{renumerate}
+\end{bbox}

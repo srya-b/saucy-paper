@@ -1,0 +1,97 @@
+Section 3
+=========
+no typing rules and noe import
+here we only want to introduce the functionality and explain the process code
+we only do the ideal functionality here an talk about the proram constructs
+-- makes sense that it's only communication between processes over channels
+
+Section 4
+=========
+
+
+
+
+
+F_coinflip:
+* on input (fllip) from P_f:
+    - b <-$- {0,1}^1
+    - Leak (flip) to A 
+* on input (recv) from P_i:
+    - if b: Send b --> P_i
+    - else: Send -1 --> P_i
+
+F_coinflip:
+* on input (flip) from P_f:
+    - b <-$- {0,1}^1 
+    - Leak (flip) to A
+    * on input (getflip) from P_i:
+        - send b to P_i
+
+F_coinflip:
+* on input (flip) from P_f
+    * on input (flip) from P_r
+        - b <-$- {0,1}^1
+        * on input (getflip) frp P_i:
+            - Send b --> P_i
+
+
+prot_coinflip_flipper:
+* on input (flip) from Z:
+    - b <-$- {0,1}^1
+    - send (Commit, b) to F_com
+    * on input (send_to_flipper, r) from F_com:
+        - Send (open) to F_com
+        - flip = r xor b
+        * on input (getflip) from Z:
+            - Send flip to Z
+
+prot_coinflip_recv:
+* on input (Committed) from F_com:
+    r <-$- {0,1}^1
+    Send (send_to_flipper, r) to F_com
+    * on input (open, b) from F_com:
+        - flip = r xor b
+        * on input (getflip) from Z:
+            - Send flip to Z
+
+environment_flipper_crupt:
+    - b <-$- {0,1}^1
+    * Send Z2A2P(P_f, (Commit, b)) to A
+    - wait to receive P2A2Z(P_f, (send, r)) from A  // the random bit sent 
+    - Send Z2A2P(P_f, (Open)) to A 
+    - Send (getflip) to P_r
+    - receive (flip) from P_r
+    - check b xor r == flip
+
+Simulator_if_flipper_crupt:
+* on input Z2A2P(flipper, (Commit, b)) from Z:
+    - Send (flip) to flipper
+    * on input (flip) from F_coinflip:
+        - f = Get flip outcome from flipper 
+        - r = b xor f 
+        - Send P2A2Z(flipper, (send_to_flipper, r)) to Z
+        ...
+
+
+Simulator_if_receiver_crupt:
+* on input (flip) from F_coinflip
+    - Send P2A2Z(receiver, committed) to Z
+
+    * on input Z2A2P(receiver, (send_to_flipper, r)) from Z:
+        - store r
+        - Send A2P(receiver, (recv)) to receiver
+        * recv P2A(receiver, flip) from receiver
+        - b <- r xor f 
+        - Send P2A2Z(receiver, (open, b)) to Z
+
+
+* mention the polymorphic K's case in F_coinflip to enforce the sequentiality of the flip then the receive from the receiver 
+* encodes more about what the functionality does in the type itsel
+* session types say how communication on a channel is ordered, but now we can define a relationship between the channels (channel1 does X before channel2 can do Y) 
+
+
+
+=======================
+* if you look at the simplest F_com that has no extra functionality of sendiung a message, it is trivially simple, just a series of reads and writes and all encapsulated in a single process
+* for the more complicated F_com you end up writing functionalities as multiple processes like a state transition machine that follows the changing session types
+    > you could probably come up with some syntax sugar to simplify this for example if the state of one channel changed by not another you can only define the new one and reuse the  message handler of the other one.

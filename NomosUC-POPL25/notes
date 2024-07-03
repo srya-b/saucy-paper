@@ -1,0 +1,195 @@
+Distinguishing Virtual Tokens versus everything in the real
+============================================================
+the most likely scenario is an adversary that a simulator needs to run whose output depends on the amount of import it receives
+in such a case the simulator gives all of its tokens to the adversary to run and has none left for itself
+the environment would give enough tokens for the real world adverasry and the simulator getting the same results in the simulator exhausting 
+all of its tokens. 
+TODO: find a some concrete example of such an adversary and protocol/functionality example where such a situation arises. Perhaps the doubling dictionary example. 
+
+
+Describing the Full Composition Capturing the Multisession
+===========================================================
+the reviewer mentioned running arbitrary many protocols as subroutines and the hybrid games involved in replacing all of them one-by-one with the functioaliies that they realize
+this boils down to the multisession theorem where arbitrary many instances of the SAME functionaliy are replaced. Going from this to arbitrary different protocol is a trivial reduction
+TODO: highlight in greater detail that the full composition theorem that we realize is derived from our construction of the multisession theorems in the appendix. More specifically we 
+mention at a high level the reasoning required for the full proof with the hybrid words run within the environment in the appendix. Just need to highlight that part in the composition 
+section in greater detail 
+
+f_auth not being sufficient to realize F_com in our example
+============================================================
+because we do not directly activate the adversary to leak the message to it. Regular f_auth does this and our f_com does _not_ leak any information to the simulator when a commit/open is performed. 
+This interface is not the same.
+TODO: point out that our version of channels relies on the polling mechanism for getting leaks from the functionality
+
+probabilistic case for f_com in the f_ro model
+===============================================
+must mention what happens in the corner cases if there is a hash collision.
+TODO: spell out in the simulator what happens in each of the cases of the hash being found, not being found, and a collision being found
+
+
+talk about cryptographic reductions like DH hardness
+=====================================================
+we don't mention how hardness assumptions like discrete log is handled in our type system
+TODO: talk about the reduction that takes place and how the type system would fail to type check the reduction as being polynomial time at that step
+
+
+
+
+TODO: 
+-- finish the DH assumption section, talk specifically about not being able to select a polynomial regardless of how much import the session type gives the process that attempts to find the discrete log. The reduction algirithm, and in fact the discrete log solver itself fails to type check. NomosUC forces you to be explicit about the reduction and you must implement the black box
+-- expand the multisession discussion into the main paper and specifically address parallel composition here. Multisession extends to multiple instances of the same protocol and identify how replaces different ones is a simple extension. Specifically mention the hybrid game some more.
+    > here specifically the problem with arbitrary parallel composition is that operators are difficult to generalize to arbitrary protocols. Multisession is easy because of it. The need to specify a static type for the multisession operator requires defining new parallel composed types which is possible but takes away the generic and modular design nature of UC. It is usually the case that we implement a new functioaity that captures all the subroutines necessary and then realize it with a single protocol rather than compose arbitrary parallel subroutines (i think?).
+-- clarify what is import and what is potential and why we need both. Mostly refer to the UC discussion on polynomial time notion for this. This is a design decision that was carefully thought out and made in UC rather than a novel notion proposed by us. 
+-- write the missing code for the parts in the paper. Mainly the simulators and the commitment example.
+-- Clarify how the commitment example is different from canonical literature, why it's different (polling for leaks), describe how this changes the interface of the commitment
+-- f_auth as defined can't realize f_com in the standard way, clarify this
+-- enumerate how the simulator behaves in all of the cases for the corrupt committer
+
+
+TODO
+-- write examples for the 
+
+
+
+- implement protocol and functionality for the dictionary and a simulator that does some work on its own
+- implement the pedersen commitment example and show a reduction with the environment as a black box
+
+- zero knowledge composition exampe
+- reduction exmple 
+
+================================================================================================================
+- database example
+- trim NomosUC => check which definitions are actually needed for the proofs i suspect since we relegate the proofs of the preservation and progress theorems to the appendix the relevant process definitions
+    also belong in the appendix 
+- 
+
+
+
+okay the canonical commitment-base is the hamiltonian cycle zk blum protocol:
+
+On input (G, h) to Prover from Z:
+    - if h isn't a hamiltonian path reject 
+    * for k = [1..n]:
+        - permutation p[i] over nodes [n]
+        - commit to each of the (i,j) in [n]^2 edges of this graph (Commit, (i, j, k, e) where e=1 if edge between p[i] and p[j] (multisession with (i,j,k) as ssid)
+        - then commit to the 
+
+
+-----------------------------------------------
+for the purposes of demonstration of a reduction:
+
+pedersen half-commitment where you only do g^x 
+
+Reviewer B
+===========
+
+
+
+|| numbering lines up for F_db snippets should line up
+|| bring it out somewhere that the process F_db even though it receives only 1 import for every activation, over all activatios it has `n` import and you're generating potential polynomial in that `n`
+|| present both potential and import at the same time and connect it better to the F_db example in canetti f_db + import / potential together are inseparable 
+|| make use of color highlighting to do it, make the import/potential statements clear and add both of them in te same figure
+-- why are these missing from canetti paper. the best case is viewing it from here gives us insight that's applicable to UC but it's clutter  
+|| make the point here that in ITMs sandboxing is just encoded on the table of the Simulator whereas here we have separate processes
+|| why static types: if you allow userst to dynamicaly create virtual tokens types, you can call that in a recursive function / in a loop ==> same reason you don't let people define types in any language
+-- (ankush) we can specify in the type system that at some point the process will run out, and you can either terminate or wait until it gets import, can be encoded in the type
+-- uc has composition and uses it informally as a good thing (so do PL people as aformal good thing) explaining those correspondences might make sense
+-- can we unify these, db isn't a useful example it's juts contrived to explain, meanwhile the commitment is useful can we do both? maybe a timestamping service. Commit to an appending thing 
+    commitments in F_db  and combine the two examples
+-- (Appendix) Create an example in code of what expanded code looks like with generated processes
+-- check EasyCrypto assertion of addressing
+
+
+|| in the intro drive home why we want session types for UC not just that we want to capture a PPT notion (borrow some language from the RAST paper)
+|| (it's all processes but we can say we allow functions and calling them consumes potential) TODO from IV.A about function calls. in actuality those are spawning new processes that provide a new list as the provided channel, how do we actually handle those as function calls? does this mean that we have to virtualize pappend or should we actually just write in the code for that inline?
+|| really drive home providerless channel compile-time creation as the lynch-pin
+|| make clear import is constant on communicators so that's a value programmer must speficy (can we figure it automatically out from the session type?)
+-- trim providerless channels its wayyyy too long
+-- must flesh out the composition sections 
+|| the multisession operators make it clear why it's so simple
+?? channels vs tapes: look at ILC liao
+-- sketch the intermediate theorem proofs more so that concluding full composition is easier to believe.
+|| WRITE TOKEN!!!!!!!!!!!!!!
+-- make the process judgement very clear
+-- address typing rules at the end of "import" and make it flow and cohesive, currently they're just thrown in there
+|| add multiparty session types to the related works or background section
+
+?? we can drop fig 1(a) and just describe it in text
+
+
+Thought on multiparty session types:
+> different parties can have different communication patterns with functionalities, MPSTs probably have one type for multiple parties to communicate with
+
+|| finalize and ship sections III 
+|| section IV to andrew and ankush
+-- come up with a Fdb timestamping example or something for it
+-- put typing rules of base NomosUC system into appendix and combine with "selected typing rules"
+|| put configuration stuff and explain configurations
+|| from the background it seems like we're introducing import rather than it being a part of UC
+-- make clear that functionalities are always wrapped because they have to interact with the party wrapper as a single endpoint
+
+
+# Notes Section III 
+> mention protocol ordering for larger functionalities and complex protocols
+
+
+|| judgement is enough to talk about
+?? can explain the pay and get in text
+|| get rid of configuration
+|| explain the configuration and such
+
+Questions to answer
+-------------------
+-- Does RAST make local judgements about processes? if so we state directly that this another reason to build off Nomos.
+
+
+==============================================
+Abstract claims:
+> realize an "adequate" polynoial time notion using rast-inspired IST --> import, localPPT, and globalPPT
+> design NomosUC to realize the full expressiveness of UC ---> virtual tokens, providerless channels, arbitrary parties, composition 
+> run through standard uc lemmas and theorems ---> Dummy Lemma 
+
+
+Section III.
+> we state that a central focus of this work is to explore the role that session types can play in defining and analyzing ideal functionaities but this isn't mentioned in the intro nor is it really argued in the rest of the paper. We're more working with the assumption that they seem to apply well and trying to apply them
+> introuce provider and client: talked about?
+> we point out that functionalities can take any number of channels and we mention how (via code generation) in section execuc: IS IT ADDRESSED? DO WE NEED IT?
+
+Section IV
+> f is the connection rate, ensure consistent terminology
+
+Section V SAFETY
+> skipping for now, coe back to it
+
+=============================================
+-- clean up the code examples in the appendix make them all consistent
+-- run through the motivation page and make sure to hit the points that every new construction is okay with polytime
+-- can we throw out some of the dummy lemma or emulation to put in some details of the composition operator
+-- final grammar + spell check pass
+
+?? perhaps we can codense explaination of F_db session type, rather than all session type, and then code just put them into one paragraph
+^^ what would is the best use of that space?
+
+
+
+---------------------------------------------------
+revert to f_com as the main example in the paper
+minimize f_db specifically to where it is useful for exaplaining why we need virtual tokens and potential rather than just import tokens.
+    > highlight the race conditions part and state that this is a motivation taken directly from the UC paper rather than out own conception
+revamp providerless channels and sandboxing
+
+
+
+
+
+-------------------------------------------
++ virtual tokens we can use the simulator for f_com as an example of it
+
+
+* introduce f_com and explain session types and process code + prot_com code
+    describe the protocol
+
+* in the import section motivate potential by Fro in the real world
+
+* motivate virtual tokens with simcom
+

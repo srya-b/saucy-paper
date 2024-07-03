@@ -1,0 +1,66 @@
+In the import section, after we introduce the left and right import payment rules we should revisit the commitment session types and show them 
+annotated with the import sent (1 given to F_com, or maybe 0) and explain briefly why we choose these values. 
+
+
+
+
+-------------------------------
+
+* why can't we unify import and potential rather than having one or the other
+	-- relevant: the functionalities in NomosUC are parameteric in import and don't define precise bounds anyway
+					so the reason has to be in the simulator somewhere rather than protocols
+
+	> in order to perform a simulation the simulator needs to activate the real world functionality a polynomial number of times
+		where as the adversary only activates a linear or a constant number of times
+		-- TODO: find a cocrete situation where this is the case
+		-- the following rule solves this?
+				set the import to the adversaries in both worlds to be the max of the two
+				does this pose problems for the dummy lemma?
+				-- 
+
+	> maybe in composition this becomes a problem
+		-- when you i
+
+--------------------------------
+
+Fundamental problem with having the functionalities be parametric in the maount of import they accept?
+	we want to enforce at least some minimum import requirements so that functionalities can at least do some polynomial work when activated but IST can't enforce that constraint
+	when we compose we enter a dilemma trying to express the composition operator:
+		protocol rho, as defined, takes in a concrete amount of import and gives out a concrete amount of import to the hybrid functionality (it concretizes that import parameter)
+		protocol pi does the same
+		the composition operator can not be applied as written unless the two imports match perfectly
+			is this okay?? perhaps because then rho is the one constraining the required efficient of protocols that it can rely on. This departs from traditional UC where there aren't strict import requirements (they are implied by machines halting)
+
+seems okay it mimics what would happen in UC as well if who doesn't give enough import to pi
+
+--------------------------------
+
+problem wit unifying import and potential 
+
+Imagine functionalities that make a random but poynomial number of computations on any given activation. When decidin the polynomial through which all computation is judged, you would have to modify the code for the adversary, the code for the protocols, the code for the environment, to adapt to greater needs ot runtime. The system becomes cumbersome to work with without the abstraction of import/potential.
+
+--------------------------------
+
+real running vs. sandboxing
+
+1. setting: multisession operator
+	You statically define the amount of import given to !F on each activation. If !F has to give actual import to instances of F, internally, yo 
+
+
+!F --(squash)--> !!F
+
+F1 --(pi)--> F2
+-------------------
+!F1 --(!pi)--> !F2
+
+
+2. setting: simulators
+	if you do real emulation the environment closely controls the amount of polynomial work that the simulator can do. If the simulator relies on activating some real world functionality a polynomial number of times that is not known apriori, now we have to tweak the import given to S by Z rather than just modifying the polynomial in the execution.
+
+	i guess the tl;dr is that we want this parameter setting to exist outside of the code running in the execution but rather be a parameter to the execution
+
+
+3. setting: hybrid experiments
+	is there an issue here?
+
+--------------------------------------

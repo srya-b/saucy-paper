@@ -1,0 +1,99 @@
+stype db[k][v] = +{ <{1} store: PID -> k -> v -> &{ OK: PID -> db[k][v] }
+                    <{0} retreive: PID -> k -> &{ yes: PID -> v,
+                                                  no: PID -> db[k][v] }}
+stype adv[k][v] = +{ <{1} store: k -> v -> &{ OK: adv[k][v]},
+                     <{0} retreive: k -> &{ yes: v,
+                                            no: db[k][v]}}
+
+proc f_db_init[k][v] :
+  (* the usual params k, sid, crupt, etc, no f2p in this case *)
+  ($p2f: db[k][v]), ($f2p: 1), ($a2f: adv[k][v]), ($f2a: 1) |- ($c: 1) =
+{
+  (* instantiate a list/table *) 
+  $tb <- pnil[(k,v)] <- ; 
+  $c <- f_db[k][v] <- (* params *) $p2f $f2p $a2f $f2a $tb 
+}
+
+stype lserve = &{ <{1} insert: k -> v -> +{ ok: lserve},
+                  <{0} retreive: k -> +{ yes : v * lserve,
+                                         no : lserve}}
+
+proc list_process[K] :
+  (k: Int), (rng: [Bit]), (sid: _) |- ($l: lserve) = 
+
+  case $l (
+    insert =>
+      genpot 1
+      ...
+    retrieve => 
+      genpot n
+      ...
+
+proc f_db_init[k][v] :
+  (* params *)
+  ($p2f: db[k][v]), ($f2p: 1) |- ($c: 1) =
+{
+  $l <- list_process[K1][k,v] <- k rng sid
+  $c <- f_db[k,v] <- $p2f $f2p $l
+
+proc f_db[k][v]: 
+  (* params *)
+  ($p2f: db[k][v]), ($f2p: 1), 
+  ($l: lserve[k,v]) |- ($c: 1) =
+{
+  case $p2f (
+    store => pid = get $p2f;
+      k' = get $p2f; v' = get $p2f; get {1} $p2f;
+      withdrawtoken K K1 1 
+      $l.insert ; pay K1 $l 1 ;
+      send $l k ; send $l v ;
+      case $l ( ok => _ )
+      $p2f.OK; send $p2f pid;
+    retreive => pid = get $p2f ;
+     k' = get $p2f; get {0} $p2f ;
+     $l.retrieve ; send $l k ;
+     case $l (
+       yes => v' = recv $l ;
+         $p2f.yes; send $p2f PID; send $p2f v';
+       no => 
+         $p2f.no ; send $p2f PID;
+     )
+  $c <- f_db[k][v] <- (* args *)
+}
+
+(* simple protocol where parties append some n items
+   then the adverasry appends some other n items 
+   and tries to read from the *)
+
+
+stype z2a[a][b]{n}{m} = +{ <{n} Z2A2P: PID * a * z2a[a][b], 
+                           <{m} Z2A2F: b * z2a[a][b], 
+                           <{n} tokens: z2a[a][b]  }
+
+proc sim_db[k][v] : 
+  (* the usual params *)
+  ($z2a: Z2A[K][a2p,a2f]), ($a2z: A2Z
+  ($db[k][v])
+{
+  match $z2a,$p2a,$f2a (
+    Z2A2F,*,* =>
+      get {1} z2a
+      msg = recv $z2a
+      case msg (
+        Query(k) => $db.query
+          pay {1} $db
+          send $db k
+          case $db (
+            yes => v = recv $db 
+            _ => ()
+        Store(k,v) => $db.store
+          pay {1} $db
+          send $db k ; send $db v
+          case $db ( Ok => $c <- sim_db[k][v] (* args *) )
+        
+    Z2A2P,*,* =>
+    
+    
+  )
+
+

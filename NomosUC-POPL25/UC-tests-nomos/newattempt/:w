@@ -1,0 +1,90 @@
+
+type Vertex = Int ;
+type Edge = (Vertex, Vertex) ;
+type Graph = (Vertex, [Edge]) ; 
+
+stype zk_relation[a][b] = &{ pair: a -> b -> +{ yes: 1, no: 1}}
+
+proc ham_relation : . |- ($R: zk_relation[Graph][[Edge]]) =
+{
+	case $R(
+		pair =>
+			(* v = check the ham cycle *)
+		  if v then
+		  	$R.yes ;
+		  else
+		  	$R.no ;
+		  end
+	)
+}
+
+stype verifier[a][b] = +{ commitment: a * &{ yes: 1, no: 1}}
+stype prover[a][b] = +{ witness: a * b * 1 }
+
+
+proc f_zk[a][b] :
+	(* params *)
+	($v: verifier[a][b]), ($p: prover[a][b]), ($a: adv[a][b]) |- ($c: 1) =
+{
+	case $v (
+		commitment => x = get $v;
+			$a.commitment ;
+			send $a x;
+			case $p (
+				witness => w = get $p; x' = get $p;
+					if x == x' then
+						$R <- ham_relation <- ;
+						$R.pair ; send $R (x,w) ;
+						case $R (
+							yes => $v.yes ;
+							no => $v.no ;
+						)
+					else 
+						$v.no ;
+					end
+			)
+	)
+}
+
+type ham_sid = (Int, Int, Int)
+
+proc prot_ham_prover :
+	(* args *)
+	($z2p: prover[Graph][[Edge]]), ($p2z: 1), 
+	($p2f: p2ms[ham_sid][comp2f]), ($f2p: p2ms[ham_sid][comf2p]) |- ($ch: 1) =
+{
+	case $z2p (
+		witness =>
+	   	graph = recv $z2p ; hpath = recv $z2p ;
+			$R <- ham_relation <- ;
+			$R.pair ; send $R (graph, hpath) ;
+			case $R (
+				yes => 
+					let n = size graph ;
+					for k in [1..n] then
+						$p <- graph_permute ;
+						$p.permuate ; send $p graph ;
+						case $p ( permutation =>
+							newnods = recv $p ;
+							for i,j in zip([1..n],[1..n]) then
+								let ssid = (i, j, k)
+								let pi = geti newnodes i
+								let pj = geti newnodes j
+								let e = isedge graph pi pj 
+								$p2ms.p2bf ; send $p2ms ssid ;
+								send $p2ms (Commit e) ;
+								(* TODO commit to format of the nodes *)
+				no => 
+					let ssidreject = (-1, -1, -1)
+					$p2f.p2bf ; send $p2f pid ; send $p2f ssidreject ;
+					send $p2f (Send Reject) ;
+					(* TODO finis this case *)	 
+}
+
+stype gperm = &{ permute: Graph -> +{ permuatation: [Vertex] * 1}}
+
+proc graph_permute : . |- ($ch: gperm) =
+{
+	(* compute permuatation over the graph *)
+	
+}

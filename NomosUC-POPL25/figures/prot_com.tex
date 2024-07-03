@@ -1,0 +1,26 @@
+\begin{figure}
+\centering
+\begin{minipage}{0.5\textwidth}
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
+$\nproc$ prot_com_sender[K]:
+  (k: Int), (rng: [Bit]), (sid: SID[comsid]), (pid: Int),
+  ($\$$z2p: sender[a]), ($\$$p2z: senderf2p[a]),
+  ($\$$p2f: rop2f[commsg]{1}) ($\$$f2p: rof2p[commsg]{1}) |- ($\$$c: 1) =
+{
+  $\ncase$ $\$$z2p (
+    commit,* => 
+      $\nget$ {2} K $\$$z2p ; bit = $\nrecv$ $\$$z2p ;
+      $\ngenpot$ 10
+      n = sample k rng ; $\$$p2f.hash ;
+      $\npay$ {1} K $\$$p2f ; $\nsend$ $\$$p2f pid ;
+      $\nsend$ $\$$p2f (n,bit) ;     
+      $\ncase$ $\$$p2f ( shash =>
+        h = $\nrecv$ $\$$p2f ; $\$$p2f.sendmsg ;
+        $\npay$ {1} K $\$$p2f ; $\nsend$ $\$$p2f (Commit h)
+        $\$$c <- prot_com_sender_committed[K][a] <- k rng sid pid $\$$z2p $\$$p2z $\$$p2f $\$$f2p 
+) ) }
+\end{lstlisting}
+\end{minipage}
+\caption{Process code for the sender case of $\pi_\m{com}$.}
+\label{fig:protcom}
+\end{figure}
