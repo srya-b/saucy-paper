@@ -27,6 +27,11 @@ stype receivedf2p[a] = &{ <{1}| opened: Bit -> donep2f[a],
 -- send a message to the other party (transitions to after opening so channel rmains open)
 stype donep2f[a] = +{ |{1}> sendmsg: a * donep2f[a] }
 
+type ComP2F a = Commit of Bit | SendMsg of a | Open 
+type ComF2P a = Msg of a | Committed | Opened of Bit
+type ComA2F = Ok | Deliver 
+type ComF2A = SenderMsg of a | ReceiverMsg of a
+
 -- adv can get leak
 --stype adv[a] = +{ getleak: &{ yes: a -> adv[a],
 --                              no: adv[a] }}

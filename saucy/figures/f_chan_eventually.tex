@@ -1,0 +1,10 @@
+\begin{lstlisting}
+fAuth sender (p2f, f2p) (a2f, f2a) = do
+  forever $ do
+    (pid, m) <- readChan p2f
+    if pid == sender then
+      leak m
+      eventually $ writeChan f2p (pidR, m)
+      writeChan f2p (pid, Ok)
+    else ?pass
+\end{lstlisting}

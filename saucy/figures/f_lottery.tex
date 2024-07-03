@@ -1,0 +1,11 @@
+\begin{minipage}{0.5\textwidth}
+\begin{bbox}[title={Functionality $\F_\m{lottery}(\mathcal{P} = p_1,...p_n)$}]
+~
+let \honest by the set of honest parties and \crupt the corrupt ones 
+
+\begin{itemize}[leftmargin=*]
+\item[--] wait to receive \inmsg{init} from all $p_i \in \honest$, send \m{ok} back in the mean time
+\item[--] generate a random number $w \xleftarrow{\$} \{0,1\}^{\log n}$ and eventually send $(\m{winner})$ to $p_{w}$
+\end{itemize}
+\end{bbox}
+\end{minipage}

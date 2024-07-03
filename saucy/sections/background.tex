@@ -1,0 +1,23 @@
+\subsection{Import}
+The import mechanism of polynomial time, briefly, defines probabilistic polynmial-time (PPT) in terms of a global resource called \emph{import}.
+The initial ITT in a UC experiment, the environment, is given $n$ import where $n$ is some polynomial of the security parameter $k$. 
+The environment can then send messages to other ITIs, spawning them, and giving them some import to perform computation.
+More generally, ITMs exchange import alongside messages in order to pass runtime around.
+
+Import facilitates polynomial execution but isn't the main accounting mechanism for an ITM's computation.
+If it was, a distinguishing environment could use the amount of import as a means of distinguishing between the real and ideal worlds by allowing only one world to terminate.
+Instead, an ITM's net iomport, $n'$ ($n_{in} - n_{out}$), allows it to take $T(n')$ computational steps for some polynomial $T$. 
+For a proof of PPT reduction or adversary, it suffices that some such polynomial exist for each ITM individually and for the sytem of ITMs as a whole.
+
+This is a new formulation of polynomial time in UC that emerged in a more recent version of the paper where previous notions, such as ``length-of-input'' were known to be flawed, because they permit infinite runs\footnote{ITM's may send each other messages of increasing length (still polynomial in the length of input they receive) and do that forever creating runtime out of nowhere.}.
+UC imposes additional constraints on the execution and environment that we describe here to motivate our changes later in the section.
+Notably, UC described these changes are unnecessary, but simplifying for their security and composition proofs or making the framework less restrictive. 
+The first is the notion of \emph{balance environments}. 
+A balanced environment always gives the adversary at least as much import as it gives the rest of the execution.
+Simply put, adversaries that have arbitrarily less import than the protocol may not be able to read even a fraction of the protocol's messages. 
+Allowing such a restirction on simulation posseses no advantage and needlessly makes the framework less expressive.
+\plan{Worth mentioning parameterized environmments?}
+The second is \emph{parameterized systems}: no ITM in the execution performs any computation, when activated, until it first receives $k$ import tokens.
+This constraint is far more ``for the sake of simplicity'' than balanced environments and is intuitive as UC doesn't aim to model relative computational differences between ITMs, so the framework wants to ``bound the variability in the computing powers of different ITMs''.
+
+

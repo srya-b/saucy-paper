@@ -14,20 +14,25 @@ It security definition allows proving of protocols, also in isolation, while ens
 Far from only a theoretical framework, this form of design and security definition lends itself well to the this setting.
 %The UC composition operator and security definition allows replacing ideal functionalities with protocols that realize them (in isolation) to realize a larger protocol. 
 
-The ideal functionality and the real-ideal paradigm also enable a far more expressive and generalizable way to specify the properties and prove them for a protocol as a relation to an idealized version that implicitly exihibits the desired properties.
-Defining and analyzing protocols this way lends itself to properties not easily expressed as a set of independent properties by existing property-based definitions.
-Even for simple protocols, as we discuss later in this work, specifying these properties as independent asserts can be cumbersome and error-prone. 
-We believe that these advantages and features of UC mdoelling are specifically advantageous for asynchronous distributed protocol, and, in this work, we explore whether they can be realized as a software development framework using informal analysis techniques.
-The primary reason for this
-The primary reason for this \emph{gap between research and software engineering} is that UC's complex and nuanced execution model, necessary for guaranteeing compositional security, makes it esoteric and understood by only seasoned academics. 
-In this work we explore UC as a software development tool for distributed protocols through the following research questions:
-\begin{enumerate}[label=(RQ\arabic*).,leftmargin=*]
-\item Can we use UC as a development framework and capture, or take advantage of, the myriad benefits but through informal analysis?
-\item Can we adapt existing techniques for engineering and analysis to the UC setting, and can our modelling provide insight into liveness analysis?
+The real-ideal paradigm plays a big role in the success and usefulness of the framework, because it allows defining the properties and security of a protocol through a single relation of indistinguishability with a protocol.
+Comparing to an idealized program allows for expressing arbitrarily complicated and intertwined properties that can be cumbersome and error-prone with property-based definitions, i.e. a laundry list of assertions that must hold. 
+In the earliest formulation of the framework, a simple two party computation (2PC) is described where the properties of secrecy and correctness are closely related, especialy in the byzantine setting when attempting to quantify how adversaries choose inputs, their influence on outputs, output fairness, and adversarial knowledge.
+Expressing and analyzing these properties is crucial to meaningfully realize UC security, especially in the aforementioned world of decentralized protocols.
+We proposet the following concrete research questions:
+\begin{enumerate}[label=RQ\arabic*.]
+\item Is the real-ideal paradigm useful even in identifying implementation-level bugs, and performing test cases analysis for protcol security?
+\item Can UC implementation express and analyze protocols that express such properties and whether they hold in isolation and across layered and parallel composition?
 \end{enumerate}
-Our belief is that the UC as a development framework is uniquely suited to the asynchronous distributed systems setting, and that alond with our new proposed model for capturing asynchronous network assumption we can make protocols simpler to define, easier to analyze, and allow fundamental components of modern protocols to be realized.
-In this work, we propose a new model for asyncronous modelling, with eventual delivery, that greatly improves upon existing definitions that unnecessarily constrain protocol design or make testing more cumbersome.
-We implement a fuzz testing mechanism to generate environments and adversaries for testing protocols, and we believe that fuzzing and the UC security definition are a strong match that complement each other well in an engineering setting. 
+The real-ideal relationship is about testing generation against all environemnts, therefore, we select fuzz testing as our method for examing these two research questions. 
+Not only is fuzzing a natural choice for testing the real-ideal relationship, but showing that we can meaningfully use such an important widespread tool in UC lends credence to our claim of UC as a candidate as a development framework. 
+We use this tool to analyze a range of asynchronous protocols and idenfity implementation-level bugs that manifest themselves as distinguishing environments.
+
+\todo{also do coin flipping under composition}
+
+\todo{state why we need to do this for async because existing practices seem to fall short of doing this kind of analysis for them}
+
+
+We believe that these advantages and features of UC mdoelling are specifically advantageous for asynchronous distributed protocol, and, in this work, we explore whether they can be realized as a software development framework using informal analysis techniques.
 
 
 %\item Is UC suitable and practical as a development framework rather than only a theoretical one?

@@ -172,7 +172,30 @@ proc prot_com_receiver_committed[K][a] :
     sendmsg,* =>
       macro chansend
       $r <- prot_com_receiver_committed[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p h 
-  
+    *,recvmsg =>
+      get {1} K $f2p
+      mf = recv $f2p
+      case mf of
+        Left m -> -- give this to Z
+          $p2z.msg ; send $p2f m
+          $r <- prof_com_receiver[K][a] <- k rng sid pid $z2p $p2z $p2f $f2p
+        Right m ->  
+          let Open b n =  m
+          $p2f.hash ; pay {1} K $p2f ;
+          send $p2f pid ; send $p2f (n, bit)
+          case $f2p (shash =>
+            h' = recv $f2p
+            if h' == h then
+              $p2z.opened ; pay {1} K $p2z
+              send $p2z b  
+              -- DONE
+            else error "bad commitment"
+          ) 
+  )
+}
+
+------ BELOW DEPRECATED ------
+
 
 proc prot_com_sender[K][a] :
   (k: Int), (rng: [Bit]), (sid: session[1]), (pid: Int),

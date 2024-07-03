@@ -89,15 +89,15 @@
 \newtcolorbox[auto counter]{bbox}[2][]{%
     colback=white,
     colframe=bb,
-	boxrule=1pt,
+    boxrule=1pt,
     %colbacktitle=white!90!roug,
-	colbacktitle=white!40!gg,
+    colbacktitle=white!40!gg,
     coltitle=black,
     fonttitle=\footnotesize\bfseries, 
-	fontupper=\footnotesize,
-	fontlower=\footnotesize,
+    fontupper=\footnotesize,
+    fontlower=\footnotesize,
     enhanced,
-	sharp corners,
+    sharp corners,
     attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
     #1,% For possible options
 }
@@ -116,6 +116,16 @@
 % UC is esoteric, hard to understand, and not useful to programmers despite its appeal to modularity
 % even proofs/code in literature is implemented in a non-UC way so security proofs become kind of useless
 % existing tooling makes proving easier but tranfers the problem to working with bespoke languages, foralisms, etc.
+
+The UC framework is a well-known proving framework for cryptographic protocols, and more recently distributed protocols, in the academic community.
+Decentralized protocols, namely blockchain protocols, rely on layers of distributed asynchronous protocols with different fault models and guarantees, and, despite UC's success the framework rarely makes its way outisde of academic circles in such settings.
+This results from its highly technical nature which makes it difficult to understand by those not already familiar, and its predominant use for cryptographic protocols which require much greater care in implementation that the framework isn't, yet, equipped to handle~\footnote{As opposed to distributed protocols, implementations of a cryptographic primitives requires careful consideration of memory access patterns, side channel leaks, computer architecture, etc.} compared to the needs to asynchronous distributed protocols that assume cryptographic primitives. 
+
+Programming languages and tooling exists for UC to aid in autmating proving, but do little to make UC more accessible in practice. Instead, they add additional layers of complexity by requiring learning new languages and formalisms.
+We content that UC can be useful as a software development framework, and that is modularity and composability guarantees can benefit the development of distributed asynchronous protocols.
+The framework's security definition, as a relation to an idealized program, allows for simpler expression of properties useful in distributed settings, like adverasrial influence and fairness, espcially where financial incentives are involved. 
+
+\todo{roadblocks to UC, the UC real-ideal relation, we can use that to detect many classes of common bugs, better modelling for async in order to help reason about liveness, but negative result here}
 
 The UC framework is the gold standard for proving the security of cryptographic and distributed protocols, however its highly technical nature makes it difficult to understand and use for those not already well-versed.
 This renders on-paper proofs and costructions hard to verify or understand, and it results in implementations of such protocols departing from the UC computation model alltogether rendering security prooff obsolete.
@@ -151,8 +161,10 @@ component, formatting, style, styling, insert
 \section{Haskell Saucy}
 \input{sections/haskell}
 
-\section{UC Programming}
-\input{sections/experience}
+%\section{Software Development in UC}
+%\input{sections/experience}
+\section{Coin Flipping}
+\input{sections/coinflip}
 
 \section{Fuzz Testing}
 \input{sections/fuzzing}

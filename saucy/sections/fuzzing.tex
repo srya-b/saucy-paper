@@ -1,27 +1,51 @@
-In this section we examine the reach of our implementation and development framework in capturing the on-paper/theoretical advantages of UC modelling. 
-In this section we examine the extent to with our implemented framework can realize the benefits associated with using UC as a proving framework.
-We assert that doing the additional work towards adapting definitions and implementations to a UC encoding yields significant benefits over traditional implementation frameworks.
-Our validation strategy consists of two parts.
-The first is showing that existing informal analysis tools can be realized in and successfully applied to UC protocols.
-We select fuzzing for its widespread usage and importance in modern software development, and, as we discuss later in this section, because of its natural fit for UC.
-Second we implement a examples that demonstrate how even informal analsysis can be used to analyze protocols across composition and that express properties such as fairness and adversarial influence on distributions--things UC is known to be well-suited to proving.
-We also implement three asynchronous distributed protocols that and use our fuzz tester to find and discover safety violations arising from a representative class of implementation bugs.
-Finally we conclude that we can reason about liveness by asserting the necessary protocol-specific predicates, or reason about what level of adversarial fairness is required for protcols to make progress/terminate. \todo{the last part here is losing the plot}
+UC analysis replaces individual property-based testing with a testing a relationship between a protocol and an idealized version.
+Checking protocol security and properties amounts to designing and asserting indistinguishability between a real and ideal world through possible discriminating environments.
+Performain informal analysis of the kind in our implementation suggests exploring techniques for test case generation to explore the proram space and discover distriminating environments.
+Properties introduced with the coin flip example, such as fairness or adversarial influence on output distribution, require repeated runs over a variety of test cases for which automation would yield the best results.
+Fuzz testing is therefore a natural fit and we apply it to the implementations of byzantine protocols in our framework.
+We hypothesize from the outset that, rather than checking intermediate properties or program state, checking indistinguishability suffices to catch a host of implementation level bugsm, and that such bugs manifest themselves as output an environment can use to discriminate the two worlds.
+Confirming this belief, we show that developing protocols with UC permits the same kind of reasoning.
+
+On preliminary examination, the UC method of protocol development for distributed applications appearst a natural fit for fuzz testing.
+The modular design philosophy means more compact definitions with a smaller state space for exploration, and, specifically for distributed protocols, the exploratory space is primarily along the lines of adversarial scheduling strateies and input availability.
+Furthermore, fuzzin's widespread use in software engineering, and it's success as bug detection tool, make it an ideal validation candidate whose success in the UC domain reinforces our position.
+In this work, we decline to focus on developing very fine-tuned or formalized test generation strategies in favor of studying the effectiveness of simple strateies to find common issues.
+Success at this stage lays the foundation for further exploration and refinement of the intersection of UC sotware development with fuzz testin and other informal analysis techniques.
+
+Of course, there are bus that don't manifest themselves as discriminating environments.
+For example, properties of the form \emph{``if the state of the protocol in round $r$ is $X$, then $Y$ is true in round $r+1$''} are readily expressible in the ideal functionalities. 
+The byznatine agreement (ABA) protocol that we explore has an ideal functionality that accepts a proposed input from all parties and \emph{eventually} outputs the agreed upon bit.
+It has no notion of protocol rounds, and nor should it.
+Overspecifying an ideal functionality for a specific protocol realization may yield more properties that it can express but is counter-productive to the the intent of the ideal functionality model.
+Regardless, as we show, the combination of leaks, corrupted parties, and honest party output is sufficient to define and perform further property-based testing of statments like the above.
+
+%We assert that doing the additional work towards adapting definitions and implementations to a UC encoding yields significant benefits over traditional implementation frameworks.
+%Our validation strategy consists of two parts.
+%The first is showing that existing informal analysis tools can be realized in and successfully applied to UC protocols.
+%We select fuzzing for its widespread usage and importance in modern software development, and, as we discuss later in this section, because of its natural fit for UC.
+%We implement a examples that demonstrate how even informal analsysis can be used to analyze protocols across composition and that express properties such as fairness and adversarial influence on distributions--things UC is known to be well-suited to proving.
+%We also implement three asynchronous distributed protocols that and use our fuzz tester to find and discover safety violations arising from a representative class of implementation bugs.
+%Finally we conclude that we can reason about liveness by asserting the necessary protocol-specific predicates, or reason about what level of adversarial fairness is required for protcols to make progress/terminate. \todo{the last part here is losing the plot}
 
 %In this section we implement fuzz testing tools for \us and apply it to implementations of three well-known distributed protocols in order to examine UC's suitability as a development framework.
-Showing that a vital and widely-used tool like fuzzing can be used to successfully analyze UC definitions is a critical validation step towards answering our posed research questions. 
-Most importantly, a positive result for our research questions lays the foundation for future research developing methods for informal UC analysis and further exploring UC as a bridge between literature and engineering.
-We approach the examples we implement in two different ways.
-The first is realizing constructions known to be erroneous in some settings, and the other is injecting faults into our implementations of distributed protocols.
-In the absense of known faulty implementations, we seelct bugs that we believe are representative of realistic bugs arising from programming and also bugs in on-paper definitions that are translated to code.
-We show that not only can fuzzing be successfully realized in UC and successfully detect bugs, but also that UC definitions is particularly well-suited to fuzzing. 
-While we initially hoped that our asynchronous model would be useful in checking liveness or providing some analytical insight into the liveness of distributed protocols, we find that the best we can achieve is to assert and analyze predices necessary for liveness.
-Athough promising, in the absences of such on-paper proofs of predicates for termination, we find no significant advantage in using UC (and fuzzing) to detect liveness bugs---a negative result for RQ2.(ii).
+%Showing that a vital and widely-used tool like fuzzing can be used to successfully analyze UC definitions is a critical validation step towards answering our posed research questions. 
+%Most importantly, a positive result for our research questions lays the foundation for future research developing methods for informal UC analysis and further exploring UC as a bridge between literature and engineering.
+%We approach the examples we implement in two different ways.
+%The first is realizing constructions known to be erroneous in some settings, and the other is injecting faults into our implementations of distributed protocols.
+%In the absense of known faulty implementations, we seelct bugs that we believe are representative of realistic bugs arising from programming and also bugs in on-paper definitions that are translated to code.
+%We show that not only can fuzzing be successfully realized in UC and successfully detect bugs, but also that UC definitions is particularly well-suited to fuzzing. 
+%While we initially hoped that our asynchronous model would be useful in checking liveness or providing some analytical insight into the liveness of distributed protocols, we find that the best we can achieve is to assert and analyze predices necessary for liveness.
+%Athough promising, in the absences of such on-paper proofs of predicates for termination, we find no significant advantage in using UC (and fuzzing) to detect liveness bugs---a negative result for RQ2.(ii).
+%
+%\plan{Normally, liveness is associated with some notion of adversarial fairness. There is a predicate that says as long as these messages are delivered, then the protocol will do something good. Another version of this is that as long as honest partiesa are activated inifinitely often, something good will happen. What we can do with UC here is that we can test different adverasarial models of fairness to determine under what conditions is fair. What messages, how many, and under what constraints of ordering are required to allow the protocols to termiante or make progress to the next step?}
 
-\plan{Normally, liveness is associated with some notion of adversarial fairness. There is a predicate that says as long as these messages are delivered, then the protocol will do something good. Another version of this is that as long as honest partiesa are activated inifinitely often, something good will happen. What we can do with UC here is that we can test different adverasarial models of fairness to determine under what conditions is fair. What messages, how many, and under what constraints of ordering are required to allow the protocols to termiante or make progress to the next step?}
+\paragraph{Experimental Setup}
+We implement a few representative examples of distributed protocols that span reliable broadcast and binary agreement.
+Our focus on implementation-level bugs means we first implement these protocols in our framework, correctly, and then inject bugs into them.
+We believe that the bugs we select are representative of bugs encountered in practice. The most prevalent being erroneous fault models and security thresholds.
+Defining good test case generators is part of ``art of fuzzing'', and, rather than defining them with specific bugs in mind, we target places where we believe faults are most likely to be discovered.
+In testing safety for an agreement protocol, for example, it is intuitive that violations are likely to be detected when equal sets of parties have differing input and messages between partitions are censored, reordered, or dropped entirely.
 
-
-\todo{something about fuzzing x distributed systems and tractable state spaces with scheduling}
 
 %Fuzz testing is an ideal choice of experimental apparatus for testing our hypothesis for a few reasons.
 %The main one is that it is a widely-used and vital tool in production software engineering.
@@ -32,7 +56,68 @@ Athough promising, in the absences of such on-paper proofs of predicates for ter
 %Showing that fuzzing can be successfully realized in UC and used for analysis tool is critical in laying the foundation more exploration of UC in this new way.
 %The fina reason is that fuzzing seems a natural fit for UC's emulation definition. The definition requires quantification over all environments for a particular protocol/ideal functionality and using automation to explore the space of all environments (or at least all ``interesting'' environments) is an intuitive step.
 
-\subsection{Using QuickCheck}
+\subsection{Implementing Fuzz Testing}
+% describe that we use quickcheck for fuzzing and what quickcheck is
+% what kinds of randomness can we generate and to do what?
+% adv scheduling, varying party input, choosin crupt input, censoring/filtering
+We use the QuickCheck module for Haskell as the underlying codebase for generating randomness, executing test cases, and reporting/monitoring input and output.
+QuickCheck is a library for randomized testing of prorams that defines generators for many primitives and a set of combinators for combinin them.
+It provides much great functionality than we make use of here like minimizing generated input that causes property violation and shrinking/expanding the generated inputs.
+A program is defined, in QuickCheck, by a set of user-defined properties that the module generates input for according to specific generators or adaptively according to programmer-defined rules.
+In the case of UC, we are concerned with a singular property: indistinguishability between a real and ideal world.
+We focus out attention on crafting environment generators that target specific places where failures may occurr.
+
+% generating environments do take into account types of failures we anticipate, generic testing yields a much slower but still successful approach
+Like most fuzz testing, completely random generation with minimal guard rails has the potential to explore a lot of state that is of no interest.
+A simple example of this is an environment that only give one party, out of $n$, and attempts to apply a message scheduling or corrupt messsaging strategy to the execution to test the properties of an agreement protocol.
+To mitigate this, defining test case generation requires defining several strategies for input to parties and the adversarial strategy of scheduling and sending messages on behalf of corrupt messages.
+Even with the real-ideal paradigm we find that:
+\begin{center}
+\emph{$\diamond$ No matter what, the programmer or analyst is expected to have some insights into what search space is interesting, and this requires some thought as to the properties the ideal functionality is meant to capture.}
+\end{center}
+As we mention above, for agreement protocols there are intuitive search spaces where faults are likely to be found.
+In most fault models executing a protocol while giving input to only a small fraction of the parties may be likely to discover bugs where the protocol makes progress when it shouldn't but is unlikely to find cases bugs that cause parties decide on different values.
+In the coin flip and lottery example, it is intuitive that distinguishability is likely to occurr when adversaries are flipping against honest parties and abort according to the winners of other flips rather than flipping to each other.
+
+The test enviromments we generate share some commanlity across all of the protocols that we examine.
+The main ones being corruption models and static adversarial strategies.
+We apply different combinations of these, along with protocol-specific strategies to discover failure.
+
+\paragraph{Corruption Models}
+There are three corruptions cases to consider in any distributed protocol: all honest, crash faults, and byzantine parties.
+Each of these corruption models serves a purpose in protocol analysis.
+\begin{itemize}
+  \item \textbf{All Honest:} Test under the best-case scenario that the protocol does what is intended, i.e. some decision is reached by at least oen party.
+  \item \textbf{Crash Faults:} do the selected thresholds for 
+  The next strategy for testing determines whether protocol parameters, such as \emph{transition thresholds}\footnote{Transition thresholds are thresholds of certain messages that protocols use to progress their internal state machine for the protocol. In Ben-Or, for example, when $\frac{n+t}{2}$ messages proposing a particular value are receive, the protocol proceeds to attempt to decide a value.}. This setting is useful for determining that the protocol makes progress even if some parties (below a threshold) go offline.
+  \item \textbf{Byzantine Faults.} Testing against byzanting faults is testing the crucial \emph{safety} property. Unlike other settings, in this setting the goal is to determine whether a corrupt party can cause equivocation in a distributed protocol (i.e. two different honest parties decide two different values). It makes sense to test under byzanting faults once the protocol is known to be correct under the previous two fault settings. 
+\end{itemize}
+
+
+:w
+:w
+\paragraph{Adversarial Scheduling}
+
+\paragraph{Automated and Manual Checking}
+% looking for output distributions, one can program statistical methods for defining a particular assertion
+% or simply collect relevant output information across n test cases and manually inspect
+\begin{center}
+\emph{$\diamond$ implementation and fuzz testing allows expression of properties relating to distributions, but still requires either implmeneting cumbersome stastical methods for defining assertions in code or manual inspection}
+\end{center}
+
+
+\subsection{Testing Asynchronous Protocols}
+
+
+\paragraph{Liveness}
+Our definition of asynchronous execution and eventual delivery in UC is tied directly to import in a way that makes explicit that the adversary, protocol parties, and environment are \emph{explicitly paying in units of computation} for use of the model. 
+Our hypothesis, a priori is that dealing directly with UC's polynomial time notion will allow the ability to analyze liveness and termination properties for asynchronous protocols. 
+
+
+
+
+
+\subsection{(Appendix?) Using QuickCheck}
 \plan{The goal of this section is to cover how we go about doing fuzzing in saucy.
 \begin{itemize} 
 \item channels vs ITMs \todo{should already have been discussed before}

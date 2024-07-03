@@ -6,12 +6,17 @@
 --                           <{0}| no: pid ^ party[a] }
 --
 stype rop2f[a]{n}{m} = +{ |{1}> hash: pid ^ int ^ rop2f[a]{n}{m},
-													|{n}> sendmsg: pid ^ pid ^ rop2f[a]{n}{m} }
+                          |{n}> sendmsg: pid ^ pid ^ rop2f[a]{n}{m} }
 stype rof2p[a]{n}{m} = &{ <{0}| shash: pid -> Int -> rof2p[a]{n}{m},
-													<{m} | recvmsg: pid -> pid -> a -> rof2p{n}{m} } 
+                          <{m} | recvmsg: pid -> pid -> a -> rof2p{n}{m} } 
 
 type rop2f[a] = QHash of Int | Send of pid ^ a | Recv ;
 type rof2p[a] = RHash of Int | Yes of pid ^ a | No ;
+
+proc F_ro_init[K]{n,m}:
+  (k: Int), (rng: [Bit]), (sid: session[1]),
+  ($p: party[a]{n}{m}), (t: dict[(int,int)]), (rpid: Int),
+-- TODO: this is the process execUC calls and below is the process that this calls after creating the list 
 
 proc F_ro[K]{n,m}:
   (k: Int), (rng: [Bit]), (sid: session[1]),
@@ -20,7 +25,7 @@ proc F_ro[K]{n,m}:
 {
   case $p (
     hash =>
-			get {1} $p ;
+      get {1} $p ;
       p = recv $p ;
       i = recv $p ;
       if i in t
@@ -42,18 +47,18 @@ proc F_ro[K]{n,m}:
       spid, rpid, msg = recv $p ;
       $ch <- F_ro_w_msg[K] <- k rng sid $p t rpid msg ;
   | recvmsg => 
-			get {0} $p ;
+      get {0} $p ;
       rpid = recv $p ;
       if msg != (* default value *)
       then
         $p.yes ;
-				pay {m} $p ;
+        pay {m} $p ;
         send $p rpid ;
         send $p msg ;
         $ch <- F_ro[K] <- k rng sid $p t -1 None ;
       else
         $p.no ;
-				pay {0} $p ;
+        pay {0} $p ;
         send $p rpid ;
         $ch <- F_ro[K] <- k rng sid $p t -1 None ;
       end
