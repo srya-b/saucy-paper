@@ -1,12 +1,11 @@
-\documentclass[conference]{IEEEtran}
-\IEEEoverridecommandlockouts
+\documentclass[acmsmall,screen,review,anonymous]{acmart}
 %\settopmatter{printfolios=true,printccs=false,printacmref=false}
 %\IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
-\usepackage[dvipsnames]{xcolor}
+%\usepackage[dvipsnames]{xcolor}
 %\usepackage{cite}
 \usepackage[most]{tcolorbox}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{amsmath,amsfonts,amsthm} %amssymb,
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{subcaption}
@@ -95,9 +94,9 @@
 }
 \newcommand*\rot{\multicolumn{1}{R{30}{1.5em}}}
 
-\newtheorem{theorem}{Theorem}
-\newtheorem{lemma}{Lemma}
-\newtheorem{definition}{Definition}
+%\newtheorem{theorem}{Theorem}
+%\newtheorem{lemma}{Lemma}
+%\newtheorem{definition}{Definition}
 
 \definecolor{vert}{RGB}{0,181,0}
 \definecolor{oran}{RGB}{223,74,0}
@@ -112,6 +111,7 @@
 \definecolor{Black}{rgb}{0.0, 0.0, 0.0}
 \definecolor{Purple}{rgb}{0.63, 0.36, 0.94}
 \definecolor{purp}{rgb}{0.59, 0.48, 0.71}
+\definecolor{Blue}{rgb}{0.54, 0.81, 0.94}
 
 \newcommand{\anote}[1]{{\color{magenta}{AM: {{#1}}}}}
 \newcommand{\snote}[1]{{\color{green}{SB: {{#1}}}}}
@@ -149,8 +149,6 @@
 \input{macros}
 \input{st-macros}
 
-\maketitle
-
 \begin{abstract}
   Universal Composability (UC) is a leading definitional framework for secure protocols used in cryptography and computer security, however it comes at the cost of comlexity.
   %however on-paper UC definitions can be long, complicated, and difficult to understand or reuse.
@@ -178,6 +176,8 @@
   We validate out approach by realizing the standard set of lemmas and theorems from UC~\cite{canettiUC,ilc,gnuc,ipdl,easyuc}
   and showing a handful of example of UC protocols, functionalities, and simulator proofs.
 \end{abstract}
+
+\maketitle
 
 
 
@@ -236,8 +236,8 @@
 
 %input{figures/asyncwrapper}
 
-%\appendix
-\appendices
+\appendix
+%\appendices
 
 %\section{Simulators} \label{app:commitment}
 %\input{sections/commitment} 

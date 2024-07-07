@@ -1,21 +1,37 @@
-Coin flipping is an integral part of many distributed byzantine protocols, and there are a wide array of different coin flip models with subtle differences. 
-Analyzing and testing layered composition of distributed protocols on top of existing coin flip protocols, represented by ideal functionalities is a priority for a development framework for UC.
-Flipping coins between mutually distrustful parties, though a simple enough functionality, captures the range of properties that UC is uniquely suitable for expressing and reasoning about. 
-Relying solely on analytical security proofs, or proofs by hand, is has been shown in the past to \todo{how to tie this into it?}
+The first protocols and primitives we examine are disttibuted coin flipping. 
+Both as protocols and primitives assumed in other protocols, coin tossing is is an integral part of many distributed byzantine protocols, each relying on slightly different assumptions and fault models. 
+They are a simple functionality, but they express and rely on properties such as output fairness and adversarial influence, that UC is uniquely suitable for expressing and reasoning about.
+In this section, we apply our methods to a lottery protocol built atom a two-party coin tossing primitive, and show that, despite knowledge of the aforementioned bug in the old MMR protocol our methods are capable of giving meaningful feedback to the programmer suggesting a possible liveness error \footnote{Recall we employ informal methods for analyzing the protocols in this work, and, especially for liveness, can suggest possible liveness failures rather than assert them directly without knowledge of a useful predicate on the execution.}.
+
+We focus the work in this section particularly on analyzing coin tossing across layered composition, and do this for three reasons. 
+First, we believe that coin tossing is a strong representative example of the kinds of analysis possible in UC which we want to show can be meaningfully analyzed informally as well.
+Second, the assumed primitives across different dirstributed protocols can vary subtley, and, if not carefully analyzed, can be disastrous for the protocols that use them.
+The most prominent example of this is in the original publication of the well-known byzantine agreement protocol by  Mostefaoui et al.~\cite{mmrog} (referred to as the MMR protocol from here on out).
+A work similar our own ~\cite{byzbymc}, identified a critical liveness bug that arose, because the protocol relied weak common coin that allowed the adversary to see the outcome of the coin in advance of some honest parties rather than the perfect common coin that the protocol actually required in order to terminate. 
+Third, software dependencies in this setting is analgous to layered composition. 
+Software packages are represented by ideal functionaliteis for development, and replaced with the underlying protocol that implements it.
+Testing and identifying failures arising from dependencies that either don't realize the ideal functionality or are subtley different from the assumptions expected by the application is an important capabality for the viability of our proposition in this paper. 
 
 
-For many distributed protocols, even simple examples like 2-party computation, desired properties can often be deeply interconncted such that specifying them as a list of satisfiable assertion is difficult. 
+\todo{keep or don't keep this, we might have this in an earlier section}
+Simple examples like 2-party computation, desired properties can often be deeply interconncted such that specifying them as a list of satisfiable assertion is difficult. 
 In the simplest case of two parties computing a function, notions of correctness and secrecy are connected, for example, to the choice of function being computed, what an adversary can learn about the other party's inputs before choosing its own, or what distributions do the adversary's input or the protocol's output exhibit. 
 In more complex protocols we desired the analysis of properties that define notions of fairness or input availability.
 Specifying these properties in a laundry list of properties can be cumbersome and error-prone, and the ideal functionality model allows expressing arbitrary properties as a computational unit.
 Rather than proving specific assertions hold, UC defines security in relation to an idealized version that exhibits the desired properties implicitly.
 A coin flipping protocols, references throughout this work, is a core subcomponent of many asynchronous distributed protocols, and is a useful case study for examing our implementation.
 
-\subsection{Flipping Protocols and Fairness}
-Flipping between two parties is the simplest case, where protocols like Blum's coin toss over the telephone protocol ensures unbiased coin but only when the adversary does not prematurely abort the protocol.
-They are used heavily even in modern agreement protocols that operate under the strong common coin assumption: in some round all parties observe the same coin flip. 
-This relatively straightforward example protocol exhibits many properties that, traditionally, UC is adept at modelling and analyzing like fairness, input availability, and adversarial influence on outcomes.
-In this section we use this example to demonstrate that our implementation can express such a protocol, allow for analysis of properties like fairness and input availabiltiy, and detect failrue accross composition. \todo{this last sentence needs some work, maybe mention that we compose with the lottery here?}.
+\subsection{Flipping Fairness}
+The first example we study is building a lottery protocol off a two-party coin tossing protocol.
+Protocols like Blum's allow two mutually distrustful parties to flip a coin over the telephone protocol, and ensures an unbiased coin only when the adversary does not prematurely abort the protocol.
+Lottery protocols are more modern uses of coin flipping that highlight the influence adversaries can have in determining the output.
+In most agreement protocols, the value of a coin flip isn't as important as long as all parties observe the same outcome.
+In distributed protocols that operate with financial incentives, the lottery being the simplest example of one, this property becomes critically important. 
+The example presented here \todo{finish}
+%Flipping a coin involving several parties is a common coin protocol: a more complex and still widely used primitive in modern agreement protocols.
+%They are used heavily even in modern agreement protocols that operate under the strong common coin assumption: in some round all parties observe the same coin flip. 
+%This relatively straightforward example protocol exhibits many properties that, traditionally, UC is adept at modelling and analyzing like fairness, input availability, and adversarial influence on outcomes.
+%In this section we use this example to demonstrate that our implementation can express such a protocol, allow for analysis of properties like fairness and input availabiltiy, and detect failrue accross composition. \todo{this last sentence needs some work, maybe mention that we compose with the lottery here?}.
 
 \paragraph{The Ideal Coin Flip}
 In Figure~\ref{fig:fflip} we show the ideal functionality for a coin flip. 
@@ -31,6 +47,8 @@ This means that $\F_\m{flip}$ allows protocols that are \emph{not fair}: they do
 \todo{It is a known result that no coin flip protocol with n/2 corruptions is unbiased, what do say about that?}
 
 \paragraph{A Lottery from Coin Tossing}
+
+Building a lottery from an ideal functionality that gives you an unbiased two-party coin flip is a straightforward excercise and an intuitive choice for a programmer. 
 A lottery between $n$ participants is an example of a distributed protocol increasingly common in blockchain systems where financial incentives are involved.
 Unlike agreement protocols where only safety is required, lotteries are less tolerant of protocol that aren't fair or protocols where the adverasary can excert significant influence on the outcome. 
 The financial incentives involved in the protocol require development frameworks that can express and analyze these properties.
@@ -58,4 +76,8 @@ At a high level, our protocol \prot{lotto}, flips $\log n$ pair-wise coins in or
 
 \subsection{Common Coins}
 Many agreement protocols rely on common coins to introduce shared randomness into protocol to allow protocol parties to make common decisions without adversarial influence.
-The strongest assumtpion is a perfect common coin: 
+Common coins definitions vary in their guarantees of output fairness, corruption threshold, and adversarial influence on the output bit.
+The protocols that use common coins are prone to using them incorrectly, as we see in the case of the original MMR agreement protocol where the common coin assumption was shown in \cite{formalbyz} to be to weak and permitted a liveness fault.
+As we describe in the lottery protocol above, and in mode complex distributed protocol, 
+
+The strongest assumtpion is a perfect common coin

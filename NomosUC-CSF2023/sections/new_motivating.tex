@@ -11,15 +11,27 @@ For example, if a process with potential $T(n')$ generates $X < T(n')$ potential
 Concrete potential makes it possible to make a judgment about computation in the type system.
 
 \paragraph{Why another resource?} 
-The motivation for not only using import as the direct accounting mechanism is evident in our commitent example with \Fro.
-Futhermore, we refer to the UC framework~\cite{canettiUC} to motivate why import is not enough on its own.
-At a high level, allowing one ITM to directly control the exact computation of another requires it to know information it can never know in a realistic setting.
-In the case of \Fro, its internal list $\ell$ is append-only and always increasing. 
-After $n$ inserts a new party that queries it for a hash can not know how long $\ell$ is, i.e. how much computation it can do.
-In a more general case, say that \Z can control the amount of computation the ideal and real worlds can do.
-It can vary the import it gives so that only one of the worlds terminates (naturally two different sets of processes do different amounts of computation). 
-This observation allows it to distinguish between the two worlds using information that isn't known to it in any realistic setting. 
+%Why is it necessary to add another resource on top of import rather than directly account of runtime through import?
+We first address the question of why another resource is needed to bound the execution of indivual processes rather than treating import as the direct accounting value.
+%In general, an arbitrary mechanism for bounding runtime can be realized by a linear resource (like in Das et al.~\cite{das2018work}), but absracting runtime through a polynomial in import is critical and requires a separate resource to track work performed.
+The motivation for not using import as the direct accounting resource is that it would greatly restrict for which protocols emulation is possible.
+The design is suggested by Canetti~\cite{canettiUC} in the formulation of UC and the import mechanism, and we largely defer to the framework to motivate and explain it.
+%In the general case of bounding runtime, a single linear resource is sufficient to control the runtime of processes (like the work by Das et al.~\cite{rast}), however, in UC we are concerned with capturing a realistic computation model and doing so leaks information that otherwise shouldn't be known. 
+At a high level, using only UC allows an ITM to precisely control the runtime of another that it gives import to. Not only is this information unknown apriori, but assuming that the precise runtime of an arbitrary process is unrealistic.
+The environment, with this ability, gives the same import to the real and ideal worlds such that one terminates and the other does not. 
+This would allow it to distinguish between the two worlds as long as they perform different amounts of work, and it would do so using information that isn't know to it in any realistic setting. 
 \footnote{The specific example given by Canetti~\cite{canettiUC}: ``For instance, the initial ITI $I$ can start in a rejecting state, and then pass control to another ITI $M$. If $I$ ever gets activated again, it moves to an accepting state. Whether $I$ is activated again depends on the running time of $M$. If it exceeds the computation given to it (known by $I$) then $I$ accepts depending on information that should not be ``legitimately known'' to $I$.}.
+Furthermore, from a programming point of view, a programmer can't anticipate what inputs its protocol might receive and attempting to type check through trial and error setting precise import allocation is undesriable.
+
+%The motivation for not only using import as the direct accounting mechanism is evident in our commitent example with \Fro.
+%Futhermore, we refer to the UC framework~\cite{canettiUC} to motivate why import is not enough on its own.
+%At a high level, allowing one ITM to directly control the exact computation of another requires it to know information it can never know in a realistic setting.
+%In the case of \Fro, its internal list $\ell$ is append-only and always increasing. 
+%After $n$ inserts a new party that queries it for a hash can not know how long $\ell$ is, i.e. how much computation it can do.
+%In a more general case, say that \Z can control the amount of computation the ideal and real worlds can do.
+%It can vary the import it gives so that only one of the worlds terminates (naturally two different sets of processes do different amounts of computation). 
+%This observation allows it to distinguish between the two worlds using information that isn't known to it in any realistic setting. 
+%\footnote{The specific example given by Canetti~\cite{canettiUC}: ``For instance, the initial ITI $I$ can start in a rejecting state, and then pass control to another ITI $M$. If $I$ ever gets activated again, it moves to an accepting state. Whether $I$ is activated again depends on the running time of $M$. If it exceeds the computation given to it (known by $I$) then $I$ accepts depending on information that should not be ``legitimately known'' to $I$.}.
 
 %We first address the question of why another resource is needed to bound the execution of indivual processes rather than treating import as the direct accounting value.
 %The motivation for not using import as the direct accounting resource is that it would greatly restrict for which protocols emulation is possible.
@@ -62,11 +74,16 @@ In UC, the adversary never receives any import from a functionality or protocol 
 In the case of \Fro, over the course of its execution it must traverse a list per activation.
 Over the course of $n$ activations it does $O(n^2)$ word. 
 Performing this necessitates that it have net positive import, therefore its session type indicates that it receives 1 import per activation and never gives any back.
-\Fcom, on the other hand, is one-shot and does constant work per activation. 
-We still give it import so that a protocol that realizes it has import to perform more than constant work.
-The protocol that we realize it with in this work, \protcom, needs at least one import to even compute a hash in \Fro. 
-Giving \Fcom constant import because it does constant work would mean only protocols that do the same work can realize it.
-In general, it is preferable to allow session types to take the import they exchange as a parameter so we aren't artificially limiting protocols that \emph{should} realize an ideal functionality because of the precise amount import that the session type allows.
+\Fcom, on the other hand, is one-shot and does constant work per activation. Yet, we still give it import so that a protocols that realizes it, with the same session type, isn't restricted to also constant work and can be arbitrarily complex.
+
+%In the case of \Fro, over the course of its execution it must traverse a list per activation.
+%Over the course of $n$ activations it does $O(n^2)$ word. 
+%Performing this necessitates that it have net positive import, therefore its session type indicates that it receives 1 import per activation and never gives any back.
+%\Fcom, on the other hand, is one-shot and does constant work per activation. 
+%We still give it import so that a protocol that realizes it has import to perform more than constant work.
+%The protocol that we realize it with in this work, \protcom, needs at least one import to even compute a hash in \Fro. 
+%Giving \Fcom constant import because it does constant work would mean only protocols that do the same work can realize it.
+%In general, it is preferable to allow session types to take the import they exchange as a parameter so we aren't artificially limiting protocols that \emph{should} realize an ideal functionality because of the precise amount import that the session type allows.
 
 % \input{figures/prot_com}
 
