@@ -21,7 +21,23 @@ Binding guarantees that $S$ can't flip the bit that was committed to, and hiding
 This leaks is absolutely necessary, because it quantifies what the adversary allowed to learn in a protocol that will realized \Fcom. 
 If \Fcom leaks no information, then no simulator proof will be possible for any real-world protocol is the two parties are both honest.
 
+\begin{figure}
+\centering
+\begin{subfigure}{.5\textwidth}
 \input{figures/f_com}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\input{figures/f_ro}
+\end{subfigure}%
+\\[2ex]
+\begin{subfigure}{\linewidth}
+\input{figures/prot_com}
+\end{subfigure}
+\\[2ex]
+\begin{subfigure}{\linewidth}
+\input{figures/prot_com_receiver}
+\end{subfigure}
+\end{figure}
 
 Our description of the commitment is summarized by the following binary session types that outline the communication between \Fcom and each of $S$, $R$, and \A.
 These same types will exist in the real world between \Z and each of $S$ and $R$.
@@ -57,7 +73,9 @@ In the real-ideal paradigm, we compare two worlds each with its own protocol.
 The ideal world consits of \Fcom along with a dummy protocol where parties forward all communication between \Z and the functionality.
 The dummy protocol provide the same session types as used by \Fcom, and, therefore, the real world where parties locally run \protcom also exhibi the same type.
 
-\input{figures/f_ro}
+%\begin{figure}
+%\input{figures/f_ro}
+%\end{figure}
 
 \paragraph{Random Oracle}
 The commitment protocol \protcom that realize \Fcom operates in the random oracle model. 

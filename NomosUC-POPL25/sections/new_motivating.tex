@@ -57,7 +57,7 @@ Over the course of $n$ activations it does $O(n^2)$ work.
 Performing this necessitates that it have net positive import, therefore its session type indicates that it receives 1 import per activation and never gives any back.
 \Fcom, on the other hand, is one-shot and does constant work per activation. Yet, we still give it import so that a protocols that realizes it, with the same session type, isn't also restricted to constant work and can be arbitrarily complex.
 
-\input{figures/prot_com}
+%\input{figures/prot_com}
 
 \paragraph{Exchanging Import in NomosUC}
 In process code, the new type operators for import are paired with two operators in process code: \ipay and \iget.
@@ -242,19 +242,21 @@ The typing rules at the end of the section use $q$ and $q'$ to judge \emph{valid
 Our realization of import so far adheres to the design specified by Canetti et al~\cite{canettiUC}.
 We encounter a subtle problem realizing a common UC design pattern in NomosUC: ITMs sandboxing, or running internally, other ITMs.
 Simulators, in particular, rely on this design pattern to emulate real-world protocols, rewind them, replay them, and override their randomness.
-Allowing processes in NomosUC to do the same results in some issues with execution cost analysis.
-Specifically, this issues arises in the simulator we use to for the proof of realization for \protcom.
+In its form so far, process must run processes like any other and give them import as required by their session types.
+This design constrains what simulators NomosUC can realize.
 
 A simulator for \protcom is straightforward but elucidates and highlights additional design challenges necessary to overcome.
 We focus on the case of the corrupt sender and include the full simulator in Appendix~\ref{app:commitment}.
 
-We define a simulator for the dummy adversary in the real world.
-The dummy adversary suffices for an emulation proof, because it's the strongest possible adversary and there is a deterministic function for adapting a simulator for the dummy adversary to a simulator for any other adversary.
-In the real world with a corrupt sender, \Z observes no messages received from the receiver, and tries to create a commitment and open it to the receiver.
-The ideal world simulator \Sim must ensure that the ideal world opens only if the real world succesfully opens and ensures that the ideal world commits to the same bit as the real world.
-As is common in many UC proofs, simulator's sandbox some or all of the real world.
-For commitment, \Sim wants to internally run \Fro and use it to handle inputs from \Z, and use it to observe preimages and ensure the commitment is io
-This is done by \Sim by sandboxing \Fro, reading \Z's requests to compute hashes on behalf of the corrupt sender, and peeking at the bit that was committed to.
+The simulator for \protcom is defined for the dummy adversary in the real worls, and wants to run simulate the real world in a sanboxed environment. 
+$\Sim_\m{com}$, and many other simulators, do this to ensure that the ideal world outputs and outcome mimic the real world.
+For example, the $\Sim_\m{com}$ must ensure the ideal world receiver outputs to the environment at the same time, and that the environment receives the same messages from the corrupt parties at the same time.
+%The dummy adversary suffices for an emulation proof, because it's the strongest possible adversary and there is a deterministic function for adapting a simulator for the dummy adversary to a simulator for any other adversary.
+%In the real world with a corrupt sender, \Z observes no messages received from the receiver, and tries to create a commitment and open it to the receiver.
+%The ideal world simulator \Sim must ensure that the ideal world opens only if the real world succesfully opens and ensures that the ideal world commits to the same bit as the real world.
+%As is common in many UC proofs, simulator's sandbox some or all of the real world.
+Specifically, $\Sim_\m{com}$ runs \Fro internally, to handle requests by \Z to hash all while reading its state and learning the preimages of commitments when the sender is corrupt.
+In UC, the simulator internally executes \Fro on its tape and performs the same steps it would, and the work performed is counted toward as potential being consumed with the import the simulator possesses.
 
 The simulator process's type is define simply as follows where we omit the common arguments to all processes. 
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0em]
@@ -263,24 +265,26 @@ $\nproc$ sim_com[K][K1] : $\tg{(* standard args *)}$
   ($\$$a2z: A2Z[K][ro2fp[commsg][rof2a]{0}),
   $\tg{(* other channels removed for brevity *)}$ = {
 \end{lstlisting}
-The simulator presents an interface to \Z that mimics the real world with \Fro, and it communicates with the corrupt sender and \Fcom through their espective types for channels \ic{a2p} and \ic{a2f}.
+The simulator presents an interface to \Z that mimics the real world with \Fro, and it communicates with the corrupt sender and \Fcom through their respective types for channels \ic{a2p} and \ic{a2f}.
+\todo{something else here?}
 
-The simulator, running 
 
 \paragraph*{\textbf{A Constraint Unique to NomosUC}}
-Simulators in UC often run other ITMs internally in a black-box manner. 
-In NomosUC, doing the same with processes comes with the added constraint of satisfying the simulated process's session type, namely its import requirement.
-
-Suppose a simulator \Sim that sandboxes \Fro internally. 
+%Simulators in UC often run other ITMs internally in a black-box manner. 
+Doing the same in NomosUC with processes comes with the added constraint of satisfying the import requirement of the simulated process's session type.
+%Suppose a simulator \Sim that sandboxes \Fro internally. 
 Ideally, we want that the computation done by \Fro counts towards the total work performed by \Sim rather that requiring import of its own like its session type requires.
-Unless there is a way to give \Fro some ``fake'' import, we require that simulators must effectively waste import simulating the real world rather than just the potential required to perform that same computatiuon.
-The widens the gap in the simulator proofs that UC can realized by NomosUC can't.
-We describe a more generic example.
+Unless there is a way to give \Fro some ``fake'' import, simulators must, effectively, waste import simulating the real world rather use only the precise potential required to perform that same computatiuon.
+Spending potential on simulation is expected behavior, but spending import on simulation is depriving the simulator of far more computation than it should.
+This constrains the kind of simulator proofs that can be constructed, because they must contend with less import by the definition of NomosUC.
+We describe it in a more generic example.
 
-Imagine a real world functionality $\F_\m{real}$ that takes one import from \A, and an ideal world functionality $\F_\m{ideal}$ that requires one import from \Sim.
-\A is activaed with 2 import. One of which it uses for $\F_\m{real}$ and one it uses to perform some local polynomial amount of work.
-\Sim in the ideal world must receive the same import as \A. If it must use one import to simualte $\F_\m{real}$ and one import for $\F_\m{ideal}$, it's left with no import and can only do constant work over the course of the execution.
-More generally, forcing a process to give up whole import for a process it wants to simulate internally, rather than only expending the required potential, constraints what can be realized in NomosUC.
+Imagine a real world functionality $\F_\m{real}$ that requires one import from \A, and an ideal world functionality $\F_\m{ideal}$ that requires one import from \Sim.
+\Z activates \A with 2 import. One of which it uses for $\F_\m{real}$ and one it uses to perform some polynomial work.
+\Z must give \Sim in the ideal world, running a copy of $\F_\m{read}$, the same import as \A.
+If it must use one import to run $\F_\m{real}$ and one import for input to $\F_\m{ideal}$, it's left with no import and can only do constant work over the course of the execution.
+Though contrite, this example is representative of the issue of differentiating regular processes from ``sandboxed'' processes.
+Forcing a process to give up whole import (the source of computation) for a process it wants to simulate internally, rather than only expending the required potential (actual computation), significantly constrains NomosUC.
 
 % Imagine an adversary in the real world that accepts one unit of import and uses it to query \Fro.
 % The ideal world simulator is given the same single unit of import as the real world adversary, by definition, and if it must expend it to sandbox \Fro then it's left with no import to do anything else.
@@ -343,9 +347,9 @@ More generally, forcing a process to give up whole import for a process it wants
 
 %% | describe the a simulated \Fdb now without virtual tokens and showcase the issue
 %% | and we need to be able to reuse process definitions rather than make special virtual one
-The approach we take is to allow creation of ``fake tokens'', called \emph{virtual import tokens}, and make all processes parameteric in their token typ.
+The approach we take is to allow creation of ``fake tokens'', called \emph{virtual import tokens}, and make all processes parameteric in the token type.
 We tie the amount of virtual import crated to the real import that the calling process holds.
-Tokens types are represented by a token hierarchy 
+Token types are represented by a token hierarchy 
 \vspace{-0.5em}
 \begin{mathpar}
   \mi{token types\;}\;\K_0 \to \K_1 \to ... \to \K_m
@@ -353,11 +357,12 @@ Tokens types are represented by a token hierarchy
 \end{mathpar}
 Where $\K_0$ are real import tokens and $\K_{i>0}$ are all virtual.
 The heirarchy is a global definition used by all processes, and the number of levels $m$ in the heirarchy is statically defined, at compile-time, as the number of layers of sandbox within a sandbox.
-It is statically defined to prevent infinite type creation at runtime, and we believe the loss of expressivity is insignificant.
-Processd definitions all include a type parameter, \inline{K}, that they refer to as their ``real token type'' (seen in the definition of \m{protcom} above).
-The main processes in the execution, the ``real processes'' such as \Z and \A, are obviously spawned with parameter $K_0$ and all sandboxes processes with $K_{i > 0}$.
-Definint different token types also creates additional guard rails for sandboxxed programs: they can't communicate with process outside the sandbox, and the type system enforces it through a token type mismatch.
-\plan{There used to be a code snippet here showing a process definition with the toke type paramter but it's useless we just point to the process definition of procom above}
+It is statically defined to prevent infinite type creation at runtime, and the loss of expressivity is insignificant.
+Process definitions all include a type parameter \inline{K}, which is their ``real token type'' (seen in the definition of \m{protcom} above).
+The main processes in the execution, such as \Z and \A, are obviously spawned with parameter $K_0$ and all sandboxed processes are spawned with $K_{i > 0}$.
+Defining different token types also creates additional useful guard rails for sandboxed programs: they can't communicate with process outside the sandbox, because the type system enforces matching token types.
+
+%\plan{There used to be a code snippet here showing a process definition with the toke type paramter but it's useless we just point to the process definition of procom above}
 %For example, the simulator above is now given the parameter $K_0$ (for real), and type $K_1$ as the virtual type to sandbox with:
 %\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
 %$\$$c $\leftarrow$ sim_db$\tr{[K0,K1]}$[k][v] $\tg{(* the usual params *)}$
@@ -370,18 +375,18 @@ Definint different token types also creates additional guard rails for sandboxxe
 %$\$$fdb $\leftarrow$ Fdb$\tr{[K1]}$[k][v] $\leftarrow$ $\tg{...}$
 %\end{lstlisting}
 
+\begin{figure}
+\input{figures/sim_com}
+\end{figure}
+
 \paragraph{Creating Virtual Import}
 NomosUC processes create virtual tokens by withdrawing them from their real token type. 
 The operator \inline{$\nwithdraw\ $ K0 K1 n} allows a process, using its real token type $K_0$, to create $n$ new tokens of type $K_1$.
 A new parameter is also added to $\npay$ and $\nget$ which specifies the token type being sent or received, so a process $P$ can spawn another process $P'$ with a virtual type $K_1$ and can pay/receive virtual tokens to/from $P'$.
-A process (below) that sandboxes $\Fro$ (above) spawns it with its virtual token type (line 1), creates the virtual tokens it needs to send (line 2), and finally sends the tokens specifying the type being sent by \inline{$\npay$} (line 3).
-\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
-$\$$ $\leftarrow$ Fro[K+1][(Int,Bit)] <- k sid rng $\$$p2f' $\$$f2p' $\$$a2f' $\$$f2a' 
-$\nwithdraw$ K0 K1 1
-$\$$p2f'.query ; pay $\textcolor{red}{K1}$ {1} $\$$p2f' 
-$\nsend$ $\$$p2f' x
-\end{lstlisting}
-In Section~\ref{sec:execuc}, we show examples of where sandboxing appears in our definition fo the UC experiment. Namely, we create an entity called the \partywrapper which internall runs protocol parties in a sandbox.
+In Figure ~\ref{fig:simcom}, \simcom first spawns \Fro in sandbox by inuitializing it with virtual token type $K_1$ (line 6-7). 
+When receiging a hash query from \Z, \simcom first creates the necessary virtual tokens and sends forwards the query to the sandboxed \Fro (line 12).
+When it receives a reply, it sends the result back to \Z just as the dummy adversary in the real world would.
+The virtual tokens satisfy the definition of \Fro because they appear as its ``real'' token type, and the work performed when it generates potential is counted towards the total work allowed by the import held by \simcom.
 %When communicating with augmented \Fdb (above), \Sim (below) first creates the virtual tokens (line 5) and then sends them on the channel (line 6).
 %Trying to give a type $K_i$ to a process whose real token type is some $K_{j \neq i}$ fails to type-check for obvious reasons.
 %\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
@@ -401,8 +406,8 @@ In Section~\ref{sec:execuc}, we show examples of where sandboxing appears in our
 
 \paragraph{Relating virtual tokens to real work.}
 %Without relating virtual tokens to the amount of import that the sanboxing process has, we encounter an infinite runs problem where processes can continue to create virtual tokens and processes to perform super-polynomial work.
-Intuitively, the number of virtual tokens created should be tied to the total runtime budget of the sandboxing process to prevent an infinite runs problem.
-The number of virtual tokens created through a globally known polynomial \GlobalF defined at compile-time.
+% Intuitively, the number of virtual tokens created should be tied to the total runtime budget of the sandboxing process to prevent an infinite runs problem.
+The number of virtual tokens created are bounded through a globally known polynomial \GlobalF defined at compile-time.
 The type system requires that the virtual tokens of type $i+1$, $t_{i+1}$, created by a process $P_i$ are upper bounded by $\GlobalF(t_i, k)$ where $t_i$ is the number of tokens $P_i$ possesses of its real token type $K_i$ and $k$ is the security parameter.
 %This ensures that over all virtual processes within a ``real'' process the amount of tokens is never super-polynomial in the number of real import.
 The \inline{$\nwithdraw$} operator itself consume some potential, preventing a process from calling it indefinitely.
@@ -420,6 +425,12 @@ The typing rules described next clarify on how the type system determines whethe
 %% | how do we make sure they don't exceed the polynomial constraints of the calling process?
 
 %\subsection{Typing Rules for Import and NomosUC}
+
+\paragraph{Completing the Commitment Proof}
+The simulator in Figure~\ref{fig:simcom} runs the ideal hash function internally, and waits until \Z tries to commit something to the receiver. 
+When it does so, if the commitment and its preimage exist in \Fro (line 20-21) then it commits to the bit with the ideal world sender, otherwise the environment is commiting to value that the honest receiver rejects in the real world and arbitrarily commits to bit zero, instead.
+The receiver case is much simpler, and we push it into the appendix, because \simcom can assign any hash value to the committed bit send to the corrupt receiver by \Fcom. 
+
 \section{Typing Rules for Import and NomosUC}
 We introduce some of the base type system from Nomos augmented with import, but focus mainly on the the new additions for handling import, potential, and virtual tokens. 
 

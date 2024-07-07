@@ -403,6 +403,9 @@ Definint different token types also creates additional guard rails for sandboxxe
 NomosUC processes create virtual tokens by withdrawing them from their real token type. 
 The operator \inline{$\nwithdraw\ $ K0 K1 n} allows a process, using its real token type $K_0$, to create $n$ new tokens of type $K_1$.
 A new parameter is also added to $\npay$ and $\nget$ which specifies the token type being sent or received, so a process $P$ can spawn another process $P'$ with a virtual type $K_1$ and can pay/receive virtual tokens to/from $P'$.
+In the case of the corrupt sender, \simcom runs a copy of \Fro internally, and spawns it with a virtual token type $K_1$ but gives it a database/list that it can read directly from:
+
+
 A process (below) that sandboxes $\Fro$ (above) spawns it with its virtual token type (line 1), creates the virtual tokens it needs to send (line 2), and finally sends the tokens specifying the type being sent by \inline{$\npay$} (line 3).
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
 $\$$ $\leftarrow$ Fro[K+1][(Int,Bit)] <- k sid rng $\$$p2f' $\$$f2p' $\$$a2f' $\$$f2a' 

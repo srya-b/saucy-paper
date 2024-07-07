@@ -1,0 +1,28 @@
+\centering
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0em]
+$\nproc$ sim_com[K][K1] : $\tg{(* standard args *)}$ 
+  ($\$$z2a: Z2A[K][rop2f[commsg][roa2f]{1}), ($\$$a2z: A2Z[K][ro2fp[commsg][rof2a]{0}),
+  $\tg{(* other channels removed for brevity *)}$ = {
+  $\$$s2roRO, $\$$s2roSIM $\leftarrow$ chan_init[K1][RoP2F[commsg]][rop2f[commsg]]
+  $\$$r2soRO, $\$$ro2sSIM $\leftarrow$ chan_init[K1][RoF2P[commsg]][rof2p[commsg]]
+  l $\leftarrow$ list[((Bit,Int),Int)]
+  $\$$ro $\leftarrow$ Fro $\leftarrow$ k rng sid $\$$ro2sRO $\$$s2roRO l
+  $\tg{(* ... *)}$
+  match $\$$z2a, $\$$p2a, $\$$f2a (
+    Z2A2F,*,* => get {2} K $\$$z2a ; m = $\nrecv$ $\$$z2a ;
+      $\ncase$ m ( QHash(x) =>
+        $\nwithdraw$ K K1 1 ; $\$$s2roSIM.hash ; $\npay$ K1 {1} $\$$s2roSIM ; $\nsend$ $\$$s2roSIM pidS 
+        $\nsend$ $\$$s2roSIM x 
+        $\ncase$ $\$$ro2sSIM ( shash =>
+          $\nrecv$ $\$$s2roSIM ; h = $\nrecv$ $\$$s2roSIM ; $\$$a2z.F2A2Z ; $\nsend$ $\$$a2z RHash(h)
+          $\tg{(* continue to intercept hashed *)}$
+    Z2A2P,*,* => $\nget$ {2} K $\$$z2a ; pid = $\nrecv$ $\$$z2a ; m = $\nrecv$ $\$$z3a 
+      $\ncase$ m ( Send(Commit(h)) =>
+        $\$$a2p.A2P ; $\npay$ K $\$$a2p {1} ; $\nsend$ $\$$a2p pidS 
+        b $\leftarrow$ lexists l (_, h)
+        if b then ((bit, nonce), _) = lfind l (_, h) ; $\nsend$ $\$$a2p Commit(bit)  $\tg{// commitment has preimage}$
+        else $\nsend$ $\$$a2p Commit(false)  $\tg{// environment commiting to something that will fail}$
+  ) }
+\end{lstlisting}
+\caption{The simulator for the corrupt sender, intercepting and replaying hash queries in its sandboxed \Fro.}
+\label{fig:simcom}
