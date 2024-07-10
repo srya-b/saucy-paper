@@ -105,7 +105,7 @@ Proving this theorem requires constructing a straightforward simulator that comb
 and the complete security reduction involves translating a distinguishing environment $Z$ for the combined protocol $\rho \circ \pi$ to a
 distinguishing environment $Z^*$ for either $\pi$ or $\rho$ individually.
 Although the proof is straightforward, the precise statement of the simulator that is parametric in the session type
-of the protocol in our framework serves as good validation for its expressivity. %: our theorem and proof are parametric in the session type of the protocol, i.e., the theorem places no restrictions
+of the protocol in our framework serves as good validation for NomosuC's expressivity. %: our theorem and proof are parametric in the session type of the protocol, i.e., the theorem places no restrictions
 %on the communication pattern used by the underlying protocol and functionalities.
 \begin{theorem}[Composition]\label{thm:composition}
     \begin{mathpar}
@@ -126,8 +126,41 @@ of the protocol in our framework serves as good validation for its expressivity.
 %The transitive relation in Theorem~\ref{thm:singlecomp} allows for replacement of only a single instance of $\F_2$ with $\pi$.
 UC composition in Theorem~\ref{thm:composition}, realized using Theorem~\ref{thm:singlecomp}, allows for
 replacing an arbitrary number of instances of $\F_2$ running concurrently denoted by the $!$ operator. 
+We define some intermediate composition theorems around the $!$ operator that combine with Theorem~\ref{thm:singlecomp} to realize Theorem~\ref{thm:composition}.
+The multisession operator, $!\F$ or $!\pi$, describes a functionality, or protocol, where an arbitrary number of instances may be created.
+In the case of $!\F$, messages from $\pi$ go from being $(\m{pid}, m)$ to $(\m{ssid}, (\m{pid}, m))$ where \m{ssid} identifies which instance of $!\F$ the message is intended for. 
+The operator manages the creation of each instance and relays messages to and from them.
+The associated composition theorem, which we call the Multisession Composition Theorem, extends emulation to an arbitrary number of instances of the functionality and protocol.
+\begin{theorem}[Multisession Composition]\label{thm:functor}
+\vspace{-0.5em}
+    \begin{mathpar}
+        \inferrule*[right=MultiComp]
+        {
+            \F_1 \xrightarrow{\pi} \F_2
+        }
+        {
+            !\F_1 \xrightarrow{!\pi} !\F_2
+        }
+    \end{mathpar}
+\end{theorem}
 Importantly, capturing the arbitrary number of instances is a limitation of most related works. 
 We introduce the operator and its theorem later in Section~\ref{sec:execuc}.
+
+The final theorem that we need is quite simple and explains the inclusion of a \m{squash} protocol in Theorem~\ref{thm:composition}.
+Theorem~\ref{thm:squash} says that there is a simple protocol that can emmulate multisession operator applied twice, $!!\F$, with a protocol that only uses $!\F$. 
+The reasoning behind this is trivial: $!!\F$ messages are of the form $(\m{sid}_1, (\m{sid}_2, (\m{pid}, m)))$ and the \m{squash} protocol turns it into a single \m{ssid} message $(\m{sid}_1 \times \m{sid}_2, (\m{pid}, m))$ that it sends to $!\F$.
+\begin{theorem}[Squash Theorem] \label{thm:squash}
+	\begin{mathpar}
+		\inferrule*[right=squash]
+		{
+			\textit{well-resource-typed} \; \F
+		}
+		{
+			!\F \xrightarrow{\msf{squash}} !!\F
+		}
+	\end{mathpar}
+\end{theorem}
+
 % We elide the details of this composition theorem until we have introduced the $!$ operator and it's corresponding
 % composition theorem (and the \msf{squash} protocol).
 % $!\F_1 \xrightarrow{\pi} \F_2$, $!\F_2 \xrightarrow{\phi} \F_3 \implies !\F_1 \xrightarrow{\phi \circ !\pi} F_3$.
