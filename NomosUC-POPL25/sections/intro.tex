@@ -84,9 +84,12 @@ Our abstraction, called \emph{providerless channels}, wraps processes and runs t
 the (de)multiplexing required for arbitrary topologies.
 Third, several UC protocols require \emph{sandboxing}, i.e., executing individual protocol components in isolation so that their
 internal workings do not interfere with each other.
-This isolation is vital for maintaining security properties when protocols are composed.
+It is a vital design pattern for UC security proofs so sandboxed processes can ba arbitrarily manipulated and replayed, and it
+is an essential part of security under composition.
 To enable cost analysis in the presence of sandboxing, we introduce \emph{virtual import tokens} to allow processes to
 run other processes internally (and satisfy their import requirements), a critically important design pattern in NomosUC.
+Running sandboxed processes like any other requires processes forfeiting more runtime budget (sending whole import) than necessary rather than 
+only the runtime required which is the intended behavior.
 Finally, our main technical challenge was ensuring that the UC security definitions and generic composition operators
 can be expressed in their full generality.
 Surprisingly, even contending with the static nature of IST, we arrive at a notion of compositional security
