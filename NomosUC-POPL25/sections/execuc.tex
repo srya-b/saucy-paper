@@ -351,18 +351,33 @@ In summation, the \partywrapper is a (de)multiplexer that uses the \m{PID} of th
 % introduce composition and show how providerless channels easily connect two processes
 % this should elucidate how connections happen and then the dummy lemma is equivalent just connecting simulators
 % 
-\paragraph*{\textbf{Single Composition}}
-Single composition, defined in Theorem~\ref{thm:singlecomp}, shows that protocols remain secure when a single instance of a functionality is replaced with a protocol that realizes it. 
-It is the composition theorem that is also realized by ILC.
-For example, this theorem suffices for a protocol $\rho$ that uses $\Fcom$ and replaces it with $\protcom$. 
-Ensuring security when a protocol uses multiple instances of the commitment, $!\Fcom$, requires an additional multisession theorem, Theorem~\ref{thm:functor}. 
-It and the single composition theorem presented here suffice to realize UC composition theorem.
-It is important to reiterate that we do not aim any mechanization of UC proofs in this work, therefore, our goal is here to demonstrate that proofs can be specified in NomosUC as a means of validating that we can realize the full expressiveness of UC.
+\subsection{\textbf{Single Composition}}
+We illustrate the simpler case of single composition, defined in Theorem~\ref{thm:singlecomp}, and describe the necessary constructions involved in connecting protocols and simulators.
+Single composition along with a multisession theorem, which realizes the Theorem~\ref{thm:functor} (we allude to the construction of $!\F$ earlier in this section), can be combined to show in a natural way to show that fulll composition can be realized in NomosUC.
 
-The single composition operator shows how easy it is to arbitrarilty connect parties regardless of the session type.
-The composition operator combines a protocol party of $\rho$ and a protocol party of $\pi$ (which realizes $\F_2$) by piping output from $\rho$ to $\pi$ as if it came from \Z. 
-The result of the operator is a new protocol definition that the party wrapper spawns instances of.
-The code of the operator is shown below
+The single composition operators defines a generic way to connect two protocols together to function as a single protocol.
+In Theorem~\ref{thm:singlecom}, a protocol $\rho$ that uses functionalitt $F_3$ can instead use protocol $\pi$ that realizes $F_3$ in the $F_2$ hybrid world. 
+Instances of the protocol resulting from this composition, $\rho \circ \pi$, is run inside \MX.
+Input from \Z is handed to $\rho$ and output from $\rho$ intended for the functionality $\F_3$ is instead given to the corresponding instance of $\pi$ (with the same \m{PID}) as if it were input from \Z.
+Similarly, output from $\pi$ is given to $\F_2$ if it is functionality input, and given to $\rho$ as if it was a message from $\F_3$.
+
+Below we illustrate how the single composition opreator is defined in NomosUC.
+Functionality output from $\rho$ is converted to environment input to $\pi$ by wrapping it in type \m{Z2A} (line 6). 
+Similarly, output from $\pi$ intended for \Z is wrapped to appear as input from the idael functionality, to $\rho$.
+Recall that session type labels can't be referred to generically, therefore, we rely on simple code generators here to defined the wrap functions.
+They are even simpler than the ones used by providerless channels because they perform an even simpler task.
+
+%Single composition, defined in Theorem~\ref{thm:singlecomp}, shows that protocols remain secure when a single instance of a functionality is replaced with a protocol that realizes it. 
+%It is the composition theorem that is also realized by ILC.
+%For example, this theorem suffices for a protocol $\rho$ that uses $\Fcom$ and replaces it with $\protcom$. 
+%Ensuring security when a protocol uses multiple instances of the commitment, $!\Fcom$, requires an additional multisession theorem, Theorem~\ref{thm:functor}. 
+%It and the single composition theorem presented here suffice to realize UC composition theorem.
+%It is important to reiterate that we do not aim any mechanization of UC proofs in this work, therefore, our goal is here to demonstrate that proofs can be specified in NomosUC as a means of validating that we can realize the full expressiveness of UC.
+%
+%The single composition operator shows how easy it is to arbitrarilty connect parties regardless of the session type.
+%The composition operator combines a protocol party of $\rho$ and a protocol party of $\pi$ (which realizes $\F_2$) by piping output from $\rho$ to $\pi$ as if it came from \Z. 
+%The result of the operator is a new protocol definition that the party wrapper spawns instances of.
+%The code of the operator is shown below
 \begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0em]
 $\nproc$ compose[K,K1] 
   (k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID), ($\$$z2ro: z2roS), 
@@ -375,9 +390,11 @@ $\nproc$ compose[K,K1]
     $\$$pi <- pi[K] <- k rng sid pid $\$$r2p4p $\$$p2r4p $\$$pi2f $\$$f2pi
 }
 \end{lstlisting}
-Like any other protocol party, the composition operator accepts linear channels of the required type.
-It's channels from \Z are the same type as $\rho$'s communication with \Z, and its channel with the ideal functionality is typed the same as the protocol $\pi$'s session type communicating with its hybrid functionality.
 
+The operator, like \MX, requires some additional code that is standard practice for any such construct.
+The instances of $\rho$ and $\pi$ in the operator above are virtual processes run by this composition process, and two additional processes are defined that read messages on channel \inline{$\$$z2ro} and forward them unaltered but with virtual import tokens as well.
+These processes are required to exist in NomosUC, and we defined them for every such generic construct we provide.
+\todo{make a statement about the import}
 
 \todo{removed the dummy lemma here}
 %\begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
@@ -438,6 +455,8 @@ It's channels from \Z are the same type as $\rho$'s communication with \Z, and i
 %In the next section we talk briefly about building a zero-knowledge UC experient by applying the multisession extension of $!\Fcom$ used throughout this work.
 %We talk about it at a high-level and relegate a more detailed specification of the protocol in the appendix.
 
+\paragraph{Simulator for Single Composition}
+The corresponding simulator for 
 Proving UC security under composition requires creating a simulator for $\rho \circ \pi$ that realizes $\F_3$ in Theorem~\ref{thm:singlecomp}. 
 This is done by connecting the two simulators, \SIM{\pi} and \SIM{\rho}, in the same way as the Dummy Lemma: sandboxed \SIM{\pi} receives input from \Z, gives output to \SIM{\rho} which gives output to the ideal world.  
 Also like the Dummy Lemma, the simulator construction provided in Appendix~\ref{app:simcomp} is agnostic to the types of the composed protocols and can be easily specified thanks to our token hierarchy. 
