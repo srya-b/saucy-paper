@@ -396,7 +396,42 @@ The instances of $\rho$ and $\pi$ in the operator above are virtual processes ru
 These processes are required to exist in NomosUC, and we defined them for every such generic construct we provide.
 \todo{make a statement about the import}
 
-\todo{removed the dummy lemma here}
+Say a protocol $\rho$ wants is composed with \protcom using the operator above.
+In the definition of \protcom, the user must speficy the import amounts in the session type of the commitment, but also specify the import amounts exchanged between \F and \MX.
+Recall that these are constant amounts sent with every message, in both directions.
+The programmer sets the import for these messages, in this example, to ensure that \Fro has enough import in order to perform polynomial work (a net positive import between \Fro and \MX) and that \MX has enough import to perform the actions taken by both the committer and the receiver.
+Similarly, in the real world, the dummy adversary's type, which forwards all messages from \Z to either \MX or \F, must be parameterized with an import amount to ensure all processes have enough import.
+We discuss, how this import assignment is determined for this example.
+First, we consider that the import used in the session types of the committer and receiver don't need to match directly with the import given from \MX to \F.
+In fact, they likely won't match, because both the receiver and sender are sending/receiving different messages intended for \Fro but being sent usint the same two channels between \MX and \Fro.
+We restate the commitement session types.
+\scalebox{0.9}{
+\begin{mathpar}
+  \mi{type} \; \m{sender} = \textcolor{red}{\getpot^2} \ichoice{\mb{commit} : \m{bit} \product \ichoice{\textcolor{red}{\getpot^0}\mb{Open} : \one}}
+\end{mathpar}
+}
+\scalebox{0.9}{
+\begin{mathpar}
+  \mi{type} \; \m{receiver} = \textcolor{red}{\paypot^1} \echoice{\mb{rcommit} \arrow \echoice{\textcolor{red}{\paypot^0}\mb{ropen}: \m{bit} : \one}}
+\end{mathpar}
+}
+\scalebox{0.9}{
+\begin{mathpar}
+  \mi{type} \; \m{adv} = \echoice{\mb{acommit}: \ichoice{\mb{ok}: \one}}
+\end{mathpar}
+}
+
+A simple assignment for the channels between \MX, \Z, \A, and \F works is as follows.
+The channels between \Z and \MX are typed as $\m{Z2P}[\m{comp2f}]\{3\}$ and $\m{P2Z}[\m{comf2p}]\{0\}$.
+The channels between \MX and \Fro as typed as $\m{P2F}[\m{rop2f}]\{1\}$ and $\m{F2P}[\m{rof2p}]\{0\}$.
+The channels between \MX and \A are typed as $\m{A2P}[\m{rop2f}]\{3\}$ and $\m{P2A}[\m{ro2fp}]\{0\}$--obviously matching the type between \Z and the honest parties in \MX.
+The channels between \Z and \A are typed as $\m{Z2A}[\m{rop2f}][\m{roa2f}]\{4\}$ and $\m{A2Z}[\m{rof2p}][\m{rof2a}]\{0\}$.
+
+This is also a satisfying assignment for \simcom, in Figure~\ref{fig:simcom}.
+It ensures that for every invocation of it from \Z, and its messages out to the corrupt sender or \Fcom, ensure that it always retains sufficient to emulate \Fro internally.
+ 
+
+%\todo{removed the dummy lemma here}
 %\begin{theorem}[Dummy Lemma]\label{thm:dummythicclemma}
 %If \ $\exists \DS$ s.t. $ \DA, \DS \vdash \F_2 \xrightarrow{\pi} \F_1$ then $\forall \A \ \exists \Sim_\A$ s.t. $\Sim_{\A} \vdash  \F_2 \xrightarrow{\pi} \F_1)$ 
 %\end{theorem}

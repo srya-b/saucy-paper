@@ -16,6 +16,39 @@ proc compose[K,K1][s]
   $pi <- protPi[K] <- k rng sid pid $ro2piz2p $pi2ro4pi $pi2f $f2pi
 }
 
+-- party wrapper needs 2 import for each query by the parties
+-- z2p = 3 => p2f = 1 
+-- f2p = 0
+
+-- partywrapper has 2 after sender query
+-- sender sends a message, party wrapper has 1 after msg
+-- Z gives 3 more on Open
+-- f2p gives back 0 to party wrapper
+-- partywrapper has 1 left for receiver query
+-- and it's done
+
+-- commit := 3
+-- open := 0
+
+-- dummy adversary gets 4
+-- sends 2 for first message
+-- partywrapper has 1 left on commit send
+-- dummy adv gets 4 more
+-- sends 2 for open, partywrapper has 2 left after sending open
+-- receiver sends query and is done
+
+-- z2a := 4
+-- simulator has 4 on query for hash function
+-- simulator commits to b with 3 and has 1 left
+-- activated by F_com gives OK back
+-- gets 4 more on open message, now has 5
+-- if bit is the same gives 3 to f_com for open  now has 2 left
+-- and that's it done
+
+-- z2p = 3 ; p2z = 0
+-- p2f = 1 ; f2p = 0
+-- z2a = 4 ; a2p = 3 ; a2f = 0
+
 
 proc compose[K,K1,s][z2rho,rho2z][pi2f,f2pi][rho2f,f2rho]{rho2fn,f2rhon}
   (k: Int), (rng: [Bit]), (sid: SID[s]), (pid: PID),
@@ -72,6 +105,33 @@ proc sim_comp_init[K,J1][s]
 
   -- transition to processes that read from z2a / f2a / p2a and forward to the simulators
 }
+
+proc sim_comp_extread[K,K1][s]
+  (k: Int), (rng: [Bit]), (sid: SID[s]),
+  ($z2a: Z2A[K][p2f,a2f]), ($a2z: A2Z[K][f2p,f2a]),
+  ($p2a: P2A[K][p2f]), ($a2p: A2P[K][A2P]),
+  ($f2a: F2A[K][f2a]), ($a2f: A2F[K][a2f]),
+  ($z2pi: Z2A[K1][z2pi]{z2pin}), ($pi2z: A2Z[K1][pi2z]{pi2zn}),
+{
+  match $z2a, $f2a, $p2a (
+    Z2A2P,*,* => 
+      pid, m = recv $z2a ; get K {z2an} $z2a
+      withdrawtoken K K1 {z2pin} 
+      $z2pi.Z2A2P ; send pid $z2pi ; send m $z2pi ; pay K1 {z2pin} $z2pi
+    A2A2F,*,* =>
+      m = recv $z2a ; get K {z2an} $z2a
+      withdrawtoken K K1 {z2pin} 
+      $z2pi.Z2A2F ; send m $z2pi ; pay K1 {z2pin} $z2pi
+    *,F2A,* =>
+      m = recv $f2a ; get K {0} $f2a ;
+      $f2ro.F2A ; send m $f2ro ; pay K1 {0} $f2a 
+    *,*,P2A =>
+      pid, m = recv $p2a ; get K {0} $p2a
+      $p2ro.P2A ; send pid $p2ro ; send m $p2ro ; pay K1 {0} $p2ro
+  )
+  $ch <- sim_comp_internalwrite[K,K1][s] <- k rng sid 
+}
+
 
 
 (* TODO the init process for sim_comp *)
