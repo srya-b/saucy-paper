@@ -469,18 +469,18 @@ The associated theorem, Theorem~\ref{thm:functor}, is another constrained compos
 It states that multiple concurrently running instances of $(\pi, F_1)$, run as $!\pi$ and $!\F_1$, can UC realize $!\F_2$. The intuition is basic: the instances of $(\pi,\F_1)$ do not share any state 
 with each other, therefore, simulating $!\F_2$ boils down to running many concurrent simulators in the ideal world. 
 In other words, the simulator for this theorem is simply $!\Sim_\pi$, and its construction is identical to \MX (and $!\F$/$!\pi$) above except the \inline{PID} is replaced by \inline{SID[a]}. 
-\begin{theorem}[Multisession Composition]\label{thm:functor}
-\vspace{-0.5em}
-    \begin{mathpar}
-        \inferrule*[right=MultiComp]
-        {
-            \F_1 \xrightarrow{\pi} \F_2
-        }
-        {
-            !\F_1 \xrightarrow{!\pi} !\F_2
-        }
-    \end{mathpar}
-\end{theorem}
+%\begin{theorem}[Multisession Composition]\label{thm:functor}
+%\vspace{-0.5em}
+%    \begin{mathpar}
+%        \inferrule*[right=MultiComp]
+%        {
+%            \F_1 \xrightarrow{\pi} \F_2
+%        }
+%        {
+%            !\F_1 \xrightarrow{!\pi} !\F_2
+%        }
+%    \end{mathpar}
+%\end{theorem}
 The last, intermediate theorem we use is called the squash theorem which states: $!!\F \xrightarrow{\msf{squash}} !\F$. Simply put, the \m{squash} protocol squashes two layers of multisession, $(\m{sid}_2, (\m{sid}_2, m))$, into a single $(\m{sid}_2 \times \m{sid}_1, m)$. 
 This is the simplest theorem stated so far and its simulator, that only demultiplexes \m{sid}s for $!!\F$ needs no explanation.
 We use Theorem~\ref{thm:functor}, whose simulator is found in Appendix~\ref{app:ms} and Theorem~\ref{thm:squash}

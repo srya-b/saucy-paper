@@ -25,18 +25,54 @@ proc compose[K,K1,s][z2rho,rho2z][pi2f,f2pi][rho2f,f2rho]{rho2fn,f2rhon}
   #rhop2f <- channel_init[K][rho2f]{rho2fn} ;
   #piz2p <- comp_wrap_z2p[K][rho2f]{rho2fn} <- #rhop2f ;
   #piz2p <- channel_init[K][rho2f]{rho2fn} ;
-  #rhof2p <- comp_wrap_p2z[K][rho2f]{rho2fm <- #piz2p ;
+  #rhof2p <- comp_wrap_p2z[K][rho2f]{rho2fn} <- #piz2p ;
 
   _ <- gen_wrapper_rho[K1] <- k rng sid pid #z2p #p2z #rho2pi #pi2rho ;
   _ <- gen_wrapper_pi[K1] <- k rng sid pid #rho2pi #pi2rho #p2f #f2p ; 
 }
 
+-- because labels can't be variables and generic we need to explicitly do the mapping, so generate this
+proc mux_z2a[K1][z2a][a2p,a2f]{a2pn,a2fn,z2an}:
+  ($a2pch: A2P[a2p]{a2pn}), ($a2fch: A2F[a2f]{a2fn}) |- ($z2ach: Z2A[z2a]{z2an}) =
+{
+  match $a2pch, $a2fch (
+    A2P,* =>  pid, m = recv $a2pch; get K {a2pn} $a2pch 
+      $z2a.Z2A2P ; send $z2a pid ; send $z2a m ; pay K {z2an} $z2a
+    *,A2F => m = recv $a2fch ; get K {a2fn} $a2fch 
+      $z2a.Z2A2F ; send $z2a m ; pay K {z2an} $z2a
+  ) 
+}
 
-proc sim_comp_init[K,J1][s][pi2f,f2pi]
+proc demux_z2a[K1][a2z][p2a,f2a]{p2an,f2an,a2zn}:
+  ($a2zch: A2Z[a2z]{a2zn}) 
+
+proc sim_comp_init[K,J1][s]
   (k: Int), (rng: [Bit]), (sid: SID[s]),
   ($z2a: Z2A[K][p2f,a2f]), ($a2z: A2Z[K][f2p,f2a]),
   ($p2a: P2A[K][p2f]), ($a2p: A2P[K][A2P]),
-  ($f2a: F2A[K][f2a]), ($
+  ($f2a: F2A[K][f2a]), ($a2f: A2F[K][a2f]) |- ($ch: 1) =
+{
+  -- virtual channels for the processes
+  $z2pi <- channel_init[K1][z2a]{z2an}
+  $pi2z <- channel_init[K1][a2z]{a2zn}
+  $pi2p <- channel_init[K1][pi2p]{pi2pn}
+  $pi2f <- channel_init[K1][pi2f]{pi2fn}
+  $z2ro <- mux_z2a[K1][z2ro][pi2p,pi2f]{pi2pn,pi2fn,z2ron} <- $pi2p $pi2f
+  
+  $ro2z <- channel_init[K1][ro2z]{ro2zn}
+  $p2pi, $f2pi <- demux_a2z[K1][ro2z][p2pi,f2pi]{p2pin,f2pin,ro2zn} <- $ro2z
+  $ro2f <- channel_init[K1][a2f]{a2fn} 
+  $f2ro <- channel_init[K1][f2a]{f2an}
+  $ro2p <- channel_init[K1][a2p}{a2pn} 
+  $p2ro <- channel_init[K1][p2a]{p2an} 
+
+  (* todo set the sid right? *)
+  $spi <- sim_pi[K1] <- ... $z2pi $pi2z $pi2p $p2pi $pi2f $f2pi 
+  $sro <- sim_ro[K1] <- ... $z2ro $ro2z $ro2p $p2ro $ro2f $f2ro
+
+  -- transition to processes that read from z2a / f2a / p2a and forward to the simulators
+}
+
 
 (* TODO the init process for sim_comp *)
 proc sim_compose_init[K,K1,s][pi2f,f2pi,a2f1][p2f3,f32p][a2f3,f32a]{..} :
