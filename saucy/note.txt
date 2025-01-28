@@ -1,36 +1,36 @@
 Wrapper Questions
 =================
 * If an ITM must ``pay'' 1 import to schedule aynchronous code does this pose a problem for environments giving enough import?
-	a protocol party can do possible a polyonomial amount of calls to eventually and pay that polynomial, call it `p` to the wrapper
-	if Z gives x import to protocol parties in the real world, then it gives x import to the ideal world parties and the simulator
- 	if `x` is not enough import then the ideal functionality finishes but the real world doesn't finish --> these are trivial distinguishing events		
+    a protocol party can do possible a polyonomial amount of calls to eventually and pay that polynomial, call it `p` to the wrapper
+    if Z gives x import to protocol parties in the real world, then it gives x import to the ideal world parties and the simulator
+    if `x` is not enough import then the ideal functionality finishes but the real world doesn't finish --> these are trivial distinguishing events     
 * Aynsc functionalities can't F2A_Pass but they can do a regular ?pass to the pump channel
 
 Wrapper Writing
 ===============
 -- talk about how passing works back to the environment and why?
-	> parties no longer juts give control back but go through the adversary, why?
-	> rather than the environment having to be constrained, we want the strongest adversary, one that can always preempt the environment unless a party writes from p2z, those can't be interrupted
+    > parties no longer juts give control back but go through the adversary, why?
+    > rather than the environment having to be constrained, we want the strongest adversary, one that can always preempt the environment unless a party writes from p2z, those can't be interrupted
 
 
 
 * say the party does not pay import to schedule code bloks and only the adversary schedules code blocks
-	adversary exhausts all computation by trying to delay execution and can't do any actual polynomial work
-	the point was to ensure that the adversary gets the same amount of import and therefore has as much ability 
+    adversary exhausts all computation by trying to delay execution and can't do any actual polynomial work
+    the point was to ensure that the adversary gets the same amount of import and therefore has as much ability 
 
 if all protocols define how much import they require for every message type:
-	* unless they receive the import required on input, they don't do anything
-	* it might not be possible for the protocol party to know a polynomial upper bound on the amount of code blocks it needs to shedule:
-		for example there is a sender and a receiver
-		the receive is activate with an input `m` and some import it asked for `n`
-		it gives the input to F along with 0 import
-		F computes and evaluates some random poynomial `T(k)`  and gives it back to `p_s`
-		`p_s` must send `T(k)` messages to `p_r` which will cost `T(k)` import in the wrapper
-		if `n` < `T(k)`, `p_r` outputs only `n` messages received
-		
-		in the ideal world:
-			F gets some input `m` with `n` import and `p_r` outputs some number `T(k)`
-			the distribution might not look the same to Z
+    * unless they receive the import required on input, they don't do anything
+    * it might not be possible for the protocol party to know a polynomial upper bound on the amount of code blocks it needs to shedule:
+        for example there is a sender and a receiver
+        the receive is activate with an input `m` and some import it asked for `n`
+        it gives the input to F along with 0 import
+        F computes and evaluates some random poynomial `T(k)`  and gives it back to `p_s`
+        `p_s` must send `T(k)` messages to `p_r` which will cost `T(k)` import in the wrapper
+        if `n` < `T(k)`, `p_r` outputs only `n` messages received
+        
+        in the ideal world:
+            F gets some input `m` with `n` import and `p_r` outputs some number `T(k)`
+            the distribution might not look the same to Z
 
 
 Andrew Meeting
@@ -214,6 +214,79 @@ okay so they aren't concurrency issues but composition issues that aren't captur
 fundamentally we want to 
 
 port existing informal analysis techniques, rather than verification, aided by on-paper proofs 
+
+
+
+
+Focus on one specific thing and summarize the rest.
+
+1. intro the aba paper
+2. discuss definin generators that are eneral purpose with the insight:
+    * advantage of smaller protocols like this is there is usually a small set or execution path that is most likely to yield failures
+    * in general for interesting environments you're limited to environments that follow the protocol so that something interesting happens
+    * for simple properties you throw everything at it
+3. examination of the injected faults
+    * ranging from simple errors that should be easy to catch to more subtle bugs that may require an interested strategy to find
+
+
+
+
+The environments ability to force delivery of the ideal world renders simple assertions not very useful on their own. 
+Instead we focus on how observations over the many generators and randomly generated environments can give useful information to help isolate a bug.
+In the process, we find no clear path for eliminating false positives from our results except understanding what the generators we specify are able to do
+
+
+a real world protocol that results in a dead-locked environment is easily observable and the simulator ensures that this is the case.
+when the execution states that the queue is empty, but forcing progress still results in output in one of the worlds this becomes and easily distinguishable environment 
+
+for shorter protocols like ABA environments trying to force safety-type violations will try to force things to happen within the first few rounds
+
+for liveness we want protocols that'll run for longer trying to delay decision by forcing view = {0,1}
+
+
+
+
+
+
+
+distribution testing in ABA?
+the ideal functionality doesn't specify a particular distribution and it certainly isn't uniform distribution of output
+say that the real world bug means that the threshold to deliver a value is higher, in some cases this will present as a liveness
+
+t+1 for echo 
+2t+1 for delivery
+
+t+2 for echo 
+2t+2 for delivery
+
+n = 4, t = 1
+t+2 = 3
+2t+2 = n = 4
+
+a: 1, b: 1, c: 0, d: 0
+no one echos anything and nothing is delivered
+
+t+1 and 2t+2
+then a, b force c and d to echo 
+then you have 2t+2 = 1 messages and now you can deliver 1
+and you can also deliver 0
+
+if d = crupt
+a, b can still force c = echo 1 but only if adv says 1 can anyone deliver 1 
+which is a liveness failure
+
+
+
+
+The probability modelling and checking in saucy.
+
+Coin flips are the obvious example because they require some degree of nuance to capture in real protocols.
+They specify properties of probability distributions. A state transition function can define the correct state of a protocol but can not analyze a protocol for when the adversary is the second-moved and affects the probabilityt distribution of the outcome. 
+In general, such specifications fail to reason about how inputs are chosen and quantify any fact about the "knowledge" that the adversary has.
+
+
+
+
 
 
 

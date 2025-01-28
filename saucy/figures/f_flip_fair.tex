@@ -1,0 +1,16 @@
+\begin{minipage}{0.5\textwidth}
+\begin{bbox}[title={Functionality $\F_\m{flip}(S,R)$}]
+~
+%\begin{itemize}[leftmargin=*]
+%\item[--] 
+On \m{init} from $S$ or $R$, if first \m{init} send back \m{Ok} otherwise, generate and store the coin flip $b \xleftarrow{\$} \{0,1\}$ and send back \m{Ok}. Then,
+
+\begin{itemize}
+\citem \emph{eventually} Send $b$ to $S$
+\citem \emph{eventually} Send $b$ to $R$
+\end{itemize}
+%\item[--] on the first \inmsg{deliver}{$S$} from \A send $b$ to $S$
+%\item[--] on the first \inmsg{deliver}{$R$} from \A send $b$ to $R$
+%\end{itemize}
+\end{bbox}
+\end{minipage}

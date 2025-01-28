@@ -1,0 +1,20 @@
+\begin{minipage}{0.5\textwidth}
+\begin{bbox}[title={Functionality $\F_\m{flip}(\mathcal{P})$}]
+~
+\begin{itemize}[leftmargin=*]
+\item[--] on \inmsg{init} from $p_S \in \mathcal{P}$: if $t+1$ honest parties have called \m{init} generate and store coin flip $b \xleftarrow{\$} \{0,1\}$ and 
+
+\begin{itemize}
+\item[$\circ$] For $p \in \mathcal{P}$: \emph{eventually} Send $b$ to $p$.
+\end{itemize}
+
+\item[--] Send $\m{Ok}$ back to $p_S$
+
+
+
+% if first \m{init} send back \m{Ok} otherwise, generate and store the coin flip $b \xleftarrow{\$} \{0,1\}$ and send back \m{Ok}. Then
+% \item[--] on the first \inmsg{deliver}{$S$} from \A send $b$ to $S$
+% \item[--] on the first \inmsg{deliver}{$R$} from \A send $b$ to $R$
+\end{itemize}
+\end{bbox}
+\end{minipage}

@@ -1,0 +1,45 @@
+\begin{center}
+\begin{tabularx}{\textwidth}{ || p{0.2\textwidth} | p{0.1\textwidth} | p{0.1\textwidth} | p{0.5\textwidth} || }
+\hline \hline
+Bug(s) & Result & Generators & Remarks
+\\ \hline
+Message Validation ABA & TP & Simple  & Trivially found safety violation.
+\\ \hline
+Message Validation Ben Or & {\color{blue} FN} & - & The probabilities involved in producing the distinguishing environment and our generators need to be better and smarter about exploration.
+\\ \hline
+Reset \emph{bin\_ptr} [ABA] & TP / (Partial FP) & simple & liveness failure: partial false because ven inputs that result in decisions never output them because of how the code is constructed
+\\ \hline
+{\color{red} Discovered: Any $(n-t)$ $\msf{AUX}(\cdot)$ [ABA]} & Expected FP was a FN & Targeted  & The protocol, as stated, exchibits a safety violation, and this was discovered as a bug in the ``correct'' protocol 
+\\ \hline
+Old MMR bug [ABA] & Partial FN & - & Our generators exploit it but not enough to force simulator to raise a failure.
+\\ \hline 
+Thresh. ABA Too Low / Too High & TP / (TP/TN) & Simple / simple & common coin eases ability to detect / Deadlocks in some cases + simulator without manual inspection highlighted the failure.
+\\ \hline
+Thresh. BenOr Too Low / Too High & TN / (TP/TN) & Targetted / Simple & Protocol over secure no exploit found without significant change in thresholds. / Deadlocks are easy to spot and live locks require manual inspection. 
+\\ \hline
+%{\begin{tabularx}{\textwidth}{ p{0.5\textwidth} p{0.5\textwidth} }
+%\multirow{2}{1em}{Thresh.} & Too low \\ & Too high \\
+%\end{tabularx}}
+%& 
+%{\begin{tabularx}{\textwidth}{ p{\textwidth} }
+%TP \\ TP / TN
+%\end{tabularx}} & 
+%{\begin{tabularx}{\textwidth}{ p{\textwidth} }
+%every environment \\ dumb generators
+%\end{tabularx}} &
+%{\begin{tabularx}{\textwidth}{ p{\textwidth} }
+%safety violations \\
+%some implut distributions, protocol is locked
+%\end{tabularx}} \\ \hline
+%every environment & Too low: safety violations \\
+%& Too high: true positive / true negatives & dumb generators & Too high: some input distributions, protocol is locked
+%\\ \hline
+%\multirow{2}{4em}{ABA thresh. perturbation [ABA]} & Too low: true negative & every environment & Too low: safety violations \\
+%& Too high: true positive / true negative & dumb generators & Too high: some distributions yield a locked protocol state
+%\\ \hline
+Inverted \m{supportCoin} [ABA] & TP & Simple & Simulator loop checking identifies this as a repeated cycle occuring too often to discount as randomness. 
+\\ \hline
+%Should present a liveness failure under specific conditions. It's rare to see exxecutions that exploit this, but some observations when partyh input is split equally. Looping behavior is a good indicator if searched over varying numbers of rounds to discound false positives. \\
+\hline \hline
+\end{tabularx}
+\end{center}

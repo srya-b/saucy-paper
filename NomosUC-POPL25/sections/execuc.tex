@@ -25,7 +25,7 @@ Any process can attempt to \emph{acquire} its channel, check for new messages wi
 The session type of the communicator is given below, along with operators to acquire ($\up$) and release ($\down$) operators, below, and the full typing rules of shared session types is given in Appendix~\ref{app:typing_rules}.
 We provide the full typing rule of shared session types and the communicator in the Appendix.
 
-\vspace{-1mm}
+% \vspace{-1mm}
 {\centering
 \scalebox{0.9}{
 \parbox{0cm}{
@@ -426,9 +426,19 @@ The channels between \Z and \MX are typed as $\m{Z2P}[\m{comp2f}]\{3\}$ and $\m{
 The channels between \MX and \Fro as typed as $\m{P2F}[\m{rop2f}]\{1\}$ and $\m{F2P}[\m{rof2p}]\{0\}$.
 The channels between \MX and \A are typed as $\m{A2P}[\m{rop2f}]\{3\}$ and $\m{P2A}[\m{ro2fp}]\{0\}$--obviously matching the type between \Z and the honest parties in \MX.
 The channels between \Z and \A are typed as $\m{Z2A}[\m{rop2f}][\m{roa2f}]\{4\}$ and $\m{A2Z}[\m{rof2p}][\m{rof2a}]\{0\}$.
-
 This is also a satisfying assignment for \simcom, in Figure~\ref{fig:simcom}.
 It ensures that for every invocation of it from \Z, and its messages out to the corrupt sender or \Fcom, ensure that it always retains sufficient to emulate \Fro internally.
+
+In the providerless channel model, we illustrate what the internals of the composition look like when a protocol \rhocom is composed with \protcom.
+
+\begin{figure}
+\begin{center}
+%\input{figures/compose_diagram}
+\includegraphics[scale=0.35]{compose_diagram.png}
+\end{center}
+\caption{Below is what a protocol $\rho$ that uses \Fcom looks like inside \MX (we only show the case of the sender. Above, is the composed protocol $\rho \circ \protcom$. Below, the part \rhocom connects directly to the \MX internals which relay the message out to \Fcom. Above, \rhocom is directly connected to \protcom via a providerless channel that offers both protocols the appropriate commitment session types. \protcom then connects directly to \MX which outputs its messages to \Fro.}
+\label{fig:composediagram}
+\end{figure}
  
 
 %\todo{removed the dummy lemma here}

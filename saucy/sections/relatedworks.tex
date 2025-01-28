@@ -1,0 +1,46 @@
+\subsection{Existing Frameworks}
+There are many works that discuss better development practices for distributed systems implementation. 
+Some take the additional steps of implementing a framework for writing better distributed sytems, and some go so far as to propose new methods or tools for analyzing them.
+There are a few common themes and suggestions that appear across most of them.
+
+\paragraph{Common Desiderata}
+The first is concurrency.
+Highly concurrent implementations are seen as both a source of new bugs and a hurdle to identifying, or isolating, existing bugs in the protocols.
+Its prevalence has led to a new term has being coined to refer to bugs that don't manifest in testing but appear in deployed systems due to new execution paths created by concurrency: \emph{heisenbugs}.
+To address this concern, existing frameworks recommend design patterns that minimize concurrency and maximize atomicity of the actions a protocol takes~\cite{farsite}, while others enforce it through programming abstractions~\cite{mace,verdi}.
+UC enforces similar concurrency minimzation through its communication rules that create, effectively, single-threaded programs.
+
+The second common theme goes hand in hand with concurrency: layered programming.
+Layered programming refers to clean abstractions through well-defined interfaces between different parts of a distributed protocol such as a consensus layer and an application layer or a network layer and a message handling layer.
+Often state isn't shared accross layers and actions within a layer can't be interrupted and are atomic with respect to other layers.
+This is an intuitive design goal for developers in any setting, and UC exhibits this through the use of ideal functionalities to abstract and prove, in isolation, the security of a protocol.
+In implementation, the same layered programming principles carry over, however security under composition is a formal guarantee that informal analysis alone can't guarantee for protocol implementations.
+
+\paragraph{Comparison}
+Third is a specification language for the desired properties of the system.
+Many of the related works rely on either a state machine representation \cite{mace}, higher-order abstractions like threshold automata~\cite{formalbyz}, TLA style specifications~\cite{ironfleet,farsite} of safety and liveness properties, or other bespoke models~\cite{verdi}.
+The specification language goes hand in hand with the fault-models that the works consider.
+Most works model only crash-faults and the assumption simplifies the modelling language used.
+TLA-style specifications, for example, are very good at specifying safety and liveness properties but cannot support any kind of byzantine behavior let alone specify probabilistic properties such as the distribution of the output of a common coin protocol among a set of mutually distrustful parties.
+Crash faults also enable other works to specify properties and program state for single nodes rather than whole executions. 
+Even the works that support byzantine reasoning are limited in the kinds of properties or types of protocols they can model.
+
+The work by Tholoniat and Grimolie~\cite{formalbyz} models byzantine distributed systems using threshold automata which describe protocols as a system of counters with guarded transitions based on the numbers of types of messages sent by parties.
+It is a powerful, and useful, abstraction but suffers from limititations that the ideal functionality model overcomes.
+The first is that for any moderately complex system, say a repeated consensus protocol, the state space of the automata can explode, and specifying such a state transition function can be cumbersome to do explicitly. 
+The ideal functionality model on the other hand, describes the protocols as a minimal program and the security relation of output indistinguishability is a simplifying specification language.
+Further, despite supporting byzantine protocols, threshold automata are not useful for protocols where particular distributions of the protocols output is desired, such as the coin flipping protocol we implement or the shared common coin use by many modern asynchronous byzantine agreement (ABA) protocols.
+Threshold automata can validate that the protocol follows a correct path of execution based on guards but can not make any statement about the output of repeated runs of it.
+Recent innovations introduce probabilistic threshold automata 
+Threshold automata are also defined via fixed number of honest and corrupt parties, and, therefore, struggle to model permissionless protocols where parties can come and go.
+Finally, the method of verification of the consensus protocol in \cite{formalbyz} requires an additional constraint of the adversary such that it is round-rigid: all parties complete round $r-1$ before any party begins round $r$. \todo{confirm, but: in the Ben-Or example that we study we isolate a bug in the protocol exactly through a distinguishing environment which violated round-rigidity}.
+The ideal functionality model and real-ideal relationship imposes no such restriction on protocols.
+
+\paragraph{Formal Verification}
+Some of the works, especially the works that use TLA for specifying properties, propose formal verification of their implementations.
+Although this provides a strong guarantee on the implemented protocols, it does little to aid in the composability of verified code.
+Notoriously, TLA specifications don't compose, and  the limited composabiltiy of definitions means even two of the same protocol run side-by-side must be respecified and re-verified. 
+This further begs the question whether informal analysis techniques, like we use in this work, are better from the perspective of software development where repeated watsted effort is a hurdel to modular development.
+
+
+

@@ -1,0 +1,13 @@
+\begin{minipage}{0.5\textwidth}
+\begin{bbox}[title={Functionality $\F_\m{flip}(S,R)$}]
+~
+\begin{itemize}[leftmargin=*]
+\item[--] on \inmsg{init} from $S$ or $R$, if first \m{init} send back \m{Ok} otherwise, generate and store the coin flip $b \xleftarrow{\$} \{0,1\}$ and send back \m{Ok} \emph{and leak $b$ to \A}.
+\item[--] on \emph{abort} from \A output \m{abort} to $S$ and $R$ otherwise:
+\begin{itemize}
+\citem \emph{eventually} Send $b$ to $S$
+\citem \emph{eventually} Send $b$ to $R$
+\end{itemize}
+\end{itemize}
+\end{bbox}
+\end{minipage}

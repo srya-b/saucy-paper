@@ -6,174 +6,165 @@
 %             (i).  Fuzz testing is widely used, is a successful analysis tool, and is itself an engineering undertaking. Can we successful apply fuzzing to UC?
 %             (ii).  Does the ideal functionality model and out realization of import aid in analyzng liveness in distributed protocols?
 
-Universal composability is the leadeding framework for defining the security of message-passing cryptographic protocols between mutually distrustful parties.
-Though largely used for cryptography, it has seem a reemergence in asynchronous distributed systems literature, especially due to the rise of decentralized protocols where applications are a composition of many interacting layers of other asynchronous distributed systems with different fault models and properties.
-This highly compositional nature, combined with a new setting where financial incentives make properties like fairness, output distribution, and adversarial influence more relevant, have led to increasing interest in UC for distributed protocols.
-At its core the framework's appeal is that it allows protocols to be designed in isolation and rely on idealized versions of other subprotocols and assumptions that behave like trusted third parties--called \emph{ideal functionalities}. 
-It security definition allows proving of protocols, also in isolation, while ensuring that the proof holds when ideal functionalities are replaced with real protocols and the protocol is composed with arbitrarhy other protocols. 
-Far from only a theoretical framework, this form of design and security definition lends itself well to the this setting.
-%The UC composition operator and security definition allows replacing ideal functionalities with protocols that realize them (in isolation) to realize a larger protocol. 
+% UC is leading framework but only recently we see it being used for distributed systems
+% UC is good at expressing certain kind of properties easily through an ideal functionality 
+Universal composability is the leading framework for defining the security of message-passing cryptographic protocols between mutually distrustful parties.
+Though largely used for cryptography, it has experienced a surge of interest in the domain of asynchronous distributed systems literature within the last 10 years.
+This is due, in large part, to the rising interest in modelling decentralized byzantine protocols, namely blockchain protocols~\cite{kosba2016hawk, badertscher2018ouroboros, miller2019sprites, badertscher2024bitcoin, dziembowski2018fairswap, aumayr2021blitz, kiayias2020composable}.
+%The framework's appeal is two-fold. 
+The framework has widespread appeal for a few reasons. 
+First, the ideal functionality model for specifying protocol behavior allows the designer to express properties not easily captured via a property-based definitions, clearly define adversarial capabilities, and reason about what the adversary learns, and it reduces security definitions down to an indistinguishability relationship to an ideal execution.
+Second, the modularity encouraged by the framework, and the subsequent composition operators and theorems, are well-suited to distributed systems where protocols sit on a bed of several other layered distributed protocols, and creating composable security proofs in isolation is a big advantage.
+Finally, the computational model of UC allows proving liveness of a protocol within an eventual delivery system against a computationally bounded adversary--a core innovation of the framework.
 
-The real-ideal paradigm plays a big role in the success and usefulness of the framework, because it allows defining the properties and security of a protocol through a single relation of indistinguishability with a protocol.
-Comparing to an idealized program allows for expressing arbitrarily complicated and intertwined properties that can be cumbersome and error-prone with property-based definitions, i.e. a laundry list of assertions that must hold. 
-In the earliest formulation of the framework, a simple two party computation (2PC) is described where the properties of secrecy and correctness are closely related, especialy in the byzantine setting when attempting to quantify how adversaries choose inputs, their influence on outputs, output fairness, and adversarial knowledge.
-Expressing and analyzing these properties is crucial to meaningfully realize UC security, especially in the aforementioned world of decentralized protocols.
-We proposet the following concrete research questions:
-\begin{enumerate}[label=RQ\arabic*.]
-\item Is the real-ideal paradigm useful even in identifying implementation-level bugs, and performing test cases analysis for protcol security?
-\item Can UC implementation express and analyze protocols that express such properties and whether they hold in isolation and across layered and parallel composition?
-\end{enumerate}
-The real-ideal relationship is about testing generation against all environemnts, therefore, we select fuzz testing as our method for examing these two research questions. 
-Not only is fuzzing a natural choice for testing the real-ideal relationship, but showing that we can meaningfully use such an important widespread tool in UC lends credence to our claim of UC as a candidate as a development framework. 
-We use this tool to analyze a range of asynchronous protocols and idenfity implementation-level bugs that manifest themselves as distinguishing environments.
+% Async systems well-suited to the UC domain
+% little work has attempted using informal setting and why? 
+Protocols like distributed randomness generation (two-party coin flips, $n$-party common coin protocols) exhibit properties such as fairness, that may bounds on adversarial influence on protocol output, and require a specific output distribution. 
+These requirements make asynchornous systems particularly well-suited to UC.
+Most modern byzantine protocols rely such protocols as subroutines, or themselves exhibit similar properties, and the UC framework provides a generalized approach to specifying and defining their security in relation to a computationally bounded adversary and environment.
+Despite these advantages of the framework, little work has explored the use of UC as an analysis \emph{and implementation} framework for distributed protocols, and to the best of our knowledge no generalizable framework currently exists which exhibits all of these features.
+Implementations of UC definitions are often done in frameworks that bare little resemblance to it, and the resulting code has a weak connection to the proofs in literature.
+The primary reason for the disparity is that UC is a subtle and complex framework that is considered accessible only to seasoned researchers or experts on the topic.
+Furthermore the question remains whether the framework remains useful or even advantageous in an informal setting where proofs are replaced by software testing. 
+UC definitions, themselves, also pose a challenge because existing proofs, ideal functionalities, and protocols can be large, difficult to understand, and often contain framework-specific details alongside core functionality~\cite{badertscher2024bitcoin, badertscher2018ouroboros}
+%In this work we implement UC in a mainstream language, introduce a new model for asynchronous networks, propose new UC design principles to simplify and isolate user code from framework-specific code, and examine the framework through a few case studies.
 
-\todo{also do coin flipping under composition}
+% existing UC programming tools and their push towards more formality 
+Existing literature focuses on creating programming languages for UC or formal programming tools that express UC in existing languages~\cite{canetti2019easyuc, liao2019ilc}.
+Despite enabling executable UC definitions, most work aims to enable formal analysis or proof generation targetted towards researchers and do very little to bridge the game between theory and implementation.
 
-\todo{state why we need to do this for async because existing practices seem to fall short of doing this kind of analysis for them}
+%However, these works exacerbate the biggest challenge to UC adoption oustide of academics: is requires a lot of esoteric knowledge and expertise to parse the subtle details of UC proofs, constructions, and mechanisms.
+%Translating UC definitions of protocols from literature to an implementation presents its own challenges.
+%Definitions are highly technical and full of framework-specific or model-specific details, and implementing them in a non-UC programming framework requires significant tranlation work.
+%Existing UC definitions for distributed protocols, existing largely in the blockchain space~\cite{bitcoinledger, ouroboros, perun}, consist of ideal functionalities, sub-protocols, and proofs that are many pages long. 
+%Understanding and attempting to falsify such weildy definitions can be difficult, let alone implementing them correctly. 
 
+% highlights of drawbacks of existing development/analysis frameworks in distributed systems
+% TODO: talk about the analysis drawbacks as well
+%Existing frameworks and tooling for implementing and analyzing distributed protocols fall short of performing such analysis.
+%Several works, for example, rely on TLA-style specifications which are able to specify safety and liveness properties but not properties about probability distributions~\cite{a, bunch, of, them}.
+%Furthermore, many of them tolerate only crash faults and are unable to express any properties related to byzantine adversaries.
+%For example, even simple two-party com
+%putations (2PC) require reasoning about how the adversary chooses its input, what it learns, and whether inputs of other parties is kept secret.
 
-We believe that these advantages and features of UC mdoelling are specifically advantageous for asynchronous distributed protocol, and, in this work, we explore whether they can be realized as a software development framework using informal analysis techniques.
-
-
-%\item Is UC suitable and practical as a development framework rather than only a theoretical one?
-%    \begin{itemize}
-%        \item [(i)] Can existing UC models/techniques be improved for easy of development?
-%        \item [(ii)] What are the advantages of using UC for development?
-%    \end{itemize}
-%\item Is UC compatible with existing software analysis techniques?
-%    \begin{itemize}
-%        \item [(i)] Does the ideal functionality model and UC's polynomial time notion aid in reasoning about liveness in implementations?
-%    \end{itemize}
-%\todo{Hypotheses: why UC for async protocols and distributed systems are where this matters the most}
-%
-%\todo{maybe something along these lines: good as a dev framework for analyzing security and better researcher tooling for analyzing definitions without cumbersome extra work}.
-
-There is a large amount of exsisting literature proposing programming language (PL) and formal verification tools for expressing UC security in limited, but useful ways~\cite{.}.
-Contrary to our goal, working with new process calculi, a new domain-specific language, or a proving framework do little to make UC more accessible to non-cryptography researchers because 
+% the central claim and research questions of this work
+In this work we instantiate UC as a development framework for asynchronous distributed protocols and explore its use for implementing and analyzing them.
+Notably, we take the opposite approach of existing works and only consider informal analysis of protocols within the framework.
+Concretely our research questions are stated below, and we expand on, and discuss, them in the remainder of this section.
 \begin{enumerate}
-\item Niche programming languages aren't well-suited to production environments and add to the already high learning curve.
-\item The added obligations of using PL machinery for mechanizing proofs can add significant work for researchers as well~\cite{ironfleet,easycryptuc} \plan{easycrypt requires a whole new method of communication that makes translating definitions annoying} \todo{saying ``can add burden'' is an unproven claim but maybe still okay?}
+\item How are asynchronous eventual delivery protocols realized in UC, and what are the design consequences?
+\item What are the advantages or drawbacks of developing protocols in UC compared to existing frameworks?
+\item To what extent can the advantages of the real-ideal paradigm and ideal functionality model be captured by informal analysis of UC implementations?
 \end{enumerate}
+Our focus on \emph{informal analysis} extends from our stated goal of minimizing the barriers to accessibility.
+We select fuzz testing as our informal analysis tool of choice, because test case generation and analysis fits well within UC's emulation definition (more detail in Section~\ref{sec:background}) for ensuring indistinguishability of a protocol with an ideal program for all environments (the test cases of UC) and adversaries.
 
-For researchers, software artefacts are a crucial for establishing more precise definitions that a broader audience can interact with, resuse, and rigorously test. 
-Engineering aside, opening research up to broader falsiability of definitions/proofs is important.
-For software engineers, there is a clear advanage to implementing code that matches academic definitions, the ideal functionality models provides a clear interface (specification, adversarial capabilities, and security guarantees) for software modules, and a UC environment facilitates more sophisticated protocol analysis because of its exposure to both honest party input/output and adversarial action.\todo{the point is along the lines mentioned that both scheduling and inputs/outputs allow more intelligent choice of actions for testing more interesting conditions...}
-Simply put, UC is an efficient \todo{efficient?} harness for developing and testing protocos under byzantine conditions.
-Furthremore, maintaining a symmetry between paper definitions and the resulting implementation solidifies the validity of existing security proofs.
+% talking about the first research question
+Our first challenge in implementing a UC framework for asynchronous development is contending with the new \emph{import mechanism} for polynomial time in UC and understanding the consequences of its design for eventual delivery and liveness.
+Existing asynchronous models in UC work with the outdated lenght-of-input polynomial time notion, which has been shown to permit infinite executions through a straightforward protocol.
+Existing definitions also impose additional design constraints on ideal functionalities, protocols, and environments that unnecessarily force framework and model-specific code to exist within application code.
+The import mechanism centers around import, the fundamental unit of potential runtime that is exchanges as ``tokens'' between machines, giving them the potential to perform polynomial work based on the net import held. 
+To the best of our knowledge, no work has explored how eventual delivery is defined with import, what the consequences of it are for protocol design, and how liveness properties are expressed.
+Concretely, we propose a new eventual delivery model that uses import, and we outline a set of design decisions that minimize its impact on user-defined code and maximally automate parts of the framework that previously required manual instrumentation.
+Further, we discover that the existing constraints of balanced environments and ``parameterized systems'' around import pose hurdles to realizing eventual delivery and require a minor departure from the framework as defined by Canetti~\cite{uc}. 
+They prohibit the necessary difference in computational ability between the adversary and the rest of the execution that is required to achieve eventual delivery.
+Finally, we apply fuzzing and informal analysis towards testing the liveness properties of distributed protocols.
 
-\todo{maybe mention mainstream language earlier}
-In order to address our research questions, and intuition, about UC, we implement it in a mainstream language, Haskell, and apply fuzz testing as our candidate analysis technique to explore UC's suitability as a development framework for distributed protocols.
-Fuzz testing is a method of property-based testing that involves generating random inputs and checking output against a spec, and prior work shows that it can be as successful, if not better, than formal approaches like symbolic execution. 
-It is widely used in practice and considered to be a vital tool in software testing.
-Furthermore, implementing fuzzing is itself an engineering excercise that tests the framework's flexibility. 
-Additionally, we propose a new mechanism for capturing an asynchronous network that extends asynchronous message deliver to asynchronous code execution. 
-Our mechanism, an asynchronous wrapper, allows ITMs to schedule code blocks whose execution is controlled by the adversary and uses the new import mechanism for polynomial time to achieve eventual delivery~\footnote{The import mechanism was devised to overcome problems with previous versions of polytime like the ``length-of-input'' notion, and, as far as we know, we are the first to use it in this way}.
-Moving away from traditional definitions that only work with messages, \emph{eventually} executing code blocks massively simplifies UC definitions and is an abstraction familiar to software engineers in other programming languages.
-\plan{In fact, we posit that there is significant room for innovation on similar conventional UC-isms.}
+% second research querstion
+As far as we know, no work has explored using UC as an implementation framework relying only on existing informal analysis tools, commonplace in modern software engineering to test and located bugs. 
+Of course, such approaches can not guarantee correct code, but we believe that programming within UC simplifies the required assertion to the single property of UC-indistinguishability of a protocol with an ideal functionality.
+Relying on ideal functionalities to describe protocols, and the real-ideal paradigm to test them, is an unexplored concept, and a generalizable approach to distributed systems programming that we believe is an improvement on the status quo.
+We address this claim, and the associated research question above, by specifically examining whether relying on UC emulation (real-ideal indistinguishability), suffices to catch implementation bugs in UC implementations. 
+Specifically, do implementation-level bugs manigest themselves as distinguishing environments (test cases) that fuzzing can find.
+Furthermore, we confirm that UC implementations, and specifically fuzz testing, allows implementations to analyze protocols for properties related to fairness and probability distribution.\todo{maybe mention existing work}.
+The experimental method in this work consists of implementating candidate distributed protocols, injecting bugs into them which we believe are representative of reality, and examining the false negatives and false positives with the lens of our research questions.
+Our findings suggest that for non-liveness bugs, even simple fuzz test generators are capable of discovering distinguishing environments for most bugs that lead to protocol property violation.
+\todo{say something about the other bugs that don't manifest themselves are a result of un-stated properties about efficiency of a protocol or distributions of output}.
+\todo{rephrase the following better as higher-level concluding thoughts}
+The cases in which we fail are a consequence of our fuzzing strategies, and this is expected because fuzzing is only a method of finding bugs not ruling them out.
+In the case of liveness-related properties, cycle-checking is made easy as part of the UC proof obligation for real-ideal emulation, but neither our eventual delivery model nor our attempts at being clever with import yield much success beyond that. 
 
+Our attention turns to UC definitions that assert properties  
 
-
-We validate this vision for UC by implementing it in a mainsteam language and studying its compatibility with existing development practices. 
-\todo{sopped edit here, te rest is not edited:} This implementation realizes the ITM computation model, and provides type checking of channel interfaces between module though we envision more descriptive type systems can be applied to this task.
-We push modular and programming-inspired UC designs further by providing a new abstraction for realizing asynchronous, and other arbitrary, networks that both greatly simplifies paper-and-pencil definitions/proofs and an \emph{asynchronous code} abstraction familiar to programmers.
-Finally, we employ fuzz testing, a critically important and highly successful testing strategy in modern software engineering, to our own implementations of canonical and modern byzantine agreement protocols and showcase
-\begin{itemize}
-\item the UC framework especially lends itself to fuzz testing by reducing complex distributed systems to a set of simple protocol and adversarial interfaces that greatly reduce the input space to be searched
-\item the real/ideal paradigm already provides a built-in specification, the ideal functionality, of the inteded protocol to test protocols properties against
-\item our novel design of asynchronous computing/networking \todo{something something}
-\end{itemize}
-
-Rough notes for the paragrapph. 
-We implement bracha, ben-or, aba and inject faults into them. show how simple fuzzers that don't target specific vulnerabilities can find bugs that violate agreement/safety/etf
-the better approach might be to idenftify only the set of bugs that would induce failures in safety and then say that those can be identified
-but what about simpler bugs? that would require more meaningful testing but not what UC is good fr
-existing fuzz testing is already good for bugs in single compiled progra like a single protocol running in isolation, so we don't think of finding those
-but finding those of a distributed nature
-
-
-Rather than bridge the gap between cryptography reserachers and protocol implementers, these approaches aid validation but accept and embrace the complexity of the framework.
-Ultimately, the advantages of the proving framework, and the paper proofs that rely on it, are lost because of code that completely departs from them. 
+We continue the same approach as above and demonstrate that UC definitions that express properties relating to output fairness, adversarial selection of input (related closely to adversarial knowledge), and their effect on the distribution of outputs. 
+The canonical example we use here is the coin flips and ``fair'' lotteries which have become important byzantine protocols in the blockchain space, and implementation frameworks must be able to express thes properties in a protocol's specification, 
+Some non-blockchain protocols, such as the ABA protocol we study in this work, make use of distributed protocols to generate shared common coins that must specify what the adversary learns about the execution and its ability to influence the outcome. 
+Existing frameworks fail to express and/or analyze protocols that require such definitions.
+Not only does the ideal functionality enable greater expressiveness than existing specification frameworks in this situation, but UC's 
 
 
+%Exising development and analysis frameworks fall short of desirable properties in that most lack support for byzantine protocols and for obvious reasons.
+%The disparity is easily explained by the prevalence of crash-fault distributed systems in production over byzantine.
+%Those that support, such as the work of Tholoniat and Gremolie~\cite{formalbyz, bymc} can not capture properties 
+%and those that do, namely the work of Tholoniat and Gremolie~\cite{formalbyz, bymc} can not capture properties about adversarial influence on, or the distribution of, protocols output. 
+%A simple lottery protocol, common in decentralized systens, requires fairness in availability and distribution of output, but existing framewor
+%
+%
+%Next we implement and examine candidate byzantine protocols in this framework and analyze them for bug detection.
+%There is a wealth of related frameworks that aim to support layered programming, propose a specification language for checking implementations, and some that formally verify implementations.
+%The main drawback of existing works is the lack of support for byzantine protocols, and the disparity can be explained by the relative prevalence of crash-fault distributed systems compared to byzantine ones.
+%%importance of crash-fault distributed systems in large scale computing compared to byzantine systems that have only recently gained widespread popularity.
+%Even so, the underlying principles and techniques that these works make use of, like TLA logic to express properties, are fundamentally incompatible with the needs of the byzantine setting.
+%Some works do aim at byzantine modelling for distrtibuted systems still fall short of the expressive power of UC that we aim to realize.
+%For example, work by Tholoniat and Gramolie~\cite{formalbyz, bymc} uses threshold automata which can suffer from state space explosion for distributed systems with many states, can not model permissionless systems where parties may join or leave the protocol, and requires consensus algorithms be analyzed under a round-rigid adversary condition. 
+%A protocol which may violate safety under an adversary that can delay parties long enough for them to fall behind can not be caught under this constraint.
+%The ideal functionality model, on the other hand, expresses a desired protocols as a minimal program that expresses the properties of the protocol as a whole rather than specifying the behavior of only a single node, as in several existing works. 
+%It also explicitly encodes the adversary's capabilities, and so can express desired properties about what the adversary learns about an execution of a protocol and how it can influence its outcome. 
 
 
-%  Universal Composability (UC)~\cite{canettiUC} is the leading framework for defining security properties of cryptographic protocols.
-%  It is considered the strongest definitional model since it guarantees the security properties hold even when the protocol is arbitrarily composed with
-%  multiple concurrently-executing sessions of other protocol.
-%  UC has gained popularity for analyzing cryptographic protocols due to its \emph{ideal world/real world} simulation mechanism.
-%  In contrast to game-based cryptography where security properties are defined via attack games,
-%  UC defines the \emph{ideal functionality}, a trusted third party that serves as the \emph{protocol specification}.
-%  A core feature of the frameowk is its modularity where complex protocols are defined in terms of simple, ideal functionality building blocks that are secure by definition. 
-%  A major drawback of UC is that security proofs can be quite complicated and difficult to analyze. 
-%  Many related works \cite{ilc, easyuc, ipdl, etc} attempt to formalize UC security through a new programming language or defining UC security in an existing formal verification lanuage, and,  
-%  although useful, such tools frequently never make their way to software engineering practice because
-%  1. niche programming languages aren't suited to large scale development and can be difficult to use, and 2. the added proof obligations on the programmer can be extensive~\cite{ironfleet}.
-%  Utimately, UC-secure prtocols end up being implemented in software frameworks that do not replicate UC, and, therefore, my invalidate on-paper proofs without further security proofs of the code.
-%  
-%  We address this gap in UC-driven software develoment by exploring how inforal security analysis of UC definitons, in our implementation of UC, can identify, and aid in eliminating, security vulnerabilities.
-%  A key controbution of our software development framework for UC is proposing a noval new abstraction for capturing network assumptions. Our abstraction makes use of the novel import mechanism 
-%  for polynomial time and fits nicely as a software abstraction. Our implementation and network model are, to the best of our knowledge, the first concretiziations of the import mechanism in this way.
-%  Prior attempts at modelling asynchrnous networks, for example, focus primarily on adversarial delay of messages between parites. Such notions can require
-%  protocols to encode signficant model-specific behavior which clutters functionalitiy (and protocol) definitions, places unecessary restrictions on protocol design, and is counter-productive for modular and reusable code. 
-%  Out abstraction, on the other hand, acts are a wrapper around ITMs and offers a notion of \emph{asynchronous computation} in a way that is UC-compatible and firs well within a software framework. 
-%  Not only is it natural for software development, but it also reduces functionality and protocol code to be almost model-agnostic. 
-%  We use our network model of computation to focus solely on modeling and analzing distributed protocols in this work.
-%  UC is most notably a framework for cryptographic protocols, however, in recent years the emergence of decentralized systems has renewed focus on modelling the security of asynchronous byzantine networks in UC~\cite{many,cit,ations}. 
-%  Decentralized, namely blockchain, systems are highly modular with many protocols sharing state in unexpected ways and relying on numerous shared distrbuted sub protocols.
-%  Naturally, compositional security in UC is ideal for capturing such protocols. 
-%  
-%  We opt for fuzz testing, by generating environments, as our analysis tool for three important reasons. First, numerous prior work has demonstrated the success of fuzz testing at identifyin software bugs. 
-%  Some work suggests fuzzing is comparable in success to even formal approach such as symbolic execution. 
-%  Second, the UC framework lends itself to compact definitions that compose through ideal functionalities making the input space for protocol parties and adversaries much smaller. 
-%  Combined with our simple network model, UC modularity makes it easier for generated environmenst to explore more of the state space for a particular protocol or simulator proof. \todo{is this setting us up with an obligation to prove this statement with some coverage testing?}
-%  Third, the real/ideal paradigm, and the ideal functionality, provide a built-in specification against which protocols can be tested and a method for comparing the two (the UC experiment). \todo{this last one is the least good the point is that we don't have to define state machines and added spec on top of a protocol, they should already exist from on-paper definitions it isn't an additional obligation to the programmer when using haskell saucy fuzzing.}
-%  
-%  Among the few related works that apply fuzzing to distributed systems, the work by Jepsen goes so far as to apply their methdology to a decentralized byzantine consensus protocol called Tendermint.
-%  Jepsen deploys compiled Tenderming binaries and tests that operations on a distributed database are linearizable under various network conditions and limited byzantine behavior. 
-%  As they admit in their results, the byzantine behavior that they capture is limited to replicated simple scenarios signing keys for multiple nodes. Designing a ful byzantine node for Tendermint is a considerable engineering effort.
-%  Part of the hurdle is that testing a monolothic application like the Tendermint binary requires instrumenting and implementing every sub-component in the whole protocol.
-%  Conversely, it is not possible, within \us, to test secrity under clock skews or race conditions in multi-threaded handling of network messages like Jepsen is able todo.
-%  Hoever, this isn't a limitation of \us, but highlights a key distinction between us and works like Jepsen. \us is a \emph{development framework} rather than only a testing framework.
-%  An application like Tendermint, implemented in \us, ensures that sub-components like network handling and clock timing are implemented and tested in isolation.
-%  As mentioned in the previous paragraph, this makes allows us to test race conditions, should they arise, and capture byzantine complicated byzantine behaviort that Jepsen does not. 
-%  \todo{feels like the point is there but not stated clearly enough. I'm trying to relate to the point of reduced input space from the previous paragraph to talk about why byzantine modelling is easy in \us and that not being able to do clock-skew type testing is a consequencer of Jepsen not being a development framework and having to work with existing monolithic binaries.}
+% non-byz: fairness isn't important in non-byz and probability distributions aren't important: xor of all inputs is random and works 
+% verdi: semantics for different network models, verified system transformers, extend with non-determinism for byzantine faults
+% mace: single node specification because that suffices under all honest assumption
+% formal byzanting verification: 
 
-\subsection{Below this is just notes}
+%We make the claim that a UC development framework can be used for engineering and testing distributed protocols informally, and 
+%A UC-based development framework may greatly benefit programmers by offering a generalizable approach to protocol definition and testing against byzantine adversaries, and it may greatly benefit the broader UC community to create software artifacts that are easy to play with, test, and use as building blocks.
+%We explore this claim by answering the following research questions:
+%\begin{enumerate}
+%\item Can we make better design choices to realize the UC framework and necessary network models to mimize the exposure of protocol and functionality code (user-implemented) to the underlying framework?
+%\item Is the real-ideal paradigm useful for testing and analyzing protocols with informal analysis tools commonly used in software development?
+%\end{enumerate}
+%Security under composition is a more formal statement, and it's not clear whether there exists a straightforward validation method to substantiate it in this setting.
+%
+%
+%The first observation we make is that US definitions tend to carry framework-specific or model-specific code alongside application-specific code.
+%From a theoretical perspective, this is fine, but from a programming perspective we want minimal intereference from the framework or network model in the application itself.
+%Programs and applications need to be used by other protocols, understood by programmers, and not require re-engineering for every new setting it might be used in.
+%In this work, we focus on realizing and analyzing asynchronous distributed protocols, and apply these design principles to propose a new model that guarantees eventual delivery.
+%Our model takes inspiration from existing works, but makes uses the import mechanism for polynomial time rather than previous, flawed, notions used in current literature.
+%The proposed construction defines a wrapper around ideal functionalities, expands upon thw drawbacks of conventional UC design, and defines a new set of simple but effective design choices to automate and shift UC compleixy away from program code.
+%As we discuss later in this work, the our design choices removes significant responsiblity from both protocos and environments to orchestrate the execution correctly (we defined what this means later).
+%The benefits of our construction also carry over our validation strategy for the second question we answer.
+%
+%\todo{explain why distributed systems}
+%
+%In order for UC to be a useful development framework, its inherent advantages mentioned above should manifest themselves as advantages for engineering protocols.
+%The obvious structural advantages give a generalized approach to writing better, more modular, code, and the ideal functionality is a more concise and expressive representation of a software package for others to interact with. 
+%Despite the lack of formal guarantees on security under composition, programming within the structure provides at least some informal relationship between the ideal functuionaliy building blocks and the protocol being realized.
+%The more impactful benefits are taking advantage of the real-ideal relationship as the security definition of an implementation, the environment's ability to control the adversary and adaptively choose inputs for the execution, and the 
+%Finally, we care that informal analysis tools and software testing practices can be effective at analyzing protocols written with UC by relying on the indistinguishability relationship.
+%
+%\todo{mention that we care about bugs manifesting in the real-ideal relationship}
+%We validate our claim and answer our second research question by implenting UC in a mainstream programming language, implementing asynchronous distributed protocols, and analyzing them using fuzz testing. 
+%Fuzz testing is an ideal choice for UC analysis for a few reasons. 
+%First, UC emulation is all about ensuring a property of the real and ideal executions holds for all environments, and relying on test case generation to create environments is a natural fit. 
+%Second, fuzz testing is an effective way method of discovering bugs, even compared to formal approaches like symbolic execution, and it is widely used today in software engineering that programmers are familiar with.
+%Third, the design principles that UC encourages lend themselves well to fuzz testing because protocols can be made easily separable through the ideal functionality abstraction, and the smaller state space should increase the abilities of fuzzing.  
+%
+%In our experiments we implement three asynchronous byzantine protocols of differing complexity. 
+%The most relevant and complex protocol, an asynchronous binary agreement protocol (ABA), is an intended improvement to original version of the well-known agreement protocol by Mostefaoui et al. (dubbed the MMR protocol). 
+%We implement these three protocols, and implement a fuzz testing framework for generating environments and adversarial strategies.
+%In order to detect protocol implementation-level bugs through the real-ideal relationship, we inject bugs representative of those expected during development and run the faulty protocols through our fuzzing apparatus. 
+%We first examine the protocols for failures unrelated to liveness or termination, and find a previously unknown vulnerability in the ABA protocol that our fuzz tester discovered.
+%Furthermore, we find that for all three protocols our fuzzers only returned true positives, and failed to find a distinguishing environment in only one case (discussion in Section~\ref{sec:aba}.
+%Next, we turn our attention to using our new import-based approach to polynomial time to see whether the real-ideal relationship can be useful for analyzing the liveness properties of protocols.
+%Our initial approach of using the simulator proof mechanism for detecting liveness in protocols proved successful, but we observe that non-determinism in protocols makes it difficult to avoid false positives.
+%Finally, we ask whether import and the environment's ability to interact with it directly aids in detecting liveness bugs.
+%Our experiment shows that import ends up being minimally useful in detecting liveness bugs more successfully than the naive simulator approach, however, it is still useful for providing insight into how and when a protocol terminates with respect to the distribution of honest party inputs and adversaries. 
+%
+%The remainder of the paper is structured as follows.
+%Section \ref{sec:background} and \ref{sec:relatedwork} describe the UC framework in more detail, along with the import mechanism, and discusses existing work in informal protocol analysis, previously proposed generalizable frameworks for distributed programming, and existing models for asynchronous networks in UC.
+%Section \ref{sec:wrapper} introduces our asynchronous network model, it's unique abstraction to asyncrhonous code execution, and how it achieves eventual delivery.
+%Section \ref{sec:aba} dives into our experiments with fuzzing, our setup, how our fuzzing apparatusm works, and the results of our experiments. 
+%Finally, in Section \ref{sec:liveness} we examine the open problem of liveness analysis using fuzzing and our proposed eventual delivery model.
 
-\us is a not only a testing framework but a \emph{development framework} where subcomponents and sub protocols are created and tested in isolation.
-
-Combined with paper and pencil proofs, we can reply on the composition theorem to test more complex protocols like Tendermint without worrying about the full code stack.
-For example, even though \us can doesn't allow testing of race conditions resulting from multi-threaded handling of network messages 
-
-our framework ensures that such sub-components of Tenderming are created and tested
-within UC and composed correctly. 
-
-Jepsen fuzz test a compiled binary for Tendermint and check that updates to a distributed database are linearizable under various network conditions and some byzantine behavior.
-
-
-
-fuzz testing is a proven technique even when compared to formal analysis tool. this shows promise as a simple informal tool for protocol analysis
-compared to things like jepsen running and testing protocols is much easier without any of the engineering effort require because of the subtle ways in which UC is designed to mimic a realistic computing environment and network
-fuzzing byzantine messages is easier with UC for a few reasons:
-* the simple interface for adversarial behavior makes it easy to play with message ordering and deliver / dropping messages
-* the ideal functionality abstraction removes sub-protocol detail making the space of byzantine messgaes much smaller / manageable for fuzz testing
-
-this leads into another point about comparing with jepsen. they test existing compiled binaries and so end up testing the full stack of code as part of their testing
-they can test race conditions in how messages are received, for exampe, and standalone UC fuzz testing can not replicate that
-but this is precisely where UC shines: not just testing code but developing it within the UC framework all such sub-protocols are tested and designed individually and larger, composed protocols only testing teir behavior with the ideal functionality model 
-
-
-
-We address the state of software development around UC by exploring the extent to which informal security analysis of UC definitions, in our UC implementation can identify, and aid in elminiating, security vulnerabilities such as safety, correctness, and liveness in distributed systems .\todo{this first line needs to be better}.  
-A key contribution of our software development framework around UC begins with proposing a novel abstraction for capturing different network models.
-Prior attempts to capture, for example, asynchronous communication focus primarily on adversarial delay of messages between parties. 
-Such notions can require protocols to encode significant model-specifi behavior in their definition which lutters definitions, places unecessary restrictions on protocol design, and is counter-productive for modular and reusable code. 
-Our abstraction, on the other hand, acts as a wrapper around ITMs and extends the abstraction to asynchronous \emph{computation}: adverasrially delayed code rather than messages.  
-Not only is this abstraction more natural for a software setting, but it also reduces functionalities and protocols to become almost model-agnostic in their definition. 
-For asynchronous networks we dub our construction the \emph{asynchronous wrapper}. 
-It uses the import mechanism introduced in UC to provide \emph{eventual} deliver guarantees.
-To the best of our knowledge, it is the first concretization of the import mechanism with eventual delivery. 
-
-
-
-\todo{a statement wrapping all this up in a key takeaway and positive result of this work in the context of the state of UC}.

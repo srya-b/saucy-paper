@@ -86,24 +86,24 @@ proc sim_comp_init[K,J1][s]
   ($f2a: F2A[K][f2a]), ($a2f: A2F[K][a2f]) |- ($ch: 1) =
 {
   -- virtual channels for the processes
-  $z2pi <- channel_init[K1][z2a]{z2an}
-  $pi2z <- channel_init[K1][a2z]{a2zn}
-  $pi2p <- channel_init[K1][pi2p]{pi2pn}
-  $pi2f <- channel_init[K1][pi2f]{pi2fn}
+  $z2pi4pi,$z2pi <- channel_init[K1][z2a]{z2an}
+  $pi2z4pi,$pi2z <- channel_init[K1][a2z]{a2zn}
+  $pi2p4pi,$pi2p <- channel_init[K1][pi2p]{pi2pn}
+  $pi2f4pi,$pi2f <- channel_init[K1][pi2f]{pi2fn}
   $z2ro <- mux_z2a[K1][z2ro][pi2p,pi2f]{pi2pn,pi2fn,z2ron} <- $pi2p $pi2f
   
   $ro2z <- channel_init[K1][ro2z]{ro2zn}
   $p2pi, $f2pi <- demux_a2z[K1][ro2z][p2pi,f2pi]{p2pin,f2pin,ro2zn} <- $ro2z
-  $ro2f <- channel_init[K1][a2f]{a2fn} 
-  $f2ro <- channel_init[K1][f2a]{f2an}
-  $ro2p <- channel_init[K1][a2p}{a2pn} 
-  $p2ro <- channel_init[K1][p2a]{p2an} 
+  $ro2f4ro,$ro2f <- channel_init[K1][a2f]{a2fn} 
+  $f2ro4ro,$f2ro <- channel_init[K1][f2a]{f2an}
+  $ro2p4ro,$ro2p <- channel_init[K1][a2p}{a2pn} 
+  $p2ro4rp,$p2ro <- channel_init[K1][p2a]{p2an} 
 
-  (* todo set the sid right? *)
   $spi <- sim_pi[K1] <- ... $z2pi $pi2z $pi2p $p2pi $pi2f $f2pi 
   $sro <- sim_ro[K1] <- ... $z2ro $ro2z $ro2p $p2ro $ro2f $f2ro
 
   -- transition to processes that read from z2a / f2a / p2a and forward to the simulators
+  $c <- sim_com_read <- (* preceeding channels *)
 }
 
 proc sim_comp_extread[K,K1][s]

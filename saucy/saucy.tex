@@ -14,6 +14,8 @@
 \usepackage{xspace}
 \usepackage{listings}
 \usepackage{fontenc}
+\usepackage{multirow}
+\usepackage{tabularx}
 
 
 %% PL packages
@@ -35,7 +37,7 @@
 \lstset{
   backgroundcolor=\color{white},     % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
   % identifierstyle=\color{red},
-  basicstyle=\footnotesize\ttfamily\upshape,      % the size of the fonts that are used for the code
+  basicstyle=\footnotesize\sffamily\upshape,      % the size of the fonts that are used for the code
   breakatwhitespace=false,              % sets if automatic breaks should only happen at whitespace
   breaklines=false,                     % sets automatic line breaking
   captionpos=b,                         % sets the caption-position to bottom
@@ -49,7 +51,8 @@
   % keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
   keywordstyle=\color{blue},     % keyword style
   language=Haskell,                  % the language of the code
-  morekeywords={ forMseq_, generate, forAllM, fork, forever }
+  morekeywords={ forMseq_, generate, forAllM, fork, forever },
+  morecomment=[f][\color{blue}][0]{--},
   %morekeywords={ Set, Tree, Leaf, Node, Applicative, fmap, liftA2, bimap, foldMap
   %             , traverse, mappend, pure, Foldable, Traversable, zero, one
   %             , Semiring, Semigroup, NonEmpty, sconcat, TSet,
@@ -86,6 +89,9 @@
 \definecolor{bb}{RGB}{0,0,0}
 \definecolor{gg}{RGB}{220,220,220}
 
+\newcommand*\ecircled[1]{\tikz[baseline=(char.base)]{%
+            \node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
+
 \newtcolorbox[auto counter]{bbox}[2][]{%
     colback=white,
     colframe=bb,
@@ -97,7 +103,7 @@
     fontupper=\footnotesize,
     fontlower=\footnotesize,
     enhanced,
-    sharp corners,
+    %round corners,
     attach boxed title to top left={yshift=-2mm, xshift=0.5cm},%
     #1,% For possible options
 }
@@ -116,30 +122,31 @@
 % UC is esoteric, hard to understand, and not useful to programmers despite its appeal to modularity
 % even proofs/code in literature is implemented in a non-UC way so security proofs become kind of useless
 % existing tooling makes proving easier but tranfers the problem to working with bespoke languages, foralisms, etc.
+it's concrete
 
-The UC framework is a well-known proving framework for cryptographic protocols, and more recently distributed protocols, in the academic community.
-Decentralized protocols, namely blockchain protocols, rely on layers of distributed asynchronous protocols with different fault models and guarantees, and, despite UC's success the framework rarely makes its way outisde of academic circles in such settings.
-This results from its highly technical nature which makes it difficult to understand by those not already familiar, and its predominant use for cryptographic protocols which require much greater care in implementation that the framework isn't, yet, equipped to handle~\footnote{As opposed to distributed protocols, implementations of a cryptographic primitives requires careful consideration of memory access patterns, side channel leaks, computer architecture, etc.} compared to the needs to asynchronous distributed protocols that assume cryptographic primitives. 
-
-Programming languages and tooling exists for UC to aid in autmating proving, but do little to make UC more accessible in practice. Instead, they add additional layers of complexity by requiring learning new languages and formalisms.
-We content that UC can be useful as a software development framework, and that is modularity and composability guarantees can benefit the development of distributed asynchronous protocols.
-The framework's security definition, as a relation to an idealized program, allows for simpler expression of properties useful in distributed settings, like adverasrial influence and fairness, espcially where financial incentives are involved. 
-
-\todo{roadblocks to UC, the UC real-ideal relation, we can use that to detect many classes of common bugs, better modelling for async in order to help reason about liveness, but negative result here}
-
-The UC framework is the gold standard for proving the security of cryptographic and distributed protocols, however its highly technical nature makes it difficult to understand and use for those not already well-versed.
-This renders on-paper proofs and costructions hard to verify or understand, and it results in implementations of such protocols departing from the UC computation model alltogether rendering security prooff obsolete.
-Existing programming language tools for UC attempt to make proving and writing definitions easier through a type systems and applying formal verification, but do little to make UC more accessible by introducing bespoke programming languages and formalisms.
-
-We contend that UC has a place as software develpoment framework, and not only a theoretical proving framework.
-Specifically, its modularity and compositional security guarantees suggest it aligns well with fundamental software development principles, and it's ideal functionality model succintly captures intended properties, adversarial capabilities, and stands are a more specfic and useful analog of a software module.
-\todo{we want to show that UC is amenable to software engineering and challenge conventional wisdom and say that this avenue requires greater work/effort/investiation/research where the payoff could be great!}
-
-We validate this claim by proposing a simpler, more programmining-friendly, abstraction to network modelling in UC and through case studies to understand how well UC works with existing software practicies.
-Specifically we use fuzz testing as our experimental apparatus, and apply it to implementations of real byzantine agreement protocols ranging from simple to complex. 
-We demonstrate the usefulness of the ideal functionality definitions as a high-level property-based models, UC's adversarial modelling of scheduling and leaks for testing protocol paths, and the advantage of its modular approach on minimizing state space for fuzzers. 
-
-\todo{how to throw in that along the way we arrive at a few insights into what it means to write code or on-paper definitions in the UC-style and how it manifests itelf (like multi-threaded computation model vs ITM model)}
+%The UC framework is a well-known proving framework for cryptographic protocols, and more recently distributed protocols, in the academic community.
+%Decentralized protocols, namely blockchain protocols, rely on layers of distributed asynchronous protocols with different fault models and guarantees, and, despite UC's success the framework rarely makes its way outisde of academic circles in such settings.
+%This results from its highly technical nature which makes it difficult to understand by those not already familiar, and its predominant use for cryptographic protocols which require much greater care in implementation that the framework isn't, yet, equipped to handle~\footnote{As opposed to distributed protocols, implementations of a cryptographic primitives requires careful consideration of memory access patterns, side channel leaks, computer architecture, etc.} compared to the needs to asynchronous distributed protocols that assume cryptographic primitives. 
+%
+%Programming languages and tooling exists for UC to aid in autmating proving, but do little to make UC more accessible in practice. Instead, they add additional layers of complexity by requiring learning new languages and formalisms.
+%We content that UC can be useful as a software development framework, and that is modularity and composability guarantees can benefit the development of distributed asynchronous protocols.
+%The framework's security definition, as a relation to an idealized program, allows for simpler expression of properties useful in distributed settings, like adverasrial influence and fairness, espcially where financial incentives are involved. 
+%
+%\todo{roadblocks to UC, the UC real-ideal relation, we can use that to detect many classes of common bugs, better modelling for async in order to help reason about liveness, but negative result here}
+%
+%The UC framework is the gold standard for proving the security of cryptographic and distributed protocols, however its highly technical nature makes it difficult to understand and use for those not already well-versed.
+%This renders on-paper proofs and costructions hard to verify or understand, and it results in implementations of such protocols departing from the UC computation model alltogether rendering security prooff obsolete.
+%Existing programming language tools for UC attempt to make proving and writing definitions easier through a type systems and applying formal verification, but do little to make UC more accessible by introducing bespoke programming languages and formalisms.
+%
+%We contend that UC has a place as software develpoment framework, and not only a theoretical proving framework.
+%Specifically, its modularity and compositional security guarantees suggest it aligns well with fundamental software development principles, and it's ideal functionality model succintly captures intended properties, adversarial capabilities, and stands are a more specfic and useful analog of a software module.
+%\todo{we want to show that UC is amenable to software engineering and challenge conventional wisdom and say that this avenue requires greater work/effort/investiation/research where the payoff could be great!}
+%
+%We validate this claim by proposing a simpler, more programmining-friendly, abstraction to network modelling in UC and through case studies to understand how well UC works with existing software practicies.
+%Specifically we use fuzz testing as our experimental apparatus, and apply it to implementations of real byzantine agreement protocols ranging from simple to complex. 
+%We demonstrate the usefulness of the ideal functionality definitions as a high-level property-based models, UC's adversarial modelling of scheduling and leaks for testing protocol paths, and the advantage of its modular approach on minimizing state space for fuzzers. 
+%
+%\todo{how to throw in that along the way we arrive at a few insights into what it means to write code or on-paper definitions in the UC-style and how it manifests itelf (like multi-threaded computation model vs ITM model)}
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -161,6 +168,26 @@ component, formatting, style, styling, insert
 %\section{Haskell Saucy}
 %\input{sections/haskell}
 
+\section{Asynchronous Byzanting Broadcast (ABA)}
+\input{sections/aba}
+
+\section{Analyzing Liveness}
+\input{sections/liveness}
+
+\section*{Acknowledgment}
+
+\section*{References}
+
+\appendix
+
+\section{Brachs'a Broadcast}
+\plan{Commented out: a section describing bracha broadcast}
+%\input{sections/bracha}
+
+\section{BenOr's Agreement}
+\plan{Commented out: a section describing BenOr}
+%\input{sections/benor}
+
 %\section{Software Development in UC}
 %\input{sections/experience}
 \section{Fuzz Testing}
@@ -169,13 +196,9 @@ component, formatting, style, styling, insert
 \section{Case Study: Coin Flipping}
 \input{sections/coinflip}
 
-\section*{Acknowledgment}
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv, saucy}
 
-\section*{References}
-
-\appendix
-
-
-\pagebreak
+%\pagebreak
 
 \end{document}

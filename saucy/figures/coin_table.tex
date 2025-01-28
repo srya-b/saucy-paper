@@ -1,0 +1,13 @@
+\begin{center}
+\begin{tabularx}{\textwidth}{ || p{0.20\textwidth} | p{0.20\textwidth} | p{0.20\textwidth} | p{0.30\textwidth} || }
+\hline \hline
+Coin Flip Model & Property Violated & Fault Caught & Remards
+\\ \hline
+$\F_\m{coin}$ & Fairness & Liveness & Adversary can stop after learning the result of the flip.
+\\ \hline
+$\F_{\m{coin}+\m{abort}}$ & Output distribution. & Safety & Force adversary to explicitly abort (or timeout), but now output distribution is affected.
+\\ \hline
+$\F_{\m{3coin}}$ & None & None & 2-party coin flip \emph{can not} be fair, so we expand to $n$-party flips.
+\\ \hline \hline
+\end{tabularx}
+\end{center}

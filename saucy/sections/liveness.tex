@@ -1,1 +1,422 @@
-Using 
+Asynchronous distributed protocols also care about liveness and termination.
+The simplest liveness property can be abstractly states as: under the eventual delivery assumption, the protocol will always do something good. 
+For some protocols, ``something good'' can be that they continue to make progress.
+For others, like the ABA protocol we study, it means that all parties will eventually decide and output some value.
+In this section, we turn our attention to liveness and termination, and we try to understand whether the real-ideal realation, combined with fuzzing and our eventual delivery model, allows us to detect bugs that cause liveness failures.
+%Out hypothesis is that the test environment generation will enable the real-ideal relationship to provide meaningful information about the liveness properties of asynchronous protocols.
+
+Analyzing or checking for liveness distributed protocol implementations has been the target of a many prior works~\cite{ironfleet, macemc, bymc, formalbyzantine}.
+Given the known difficulty of doing so, most works devise and apply formal techniques like symbolic execution or programming language tools that support formal logic to enable more sophisticated reasoning about termination. 
+For example, IronFleet~\cite{ironfleet} specifies protocols in Dafny and uses the Z3 SMT solver to prove statements about the protocol in relation to state machine specification.
+It is clear that aims at informal liveness analysis must make use of heuristics and additional predicates on the program, or test case, state to make statements about liveness.
+%For obvious reasons, non-formal approaches must make use of additional predicates to execution (such as input conditions or adversarial scheduling assumptions) to make statements about liveness or reduce liveness properties to safety-like properties that are necessary to conclude termination (Lemma 17 in \cite{aba}).
+
+The section is organized as follows.
+First, we focus on deadlock failures, and, as expected, show that they are trivially caught. 
+Asserting simple dead-lock failures serve as some validation that at the very least the UC programming framework isn't a hinderance to doing what any programming framework should be able to do.
+Second, we focus on the more interesting case of live locks where protocols run forever.
+These failures are naturallhy more difficult to definitively assert with informal analysis.
+We begin with the most simple, and intuitive approach: using the simulator to check for systems in livelock.
+Next, we extend the generators from the previous section to modulate the import given to an execution and collect information on the relationships between \{import, honesty party input, adversarial input\} and protocol output.
+We use these two methods to detect the liveness-associated bugs we inject into ABA, BenOr, and Bracha.
+Contrary to our initial hypothesis, we come to the conclusion that the introduction of import into our async model doesn't significantly improve our ability to detect liveness bugs, but can still be a useful lever for understanding how and when protocols reach decision.
+Furthermore, using the simulator's role as the prover to check for livelocks enables a programmable assertion in the code but still isn't without limitations against randomized protocols like ABA or BenOr.
+
+\paragraph{Two Types of Liveness Failures}
+Liveness failures in protocol implementations either force protocol parties into a locked state where no progress is made, or parties continue to move through rounds of the protocol without any meaningful progress, or decision, being made.
+The former type, intuitively, should be easier to assert, beacuse locked executions are checkable using our eventual delivery model.
+The latter type of failure can often be classified by the a cycle in the state transition function of the execution.
+Prior work \cite{formalbyzantine} does makes this assertion by using a special encoding of protocol state and running it through a model checker.
+The protocols they analyze, however, don't make use of randomness, say through local coin flips or a common coin, might complicate cycle detection: even correct protocols like ABA can encounter state cycles, several rounds in a row, as a result of the sequence of common coins.
+In such cases, easily distinguishing between true and false positives requires developing an understanding and intuition about the protocol's design.
+
+%We preface the forthcoming discussion by restating a previously made point.
+%Some of the bugs that we inject result in language-level errors being through during execution that result from our own ``correct'' implementations making assumptions about the code that are vioalted under these conditions.
+%Although these are failures in the execution as a result of the bugs we inject, we don't consider these relevant to our research question, because they provide no insight into UC for development, the real-ideal paradigm, or the union of fuzzing the UC.
+
+\subsection{Checking Liveness with UC}
+Liveness properties in UC are encoded by means of an eventual delivery mechanism that ensures that eventually all messages are delivered to all of the parties.
+Under this assumption, liveness states that eventually the correct protocol will do something good.
+Some protocols may require additional assumption such as a fair scheduler~\cite{mmr} or partial synchrony.
+In the protocols we examine, the liveness property states that all parties eventually output a value.
+
+In our async model, we present a program abstraction for asynchronously executing code, and our model ensures eventual delivery with minimal assumptions on the environment.
+The model also presents an initial limitation that we must work around: the enviromment can always force the ideal world to terminate.
+Normally, we would require that all environments always force execution, however we run into problems when the execution isn't given enough import, a value that isn't known a-priori.
+The real world halts prematurely due to a bad UC encironment rather than an inherent failure in the protocol (all false positives).
+Therefore, in the experiments where we use the import as a lever to perturb the execution, we only use environments that never force progress if the parties run out of import.
+
+% deadlocking simpler of the two to assert
+% when all are stuck, the distinguishing event is clear
+% when only some are stuck:
+%   if others terminate and queue is empty, the distinguishing event is clear if you force progress
+%   if others don't terminate but keep running, you get to the other type of liveness failure and you might not catch this one (when you combine bugs at the same time) 
+\subsection{Playing Dead(-Locked)?}
+% \plan{queue is empty -> force progress -> if execution decides then ideal world, else real world}
+Distributed systems where protocol parties are all waiting for some precondition to be satisfied before transitioning to a new state, but no queued code remains, are considered to be dead-locked.
+The protocol, or some subset of parties, is stuck and can not make any progress.
+Asserting this failure as a distinguishing event is simple for an environment to do: if the queue is empty during execution, attempt to force progress and identify the ideal world if an honest party output is observed.
+
+% on-paper definitions are rarely robust and designing them to be as such in UC required making new design decisions given the new states the protocol can be in. These design decisions required more though to ensure that the protocol did what was expected from the description. UC presents a simple way to model multi-threaded computation as a linear one and forces these decisions immediately by enforcing the behavior and immediatl giving an output signal rather than after encountering failures from vague definitions in a multi-threaded model.
+%\todo{finish}
+
+As expected, our simpler, ``dumb'', fuzzers were able to find dinstiguishing environments for every bug we inject that results in this type of dead-lock: threshold perturbation for delivery in \msf{SBroadcast}, threshold perturbation in the \emph{view} set, and resetting the \emph{bin\_ptr} every round without instantiating new \msf{SBroadcast} instances.
+Bugs that cause dead-locks in the protocols we implement appear to be severe ones lending to their ease of detection. 
+This result, and ease of detection, is a generalizable result for any asynchronous protocol that suffers from dead lock failures, and is a promising step towards the goal of detecting liveness failures.
+Identifying the source of the failure, given a positive assertion, is equally easy given the specific honest party inputs and generator that caused the failure.
+Furthermore, alonside making these assertions, we create duplicates of the same test case that record the positives and negatives and report on the distribution of failing test cases as a function of the gnerator and input distribution used.
+
+\paragraph{Partial Deadlock} 
+\plan{deadlocks where only a subset of parties is locks: apply the same strategy}
+One of the bugs we inject presented a unique dead-lock scenario where only one party is dead locked and the others went on the terminate.
+A faulty protocol that doesn't propertly handle messages from future rounds can be ``left behind'' by a scheduler that lets other parties move to the next round, delivers future messages to this party before the current round, and ensure it never moves past the next round because it didn't properly buffer the out of order messages it received. 
+This bug fails to propertly handle the asynchonrous assumption.
+Detecting failure in special cases like this is more challenging because the eventual delivery queue is never empty, and the other parties continue to exchange messages.
+In this specific instance, this bug did also manifest itself as a distinguishing environment where all parties stopped, however, this suggests that not all deadlocking bugs are easily catcable.
+In particular, the programmer must admit some number of false negatives using only the previous assertion.
+A better check might be predicated on a party that has received all pending messages and not made a move while other parties make progress. 
+This strategy of checking deadlocks is, intuitively, not generalizable or fool proof for all possible protocols but offers some information about possibly failing cases that the analyst must explore manually.
+
+%In cases where only a subset of the parties are dead-locked, while the others make progress and terminate, there is no assertion that suffice to always yield true positives.
+%The final dead-locking bug we injected results in only a single honest party being dead-locked and not making progress.
+%A protocol that doesn't let 
+%
+%A single party never making progress, i.e. dead-locked, is indistinguishable from a party that is waiting to receive more messages.
+%Therefore, we rely on heuristics basedon observations of the eventual delivery queue by the environment that are bound to yield false positives that require manual inspection to rule out.
+%Only one of our injected faults falls into this category: protocol parties not robust to message reordering. 
+%The bug allows a party to be ``left behind'' by the scheduler when other parties advance to future rounds, send the target party 
+%
+%A 
+%protocol party that is ``left behind'' by the scheduler and given messages from future rounds before messages from the existing round should implement some method of buffering them until they can be used.
+%Therefore, we rely on heuristics based on the environment's observations of the the queue and whether one party or a subset of parties never schedules any more code.
+%Naturally, this is prone to yielding false negatives, and distinguishing between positives requires defining assertions that understant the protocol well-enough
+%
+%In the context our our async model, dead-locks \emph{should} be the easiest to directly assert: if there are no more events to deliver and the protocol hasn't made progress, or terminated, then it we consider it locked.
+%It be either all parties stop making any progress or only specific parties get stuck.
+%Asserting a dead-lock requires generators that give environments that otherwise \emph{should} ensure that the protocol makes progress. 
+%In practice, it is easy to make sure an environment always allows an execution to make progress by delivering any remaining messages, but combining that with one that also has to ensure it doesn't deliver messages that invalidate the strategy it tries to execute can be difficult.
+%
+%Intuitively, these kinds of bugs are unlikely to be related to import so we put that lever aside for now
+%Instead, we focus our test cases on observing how input distribution, the number of honest parties, the number of corrupt parties, and the generator used affect the occurence of dead-locks.
+%Running the faulty programs through our simple (basic) fuzzers never reported any false negatives as expected, and every positive observed was a true positive.
+%Among the faults we inject, the ones that caused deadlock perturbations of the thresholds for delivering a value in \msf{SBroadcast} and the \emph{view} set, incorrectly setting the \emph{bin\_ptr} after every round without initiating a new \msf{SBroadcast}, and improperly handling messages from future rounds that are out of order.
+%
+%Running our more sophisticated generators over the same set again never results in false negatives, but does yield false positives that end up requiring 
+
+% all true positives were found, and no false negatives were observed
+
+%Threshold perturbations are the simplest imaginable bug in the our protocols, and perturbation of both the ABA view threshold and the delivery threshold for SBroadcast arise in even our simplest generators for only specific settings for $n$ and the existence of $t$ corrupt parties.
+%Our simplest generators always ensure progress is made in the protocol, and observing a dead-lock only as a function of $n$ and $t$ makes it clear that the protocol is incorrectly computing some function of the two variables.
+%Determing the bug for these failures is trivial.
+%We observe similar behavior from our fuzz testers under perturbation of the different thresholds in both \msf{SBroadcast} and \msf{ABA}, and detecting the existence of the bug is similarly simple.
+%
+%\todo{does something need to be said about the false positives from environments that fail to ensure progress in the protocol?}
+% Deadlocking bugs
+% resetting bin_ptr after every round
+% ABA Threshold too high + t crupt parties
+% SBCast deliver threshold: dependent on the n and t because some settings it's an issue like n=4 and t=1 then 2t+1 = n and 1 corrupt party is an issue
+
+%Our test cases are able to correctly identify all of the bugs that produce protocol-wide dead-locked failures.
+%Once a positive result is received, we transition from asserting the empty queue to recording when we encounter this scenario over all randomly generated environments.
+%By doing this we observe precisely under which conditions the failure occurs and doing so lets us easily identify the bug causing the failure.
+
+%Identifying when specfic parties are deadlocked is similarly straightforward.
+%Rather than asserting the queue is empty, the eventual delivery model lets us assert that a specific party is never scheduling any more code despite being given new messages.
+%Another failure we induce by perturbing our protocol to not be robust to message re-ordering.
+%The bugs fails to handle messages from future rounds, and buffer them until necessary.
+%Again, we find that our simplest generator
+%
+%
+%The bug we inject, makes protocols less robust to message re-ordering.
+%A protocol party in round $r$, while others are in round $r+1$, that doesn't properly receive, buffer, and record messages from future rounds will eventuall reach round $r+1$ but enter a locked state because of the messages it ignored previously. 
+%\todo{warp this section up but it's a simple section that is easy to convince}
+%
+%We enounter a few false positives along the way as a result test case generators that turned out were not ensuring progress was being made in the protocol,.
+%Upon review of the test cases, the modifications required to make sure all of our generators make progress was trivial, and the false positives went away.
+%
+%The takeaway of dead-lock failures in distributed protocols is that they are, intuitively, easy to find and randomized test cases enables easy detection of failure and identification of the specific bug based on both honest and adversarial input.
+
+\subsection{Alive and Not Well}
+Defining a good assertion for detecting liveness failures where parties run forever without making a decision is far more challenging.
+Therefore, we experiment with a few different strategies for detection that require some degree of manual inspection by the analyst and an understanding of the intended behavior of the protocol in order to distinguish between true and false positives. 
+Our findings suggest that the simulator is essential for detecting liveness failures if relying solely on the real-ideal relationship in UC, however, minimizing or eliminating false positives is still challenging without manual inspection.
+Furthermore, we discover that import is minimally useful for this purpose, but having the ability to modulate the runtime of an execution through import at gives at least some useful information regarding protocol termination.
+
+%Even catching programs in a loop turns out to be not as straightforward as one might imagine, and we discuss this in one of the examples we highlight in this section.
+%We study the ability of the real-ideal paradigm, our asynchronous model, and our fuzzing apparatus to identify bugs that cause liveness through a few approaches. 
+%Our attempts reveal that asserting liveness failures are still difficult without some useful information about the generator used or the input distribution provided.
+%The real-ideal paradigm helps the cause by using simulators to force distinguishing events in the case of protocols entering cycles, but doing so requires a good definition of protocol state beyond just the current state of the variables that the protocol parties store.
+
+\paragraph{Simulators for Finding Cycles}
+% \plan{high level: cycle detection is useful, but for non deterministic protocols cycles are normal and happen}
+The first, and most obvious strategy, we employ is relying on the simulator to output distinguishing information for protocols that will not terminate.
+Recall that the simulator is the proof obligation for UC security and it must ensure that a protocol that satisfies the properties outlined by the ideal functionality is indistinguishable from the real world, but \emph{must also ensure that protocols that fail to satisfy them are distinguishable}. 
+Therefore, we bake liveness failure checking through cycle detection into the generic simulator constructors used for all asynchronout full information protocols.
+The simulators run the real world internally, and periodically observe the state of the parties and the state of the ideal functionality (in this case the common coin), and check whether a similar state has been reached before. 
+Althrough clear and promising this approach still yields some hurdles that require heuristics to be used to minimize, but not remove false positives.
+
+What we find is that for deterministic protocols, like the ones studied by \cite{formalbyzantine}, loop checking can be an effective tool, but for protocols that rely on randomness such as local coin flips (BenOr) or a common coin (ABA), even correct protocols will reenter the same state multiple times, potentially one after another.
+A simple example of this behavior in the ABA protocol is when all honest parties start with proposed input $1$ and the common coin returns $0$ multiple times in a row.
+The protocol is live and will terminate, but a loop checker needs to use more information than just the current state to make a judgement on liveness.
+The probability of this self-loop in the state machine of the protocol decreases with every subsequent round, and programmatically asserting a livneess failure requires understanding the expected cycles in the protocol and tuning the asserting to it.
+Recognizing this fact, we examine how to define the assertions based on the protocol in question.
+%Recognizing this face, we play with different assertions in our simulators that don't immediately produce a distinguishing event when a cycle occurs but use heuristics like the same cycle being produced more than certain number of times or include protocol-specific information, like the previous outputs of the common coin for ABA, into the representation of a party's ``state''.
+
+\paragraph{ABA}
+In the case of ABA, the parties flip a common coin. 
+Intuitively this coordination point should suggest that a protocol has the same state at the start of round $r+1$ as it did at the start of $r$ with probability at most $\frac{1}{2}$. 
+For small protocols, which we define as protocols with a low level of randomness or a small total state, we can set simple constraints on the simulator for outputing a distinguishing event.
+Given this understanding of the protocol, we conservatively limit the simulator to ignore the same state isn't reached more thhan 5 times in the execution. 
+The strong common coin also suggests a simple filter that always raises a positive assertion when the same state is reached in non-sequential rounds. 
+Additionally, we apply a quick first pass filter that labels a positive assertion a false positive in the case of a self-loop where the common coin never changes.
+
+%Similarly, a common coin ensures that the protocol move closer to decision more quickly. 
+%Given this understanding of the protocol's intended design, we conservatively set our simulator to only raise a distinguishing event to the environment if the same state is reached more then 5 times and always raise an assertion if the same state is reached more than 5 rounds apart.
+%Coupled with our understanding of the protocol's design, we conservatively set our simulator to only raise positive assertions of the protocol enters the same state more than 4 times.
+%In a row, a protocol would have to flip the same coin and enter the same state more than 4 times, with probability $< \frac{1}{16}$, before the simulator raises a positive assertion of failure.
+%We err on the side of a conservative bound because even probabilities on the scale of $\frac{1}{2^6}$ are likely to be observed for a large number of test cases generated by the fuzzer and false positives may always occur.
+
+Running this above strategy on our injected faults, we observe that the only false positives, of which many were reported, were all cases where the protocol took a self-loop several rounds in a row due to the outcome of the common coin.
+\emph{For small protocols with shared randomness like ABA, discounting self-loops and these common forms of false positives was trivial given the output.}
+As for the true postives, as expected the common coin led to livelocks appearing in the same round in successive rounds.  
+
+We encounter an important false negative, that comes from the bug we injected where we reduce this ABA protocol back to the faulty MMR protocol is tries to fix and build off: make a weak common coin and respawn both broadcast primitives every round.
+Our generators for this protocol simply failed to exploit this bug enough times to overcome our threshold for the simulator's assertion.
+On manual inspection we observe this bug being exploited in some cases, but our generators failed to perform is more than 5 times in a row on any specific protocol run.
+Reducing the threshold for failure within the simulator would raise this assertion but parsing through many many more false negatives might not make this bug easier to recognize.
+As we mention in the last paragraph our intuition with the ABA protocol is that more general purpose generators should suffice for a quick protocol like this, however, the downside of not creating more targetted approaches was not detecting this bug.
+
+\paragraph{BenOr}
+Parties executing BenOr's agreement protocol execute local coin flips every round if no party observes enough proposals for a specific value before moving onto the next round.
+Naturally, this means that unlike the case of ABA, we expect that successive rounds with the same state are far less likely, and live locks are more likely to take more rounds of computation to occur. 
+Conversely, the local coin flips also mean that the protocol is more likely to explore the same state more than once as it hops around between sets of proposed inputs until one set of coin flips sets input values that make it impossible not to decide a value.
+Therefore, we tighten the restriction on the simulator for raising an assertion for a liveness failure, and we don't apply any first-pass filter to discount any cases as false positives immediately. 
+
+The only bugs we were reliably able to catch were one where the protocolw as stuck in the same state in successive rounds or entered the same state in every other round.
+For the remainder of the bugs that we confirmed should yield a liveness failure, distinguishing between false positives and true positives required a fair bit of manual work.
+The high incidence of cycle detection in the case of BenOr, is natural considering how the protocol uses randomness.
+For protocols like BenOr, better heuristics need to be created in order to limit false positives.
+
+Our experiments highlight success in finging liveness bugs in protocols like ABA, where termination is expected relatively quickly and where the randomness is limited.
+\begin{itemize}
+\item The real-ideal relation, through simulator checking, is still a good way to check for liveness failures for protocols with limited randomness and preferentially for protocols with coordinated randomness.
+\item Like in the case of ABA, the hurdles we faced with false positives and false negatives don't appear to be inherent to the use of UC, and can likely be mitigated with a more principled approach to fuzz test generation. Future work in this direction would likely illuminate a better methodology for designing fuzzers for asynchronous protocols in UC, or a more principled approach to cycle checking in the simulator that maintains it's generic construction while making assertions better tuned to the protocol in question.
+\item For protocols like BenOr, liveness detection is difficult because cyclic behavior is expected even for a correct protocol. In such cases, it is neceessary to test in the traditional way, outside of the real-ideal paradigm, and checking the adverasry leaks to make assertions about particular state transitions.
+\end{itemize}
+
+\paragraph{Relenting to Traditional Testing}
+We assert that the UC development framework still allows easy testing of protocols in the traditional way.
+For example, in the case of ABA we can define and check specific predicates that are necessary for termination and raise liveness assertions that way. 
+In the case of the MMR bug that we inject into ABA, here is a specific state transition that we can check for through our fuzz testers and use that to raise a failure in liveness.
+This method doesn't make use of the real-ideal paradigm at all, but the fuzzing setup allows us to perform this task easily. 
+Arbitrary other predicates may be definable for the protocols we study, and taking time to develop them into test cases would allow for finding more insidious bugs that cause liveness failures.
+
+
+%In the case of ABA, we used our understanding of how the randomness should affect the protocol, we increase the simulator's threshold for determining when a state cycle can be considered a liveness failure.
+%Doing so greatly reduced, but did not eliminate, false positives in all of our test case generators. 
+%In all but one of the injected bugs, the protocol enters the same state in every round rather than entering a cycle of length greater than 1. 
+%Running this strategy over our faulty protocols, we catch every true positive, but still must manually inspect every cycle reported to distinguish between true and false positives. 
+%
+%An important false negative we observe is a bug that reducses the ABA protocol back to the original, faulty MMR protocol that is known to have a liveness bug.
+%The strategy required to execute this bug is requires an adverasry to target a specific party in each round to force its \emph{view} $= \{0,1\}$ in every round based on the result of the coin from the last round and the proposed values of all of the parties in the current round.
+%Upon manual inspection, our test cases did discover this strategy, but never executed it long enough for our simulator's threshold for cycles to be met.
+%This is more a failure on our generator design to execute more precise strategies for longer, or, perhaps had we run the test cases for longer might have executed this same strategy for long enough that our simulator observes it.
+%\emph{In genearal we find that over specifying a generator to a specific strategy every time can work to produce the same cycle with reasonable probability, but perhaps better test generation techniques, like creating a breadth-first tree of exectuion might yield better results.}
+
+%\begin{center}
+%\emph{$\diamond$} There remains a tension between over specifying fuzzing generators and distinguishing true and false positives to exploit an implementation bug over multiple rounds.
+%\end{center}
+
+\paragraph{Playing with Import}
+Our proposed asynchronous model allows direct interaction with the import notion of polynomial time in order to guarantee eventual delivery.
+The environment test cases can control the import they give to the executions. Similarly, the simulator can do the same to its internal real-world simulation.
+%Its design is intended to be the most straightforward way to express eventual delivery, taking inspiration from existing models, by using the import mechanism.
+The design of our model leaves only a few places where import can be meaningfully used: the import the simulator gives its internal simulation, the import the environment gives to the protocol parties, the inputs it gives to the adversary, and the import it gives to the wrapper around \F to force progress in the network.
+We examine whether this additional lever can help reveal additional information about the termination properties of protocols, and how that information can be used to detect liveness failures through fuzzing.
+
+%The \m{MakeProgress} mechanism isn't very useful in an engineering setting, as the idea of the environment and adversary competing for runtime doesn't have a clear connection to the production setting.
+The primary thing import allows us to do is limit the runtime budget of the execution allowing us to examine when and how protocols terminate within a finite amount of time.
+Naturally, a protocol with enough import will is always simulatable, therefore it is unclear how to define a programmable assertion based on import like we do above.
+Furthermore, the real world executions all execute against the dummy adversary, controlled by the environment, so the idea of the environment competing with the adversary for execution doesn't make sense in this setting.
+Instead we augment our generators to collect information on the distribution of executions, and try to develop a methodology for determining liveness failures from it.
+
+From the start specific approaches can be discounted. 
+Giving different protocol parties different import, for example, easily reduces to the case of a byzantine party that emulates ``running out of import'' by ceasing any multicasts.
+Similarly, playing with the import the simulator gives its internal real-world is also unlikely to yield any useful information.
+
+Our approach is to examine the distribution of outputs, looking for terminating experiments, as a function of the runtime we give the execution.
+Specifically, we're trying to observe the probability of termination as a function of the runtime we give the execution for specific combinations of honest party input and generator.
+We focus specifically on outputs that don't conform to our mental model of the protocol and its executions.
+For example, one of the primary results we look for from our tests is when specific sets of honest party input, and a specific generator, fail to terminate while other distributions with the same generator terminate with high probability or when the failure is specific to a certain generator.
+We use these informal signals in our output to determine suggest which cases are worth examining manually like we do with the simulator approach above.
+Like the simualtor approach above, we are able to quickly discount specific termination delays that occur on the basis of the output of the common coin in the case of ABA.
+
+Working through our examples in this work, using this approach, we quickly come to the conclusion that this approach isn't very fruitful for detecting liveness failure in comparison to the simulator example above. 
+First, the failures in the above came from distinguishing correct behavior as a result of random choices and actual bugs remains, and import does nothing to illuminate this.
+Second, the failure of our generators to catch a more subtle bug in the case of ABA is independent of the method used to detect failure.
+However, one benefit of examing the protocol in this way is that the analyst learns the behavior of the protocol as a function of runtime, and it actually may be able to inform the simulator approach above by highlighting places where the simulator may find false posirtives.
+
+%\plan{A key limitation of our approach is that there isn't branching on random decisions, but entirely new environments and that makes finding longer strategies difficult}
+%Our asynchronous model enables direct interaction with the import mechanism for guaranteeing eventual delivery.
+%Furthermore, the real world executions all execute against the dummy adversary, controlled by the environment, so the idea of the environment competing with the adversary for execution doesn't make sense in this setting.
+%Instead we augment our generators to collect information on the distribution of executions, and try to develop a methodology for determining liveness failures from it.
+%
+%
+%Our approach is to examine the distribution of outputs, looking for terminating experiments, as a function of the runtime we give the execution.
+%Specifically, we're trying to observe the probability of termination as a function of the runtime we give the execution for specific combinations of honest party input and generator.
+%The only evaluation metric we have for this approach is to compare it to the approach above, and determine whether this approach is better overall or even detecting specific kinds of bugs than the approach above. 
+%We first run through the simple, dumb, generators to determine a baseline of how the protocol terminates for different distributions of input.
+%Recall that these generators may make completely random choices, but always deliver all messages in queue.
+%Therefore, we expect that all protocols that we test, for each input distribution, the percent of termianting test cases should reach 100\% as we increase the import we give.
+%
+%The asynchronous model we devised uses import in the most straightforward way, the translation from existing works is clear, and it leaves only a few places for import to be used as a lever for testing.
+%The import the simulator gives to its internal run of the real world, the import the environment gives to honest parties, the import it gives to the adversary, and the import it spends to force progress in the wrapper.
+%The MakeProgress mechanis, as defined, doesn't make too much sense for used in a development framework as we're only concerned with dummy adversaries, it's more a theoretical feature needed for eventual delivery.
+%The change that it makes is that the adversary always gets as much import as the parties, to ensure that it can do ther same amount of work, but never gets the MakeProgress import given to the wrapper.
+%
+%Naturally, the way we define message sending is to assign to it some cost of operation. Therefore, parties can and do run out of import in our framework after sending some number of messages.
+%Ideally, we don't care about executions that fail because of import so we give as much import as we need, however in this case we want to play with the import we give to learn something new about the execution.
+%Giving parties differing amounts of import is clearly not useful because it is equivalent to a corrupt party behaving well and stopping after some number of messages (it is not a technique that you need import for or that imporrt gives you).
+%Instead, we given the same import to all parties but modulate that number.
+%We are actually forcing the parties to stop after some amount of time.
+%
+%We observe how the protocol terminates under different conditions given different amounts of import, say an iteratively increaasing amount of import.
+%For a specific amount of import, a specific set of honest party inputs, and specific generator we determine what percent of the test cases pass.
+%For a correct protocol we expect that the percent of passing test cases increases to 100\% given enough import.
+%There is, again, a problem that you can't distinguish a false positive from a false negative 
+%
+%
+%% The frist: varying import to differen
+%
+%% giving different import to different parties shouldn't really mean anything you can just suppress parties up to the limit
+%% hypothesis is clear that this is equivalent to party being corrupt and just stopping so NOT GOING TO BE USEFUL
+%
+%% controlling import has no meaning in the ideal world only simulator that will stop doing things if the internal real world stops doing things and environment just forced progress
+%%     simulator will give the same import input to the real world and that will stop when it runs out of import, the environment makes progress which moves the real world as well but nothing happens but environment knows if it stopped f
+%
+%% import variation does nothing for the real-ideal world you can only observe passing test cases. if Z does makeprogress eventually the real world should also finish in that time if it can otherwise it is indistinguishable
+%
+%% import inside the simulator: simulator runs polynomially many copies of the real world, runs environments internally and determines whether the protocol is live but that's the same as doing it here 
+%
+%% for one particular import amount we determine how different input distributions lead to percent terminating cases: naturally we expect even distribution to take longer than other cases given the protocol description and can assert that to be true. 
+%% for ABA that makes sense, and we expect termination times to be faster for specific sets of honest party inputs. What about generators? some generators might be able to delay confirmation by a lot but you don't necessarily know that that is expected. If the described protocol is designed that is should have O(1) termination time, then any large deviations can be detected by this method. But you don't even need import for that you just directly run the environment for a specific amount of time and see if the world decided
+%
+%
+%% if you control import then you see that the queue becomes empty, the environment can determine whether that is an import issue or the parties are stuck
+%% if the queue is empty, the environment can either:
+%%               make progress a bunch in which case the ideal world terminates and the real world does not this will always result in a distinguishing even in the case of not enough import 
+%%               not do that: we mark this as not a failing test and just give more import but this doesn't allow any info on percent success we need distinguishing setup
+%%   ok so def makeprogress
+%%   now you see a protocol that finishes with some probability over many test cases say 1,000
+%%     for s
+%
+%Our approach is to examine the distribution of terminating experiments as a function of the runtime we give the execution. 
+%Specifically, we aim to observe trends for termination for specific distributions of honest party input and test case generators.
+%A first run of our experiment works only on our simple, or ``dumb'' generators. Recall that these generators execute no special adversarial strategy or behavior except making entirely random choices. 
+%They vary in only scheduling algorithms.
+%We use these generators as our baseline for comparison with other, more sophisticated generators.
+%Liveness failures caused by these generators are easily identified for protocols like ABA where the termination should occur in small time scales. Observing non terminating test cases with very high import is a clear signal.
+%Non-terminating cases in our other generators are compared to them to determine whether the p
+%We compare this approach to the simulator's cycle-checking approach above, as the idea of the environment and adversary competing for runtime doesn't have a clear connection to the production setting.
+%
+%% in aba we look for singular cases of non-termination with large import as a signal for 
+%
+%Our intuition behind this strategy is that given environments that we are confident should allow protocols to continue to make progress, the number of cases where the real and ideal worlds differ should decrease with greater run times.
+%Furthermore, this method requires manual inspect of the reports from the fuzzers, and liveness failures should present themselves as the same runtime not resulting in a decision for particular honest party inputs when compared across different generators.
+%
+%Modulating import means we give the protocol parties larger runtime budgets over time.
+%We immediately ran into a problem with this strategy where distinguishing between parties running out of import and parties in a dead-lock is not straightforward without having the ability to directly read the import they have remaining.
+%As such we substitute this approach in favor of giving parties as much import as the need but instead modulating the amount of time the environment spends giving input and delivering code in the queue.
+%Doing so allows us to filter out environments that force dead-locks and look only at executions where the protocol continues to do things.
+%
+%Here the real-ideal paradigm becomes far less important as we are only concerned with whether the protocol eventually terminates.
+%This approach to finding liveness failures highlights the liveness failure of the ``MMR bug'' that we observed false negatives on in the previous method on a specific set of inputs and with a specific generator.
+%The outpur report shows that for a particular running time, parties fail to decide when the common coin values follow a specific schedule in reference to the honest party inputs.
+%Calling this result as catching a ``true positive'' is suspect, because it's up to teh analyst to look at reports and suspect that a failure has occurred. 
+%In this way, this approach to detecting liveness failures certainly isn't a positive result for our question on the usefulness of import or the real-ideal paradigm, but does suggest that more information is revealed about the execution's termination by modulating runtime across our different test case generators.
+%\todo{Equivalent table as previous section}
+%
+%%
+%%The first strategy we employ, modulating import of the execution attempts to uncover how liveness or termination evolves as the execution is given a greater runtime budget.
+%%Rather than make assertions directly, our fuzzers output information on the relationships between the distribution of honest party input and how the protocol parties reach decisions as a function of their runtime. 
+%%Specifically we observe how many indistinguishable 
+%%
+%%The second class of liveness bugs is much more interesting because it captures adversarial action forcing protocols into a looped state. 
+%%
+%%Naturally, it is harder to assert directly in code, so we must rely on test cases that record useful information through execution that allows a developer or analyst to identify liveness failures.
+%%When reasoning about non-termination, import becomes relevant, beacause the runtime of an execution is directly tied to the import given to the execution.
+%%In this section we define different strategies we employ to detect liveness failures, and specifically focus on whether using the UC's real-ideal paradigm provides a unique advantage when combined with fuzzing.
+%%
+%%It is clear from the previous fuzz testing of ABA that the mostlikely place for livenss failure to occur is when the \emph{view} $= \{0,1\}$ for one or more parties in every round.
+%%Any other view set means that if the common coin returns the same value, parties will decide. 
+%%
+%%The first strategy we use is modulating the runtime of the executions with respect to a specific choice of honest party input distribution and environment generator.
+%
+%
+%% division of infintie run liveness as well
+%% no party decides anything
+%
+%% some parties terminate but others keep ruinning forever without decision
+%% do these reduce to the former failure? we see that in ABA this is the case that
+%
+%% the strategies that we use and what they result in
+%% 1. choose some input distribution, choose some generator, and iteratively increase import and output the number of parties that have decided
+%   % observe distribution of decisions over the generated test cases 
+%
+%% 2. modify our code that allows simulators to run protocols such that it can directly retrieve the value of every state variable for each protocol party and do cycle detection.
+%
+%% 3. depart from real-ideal and can we use the UC execution model to get enough execution information that allows us to assert specific preficates that we believe are necessary for termination
+%
+%% despite using runtime modulation, there is a fight between successfully executing an adversarial strategy that works to prevent termination and running the environments for longer and longer. ABA expected termination is O(1) rounds so our generators endedup focusing too much on exploiting vulnerabilities early rather than devising ways to attempt them repeatedly while making progress. Because of this drawback in our approach, we still catch false positives because random decisions made by the protocol can appear to be loops or cycles in the execution
+%
+%% using the simple sanity check first pass environments as a technique for discovering false positives because these "normal" things in the execution should happen any and every time
+%% the support coin bug: we see that this bug under normal circumstances causes non termination in all cases except when n-t parties have the same input and only deliver 1 value and the coin flip agrees with this value. For all other cases where 2 values can be delivered we can ensure that some parties never decide anything.
+%% can we use the other generators to discount false positives? if we deliver all messages in order we can still have the false positive occur but will this true positive occur? i think the answer is yet.
+%% cycle detection is not enough without first defining the state you care about, only looking at the common coin and state RIGHT NOW can lead to false positives, if you consider the common coin over time or observe that party state is the same despite changed in the randomness (common coin) this is a better approach to filtering out false positives. 
+%% in all no single approach seems well-suitd to the general class of distributed async algorithms but using UC + fuzzing with better test crafting can go some of the way to discovering livenss bugs.
+%
+%% more subtle bugs like MMR are harde to discover: these the adversary does a specific thing every round and relying on random generators to do would require better predicates on the inputs.
+%
+%
+%
+%%\paragraph{Iterative Checking of Decision}
+%%The simplest stragey employed does the following.
+%%The environment in question is run many times, with random distribbutions of inputs given to the honest parties, and the test cases iteratively gives more and more import to the execution.
+%%The intuition behind this strategy is that direct observation of the output distributions as the execution is given more time to execute should reveal input distributions that continue to yield no decisions ever being made by the protoco
+%%
+%%
+%%The simplest set of bugs that we inject in this section and the previous are bugs in the thresholds encoded within the protocols.
+%%In the previous section, we saw that bad thresholds lead to protocol failure which was easily caught be even the simplest generator that we defined. 
+%
+%
+%% SBcast thresholds being too high
+%% ABA thresholds being too high
+%% supportCoin being flipped:   
+%
+%% thresholds being too high for SBcast:
+%%   the true positive cases come about when parties have a more even split of input: the observation is clear that regardless of the import/runtime that we give some input distributions are locked in a state where the queue is eventually empty
+%
+%
+%% for locked liveness failures, make progress will force ideal world delivery and the real world won't do anything ever
+%% for looping liveness failures, the environment gives a specific amount of import to the protocol with enough time the real world runs out of import (and hence the simulator) and the ideal world delivers eventually
+%
+%% if the protocol is live and we run it for too short of a time, we will get a distinguishing environment so with modularing impoert (i.e. modulating round numbers) we should monitor the information of how often things decide and don't decide
+%%       if we see that the protocol never decides even if we run it for longer and longer, then this is a strong suggestion for a true positive for a liveness bug
+%%       in such a case we can't do the standard indistinguishability notion here because one case where the executions differ for termination isn't enough to determine a liveness failure so we rely on manual analysis of results for this. There is not single assertion that satisfies the liveness situation
+%
+%% in the case of locked executions, the real world runs out of items in the queue to deliver, and the simulator will report that both worlds have an empty queue, the environment continues to press and eventually one world will terminate and that will be the ideal world every time
+%
+%% programatically, we can say that environments stop when they see that the queue is empty and attempt to MakeProgress for some time and see what happens. If one of the worlds finishes, then it can distinguish between the two with non-negligible probability.
+%% the real world must ALWAYS terminate it the ideal world does. 
+%
+%
+%% liveness is tricky: the ideal world will always finish even if the real world is still live we just didn't run it for long enough
+%% with environments that continue to MakeProgress after the queue is empty: in such cases environments sometimes see one world deliver (the ideal world) and the other world does not. When there is a delivery, this world is labelled the ideal world and the other the real world. Otherwise, flip and coin and make a random guess. The delivery of one world is a distinguishing event.
+%% This isn't a useful distinguishing strategy for liveness bugs because a protocol that ran out of import could still be live, this is a FALSE POSITIVE
+%
+%% instead we focus on observing different relationships between the inputs and outputs
+%% the first method we approach is progressively increasing the amount of import that we give to the execution
+%% and we observe what the relationship is between the two executions: if we end up with less distinguishing events (more times that the transcripts are exactly the same) then we can say that there likely isn't a bug
+%% furthermore, we observe relationships between the input distribution and the 
+%
+%
