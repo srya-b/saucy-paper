@@ -1,0 +1,30 @@
+\begin{lstlisting}
+-- partition parties on the input they receive
+pidsT !$\leftarrow$! partition honest
+pidsF !$\leftarrow$! honest \\ pidsT
+
+-- start execution by only giving broadcast messages within partitions
+estTtoT !$\leftarrow$! intersectM (estTrue 1) (byReceivers pidsT)
+estFtoF !$\leftarrow$! intersectM (estFalse 1) (byReceivers pidsF)
+deliver (estTtoT ++ estFtoF)
+
+forM [1..rounds] $ \r -> do
+  -- step 1: let some parties receive both inputs in broadcast
+  partition !$\leftarrow$! subset honest
+  -- deliver the intersection of messages for p and any arbitrary EST message
+  forM partition $ \p -> (intersectM (byReceiver p) (arbitraryEst 1)) !$\gg =$! deliver
+       
+  -- step 2: give corrupt EST messages to the same group
+  -- generate 5 messages, shuffle them and execute
+  (cuptEstMsg partition inputs r 5) !$\gg =$! execCmd . shuffleM
+
+  -- step 3: give crupt AUX messages and deliver all AUX messages to all
+  -- generate 5 byzantine messages and shuffle them with deliver instructions for remaining AUX messages
+  cruptAuxs !$\leftarrow$! cruptAuxMsg honest inputs r 5
+  auxs !$\leftarrow$! allAuxs r
+  shuffleM (auxs ++ cruptAuxs) !$\gg =$! execCmd
+
+  -- step 4: give all remaining EST messages to all parties in this round
+  -- deliver them in random order
+  allEsts r !$\gg =$! execCmd . shuffleM
+\end{lstlisting}
