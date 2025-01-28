@@ -84,9 +84,10 @@ Our findings suggest that for non-liveness bugs, even simple fuzz test generator
 The cases in which we fail are a consequence of our fuzzing strategies, and this is expected because fuzzing is only a method of finding bugs not ruling them out.
 In the case of liveness-related properties, cycle-checking is made easy as part of the UC proof obligation for real-ideal emulation, but neither our eventual delivery model nor our attempts at being clever with import yield much success beyond that. 
 
-Our attention turns to UC definitions that assert properties  
-
-We continue the same approach as above and demonstrate that UC definitions that express properties relating to output fairness, adversarial selection of input (related closely to adversarial knowledge), and their effect on the distribution of outputs. 
+Our attention now turns to ideal functionalities and protocols that express properties relating to output fairness, adversarial influence on input/output (related to adversarial knowledge), and their effect on the distribution of outputs.
+The example we use is the canonical coin flipping primitve that is used throughout distributed systems literature and construct a ``fair'' lottery out of it.
+The lottery is a canonical example of the kinds of byzantine protocols common in the decentralized setting, but is a protocol not readily expressable in existing distributed development frameworks.
+\todo{finish}
 The canonical example we use here is the coin flips and ``fair'' lotteries which have become important byzantine protocols in the blockchain space, and implementation frameworks must be able to express thes properties in a protocol's specification, 
 Some non-blockchain protocols, such as the ABA protocol we study in this work, make use of distributed protocols to generate shared common coins that must specify what the adversary learns about the execution and its ability to influence the outcome. 
 Existing frameworks fail to express and/or analyze protocols that require such definitions.
