@@ -1,5 +1,5 @@
 \begin{minipage}{0.5\textwidth}
-\begin{bbox}[title={\textbf{Wrapper} $\Wasync$} ] 
+\begin{bbox}[title={\textbf{Wrapper} $\Wasync$} ]
 
 Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{delay} := 0$
 
@@ -7,27 +7,26 @@ Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{
 
 \OnInput \inmsg{\Eventually}{\msf{codeblock}} \color{red} $1 \token$ \color{black} from $\mathcal{F}$:
 	\begin{itemize}[leftmargin=*]
-		\item[--] Append ($\mathcal{F}$, \msf{codeblock}) to \msf{run\_queue}
-		\item[--] Append ($\mathcal{F}$, \msf{codeblock}) to \msf{leak\_buffer}
+		\item[--] Append ($\mathcal{F}$, \msf{codeblock}) to \msf{run\_queue} and \msf{leak\_buffer}
 		\item[--] $\msf{delay} = \msf{delay} + 1$
-		\item[--] return
+		\item[--] return to caller
 		% \item \Send $\msf{OK} \rightarrow \mathcal{F}$
-	\end{enumerate}
+	\end{itemize}
 
 
-\OnInput \inmsg{Deliver}{\msf{idx}} \color{red} $1 \token$ \color{black} from \Adversary:
+\OnInput \inmsg{Deliver}{\msf{idx}} \color{red} $1 \token$ \color{black} from \A:
 	\begin{itemize}[leftmargin=*]
-		\item \F, \msf{codeblock} $\leftarrow$ pop \msf{run\_queue} \m{idx}
-		\item \Send (\Exec, \msf{func}, \msf{args}) $\rightarrow$ \F/\Partyi
-	\end{enumerate}
+		\item[--] \F, \msf{codeblock} $\leftarrow$ pop \msf{run\_queue} \m{idx}
+		\item[--] \Send (\Exec, \msf{func}, \msf{args}) $\rightarrow$ \F/\Partyi
+	\end{itemize}
 
 \OnInput \inmsg{\textsc{Advance}} \color{red} $1 \token$ \color{black} from $\mathcal{Z}$:
 	\begin{enumerate}
 		\item If $\msf{delay} > 0$:
 
-			\quad  $\msf{delay} = \msf{delay} - 1$
+			\quad  Set $\msf{delay} = \msf{delay} - 1$ and \Send \textsc{Advance} $\rightarrow \A$
 
-			\quad  \Send \textsc{Advance} $\rightarrow \mathcal{A}$
+			%\quad  \Send \textsc{Advance} $\rightarrow \mathcal{A}$
 		\item Else:
 			
 			\quad $(\mathcal{F}/P_i, \msf{func}, \msf{args}) \leftarrow$ pop $\msf{run\_queue}$
@@ -35,21 +34,10 @@ Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{
 			\quad \Send $(\Exec, \msf{func}, \msf{args}) \rightarrow \mathcal{F}/P_i$
 	\end{enumerate}
 
-\OnInput \inmsg{\textsc{Delay}}{$d$} \color{red} $d \token$ \color{black} from \Adversary:
+\OnInput \inmsg{\textsc{Delay}}{$d$} \color{red} $d \token$ \color{black} from \A:
 	\begin{enumerate}
-		\item If $\msf{rounds} > 0:$
-
-			\quad $\msf{delay} = \msf{delay} + \msf{rounds}$
+		\item If $\msf{rounds} > 0:$ $\msf{delay} = \msf{delay} + \msf{rounds}$
 	\end{enumerate}
 
-%\OnInput \inmsg{\textsc{Leak}}{\msf{msg}} from \F:
-%	\begin{enumerate}
-%		\item Append (\F, \msf{msg}) to \msf{leak\_buffer}
-%	\end{enumerate}
-%
-%\OnInput \inmsg{\textsc{Get-Leaks}} from \Adversary:
-%	\begin{enumerate}
-%		\item \msf{leaks} $\leftarrow$ pop all from \msf{leak\_buffer}
-%		\item \Send \msf{leaks} to \Adversary
-%	\end{enumerate}
 \end{bbox}
+\end{minipage}
