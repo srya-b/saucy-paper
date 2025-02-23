@@ -1,20 +1,31 @@
 %In the previous section, we explore how we can use fuzz testing and our implementation to successfully test and analyze protocol properties across laybered composition.
 %We specifically focused on properties around fairness and adversarial distributions and tested for design-level bugs arising from subtle differences in the different models of coin flipping.
-In this section, we set out to examine whether fuzz testing can be a useful tool in UC to detect implementation-level bugs.
-Specifically, we keep our focus on the real-ideal paradigm, and ask whether implementation-level bugs manifest themselves as dinstiguishing environments.
-Moving over to UC based development, we want to show that the main assertion in UC, indistinguishability, can be used to test protocols and find implementation bugs.
-In particular, we care that bugs in the protocol which do lead to failures in properties that the ideal functionality capture can manifest as distinguishing environments using existing analysis methods.
-Alongside the real-ideal paradigm, we want to show that the roles and capabilities of the environment and adversary enable testing protocols against byzantine parties in a generalizable way.
-To the best of our knowledge no frameworks like UC exists that proposes a generalized and uniform way of specifying distributed systems, their properties, and their security that enables straightforward composition of protocol implementations.
-To confirm or refute our hypothesis, we apply fuzz testing as our analysis methodology because its approach of test case genration is a natural fit for UC's emulation definition.
-We explain the experimental setup in more detail below, and put off discussing liveness failures until the next section.
+In this section, we set out to examine whether fuzz testing can be a useful
+tool in UC to detect implementation-level bugs.  Specifically, we keep our
+focus on the real-ideal paradigm and ask whether implementation-level bugs
+manifest themselves as dinstiguishing environments, and, therefore, ask whether
+the real-ideal assertion is uniquely useful for finding implementation level
+bugs.  In particular, we care that bugs in the protocol which do lead to
+failures in properties specified in an ideal functionality can manifest as
+distinguishing environments using existing analysis methods.  Alongside the
+real-ideal relationship, we want to show that the environment and adversary in
+UC create a generalizable method of testing protocols against a strong
+byzantine adversary.  %To the best of our knowledge no frameworks like UC
+exists that proposes a generalized and uniform way of specifying distributed
+systems, their properties, and their security that enables straightforward
+composition of protocol implementations.  To confirm or refute our hypothesis,
+we apply fuzz testing as our analysis methodology because the approach of test
+case genration is a natural fit for UC's emulation definition of ensuring
+indistinguishability against \emph{all possible environments}.  We explain the
+experimental setup in more detail below, and put off discussing liveness
+failures until the....
 
 %Of course, the ideal functionality is not capable of capturing all desirable properties of protocol. 
 %For example, it may be useful for capture properties predicated on the protocol being in a specific state in a specific round.
 %We discuss out ability to assert these kinds of properties at the end of the section.
 
 %%%%% Experimental setup: implement protocols, implement generators, choose bugs that may or may not cause failure, apply fuzzing, and determing true/false positive/negative
-\paragraph{Setup}
+\paragraph{Experimental Setup}
 We start by implementing a few representative examples of asynchronous distributed protocols.
 Next, we design a set of environment generators, our test cases for fuzzing, that aim to discover points of failure by exploring different adversarial input strategies and schedulers.
 We perturb our implementations with bugs we choose which we believe are representative of bugs encountered in the wild.
