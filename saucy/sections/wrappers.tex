@@ -1,29 +1,44 @@
-Realizing asynchronous distributd protocols first requires an eventual delivery model for UC.
-In one of the more recent updates to the UC framework, a new notion of polynomial time was introduced, the import mechanism, which drastically changes the way computational bounds and PPT adversaries are defined.
-One of the main constributions of this work, which we present here, is dissecting the import mechanism to understand how eventual delivery can be defined in this work, how existing formalisms fall short in this new setting, and how liveness is defined.
+Realizing asynchronous distributd protocols first requires an eventual delivery
+model for UC.  In one of the more recent updates to the UC framework, a new
+notion of polynomial time was introduced, the import mechanism, which
+drastically changes the way computational bounds and PPT adversaries are
+defined.  One of the main constributions of this work, which we present here,
+is dissecting the import to understand how eventual delivery works under a new
+model, how existing eventual delivery formulations fare, and how liveness is
+defined.
 
-Our contribuitions toward this goal is higlighting a fundamental limitation of the constraints added alongside import in realizing eventual delivery at all.
-We cast this limitation first in the context of existing work, and then isolate the required change in the UC definition in order to support eventual delivery.
-Next, we introduce a new model for capturing eventual delivery networks which deviates from the constraints described by UC and uses import directly.
-Finally, we discuss liveness properties of protocols in this new setting. 
+Our first contribuition is identifying a fundamental limitation of the
+constraints added alongside import in realizing eventual delivery.  We first
+highlight a key requirement for eventual delivery in the context of existing
+work, and then isolate where that requirement isn't met with import.  Next, we
+introduce our new model for capturing eventual delivery in UC and recommend a
+simple deviation from the rules of the framework in order to achieve it.  Our
+objecting in designing the model is solely to create the simplest, most
+natural, construction based off the status quo, rather than one that is
+specifically tuned to suit our needs in this work with limited usefulness to
+the broader UC community.  Finally, we disuss liveness definitions of protocols
+in this new setting, and in future sections explore whether this new
+construction can be used to test liveness failures in distributed protocols.
 
-We summarize, here, the description of import provided in Section~\ref{sec:background}.
-Import can be thought of as tokens which ITMs exchange in order to give each other runtime. 
-With any message sent from one ITM to another, an additional field can be set indicating the import sent along with the message.
-At the start of a UC execution, the environment is given all the import that will ever be available to the rest of the ITMs in the system. 
-As \Z sends messages to others it gives them import, enabling them to perform polynomial computation and sent import to others.
+\paragraph{Import at a High Level} The mechanism defines a new quantity called
+import which ITMs possess which gives them the potential to perform polynomial
+work.  Import is exchanged between ITMs as ``tokens'', and a finite quantity is
+given to the \Z at the start of execution.  The environment gives import to
+other ITMs alongside messages, and those ITMs subsequently pass them on to
+others.  An ITM that has received more tokens, $n_\m{in}$, than it has given
+out, $n_\m{out}$, can perform at most $T(n_\m{in} - n_\m{out})$ computation for
+some polynomial $T$.  The initial import given to \Z is polynomial in $k$,
+ensuring the entire execution is polynomial in the security parameter.  A more
+precise description of import is given in Section~\ref{sec:background}
 
-Alongside the import mechanism, UC introduces two constraints on ITM systems that fundamentally 
-
-
-The focus of this work is on UC as on UC as a software development tool, and we design a new asynchronous model of computation that overcomes theoretical limitations of existing approaches and make design choices that reduce code size and complexity.
-Our asynchronous model borrows from existing work, but makes the additional abstraction to ascynrhonous code execution: a familiar abstraction for programmers.
-We show how our use of import acheives the necessary eventual delivery guarantees.
-To the best of our knowledge, this is the first work to relate import to asynchronicity and eventual delivery.
-
-\todo{I want to keep some text like this here so people don't think that import and our wrapper not being too useful for liveness analysis is the same as us just not designing a good wrapper in the first place.}
-Our method of designing this model is to achieve the smallest and more intuitive model which uses import in a clear way.
-We avoid designing a model specifically for the benefit of fuzz testing or informal analysis so its contribution remains clear and extends beyond the results of our experiments.
+%The focus of this work is on UC as on UC as a software development tool, and we design a new asynchronous model of computation that overcomes theoretical limitations of existing approaches and make design choices that reduce code size and complexity.
+%Our asynchronous model borrows from existing work, but makes the additional abstraction to ascynrhonous code execution: a familiar abstraction for programmers.
+%We show how our use of import acheives the necessary eventual delivery guarantees.
+%To the best of our knowledge, this is the first work to relate import to asynchronicity and eventual delivery.
+%
+%\todo{I want to keep some text like this here so people don't think that import and our wrapper not being too useful for liveness analysis is the same as us just not designing a good wrapper in the first place.}
+%Our method of designing this model is to achieve the smallest and more intuitive model which uses import in a clear way.
+%We avoid designing a model specifically for the benefit of fuzz testing or informal analysis so its contribution remains clear and extends beyond the results of our experiments.
 %The focus on this work is on realizing UC as a development framework for asynchronous distributed protocols.
 %Asynchronous protocols rely on an \emph{eventual delivery} guarantees that has been studied closely in UC literature.
 %In this section we introduce a new model for capturing eventual delivery in asynchronous networks that integrates with the import notion of polynomial time, and, to the best of our knowledge, are the first to concretize its relation to eventual delivery.
@@ -35,22 +50,49 @@ We avoid designing a model specifically for the benefit of fuzz testing or infor
 %
 %\todo{I completely forgot to say we're trying to unconstrain the environment so programs and their test cases aren't cluttered with internal UC mechanics}
 
-\subsection{Status Quo}
-One of the research questions we highlight from the beginning is identifying roadblocks to UC adoption as a development framework, and proposing a set of best practices that streamline the development experience and abstract away as much of the underlying UC framework from the programmer.
-We begin by first describing the most prevalent existing design for asynchronous networks in UC.
-The formulation of asynchronous messaging introduces by Canetti in UC~\cite{uc} is a weaker assumption than eventual delivery, because it allows the adversary to drop messages entirely.
-Although a valid adversarial model, it isn't very useful to realize the protocols we want, therefore, additional mechanisms are needed on top of the base framework to ensure eventual delivery
+\subsection{Status Quo} One of the research questions we highlight from the
+beginning is identifying roadblocks to UC adoption as a development framework,
+and proposing a set of best practices that streamline the development
+experience and abstract away as much of the underlying UC framework from the
+programmer.  We highlight these roadblocks and inconveniences in existing work
+below, and later propose a better set of design practices to mitigate them.
+Eventual delivery models are simple in nature, but the drawbacks in design that
+we cover here are representative of similar features in more complicated models
+like synchronous computation or global clock-based synchronization.
 
-Two prominent works by Katz et al~\cite{katzuc} and Coretti et al.~\cite{corettimpc} propose models for asynchronous communication with eventual delivery that closely resemble one another~\footnote{The work of \cite{corettimpc} modified the design of \cite{katzuc} into a single functionality for repeated message sending between a sender and a receiver rather than a one-shot, single-message functionality.}.
-Both models use a ``fetch'' model of messaging where receivers repeatedly ask the functionality for a new messages. 
-On ``fetch'', the functionality decrements a delay counter $D$ that the adverasry can arbitrarily add to.
-This model is summarized in Figure~\ref{fig:fchanpoll} with details about party identities removed for clarity and brevity.
-We describe the notion of eventual delivery the mode's eventual delivery guarantee later in this section and discuss the consequences of its design and other common design patterns common in UC here. 
+%We begin by first describing the most prevalent existing design for
+asynchronous networks in UC.  Asynchronous messaging, as defined by Canetti in
+UC~\cite{uc} is a weaker assumption than eventual delivery, because it allows
+the adversary to arbitrarily drop messages entirely.  It isn't very useful to
+analyze distributed protocols in this model if we cannot assume reliable
+communication, therefore, additional mechanisms have been proposed on top of UC
+to achieve eventual delivery.
 
-A fetch model adds additional constraints to environments to ensure protocol parties are sufficiently activated to fetch the messages requires, as well as perform all the actions they would like to do. 
-Similarly, the environment test case must ensure the adversary is sufficiently activated in order to execute its strategy. 
-This notion of ``sufficient activations'' would require a programmer to carefully instrument test cases so that the execution proceeds correctly according to these implicit requirements.
-Rather than part of the automation of the frameowrk, requiring intervention by the programmer to simultaneously define a meaningful test case and juggle these additional requirements imposes a significant hurdle---especially looking ahead to generating test cases with fuzzing.
+Two of the most prominent proposed models, by Katz et
+al~\cite{katz2013universally} and Coretti et al.~\cite{coretti2016constant}
+closely resemble one another~\footnote{The work of \cite{coretti2016constant}
+modified the design of \cite{katz2013universally} into a single functionality
+for repeated message sending between a sender and a receiver rather than a
+one-shot, single-message functionality.}.  Both models use a ``fetch'' model of
+messaging where receivers repeatedly ask the functionality for a new messages.
+On ``fetch'', the functionality decrements a delay counter $D$ that the
+adverasry can add to.  This model is summarized in Figure~\ref{fig:fchanpoll}
+with details about party identities removed for clarity and brevity.  We
+describe the mode's eventual delivery definition later in this section and
+discuss the consequences of its design with other common design patterns.
+
+The fetch model adds additional constraints to environments to ensure protocol
+parties are sufficiently activated to fetch all messages, as well as to ensure
+they can perform all the actions they need to take.  Similarly, the environment
+test case must ensure the adversary is sufficiently activated in order to
+execute its strategy.  This notion of ``sufficient activations'' would require
+a programmer to carefully instrument test cases so that the execution proceeds
+correctly according to these implicit requirements.  Rather than being
+automated by the framework, the programming must manually intervene to
+simultaneosuly design meaningful test cases that juggle these additional
+requirements.  Protocol and ideal functionality definitions also end up
+cluttered with model-specific code making them more challenging to implement,
+more difficult to understand, and less resuable as modular building blocks.
 
 %The fetch model introduces a couple of constrainst on the design of environment test cases. 
 %The first is that the protocol party and adversary both rely on the environment to activate at the right time and give them enough activations over the course of the execution.
@@ -62,21 +104,27 @@ Rather than part of the automation of the frameowrk, requiring intervention by t
 %The other part is that executions where these constraints are not met are of no use for analysis because it isn't clear that the model is adequately captured.
 
 \paragraph{Design Decisions for Simplicity and Clarity}
-A major roadblock we identify for realizing UC for development is that many design patterns that commonly appear in UC definitions, in literature, translate to requiring significant user interaction with the underlying framework.
-In the model above, there are a few subtle design choices that greatly impact the way a programmer must define code. 
-We highlight them, and point out a set of best practices that our asynchronous computation model, introduces later in this section, makes use of.
-
-The above definition requires the protocol to repeatedly ask for new messages, and the ideal functionality never gives control back to the protocol party. 
-When sending messages to multiple parties, this design requires that protocol parties must be sufficiently activated by the environment in order to retrieve messages and send messages to multiple parties one-by-one. 
-This process can be abstracted to some degree for simple messages passing but the protocol code must still accept null-message inputs in order to continue performing ``pending actions'': a rather unnatural method of programming in modern computing. 
-For more complex functionalities, say for flipping many coins among many parties, the enviropnment must ensure that it correctly orchestrates the execution to satisfy the implicit requirements that the model imposes in order for the execution to be ``correct''. 
-Bringing this to the fuzz testing domain, user defined environments and environment generators require careful design to ensure these contraints are adhered to correctly.
-This extends to activating the adversary a sufficient numebr of times to allow the ideal world simulator proof to perform its function.
-Orchestrating the different parts of the UC framework alongside developing and testing an implementation does little to make UC more accessible. 
-Looking beyond just the asynchronous modelling we focus on here, more complex assumptions, such as realizing synchronous computation and its notion of ``input completeness'', only amplifies these drawbacks.
-
-In general, designs that minimize programmer-interference and maximize automation are preferred in the programming environment. 
-Below, we introduce our asynchonrous model which defines and implements a set of best practices that accomplish this.
+In the model above, small and seaminglgy insignificant design choices end up
+greatly impacting the way a researcher writes definitions or a programmer
+implements code in UC.  Protocols parties must repeatedly ask for new messages
+from the network interface, therefore implementations have to implement
+additional functionality to track activations and new messages and remaining
+necessary activations.  The model also never gives control back to a protocol
+party, and opts to activate the adversary instead.  The consequence of this is
+that protocols can only make one meaningful interaction with a primitive like a
+message-passing channel per activation from the environment.  Even with an
+abstracted version of this design, protocols must implement additional
+bookkeeping in order to perform ``pending actions'': a rather unnatural method
+of programming.  For more complex functionalities, say flipping multiple coins
+among $n$ parties, the enviropnment must ensure that it correctly orchestrates
+the execution to satisfy the implicit requirements that the model imposes in
+order for the execution to be ``correct''.  Looking beyong implementation to
+test, deaing with these constraints with fuzz testing means user defined
+environments generators require careful design to adhere to these constraints
+as the execution evolves in new ways.  A similar argument extends to
+activations of the adversary.  In summary, requiring the programmer to
+implement additional code to orchestrate the execution only helps to make UC
+less attractive.
 
 %\todo{Not doing this correctly in fuzz testing means that the simualtor proofs themselves don't work unless the environment activates them enough}
 
@@ -127,30 +175,62 @@ Below, we introduce our asynchonrous model which defines and implements a set of
 
 \subsection{\fwrapper}
 % from a programming point of view we'd like to say something about protocols without having to talk about infinite time horizons
-Our model takes inspiration from the downsides outlined above, and we introduce the design of \fwrapper with four main ideas.
-First, protocol and ideal functionality code should have minimal direct interaction with the network model. 
-Second, import plays a direct role in the function of the asynchronous network and its eventual delivery guarantees. 
-All parties, including the adversary and environment, directly use import to interact with the mechanism and delay or force progress in \fwrapper.
-Third, we abstract asynchrony to the execution of blocks of code rather than just messages.
-Asychronous code definitions, and execution, are already familiar programming constructs for developers and result in clearer and more concise definitions--especially compared to the previous models (above).
-Fourth, we implement a set of best practices for how different parts of the UC framework should implemented, and use these to minimize the aforementioned constraints on environments and protocols.
-These decisions firmly promote programming patterns more closely related to existing development rather than an entirely unfamiliar set of constraints to work with. 
+Designs that minimize programmer-exposure to the model, or framework, and
+maximize automation of its different parts is preferred.  Our model takes
+inspiration from the downsides outlined above, and we introduce the design of
+\fwrapper with four main ideas.
 
-We design our construction as a wrapper around protocols, a common design pattern in UC, and a wrapper around ideal functionalities.
-The wrappers offer new functionality to the underlying ITMs, and redfines exsting behavior by intercepting and reinterpretting outgoing messages.
-The wrapper around the ideal functionality redefines how leaks to the adversary are handled, offers a new functionality to asynchronously execute code, provides the adversary with an interface to interact with the mechanism, and interacts with the protocol wrapper in a unique way we describe later.
+First, protocol and ideal functionality code should have minimal direct
+interaction with the underlying model or framework.
 
-Asynchronous execution in the ideal functionality is handled by a new function call every ITM has access to: \texttt{eventually}.
-In theoretical notation, this is synactic sugar that replaces a message addressed to a specific ITM identifier which the wrapper intercepts.
-The design is theoretically sound within the UC framework, however, we elide those details in favor of focusiong on its impact to development.
+Second, import plays a direct role in the function of the asynchronous network
+and its eventual delivery guarantees.  All parties, including the adversary and
+environment, directly use import to interact with the mechanism and delay or
+force progress in \fwrapper.  \plan{it's possible that I didn't introduce the
+concepts of delay and force progress enough in the above section, but i'm
+saving them for later in this section where eventual delivery definitions are
+discussed and compared}
+
+Third, we abstract asynchrony to the execution of blocks of code rather than
+just messages.  Asychronous code definitions, and execution, are already
+familiar programming constructs for developers and result in clearer and more
+concise definitions--especially compared to the previous models (above).
+
+Fourth, we implement a set of best practices for how different parts of the UC
+framework should implemented, and use these to minimize the aforementioned
+constraints on environments and protocols.  These decisions firmly promote
+programming patterns more closely related to existing development rather than
+an entirely unfamiliar set of constraints to work with. 
+
+We design our construction as a wrapper around protocols and ideal
+functionalities, a common design pattern in UC.  The wrappers offer new
+functionality to the underlying ITMs, and redfine exsting behavior by
+intercepting and reinterpretting outgoing messages.  The wrapper around the
+ideal functionality redefines how leaks to the adversary are handled, offers a
+new functionality to asynchronously execute code, provides the adversary with
+an interface to interact with the mechanism, and interacts with the protocol
+wrapper.
+
+Asynchronous execution in the ideal functionality is handled by a new function
+call every ITM has access to: \texttt{eventually}.  In precise terms, this is
+synactic sugar that replaces an underlying protocol between the ITM and the
+wrapper shell, and can be automatically statically generated.  
 \begin{figure}
-\input{figures/f_chan_eventually}
-\end{figure}
-At first glance, the simplified code is seen in Figure~\ref{fig:fchaneventually} where we define the same channel as in Figure~\ref{fig:fchanpoll} with our framework is trivially simple because it abstracts all model specific code.
+\input{figures/f_chan_eventually} 
+\end{figure} 
+At first glance, the simplified pseudo-code is seen in
+Figure~\ref{fig:fchaneventually}, where we define the same eventual delivery
+channels as in Figure~\ref{fig:fchanpoll} with our framework, is already a much
+simpler piece of code that neatly abstracts all model operations behind the
+\emph{eventually} interface.
 
-We show a pseudocode definition of \fwrapper in Figure~\ref{fig:wrapper} for illustration and work through its different mechanics below. 
-Alongside just code execution and implementing an asynchronous network, \fwrapper includes additional features that we introduce in order to simplify UC ITMs.
-Namely, we choose to buffer leaks and introduce a new method of protocol parties passing control back to the environment with an activation path that goes through the adversary.
+The definition of \fwrapper which implements the model is described in
+Figure~\ref{fig:wrapper}, and we walk through it in the subsequent paragraphs.
+Alongside just code execution and implementing an asynchronous network,
+\fwrapper includes additional features that we introduce in order to simplify
+UC.  Namely, we choose to buffer leaks and introduce a new method of
+protocol parties passing control back to the environment with an activation
+path that ensures the adversary is always automatically activated.
 
 %There are two main ideas that motivate the construction of \fwrapper.
 %The first is mentioned above: the applications being defined and developed should be agnostic to the network at hand, ideally.
@@ -159,26 +239,51 @@ Namely, we choose to buffer leaks and introduce a new method of protocol parties
 %The second idea is that import should be explicitly used as the main accounting tool in \fwrapper.
 %Using import to account for delay and delivery ensures a more fundamental connection between import and evental delivery, and enables programmers to interact with the polynomial time definition and reaosn about protocol liveness in terms of the import required.\todo{i want to say something here about import as some function of the protocol parameters} 
 
-\paragraph{Asynchronous Code Execution} \plan{Wax a little about the benefits of this over just messages: stateful execution in the future, can access state in the future when the adversary decides it's time}
-Our first departure from existing models is extending asynchronous message-passing to asynchronout code execution.
-The wrapper around the ideal functionality defines a keyword \texttt{eventually} that schedules a block of code to be executed with adversarial delay.
-In the simple channel functionality \Fchan, the change to the functionality is laregly a costmetic, and it simplifies the definition, as shown in Figure~\ref{fig:fchaneventually}.
-The advantage of this design is best realized by more complex ideal functionalities. 
-For example a functionality that must perform varied stateful computations, receive multiple inputs from parties over time, and maintain a causal relationship between computations. 
-The obvious place this occurs is in a blockchain functionality. 
-Abstracting to code execution simplifies the machinery required to perform asyncrhonous computation, and it is a programming abstraction already familiar to most developers.
-Furthermore, as we show in this section, the definition removes any trace of the underlying network model from ideal functionality and protocol code.
-It enables programs to be entirely model independent and allowes software packages to be reused under arbitrarily stronger network assumptions.
+\begin{figure}
+\input{figures/asyncwrapper_short}
+\caption{The pseudo-code of the asynchronous wrapper for the ideal functionality. Interfaces that require import specify the amount in red.}
+\label{fig:wrapper}
+\end{figure}
 
-\todo{include a figure for processing blockchain transactions, something real simple}
+\paragraph{Asynchronous Code Execution} \plan{Wax a little about the benefits
+of this over just messages: stateful execution in the future, can access state
+in the future when the adversary decides it's time} Our first departure from
+existing models is extending asynchronous message-passing to asynchronous code
+execution.  The wrapper around the ideal functionality defines a keyword
+\texttt{eventually} that schedules blocks of code to be executed with
+adversarial delay.  In the simple channel functionality \Fchan, the change to
+the functionality is laregly costmetic, and it simplifies the definition, as
+shown in Figure~\ref{fig:fchaneventually}.  The advantage of this design is
+best realized by more complex ideal functionalities.  For example a
+functionality that must perform varied stateful computations, receive multiple
+inputs from parties over time, and maintain a causal relationship between
+computations can make use of the abstraction to more cleanly orchestrate all of
+its different interfaces.  The obvious place this occurs is in a blockchain
+functionality like \cite{badertscher2024bitcoin} or \cite{miller2019sprites}
+where a delayed code execution abstraction might greatly simpify the ideal
+functionalities and protocols, and it provides a more precise notion eventual
+delivery in the latter.  Abstracting to code execution simplifies the machinery
+required to perform asyncrhonous computation, and it is a programming
+abstraction already familiar to most developers.  Furthermore, as we show in
+this section, the definition removes any trace of the underlying network model
+from ideal functionality and protocol code.  It enables programs to be entirely
+model independent and allowes software packages to be reused under arbitrarily
+stronger network assumptions.
 
-The parts of our proposed construction that deal with the evntual delivery guaratntee are neatly summarized in Figure~\ref{fig:wrapper}.
-As expected from prior work, it mantains and queue and a counter.
-The queue contains information about the asynchronously scheduled code block, and the counter is used by the adversary to add delay.
-The delay in the queue is at least as much as the total number of items ever queued, so that simulation in the ideal world is possible, and the adversary can spend import to add to the delay.
-In our model, the environment takes the role of protocol parties in attempting to force progress and decrement the counter.
-When the delay reaches zero, the first item is popped off the queue and executed. 
-Below, we first describe the remaining design details around the model, and then address the eventual delivery guarantee. 
+%\todo{include a figure for processing blockchain transactions, something real simple}
+
+We summarize the network-model part of \fwrapper in Figure~\ref{fig:wrapper}.
+Similar to prior works, it mantains and queue and a counter.  The queue
+contains information about the asynchronously scheduled code blocks from the
+ideal functionality or protocol parties, and the counter is used by the
+adversary to add delay.  The adversary adds delay to \fwrapper by directly
+spending import as in dicated by the {$\color{red} 1 \token$} Alongside delay
+added by the \A, it necessary to also add delay for every asynchronous
+execution ever scheduled to ensure the ideal world simulator can do its job.
+In our model, \Z takes over the role of forcing progress with the counter from
+protocol parties.  When the delay reaches zero, the first item is popped off
+the queue and executed.  Below, we first describe the remaining design details
+around how the model works, and then why it achieves eventual delivery.
 
 %When the inner ITM is activated with this information, it executes the scheduled code written on its tape, but otherwise uses the values present on the tape at the time of execution.
 %An ITM schedules a code block by attempted to write a message of an ITM with a special identifier.
@@ -200,21 +305,42 @@ Below, we first describe the remaining design details around the model, and then
 %Nevertheless, we argue that it is essential that the environment be able to force progress in the execution, because it removes shifts network and model-specific complexity out of protocol and functionality specifications, and it more closely resembles how networks function in real life. 
 
 \paragraph{Activating the Adversary and the Environment}
-Our first simplifying design choice is defining a new way of returning control back to the environment.
-In UC when an ITM doesn't activate any other ITM it passes control directly back to the environment.
-Rather than giving control back to the environment, our wrapper around ITMs redefines this message as always going through the wrapper around the ideal functionality and activating the adversary.
-Making this change primarily eases constraints on the environment to ensure the adversary is sufficiently activated and between every activation. 
-The model ensures that the adversary is automatically activated after every honest party activation by the environment allowing it to always react immediately to new information. 
+Our first simplifying design is redifining how control is returns back to the
+environment by any main ITM in the execution.  Normally, in UC, control is
+given back to the environment by a protocol party or the adversary writing a
+message to it or by an ITM stopping execution without activating any other ITM.
+Rather than directly perform the latter, when a protocol party gives up
+activation, the wrapper sends a message through the wrapper around the ideal
+functionality to the adversary.  Making this subtle change eases constraints on
+the environment's interactions activating the adversary, and automatatically
+activates the adversary at the first opportunity after a protocol party makes a
+move.
 
-By redefining adversarial activation, and making it automatic, we're able to take further decisions that enable simpler and more natural protocol code.
-The most common design for leaks is to activating the adversary directly like in \Fchan. 
-This serves a common purpose of allowing the adversary to react, and allows the simulator to learn what is happening in the ideal world execution.
-The method of activation above allows us to safely relegate adversarial leaks to be buffered in the ideal functionality, and default to the ideal functionality always returning control to the protocol party that called it.
-Ensuring adversarial action above allows all ideal functionalities to always buffer leaks, by default, and always return control back to the calling party.
-Without giving control back to the calling party, even things as simple as multicasting a message to $n$ parties requires the protocol to pause, wait for enough empty message activations from the environment to send the remaining messages, and implement similar logic to handle any action that requires multiple activations of the ideal functionality.
-This is an unecessary artifact of the framework that we don't want application code to deal with. 
+The design choice has a domino effect in enabling more simplifying changes.
+The most common design for leaks is to activating the adversary directly like
+in \Fchan.  This serves a common purpose of allowing the adversary to react,
+and allows the simulator in the ideal world to learn what is happening in the
+execution.  The mechansim of seding control to \Z by going through \A ensures
+sufficient activation of the adversary, allows us to safely relegate
+adversarial leaks to be buffered in the ideal functionality, and lets ideal
+functionalities give control back to the ITM that called them by default.  We
+reiterate from earlier in the section: 
+\begin{quoting} 
+In a design where the ideal functionality doesn't return back to the party that
+called it, even things as simple as multicasting a message to $n$ parties
+requires the protocol code to pause, wait for enough empty activations from the
+environment to send the remaining messages, and implement similar logic to
+handle any action that requires multiple activations of the ideal
+functionality.  
+\end{quoting} 
+This is an unecessary artifact of the framework that we don't want application
+code to deal with. 
 
-Though these are simple design decisions, they combine to greatly impact how protocols are defined. The pitfalls of existing design decisions and their negative impact on modularity are only apparent when attempting to realize UC protocols in an implementation.
+The two design changes mentioned above are simple, but as we saw with previous
+models simple design choices can have a big impact on protocol and ideal
+functionality design.  It is particularly important to address these changes in
+an implementation setting where the effects of code clutter, verbosity, and
+framework details are most acutely felt.
 
 %The UC framework defines a specific message that allows any ITM to given control back to the environment if it doesnt' write to any other ITM.
 %In the standard UC implementation, every ITM has access to an implicit function \texttt{?pass}, as seen in Figure~\ref{fig:fchaneventually}.
@@ -261,31 +387,53 @@ Though these are simple design decisions, they combine to greatly impact how pro
 
 \input{figures/f_chan}
 
-\subsection{Eventual Delivery}
-Previous iterations of asynchronous networks rely on an outdated notion of polynomial time in UC.
-The eventual delivery model of Katz~\cite{katzuc} functions with the length-of-input notion of polytime.
-The crux of this model is that the adversary must encode the delay parameter $T$ in unary, so it must write a polynomial number of bits for a polynomial amount of delay.
-Expected behavior is that the computational power given to the protocol parties (to ``fetch'' new messages) is more than the input given to the adversary--given to both by the environment.
+\subsection{Eventual Delivery} % explains previous eventual delivery and why we need something new
+Previous iterations of asynchronous networks rely on an outdated notion of
+polynomial time in UC.  The eventual delivery model of
+Katz~\cite{katz2013universally} functions with the length-of-input notion of
+polytime.  The crux of this model is that the adversary must encode the delay
+parameter $T$ in unary, so it must write a polynomial number of bits for a
+polynomial amount of delay.  Expected behavior is that the computational power
+given to the protocol parties (to ``fetch'' new messages) is more than the
+input given to the adversary--given to both by the environment.
 
-Directly translating this model to the import setting poses challenges necessitating a new construction.
-A basic assumption made in this model is that the environment can always give more runtime to protocol parties, to allo \msf{fetch} calls, than the adversary.
-The constraints of the import mechanism described in Section~\ref{sec:background} challenge this approach because the adversary is always given the same import as the rest of the execution.
-This is for a good reason so that it can always adequately simulate the execution internally.
-It isn't clear that relaxing the constraint for this model is an easy solution, because it would require specifying specific messages from \Z to \A or $\pi$ to be exempt.
-Which messages should be exempt is a protocol-specfic question and not easily generalizable.
-Fudamentally, the problem being encountered here is that \A is competing against protocol parties in this model, and there doesn't appear to be a simple or neat solution to rework the existing model without redesigning it from the ground up.
+Directly translating this model to the import setting poses challenges
+necessitating a new construction.  A basic assumption made in this model is
+that the environment can always give more runtime to protocol parties, to allow
+\msf{fetch} calls, than the adversary.  The constraints of the import mechanism
+described in Section~\ref{sec:background} challenge this approach because the
+adversary is always given the same import as the rest of the execution.  This
+is for a good reason so that it can always adequately simulate the execution
+internally.  It isn't clear that relaxing the constraint for this model is an
+easy solution, because it would require specifying specific messages from \Z to
+\A or $\pi$ to be exempt.  Which messages should be exempt is a
+protocol-specfic question and not easily generalizable.  Fudamentally, the
+problem being encountered here is that \A is competing against protocol parties
+in this model, and there doesn't appear to be a simple or neat solution to
+rework the existing model without redesigning it from the ground up.
 
-\paragraph{Our Eventual Delivery}
-In order to achieve eventual delivery, we depart from UC in some critical and nuanced ways.
-The first, and most important, design decision is that we shift the burden of eventual delivery from the protocol parties competing with the adversary to the adversary competing against the environment. 
-In order to achieve this, we allow the environment to activate \fwrapper around the ideal functionality in only one specific way: a \msf{MakeProgress} message which consumes an import and decrements the delay.
+\paragraph{Our Eventual Delivery} % highlights the interface in wrapper for achieving eventual delivery
+In order to achieve eventual delivery, we depart from UC in some critical and
+nuanced ways.  The first, and most important, design decision is that we shift
+the burden of eventual delivery from the protocol parties competing with the
+adversary to the adversary competing against the environment.  In order to
+achieve this, we allow the environment to activate \fwrapper around the ideal
+functionality in only one specific way: a \msf{MakeProgress} message which
+consumes an import and decrements the delay.
 
-Rather than protocol parties activated by \Z to poll for new messages, \Z sends a special \msf{MakeProgress} message to decrement the counter and force execution of the next asynchronous code block in the queue.
-Shifting the responsibility to the environment tracks with our initial criticism that network model behavior should exist oustide the application layer.
-We relax the balanced environments constraint and do not give the adversary the import that \Z spends in activate \fwrapper to \msf{MakeProgress}.
-We retain the original intent of the balanced enviromment constraint as far as simulatability is concerned by still ensuring the adversary gets the same import from \Z as the protocol parties, but we add an additional rule to the constraint ensuring \msf{MakeProgress} calles from \Z to \F don't also give import to \A.
+Rather than protocol parties activated by \Z to poll for new messages, \Z sends
+a special \msf{MakeProgress} message to decrement the counter and force
+execution of the next asynchronous code block in the queue.  Shifting the
+responsibility to the environment tracks with our initial criticism that
+network model behavior should exist oustide the application layer.  We relax
+the balanced environments constraint and do not give the adversary the import
+that \Z spends in activate \fwrapper to \msf{MakeProgress}.  We retain the
+original intent of the balanced enviromment constraint as far as simulatability
+is concerned by still ensuring the adversary gets the same import from \Z as
+the protocol parties, but we add an additional rule to the constraint ensuring
+\msf{MakeProgress} calles from \Z to \F don't also give import to \A.
 
-\todo{concluding paragraph to tie back to RQ}
+\todo{concluding paragraph}
 %\plan{deprecated below}
 %
 %The usual structure of modelling asynchronous communication is thorugh adversarial

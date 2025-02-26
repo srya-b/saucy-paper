@@ -13,7 +13,7 @@ Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{
 	\end{enumerate}
 
 
-\OnInput \inmsg{\Exec}{\msf{idx}} \color{red} $1 \token$ \color{black} from \Adversary:
+\OnInput \inmsg{\Exec}{\msf{idx}} \color{red} $1 \token$ \color{black} from \Ag:
 	\begin{enumerate}
 		\item \F/\Partyi, \msf{func}, \msf{args} $\leftarrow$ pop \msf{run\_queue}
 		\item \Send (\Exec, \msf{func}, \msf{args}) $\rightarrow$ \F/\Partyi
@@ -33,7 +33,7 @@ Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{
 			\quad \Send $(\Exec, \msf{func}, \msf{args}) \rightarrow \mathcal{F}/P_i$
 	\end{enumerate}
 
-\OnInput \inmsg{\textsc{Delay}}{$d$} \color{red} $d \token$ \color{black} from \Adversary:
+\OnInput \inmsg{\textsc{Delay}}{$d$} \color{red} $d \token$ \color{black} from \Ag:
 	\begin{enumerate}
 		\item If $\msf{rounds} > 0:$
 
@@ -45,9 +45,9 @@ Intialize $\msf{run\_queue} := \emptyset, \msf{leak\_buffer} := \emptyset, \msf{
 %		\item Append (\F, \msf{msg}) to \msf{leak\_buffer}
 %	\end{enumerate}
 %
-%\OnInput \inmsg{\textsc{Get-Leaks}} from \Adversary:
+%\OnInput \inmsg{\textsc{Get-Leaks}} from \Ag:
 %	\begin{enumerate}
 %		\item \msf{leaks} $\leftarrow$ pop all from \msf{leak\_buffer}
-%		\item \Send \msf{leaks} to \Adversary
+%		\item \Send \msf{leaks} to \Ag
 %	\end{enumerate}
 \end{bbox}

@@ -8,30 +8,62 @@
 
 % UC is leading framework but only recently we see it being used for distributed systems
 % UC is good at expressing certain kind of properties easily through an ideal functionality 
-Universal composability is the leading framework for defining the security of message-passing cryptographic protocols between mutually distrustful parties.
-Though largely used for cryptography, it has experienced a surge of interest in the domain of asynchronous distributed systems literature within the last 10 years.
-This is due, in large part, to the rising interest in modelling decentralized byzantine protocols, namely blockchain protocols~\cite{kosba2016hawk, badertscher2018ouroboros, miller2019sprites, badertscher2024bitcoin, dziembowski2018fairswap, aumayr2021blitz, kiayias2020composable}.
+Universal composability is the leading framework for defining the security of
+message-passing cryptographic protocols between mutually distrustful parties.
+Though largely used for cryptography, it has experienced a surge of interest in
+the domain of asynchronous distributed systems literature within the last 10
+years.  This is due, in large part, to the rising interest in modelling
+decentralized byzantine protocols, namely blockchain
+protocols~\cite{kosba2016hawk, badertscher2018ouroboros, miller2019sprites,
+badertscher2024bitcoin, dziembowski2018fairswap, aumayr2021blitz,
+kiayias2020composable}.
 %The framework's appeal is two-fold. 
-The framework has widespread appeal for a few reasons. 
-First, the ideal functionality model for specifying protocol behavior allows the designer to express properties not easily captured via a property-based definitions, clearly define adversarial capabilities, and reason about what the adversary learns, and it reduces security definitions down to an indistinguishability relationship to an ideal execution.
-Second, the modularity encouraged by the framework, and the subsequent composition operators and theorems, are well-suited to distributed systems where protocols sit on a bed of several other layered distributed protocols, and creating composable security proofs in isolation is a big advantage.
-Finally, the computational model of UC allows proving liveness of a protocol within an eventual delivery system against a computationally bounded adversary--a core innovation of the framework.
+The framework has widespread appeal for a few reasons.  First, the ideal
+functionality model for specifying protocol behavior allows the designer to
+express properties not easily captured via a property-based definitions,
+clearly define adversarial capabilities, and reason about what the adversary
+learns, and it reduces security definitions down to an indistinguishability
+relationship to an ideal execution.  Second, the modularity encouraged by the
+framework, and the subsequent composition operators and theorems, are
+well-suited to distributed systems where protocols sit on a bed of several
+other layered distributed protocols, and creating composable security proofs in
+isolation is a big advantage.  Finally, the computational model of UC allows
+proving liveness of a protocol within an eventual delivery system against a
+computationally bounded adversary--a core innovation of the framework.
 
 % Async systems well-suited to the UC domain
 % little work has attempted using informal setting and why? 
-Protocols like distributed randomness generation (two-party coin flips, $n$-party common coin protocols) exhibit properties such as fairness, that may bounds on adversarial influence on protocol output, and require a specific output distribution. 
-These requirements make asynchornous systems particularly well-suited to UC.
-Most modern byzantine protocols rely such protocols as subroutines, or themselves exhibit similar properties, and the UC framework provides a generalized approach to specifying and defining their security in relation to a computationally bounded adversary and environment.
-Despite these advantages of the framework, little work has explored the use of UC as an analysis \emph{and implementation} framework for distributed protocols, and to the best of our knowledge no generalizable framework currently exists which exhibits all of these features.
-Implementations of UC definitions are often done in frameworks that bare little resemblance to it, and the resulting code has a weak connection to the proofs in literature.
-The primary reason for the disparity is that UC is a subtle and complex framework that is considered accessible only to seasoned researchers or experts on the topic.
-Furthermore the question remains whether the framework remains useful or even advantageous in an informal setting where proofs are replaced by software testing. 
-UC definitions, themselves, also pose a challenge because existing proofs, ideal functionalities, and protocols can be large, difficult to understand, and often contain framework-specific details alongside core functionality~\cite{badertscher2024bitcoin, badertscher2018ouroboros}
+Protocols like distributed randomness generation (two-party coin flips,
+$n$-party common coin protocols) exhibit properties such as fairness, that may
+bounds on adversarial influence on protocol output, and require a specific
+output distribution.  These requirements make asynchornous systems particularly
+well-suited to UC.  Most modern byzantine protocols rely such protocols as
+subroutines, or themselves exhibit similar properties, and the UC framework
+provides a generalized approach to specifying and defining their security in
+relation to a computationally bounded adversary and environment.  Despite these
+advantages of the framework, little work has explored the use of UC as an
+analysis \emph{and implementation} framework for distributed protocols, and to
+the best of our knowledge no generalizable framework currently exists which
+exhibits all of these features.  Implementations of UC definitions are often
+done in frameworks that bare little resemblance to it, and the resulting code
+has a weak connection to the proofs in literature.  The primary reason for the
+disparity is that UC is a subtle and complex framework that is considered
+accessible only to seasoned researchers or experts on the topic.  Furthermore
+the question remains whether the framework remains useful or even advantageous
+in an informal setting where proofs are replaced by software testing.  UC
+definitions, themselves, also pose a challenge because existing proofs, ideal
+functionalities, and protocols can be large, difficult to understand, and often
+contain framework-specific details alongside core
+functionality~\cite{badertscher2024bitcoin, badertscher2018ouroboros}
 %In this work we implement UC in a mainstream language, introduce a new model for asynchronous networks, propose new UC design principles to simplify and isolate user code from framework-specific code, and examine the framework through a few case studies.
 
 % existing UC programming tools and their push towards more formality 
-Existing literature focuses on creating programming languages for UC or formal programming tools that express UC in existing languages~\cite{canetti2019easyuc, liao2019ilc}.
-Despite enabling executable UC definitions, most work aims to enable formal analysis or proof generation targetted towards researchers and do very little to bridge the game between theory and implementation.
+Existing literature focuses on creating programming languages for UC or formal
+programming tools that express UC in existing
+languages~\cite{canetti2019easyuc, liao2019ilc}.  Despite enabling executable
+UC definitions, most work aims to enable formal analysis or proof generation
+targetted towards researchers and do very little to bridge the game between
+theory and implementation.
 
 %However, these works exacerbate the biggest challenge to UC adoption oustide of academics: is requires a lot of esoteric knowledge and expertise to parse the subtle details of UC proofs, constructions, and mechanisms.
 %Translating UC definitions of protocols from literature to an implementation presents its own challenges.
@@ -48,49 +80,106 @@ Despite enabling executable UC definitions, most work aims to enable formal anal
 %putations (2PC) require reasoning about how the adversary chooses its input, what it learns, and whether inputs of other parties is kept secret.
 
 % the central claim and research questions of this work
-In this work we instantiate UC as a development framework for asynchronous distributed protocols and explore its use for implementing and analyzing them.
-Notably, we take the opposite approach of existing works and only consider informal analysis of protocols within the framework.
-Concretely our research questions are stated below, and we expand on, and discuss, them in the remainder of this section.
+In this work we instantiate UC as a development framework for asynchronous
+distributed protocols and explore its use for implementing and analyzing them.
+Notably, we take the opposite approach of existing works and only consider
+informal analysis of protocols within the framework.  Concretely our research
+questions are stated below, and we expand on, and discuss, them in the
+remainder of this section.
 \begin{enumerate}
-\item How are asynchronous eventual delivery protocols realized in UC, and what are the design consequences?
-\item What are the advantages or drawbacks of developing protocols in UC compared to existing frameworks?
-\item To what extent can the advantages of the real-ideal paradigm and ideal functionality model be captured by informal analysis of UC implementations?
+\item How are asynchronous eventual delivery protocols realized in UC, and what
+are the design consequences?
+\item What are the advantages or drawbacks of developing protocols in UC
+compared to existing frameworks?
+\item To what extent can the advantages of the real-ideal paradigm and ideal
+functionality model be captured by informal analysis of UC implementations?
 \end{enumerate}
-Our focus on \emph{informal analysis} extends from our stated goal of minimizing the barriers to accessibility.
-We select fuzz testing as our informal analysis tool of choice, because test case generation and analysis fits well within UC's emulation definition (more detail in Section~\ref{sec:background}) for ensuring indistinguishability of a protocol with an ideal program for all environments (the test cases of UC) and adversaries.
+Our focus on \emph{informal analysis} extends from our stated goal of
+minimizing the barriers to accessibility.  We select fuzz testing as our
+informal analysis tool of choice, because test case generation and analysis
+fits well within UC's emulation definition (more detail in
+Section~\ref{sec:background}) for ensuring indistinguishability of a protocol
+with an ideal program for all environments (the test cases of UC) and
+adversaries.
 
 % talking about the first research question
-Our first challenge in implementing a UC framework for asynchronous development is contending with the new \emph{import mechanism} for polynomial time in UC and understanding the consequences of its design for eventual delivery and liveness.
-Existing asynchronous models in UC work with the outdated lenght-of-input polynomial time notion, which has been shown to permit infinite executions through a straightforward protocol.
-Existing definitions also impose additional design constraints on ideal functionalities, protocols, and environments that unnecessarily force framework and model-specific code to exist within application code.
-The import mechanism centers around import, the fundamental unit of potential runtime that is exchanges as ``tokens'' between machines, giving them the potential to perform polynomial work based on the net import held. 
-To the best of our knowledge, no work has explored how eventual delivery is defined with import, what the consequences of it are for protocol design, and how liveness properties are expressed.
-Concretely, we propose a new eventual delivery model that uses import, and we outline a set of design decisions that minimize its impact on user-defined code and maximally automate parts of the framework that previously required manual instrumentation.
-Further, we discover that the existing constraints of balanced environments and ``parameterized systems'' around import pose hurdles to realizing eventual delivery and require a minor departure from the framework as defined by Canetti~\cite{uc}. 
-They prohibit the necessary difference in computational ability between the adversary and the rest of the execution that is required to achieve eventual delivery.
-Finally, we apply fuzzing and informal analysis towards testing the liveness properties of distributed protocols.
+Our first challenge in implementing a UC framework for asynchronous development
+is contending with the new \emph{import mechanism} for polynomial time in UC
+and understanding the consequences of its design for eventual delivery and
+liveness.  Existing asynchronous models in UC work with the outdated
+lenght-of-input polynomial time notion, which has been shown to permit infinite
+executions through a straightforward protocol.  Existing definitions also
+impose additional design constraints on ideal functionalities, protocols, and
+environments that unnecessarily force framework and model-specific code to
+exist within application code.  The import mechanism centers around import, the
+fundamental unit of potential runtime that is exchanges as ``tokens'' between
+machines, giving them the potential to perform polynomial work based on the net
+import held.  To the best of our knowledge, no work has explored how eventual
+delivery is defined with import, what the consequences of it are for protocol
+design, and how liveness properties are expressed.  Concretely, we propose a
+new eventual delivery model that uses import, and we outline a set of design
+decisions that minimize its impact on user-defined code and maximally automate
+parts of the framework that previously required manual instrumentation.
+Further, we discover that the existing constraints of balanced environments and
+``parameterized systems'' around import pose hurdles to realizing eventual
+delivery and require a minor departure from the framework as defined by
+Canetti~\cite{uc}.  They prohibit the necessary difference in computational
+ability between the adversary and the rest of the execution that is required to
+achieve eventual delivery.  Finally, we apply fuzzing and informal analysis
+towards testing the liveness properties of distributed protocols.
 
 % second research querstion
-As far as we know, no work has explored using UC as an implementation framework relying only on existing informal analysis tools, commonplace in modern software engineering to test and located bugs. 
-Of course, such approaches can not guarantee correct code, but we believe that programming within UC simplifies the required assertion to the single property of UC-indistinguishability of a protocol with an ideal functionality.
-Relying on ideal functionalities to describe protocols, and the real-ideal paradigm to test them, is an unexplored concept, and a generalizable approach to distributed systems programming that we believe is an improvement on the status quo.
-We address this claim, and the associated research question above, by specifically examining whether relying on UC emulation (real-ideal indistinguishability), suffices to catch implementation bugs in UC implementations. 
-Specifically, do implementation-level bugs manigest themselves as distinguishing environments (test cases) that fuzzing can find.
-Furthermore, we confirm that UC implementations, and specifically fuzz testing, allows implementations to analyze protocols for properties related to fairness and probability distribution.\todo{maybe mention existing work}.
-The experimental method in this work consists of implementating candidate distributed protocols, injecting bugs into them which we believe are representative of reality, and examining the false negatives and false positives with the lens of our research questions.
-Our findings suggest that for non-liveness bugs, even simple fuzz test generators are capable of discovering distinguishing environments for most bugs that lead to protocol property violation.
-\todo{say something about the other bugs that don't manifest themselves are a result of un-stated properties about efficiency of a protocol or distributions of output}.
-\todo{rephrase the following better as higher-level concluding thoughts}
-The cases in which we fail are a consequence of our fuzzing strategies, and this is expected because fuzzing is only a method of finding bugs not ruling them out.
-In the case of liveness-related properties, cycle-checking is made easy as part of the UC proof obligation for real-ideal emulation, but neither our eventual delivery model nor our attempts at being clever with import yield much success beyond that. 
+As far as we know, no work has explored using UC as an implementation framework
+relying only on existing informal analysis tools, commonplace in modern
+software engineering to test and located bugs.  Of course, such approaches can
+not guarantee correct code, but we believe that programming within UC
+simplifies the required assertion to the single property of
+UC-indistinguishability of a protocol with an ideal functionality.  Relying on
+ideal functionalities to describe protocols, and the real-ideal paradigm to
+test them, is an unexplored concept, and a generalizable approach to
+distributed systems programming that we believe is an improvement on the status
+quo.  We address this claim, and the associated research question above, by
+specifically examining whether relying on UC emulation (real-ideal
+indistinguishability), suffices to catch implementation bugs in UC
+implementations.  Specifically, do implementation-level bugs manigest
+themselves as distinguishing environments (test cases) that fuzzing can find.
+Furthermore, we confirm that UC implementations, and specifically fuzz testing,
+allows implementations to analyze protocols for properties related to fairness
+and probability distribution.\todo{maybe mention existing work}.  The
+experimental method in this work consists of implementating candidate
+distributed protocols, injecting bugs into them which we believe are
+representative of reality, and examining the false negatives and false
+positives with the lens of our research questions.  Our findings suggest that
+for non-liveness bugs, even simple fuzz test generators are capable of
+discovering distinguishing environments for most bugs that lead to protocol
+property violation.  \todo{say something about the other bugs that don't
+manifest themselves are a result of un-stated properties about efficiency of a
+protocol or distributions of output}.  \todo{rephrase the following better as
+higher-level concluding thoughts} The cases in which we fail are a consequence
+of our fuzzing strategies, and this is expected because fuzzing is only a
+method of finding bugs not ruling them out.  In the case of liveness-related
+properties, cycle-checking is made easy as part of the UC proof obligation for
+real-ideal emulation, but neither our eventual delivery model nor our attempts
+at being clever with import yield much success beyond that. 
 
-Our attention turns to UC definitions that assert properties  
-
-We continue the same approach as above and demonstrate that UC definitions that express properties relating to output fairness, adversarial selection of input (related closely to adversarial knowledge), and their effect on the distribution of outputs. 
-The canonical example we use here is the coin flips and ``fair'' lotteries which have become important byzantine protocols in the blockchain space, and implementation frameworks must be able to express thes properties in a protocol's specification, 
-Some non-blockchain protocols, such as the ABA protocol we study in this work, make use of distributed protocols to generate shared common coins that must specify what the adversary learns about the execution and its ability to influence the outcome. 
-Existing frameworks fail to express and/or analyze protocols that require such definitions.
-Not only does the ideal functionality enable greater expressiveness than existing specification frameworks in this situation, but UC's 
+Our attention now turns to ideal functionalities and protocols that express
+properties relating to output fairness, adversarial influence on input/output
+(related to adversarial knowledge), and their effect on the distribution of
+outputs.  The example we use is the canonical coin flipping primitve that is
+used throughout distributed systems literature and construct a ``fair'' lottery
+out of it.  The lottery is a canonical example of the kinds of byzantine
+protocols common in the decentralized setting, but is a protocol not readily
+expressable in existing distributed development frameworks.  \todo{finish} The
+canonical example we use here is the coin flips and ``fair'' lotteries which
+have become important byzantine protocols in the blockchain space, and
+implementation frameworks must be able to express thes properties in a
+protocol's specification, Some non-blockchain protocols, such as the ABA
+protocol we study in this work, make use of distributed protocols to generate
+shared common coins that must specify what the adversary learns about the
+execution and its ability to influence the outcome.  Existing frameworks fail
+to express and/or analyze protocols that require such definitions.  Not only
+does the ideal functionality enable greater expressiveness than existing
+specification frameworks in this situation, but UC's 
 
 
 %Exising development and analysis frameworks fall short of desirable properties in that most lack support for byzantine protocols and for obvious reasons.
