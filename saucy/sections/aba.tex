@@ -1,24 +1,70 @@
 %In the previous section, we explore how we can use fuzz testing and our implementation to successfully test and analyze protocol properties across laybered composition.
 %We specifically focused on properties around fairness and adversarial distributions and tested for design-level bugs arising from subtle differences in the different models of coin flipping.
-In this section, we set out to examine whether fuzz testing can be a useful
-tool in UC to detect implementation-level bugs.  Specifically, we keep our
-focus on the real-ideal paradigm and ask whether implementation-level bugs
-manifest themselves as dinstiguishing environments, and, therefore, ask whether
-the real-ideal assertion is uniquely useful for finding implementation level
-bugs.  In particular, we care that bugs in the protocol which do lead to
-failures in properties specified in an ideal functionality can manifest as
-distinguishing environments using existing analysis methods.  Alongside the
-real-ideal relationship, we want to show that the environment and adversary in
-UC create a generalizable method of testing protocols against a strong
-byzantine adversary.  %To the best of our knowledge no frameworks like UC
-exists that proposes a generalized and uniform way of specifying distributed
-systems, their properties, and their security that enables straightforward
-composition of protocol implementations.  To confirm or refute our hypothesis,
-we apply fuzz testing as our analysis methodology because the approach of test
-case genration is a natural fit for UC's emulation definition of ensuring
-indistinguishability against \emph{all possible environments}.  We explain the
-experimental setup in more detail below, and put off discussing liveness
-failures until the....
+In this section, we set out to examine the real-ideal definition of security as
+a candidate for testing UC implemenations.  There are two questions we seek to
+answer towards this goal.  First, is the emulation definition capable of
+detecting implementation-level bugs?  Put another way, do implementation bugs
+manifest themselves as disinguishing environments that can be checked relying only
+on real-ideal emulation?  Second, do the inherent advantages of the ideal functionality
+model of specificaiton translate to advantages in a development setting?  
+As discussed earlier, specifying protocol behavior as a program, the ideal functionality, makes specification easier than property-based definitions for protocols where properties like safety, secrecy, and fairness might be highly intertwined and not easily separable.
+%As mentioned earlier in this work, the frameworks security definition and 
+%adversarial modeling choices allow for more sophisicated properties to
+%be expressed and checked compared to other frameworks. 
+
+In general, we are also interested in testing implementations that aim to achieve
+output fairness or limit adversarial influence on some distribution.  We
+observe that the properties of a simple coin tossing protocol can't be
+specified or checked by existing work. To the best of our knowledge no
+frameworks, especially implemenation frameworks, exist that provide a
+generalizable method of testing arbitrary byzantine distributed protocols.  To
+confirm or refute out hypothesis, we apply fuzz testing as our analysis
+methodology for analyzing protocol failues in UC, because analysis by automated
+test case generation seems a natural fit for UC's emulation definition
+(indistinguishability against all possible enviroments).  We explain our
+approach in more detail below, and put off discussing liveness failures until
+the next section.
+
+Our application of fuzz testing proves very successful for the safety-like
+properties we are concerned with here.  For each of the example protocols we
+use (described below) we observe a high true positive rate and almost no false
+negatives.  The most notable result of this sesion is discovering a previously
+unknown bug in the ABA paper by Crain~\cite{aba}, and it is a critical positive
+result for the larger case we are making in this work.  We confirm this bug
+with both the protocol pseudocode and the text describing it in detail.  The
+outcomes of fuzz testing are discussed in their respective subsections below.
+
+Ths section is laid out as follows. First we introduce our methodology for
+evaluating our UC implementation. Second, we highlight the three candidate
+protocols we will examine. Then we describe our approach to defining test case
+generators and more detail on how we go about testing each protocol. For
+brevity we only focus on the ABA protocol in this section, as it is the most
+interesting example, present the high-level results from the other two
+protocols, but relegate them to the appendix.  Third, we look at a coin toss
+example and build a lottery protocol out of it.  Recall that these protocols
+differ from traditional distributed protocols in that they require notions of
+fair distribution.  They are especially important in the blockchain domain due
+to the financial incentives involved, and are representative of the kinds of
+protocols that form the backbone of many decentralized applications.
+%In this section, we set out to examine whether fuzz testing can be a useful
+%tool in UC to detect implementation-level bugs.  Specifically, we keep our
+%focus on the real-ideal paradigm and ask whether implementation-level bugs
+%manifest themselves as dinstiguishing environments, and, therefore, ask whether
+%the real-ideal assertion is uniquely useful for finding implementation level
+%bugs.  In particular, we care that bugs in the protocol which do lead to
+%failures in properties specified in an ideal functionality can manifest as
+%distinguishing environments using existing analysis methods.  Alongside the
+%real-ideal relationship, we want to show that the environment and adversary in
+%UC create a generalizable method of testing protocols against a strong
+%byzantine adversary.  %To the best of our knowledge no frameworks like UC
+%exists that proposes a generalized and uniform way of specifying distributed
+%systems, their properties, and their security that enables straightforward
+%composition of protocol implementations.  To confirm or refute our hypothesis,
+%we apply fuzz testing as our analysis methodology because the approach of test
+%case genration is a natural fit for UC's emulation definition of ensuring
+%indistinguishability against \emph{all possible environments}.  We explain the
+%experimental setup in more detail below, and put off discussing liveness
+%failures until the....
 
 %Of course, the ideal functionality is not capable of capturing all desirable properties of protocol. 
 %For example, it may be useful for capture properties predicated on the protocol being in a specific state in a specific round.
@@ -26,54 +72,103 @@ failures until the....
 
 %%%%% Experimental setup: implement protocols, implement generators, choose bugs that may or may not cause failure, apply fuzzing, and determing true/false positive/negative
 \paragraph{Experimental Setup}
-We start by implementing a few representative examples of asynchronous distributed protocols.
-Next, we design a set of environment generators, our test cases for fuzzing, that aim to discover points of failure by exploring different adversarial input strategies and schedulers.
-We perturb our implementations with bugs we choose which we believe are representative of bugs encountered in the wild.
-Some of the injected bugs are generic to any distributed protocols and others are specific to the protocol in question, and of course we don't tailor the chosen bugs to the desired outcome.
-Finally, we apply our fuzzing techniques to the buggy protocols and determine where and when we encounter true positives or false negatives. 
-
-In our setup, we design the generators and choose the bugs that we inject into our protocols, and we have to be careful to design the generators to target specific states in the code where we think failures might occur rather than targetting them specifically at the bugs that we inject.
+We answer the first question above by pitting UC and fuzz testing against
+implementations of three candidate distributed protocols.  The first step is
+correctly implementing the three protocols in question: Bracha's well-known
+broadcast primitive~\cite{bracha}, Ben-Or's randomized agreement
+algorithm~\cite{benor}, and an optimized version~\cite{aba} of the well known
+asynchronoud byzantine agreement (ABA)  protocol by Motefaoui et
+al.~\cite{mmr}.  next, a set of environment generations (our test cases for
+fuzzing) are designed that aim to discover points of failure by exploring
+different adversarial input strategies and schedules.  The implementations are
+then perturbed by implementation bugs which we choose with the belief that they
+are representative of common bugs encountered in the wild.  Many of the
+injected bugs are generic and likely to occur in any protocol implementation,
+and the others are specific to the protocol in question.  We strictly adhere to
+this order of steps to ensure that the tests and generators we define aren't
+influenced by the bugs we choose in way that tailors them to a positive outcome
+for this work.  Finally, the generators are applied to the broken
+implementations. The results of our fuzz testing, specifically examining where,
+when and why we encounter true or false positives and negatives, gives insight
+into using the UC framework as an implementation and analysis tool.
 
 %%%%% what do false positives and true negatives mean and they aren't useful to answering this question, we assume we start with a correctly implemented protocol
-\paragraph{Classifying Failure}
-A fuzz test case that raises an assertion that fails is considered a positive result.
-We classify true positives as the bugs for which a distinguishing environment exists, and false positives where a distinguishing environment is found but shouldn't exist.
-For the class of failures we're considering in this section, false positives are categorized as a failure on our part to implement an adequate simulator or a correct implementation rather than identification of a bug in the protocol. 
-False positives might be cases in which bugs we inject cause only code-level failures (e.g. index out of bounds errors or concurrent failures) rather than protocol-level failures are discarded because they don't advance our understanding of our research question.
-%False positives encountered in our analysis of liveness in the next section are not discarded.
-True negatives are another class of outcomes where we expect a correct protocol to be correct. 
+\paragraph{Classifying Experimental Outcomes}
+True positives are classified as bugs for which a distinguishing environment
+exists and was produced by fuzzing, and a false negative means the former
+condition is true but our fuzzer didn't find one.  A true negative means our
+fuzzer corretly fails to find a distinguishing test case (none exists), and a
+false positive means a distinguishing test case was found by the fuzzer where
+none should exist.  False positives in our case are unexpected, and we larlgely
+categorize them as a failure on our part to implement an adequate simulator for
+the real-ideal experiment or a previously correct implementation of the
+protocol.  False positives include cases in which bugs we inject cause only
+code-level failures (e.g. index out of bounds errors or concurrent failures)
+rather than protocol-level failures and are discarded because they don't
+advance our understanding of our research question.  %False positives
+encountered in our analysis of liveness in the next section are not discarded.
+True negatives are the class of outcomes where we expect a correct protocol to
+be correct. 
 %These test cases are sanity checks for our implementation and on our methodolody that it is able to recognize passing tests.
 
 %%%%% Which protocols do we choose, focus on ABA, and we find a bug in ABA
 \paragraph{The Protocols}
-In this work, we implement three byzantine protocols: Bracha's broadcast protocol~\cite{brachabcast}, Ben-Or's randomized agreement protocol~\cite{benoragreement}, and an ABA protocol~\cite{aba} that is a more modern optimization of the well-known byzantine agreement protocol by Mostefaoui et al.~\cite{mmr} (dubbed the MMR protocol).
-We choose these protocols for a few reasons. 
-%The protocols should be probabilistic and use randomness in different ways.
-The protocols should be probabilistic and use randomness in different ways, and they should intuitively require different approaches to test case generation based on their differences.
-The ABA protocol makes use of shared randomness and has a greater surface are for bugs to occur.
-Intuitively, failures in this protocol should manigest relatively quickly as the state space is reduced by the use of a strong common coin, and we expect that its fine-tuned nature yields many failures from ever simple bugs.
-Our testing generators need to be broad and general purpose to find failures resulting from a variety of different reachable states in the protocol.
-%The BenOr protocol makes use of local randomness. 
-BenOr, on the other hand, makes use of local randomness and is loosely constructed, and we expect bugs to not manifest as failures quite as easily.
-It needs to be possible that generators can not only be broad and expansive in their search like in ABA, but also be targetted and produce the long-range attacks against buggy versions of this protocols.
-We also expect that liveness analysis, which we discuss in the next section, should also be affected by the difference in length of the protocols.
+In this work, we implement three byzantine protocols: Bracha's broadcast
+protocol~\cite{brachabcast}, Ben-Or's randomized agreement
+protocol~\cite{benoragreement}, and an ABA protocol~\cite{aba} that is a more
+modern optimization of the well-known byzantine agreement protocol by
+Mostefaoui et al.~\cite{mmr} (dubbed the MMR protocol).  We choose these
+protocols for a few reasons.  We wanted both probabilistic and deterinistic
+protocols, protocols that used randomness in different ways from one another,
+and were different enough from each other to require different approaches to
+their generators.  Bracha's broadcast is the simplest of the three protocols,
+and deterministic, making is a perfec first protocol to tackle as we get our
+bearings.  The Ben-Or protocol is slightly more complex and uses local
+randomness generated within parties to ultimately make decisions.  The ABA
+protocol is the most complex of the three (also the most modern), uses a
+broadcast sub-protocol, and relies on distributed randomness generation through
+the use of a common coin amont the parties.  Naturally, we expect this protocol
+to have the greatest surface area for bugs and faults.  We also expect bugs to
+manifest themselves more quickly in this protocol owing to its shared
+randomness, and, therefore, smaller expected runtime, and it's fine-tuned
+parameters (for efficiency) compared to the Ben-Or protocol.  For the remainder
+of this section we limit the discussion to the ABA example and give only high
+level results for the other two protocols.
+%Our testing generators need to be broad and general purpose to find failures resulting from a variety of different reachable states in the protocol.
+%We also expect that liveness analysis, which we discuss in the next section, should also be affected by the difference in length of the protocols.
 
-Through our fuzz testing of the protocol, we discover a previously unknown bug in the ABA protocol.
-This is a positive result for the case we are making, as implementations, and their analyses, of UC definitions is critical to achieving better protocol definitions and possibly enabling more complete analysis by being concrete.
-We confirm this bug with both the protocol pseudocode and the text describing it in detail.
+%\todo{when to mention this result??}
+%Through our fuzz testing of the protocol, we discover a previously unknown bug in the ABA protocol.
+%This is a positive result for the case we are making, as implementations, and their analyses, of UC definitions is critical to achieving better protocol definitions and possibly enabling more complete analysis by being concrete.
+%We confirm this bug with both the protocol pseudocode and the text describing it in detail.
 
 \subsection{Asynchronous Byzantine Agreement (ABA)}
 %\plan{Explain the ABA protocol we use and the messages involved. \m{EST} messages and \m{AUX} messages and how a value is decided by theh coin flip}
-The ABA protocol has a set of $n$ parties each propose a binary input $x_i$, and eventually all parties decide on a single binary value.
-More formally, the protocol aims to guarantee the following properties:
+The ABA protocol has a set of $n$ parties each propose a binary input $x_i$,
+and eventually all parties decide on a single value.  More formally, the
+protocol aims to guarantee the following properties:
 \begin{itemize}
-\item \emph{Termination}: Every non-faulty process eventually decides on a value.
+\item \emph{Termination}: Every non-faulty process eventually decides on a
+value.
 \item \emph{Agreement}: No two non-fault processes decide on different values.
-\item \emph{Validity}: If all non-faulty processes propose the same value, no other value can be decided.
+\item \emph{Validity}: If all non-faulty processes propose the same value, no
+other value can be decided.
 \end{itemize}
-All three of these properties can be captured by the ideal functionality for binary agreement in Figure~\ref{fig:faba}.% but we examine checking failures of the \emph{Termination} property in the next section.
-% We rely on our asynchronous model to capture the \emph{eventual delivery} guarantee that underpins the \emph{Termination} property.
-Our description of the protocol mimics the MMR protocol except for one specific design choice that we will point out.
+All three of these properties can be captured by the ideal functionality for
+binary agreement in Figure~\ref{fig:faba}.  The protocol description given by
+the ideal functionality lets the adversary determine the input as long as the
+input must have been given by at least 1 honest party (more than $t$ number of
+the input).  Otherwise the decision is is determined by which input is given by
+the honest parties. The eventual send at the end of the functionality is handled
+by our asynchronout model. 
+
+\begin{figure}
+\input{figures/f_aba}
+\caption{Ideal functionality for an ABA protocol with $t < \frac{n}{3}$. The
+adversary gets to choose the agreed upon value given a sufficient number of
+either value.}
+\label{fig:faba}
+\end{figure}
 
 %%%%%% Describe SBroadcast
 \paragraph{Broadcast Primitive}
