@@ -123,9 +123,9 @@ world where parties locally run \protcom also exhibit the same type.
 The commitment protocol \protcom that realizes \Fcom operates in the random oracle model. 
 The random oracle model assumes protocol parties have access to an idealized hash function \Fro.
 It is queried to ``hash'' items and is deterministic. 
-The session type below described communication with \Fro and we give its pseudocode in Figure~\ref{fig:fro}.
+The session type below concretizes \Fro to take integers as pre-images and output integers, and we give its pseudocode in Figure~\ref{fig:fro}.
 \begin{tabbing}
-    $\mi{type} \; \m{oracle}[a] = \textcolor{red}{\getpot^1} \ichoice{$\=$\mb{query}: \m{pid} \product \m{a} \tensor \textcolor{red}{\paypot^1} \echoice{\mb{hash}: \m{pid} \arrow \m{int} \tensor \m{oracle[a]}}}$ 
+    $\mi{type} \; \m{oracle} = \textcolor{red}{\getpot^1} \ichoice{$\=$\mb{query}: \m{pid} \product \m{int} \tensor \textcolor{red}{\paypot^1} \echoice{\mb{hash}: \m{pid} \arrow \m{int} \tensor \m{oracle}}}$ 
 \end{tabbing}
 Any arbitrary data type can be hashed, hence the type parameter \m{a}, but the resulting hash is always represented as an integer. 
 The commitment protocol concretizes this type to hashing queries of type $\m{(Bit,Int)}$ as shown in the type definition \protcom in Figure~\ref{fig:fcomideal}.
@@ -141,12 +141,12 @@ This retains the original \m{oracle} session type.
 In order to achieve this we split communication between two channels:
 
 \begin{align*}
-    \m{RoP2F}[a][b] = \ichoice{&\textcolor{red}{\getpot^1} \mb{query}: \m{pid} \product \m{a} \product RoP2F[a][b], \\
-    &\rgetpot{1} \mb{sendmsg}: \m{pid} \product b \product \m{RoP2F[a][b]}}
+    \m{RoP2F} = \ichoice{&\textcolor{red}{\getpot^1} \mb{query}: \m{pid} \product (\m{bit},\m{int}) \product RoP2F[b], \\
+    &\rgetpot{1} \mb{sendmsg}: \m{pid} \product \m{comp2f} \product \m{RoP2F}}
 \end{align*}
 \begin{align*}
-    \m{RoF2P}[a] = \echoice{&\rpaypot{0} \mb{hash}: \m{pid} \arrow \m{int} \arrow \m{oracle[a]}, \\
-    &\rpaypot{1} \mb{msg}: \m{pid} \arrow \m{a} \arrow \m{RoF2P[a]}}
+    \m{RoF2P} = \echoice{&\rpaypot{0} \mb{hash}: \m{pid} \arrow \m{int} \arrow \m{oracle}, \\
+    &\rpaypot{1} \mb{msg}: \m{pid} \arrow \m{comf2p} \arrow \m{RoF2P}}
 \end{align*}
 
 \paragraph{Process Code for Using Session Types}

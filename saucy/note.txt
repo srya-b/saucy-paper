@@ -1,3 +1,6 @@
+developers need faster, standard, battle-tested languages (add to intro)
+
+
 Wrapper Questions
 =================
 * If an ITM must ``pay'' 1 import to schedule aynchronous code does this pose a problem for environments giving enough import?

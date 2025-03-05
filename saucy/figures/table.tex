@@ -7,9 +7,9 @@ Message Validation ABA & TP & Simple  & Trivially found safety violation.
 \\ \hline
 Message Validation Ben Or & {\color{blue} FN} & - & The probabilities involved in producing the distinguishing environment and our generators need to be better and smarter about exploration.
 \\ \hline
-Reset \emph{bin\_ptr} [ABA] & TP / (Partial FP) & simple & liveness failure: partial false because ven inputs that result in decisions never output them because of how the code is constructed
+Reset \emph{bin\_ptr} [ABA] & TP / (Partial FP) & simple & liveness failure: partial FP because even inputs that result in decisions don't always output due to the structure of our implementation
 \\ \hline
-{\color{red} Discovered: Any $(n-t)$ $\msf{AUX}(\cdot)$ [ABA]} & Expected FP was a FN & Targeted  & The protocol, as stated, exchibits a safety violation, and this was discovered as a bug in the ``correct'' protocol 
+{\color{Maroon} Discovered: Any $(n-t)$ $\msf{AUX}(\cdot)$ [ABA]} & {\color{Maroon} Expected FP found FN} & {\color{Maroon} Targeted}  & {\color{Maroon} The protocol, as stated, exchibits a safety violation, and this was discovered as a bug in the ``correct'' protocol}
 \\ \hline
 Old MMR bug [ABA] & Partial FN & - & Our generators exploit it but not enough to force simulator to raise a failure.
 \\ \hline 
@@ -40,6 +40,6 @@ Thresh. BenOr Too Low / Too High & TN / (TP/TN) & Targetted / Simple & Protocol 
 Inverted \m{supportCoin} [ABA] & TP & Simple & Simulator loop checking identifies this as a repeated cycle occuring too often to discount as randomness. 
 \\ \hline
 %Should present a liveness failure under specific conditions. It's rare to see exxecutions that exploit this, but some observations when partyh input is split equally. Looping behavior is a good indicator if searched over varying numbers of rounds to discound false positives. \\
-\hline \hline
+\hline
 \end{tabularx}
 \end{center}

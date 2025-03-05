@@ -172,25 +172,49 @@ either value.}
 
 %%%%%% Describe SBroadcast
 \paragraph{Broadcast Primitive}
-The ABA protocol relies on instances of a broadcast primitive called \msf{SBroadcast} (shortened \msf{SBCast}).
-Two \msf{SBCast} instances are running at any time one for each input value 1 or 0.
-The two primitives determine whether $2t+1$ parties have broadcast a value with $\m{EST}(\cdot)$ message and ``delivers'' the value to the main protocol if so.
-%The primitives listens for other parties proposing a particular value and ``delivers'' the value if $2t+1$ parties have similarly broadcast the value with $\msf{EST}(\cdot)$ messages.
-At the start of the protocol, a party with input $x$ creates an instance $\msf{SBCast}(x, True)$ which starts by broadcasting $x$ and an instance $\msf{SBCast}(\not x, False)$ only listens and echos $\not x$ if at least one honest party broadcasts it.
-One instance proposes the input value, and the other listens for other proposed values.
-In subsequent rounds,  new \msf{SBCast} instances are created depending on the values delivered in the current round and the output of the common coin.
+The ABA protocol relies on instances of a broadcast primitive called
+\msf{SBroadcast} (shortened \msf{SBCast}).  Two \msf{SBCast} instances are
+running at any time one for each possible input value 1 or 0.  The two
+primitives determine whether $2t+1$ parties have broadcast a value with
+$\m{EST}(\cdot)$ messages and ``deliver'' the value to the main protocol if so.
+%The primitives listens for other parties proposing a particular value and
+``delivers'' the value if $2t+1$ parties have similarly broadcast the value
+with $\msf{EST}(\cdot)$ messages.  At the start of the protocol, a party with
+input $x$ creates an instance $\msf{SBCast}(x, True)$ which starts by
+broadcasting $x$ and an instance $\msf{SBCast}(\not x, False)$ only listens and
+echos $\not x$ if at least one honest party broadcasts it.  When a vaue is
+broadcast as a proposed value we say the protocol ``supports'' this value. The
+delivered values and the output of the common coin, which determines what
+values parties propose in the next round, determine what new instances of
+\m{SBCast} are created.
 
 %%%%% What the main protocol does once a value is delivered
 \paragraph{Main ABA Protocol}
-The protocol begins with the two instances of \msf{SBcast} above, and waits until some value is ``delivered'' (i.e. some \emph{bin\_ptr}$[b] = True$).
-It broadcasts an $\msf{AUX}(b)$ for the first value delivered and waits until it receives $n-t$ $\m{AUX}(\cdot)$ messages such that a set \emph{view} can be formed where for $b \in view$, $bin\_ptr[b] = True$ and an $\m{AUX}(b)$ messages was received.
-Once a satisfying set is found, call the common coin.
-The strong common coin only returns a value after being called by $t+1$ honest parties.
-Based on the result of the coin, $c$, and the set \emph{view}, either decide on a value if $view = {s}$ and listen with $\msf{SBcast}(\not s, False)$, have $view = {0,1}$ and support $c$ with $\msf{SBcast}(\not c, False)$, or have $view = {\not c}$ and support $\not c$ again next round with $\msf{SBCast}(\not s, True)$.
-The key idea here is that parties only propose the opposite of the common coin if the coin value was never delivered or seen in $\msf{AUX}(\cdot)$ messages.
-Otherwise, they go into the next round with $bin\_ptr[c] = True$ and listen passively for $\not c$ with a new instance of \msf{SBCast}.
+The main protocol tracks what values have been delivered (\emph{bin\_ptr}$[b]=
+True$ if so) and how many $\m{AUX}(b)$ messages have been received.  Once one
+of the values, $b$, is delivered it broadcasts $\m{AUX}(b)$ as the value it
+tries to decide an waits to receive $n-t$ $\m{AUX}(\cdot)$ messages of any
+kind.  It waits till there exists a set \emph{view} exists where for $b \in
+view$, $bin\_ptr[b] = True$ and an $\m{AUX}(b)$ message was received for it.
+The next step is waiting for the output of the common coin once it has been
+called by $t+1$ honest parties.  For some party, if $c \in view$ they support
+it next round by only listening for $\not c$ in case others support it. If
+$view = \{c\}$ the party also decides $c$.  Otherwise the party ``supports''
+$\not c$ next round with a new broadcast.  At a high level, parties only
+propose the opposite of the common coin in the next round if $c \notin view$.
+The values of $bin\_ptr$ are unchanged from round to round unless a new
+instance of $\m{SBCast}$ overrides it to $False$.  The notable departure from
+the original MMR protocol~\cite{oldmmr} is the distinct instances of
+\msf{SBCast} that can persist through to future rounds.
 
-The notable departure from the original MMR protocol~\cite{oldmmr} is the distinct instances of \msf{SBCast} that can persist through to future rounds.
+%The protocol begins with the two instances of \msf{SBcast} above, and waits until some value is ``delivered'' (i.e. some \emph{bin\_ptr}$[b] = True$).
+%It broadcasts an $\msf{AUX}(b)$ for the first value delivered and waits until it receives $n-t$ $\m{AUX}(\cdot)$ messages such that a set \emph{view} can be formed where for $b \in view$, $bin\_ptr[b] = True$ and an $\m{AUX}(b)$ messages was received.
+%Once a satisfying set is found, call the common coin.
+%The strong common coin only returns a value after being called by $t+1$ honest parties.
+%Based on the result of the coin, $c$, and the set \emph{view}, either decide on a value if $view = {s}$ and listen with $\msf{SBcast}(\not s, False)$, have $view = {0,1}$ and support $c$ with $\msf{SBcast}(\not c, False)$, or have $view = {\not c}$ and support $\not c$ again next round with $\msf{SBCast}(\not s, True)$.
+%The key idea here is that parties only propose the opposite of the common coin if the coin value was never delivered or seen in $\msf{AUX}(\cdot)$ messages.
+%Otherwise, they go into the next round with $bin\_ptr[c] = True$ and listen passively for $\not c$ with a new instance of \msf{SBCast}.
+
  
 %%%%% A note on the types of failures: difference between property failures w.r.t ideal functionalities and throwing errors based on assumptions being violated
 %%%%% We don't care about the throwing errors because it has nothing to do with the real-ideal paradigm or the properties of the protocol it's just bad code on our part
@@ -213,14 +237,28 @@ The notable departure from the original MMR protocol~\cite{oldmmr} is the distin
 
 %%%% Describe generators
 \subsection{Environment Generators}
-The generators we define for all the protocols produce environments that range from completely random, but semantically correct, inputs to structured environments that follow the protocol but try to force specific deviant protocol states.
-As we show in this section, the small design surface that UC encourages through modularity results in protocols with a relatively small state space and makes devising and executing adversarial strategies, as fuzz test generators, straightforward.
-For example, in the ABA protocol we described above, it suffices to introduce small variations into a specific generator to detect most of the implementation bugs that we inject.
+The generators we define for all the protocols produce environments that range
+from completely random (but still non-trivial) inputs to what we call
+structured environments that follow the protocol but try to force specific
+deviant protocol states.  As we show in this section, the small design surface
+encouraged by UC compositional design results in indivually testable protocols
+with a relatively small state space and makes devising and executing
+adversarial strategies, as fuzz test generators, straightforward.  For example,
+despite ABA being a relatively complex distributed protocol with many moving
+parts, we were able to detect most of the injected implementation bugs by
+introducing small variants to a single specific generator.
 
 %%%% fuzzing caveat the "art" of fuzzing
-A limitation of our fuzz testing approach is that we do not apply any tooling to determine the coverage acheived by our fuzzers.
-We design generators that we believe cover the various adversarial strategies out there and should suffice to catch all of the implementation bugs we inject.
-In places where we encounter false negatives, where our generators aren't able to create the necessary conditions for the indistinguishability failure associated with a bug, we address the reasons and whether this is a fundemental limtiation of analysis or failure of our approach.
+\paragraph{A Limtation, and Future Workk}
+We do not employ any tooling to determine the coverage acheived by our fuzzers.
+We design generators that we believe cover the various adversarial strategies
+out there and should suffice to catch all of the implementation bugs we inject.
+In places where we encounter false negatives, where our generators aren't able
+to create the necessary conditions for the indistinguishability failure
+associated with a bug, we address the reasons and whether this is a fundemental
+limtiation of analysis or failure of our approach.  An obvious place for future
+work is to add more sophisticated testing techniques, like code coverage
+metrics, into our analysis framework.
 % TODO: save for later
 %\begin{center}
 %\emph{$\diamond$ Fuzz testing for the protocol still requires insight into the protocol mechanism in order to understand what search space is interesting to explore.}
@@ -240,20 +278,33 @@ In places where we encounter false negatives, where our generators aren't able t
 
 \begin{figure*}
 \input{listings/simplegen}
-\caption{A simple ``dumb'' generator that doesn't to any protocol specific work or targetting, but just loops and schedules message delive}
+\caption{A simple ``dumb'' generator that doesn't to any protocol specific work
+or targetting, but just loops and schedules message delive}
 \label{lst:simplegen}
 \end{figure*}
 
 \paragraph{Simple Generators}
-Thre are two kinds of environment generators we define.
-The first type are simple, or ``dumb'', generators that arent' reacting to the state of the protocol, but they randomly choose some scheduling strategy before observing protocol state, arbitrarily choose byzantine messages for corrupt parties, and always deliver messages to ensure that the protocol can make progress. 
-In most cases, this means that all messages in round $r$ are delivered before any messages in round $r+1$.
-In other cases, the environment makes random decisions to deliver all current code in the queue or throw everything against the wall and don't make any guarantees other than taking all actions at random.
-We create these generators with the expectation \emph{that they will help us find simple bugs, ensure that our correct implementation doesn't return any true positives, and that our testing infrastructure doesn't return any false positives}.
-They can also be considered sanity checks on our implementation of both the protocols and our fuzzing framework.
-In Figure~\ref{lst:simplegen}, we show an example of a dumb generator that performs a simple set of actions.
-As we will find out in the section, where we study liveness properties, environments that always ensure protocol progress are especially useful. \todo{???}
-The generator operates in the all-honest corruption setting, chooses random input, and then proceeds in some number of rounds and delivers all the code currently waiting in the queue.
+Thre are two kinds of environment generators we define.  The first type are
+simple, or ``dumb'', generators that aren't reacting to the state of the
+protocol, but randomly choose some scheduling strategy, a priori, before
+observing protocol state, arbitrarily choose byzantine messages for corrupt
+parties, and always deliver all messages to ensure that the protocol can make
+progress.  In most cases, this means that all blocks in round $r$ are executed
+before any in round $r+1$.  In other cases, the environment makes random
+decisions to deliver all current scheduled blocks in the queue or throw
+everything against the wall and don't make any guarantees other than taking all
+actions at random.  We create these generators with the expectation \emph{that
+they will help us find simple bugs, ensure that our correct implementation
+doesn't return any true positives, and that our testing infrastructure doesn't
+return any false positives}.  They can also be considered sanity check test
+cases on our implementation of both the protocols and our fuzzing framework.
+In Figure~\ref{lst:simplegen}, we show an example of a dumb generator that
+performs a simple set of actions.  As we will find out in the next section,
+where we study liveness properties, environments that always ensure protocol
+progress are especially useful.  Simple generators mostly operate in the
+all-honest setting, chooses random input, and then proceeds for some number of
+rounds and delivers all the code currently waiting in the queue (hence checking
+our protocol at least does what it's supposed to in the happiest case).
 
 %\todo{Mention here that we test reactively rather than determining an input trace before hand and executing it. This is a key difference between what fuzz testing normally does.}
 %We run these generators in the three important failure models: all honest, crash fault, and byzantine.
@@ -263,21 +314,34 @@ The generator operates in the all-honest corruption setting, chooses random inpu
 
 \begin{figure*}
 \input{listings/abaenv}
-\caption{The code for the the most basic ``smart'' generator we use for checking ABA. We exclude print statements and the environment setup code that is common to all generators.}
+\caption{The code for the the most basic ``smart'' generator we use for
+checking ABA. We exclude print statements and the environment setup code that
+is common to all generators.}
 \label{lst:genaba}
 \end{figure*}
 
 \paragraph{Smarter Generators}
-The generator in Figure~\ref{lst:genaba} is a slightly smarter generator which targets a failure mode where parties might decide on different values or never decide any value but confirm both.
-The strategy is intuitive for forcing such a failure.
-Partition the parties on input and only deliver broadcast messages within the partition so that parties hopefully deliver only their input.
-Choose some random set of parties, possibly between partitions, and allow tham to exchange broadcast messages so that some parties might deliver two values and don't decide on anything this round.
-Finally, give all parties enough \msf{AUX} messages so that they progress to the common coin and eventually start the next round.
-In this round, some party may decide the output of the common coin, and in the next round the generator selectively give messages so that parties that didn't decide this round may decide a different coin value if the protocol is problematic.
-Variants of this environment turn out to be sufficient for catching a lot of the bugs we inject into the protocol that do cause indistinguishability failures. 
-\emph{In general, we see that understanding the decision points of the protocol make defining useful generators easy for non-liveness bugs.}
-Crucially note, that the generator isn't assuming the existence of a particular bug but targetting a particulat protocol state.
-Variants of this generator are different in whether they deliver the remaining \msf{EST} messages within the same round, or are more selective, based on the common coin in round $r-1$, about which messages are given to which parties in round $r$.
+The generator in Figure~\ref{lst:genaba} is a slightly smarter generator which
+targets a failure mode where parties might decide on different values or never
+decide any value but confirm both.  Partition the parties on input and only
+deliver broadcast messages within each partiion for the respective inupts.
+Choose some random set of parties, som possibly that are inter partitions, and
+allow them to exchange broadcast messages so that some parties might deliver
+two values or don't decide on anything this round.  Finally, give all parties
+enough \msf{AUX} messages so that they progress to the common coin and
+eventually start the next round.  In this round, some party may decide the
+output of the common coin, and in the next round the generator selectively give
+messages so that parties that didn't decide this round may decide a different
+coin value if the protocol is problematic.  Variants of this environment turn
+out to be sufficient for catching a lot of the bugs we inject into the protocol
+that do cause indistinguishability failures.  \emph{In general, we see that
+understanding the decision points of the protocol make defining useful
+generators easy for safety-like faults.} Crucially, note that the generator
+isn't assuming the existence of a particular bug but targetting a particulat
+protocol state.  Variants of this generator are different in whether they
+deliver the remaining \msf{EST} messages within the same round, or are more
+selective, based on the common coin in round $r-1$, about which messages are
+given to which parties in round $r$.
 
 %In Figure~\ref{lst:genaba}, we show an example of a smart generator for the ABA protocol.
 %The generator doesn't target any specific vulnerabilities, but targes an intuitive place where protocol failures are likely to happen.
@@ -322,42 +386,75 @@ Variants of this generator are different in whether they deliver the remaining \
 %The test generator that suggests the same liveness bug that was found in the original MMR protocol works by selecting one party arbitrarily out of four and attempting to force is to always deliver the value opposite the coin toss.
 %The hypothesis behind this environment is: \emph{if we can successfuly force one party to always deliver a value in a round that is opposite to the result of the coin flip then it will never decide any value}.
 
-\subsection{Injecting and Detecting Bugs}
+\subsection{Detecting Bugs}
 %The common use case of QuickCheck is definging a set of properties that assert specific things about the output of programs.
 %Optionally, QuickCheck includes a set of combinators to combine properties, define predicates for ``useful'' properties, and quantify results/failures over different test case generators.
-Traditionally, fuzz testing with QuickCheck at a basic level requires defining the desired properties of the program in terms of generators, and combinators to combine them, for input and an assertion of the desired property.
-In UC, we are specifically interested in the indistinguishability property of a real-ideal execution, so our assertions in this section checks for equality between the transcripts output by the two executions.
-Our ability to replay randomness in the simulator for the real world ensures that for full information protocols, like Bracha's broadcast, BenOr, and ABA, the transcripts will be exactly equal despite their use of randomness.
-The property definitions we create all make the same assertion but use different test case generators and inputs. 
+Traditionally, fuzz testing with QuickCheck, at a basic level, requires
+defining the desired properties of the program in terms of generators, and
+combinators to combine them, for input and an assertion of the desired
+property.  In UC, we are specifically interested in the indistinguishability
+property of a real-ideal execution, so our assertions in this section checks
+for equality between the transcripts output by the two executions.  Our ability
+to replay randomness in the simulator for the real world ensures that for full
+information protocols (all of the protocols we look at) the transcripts will be
+exactly equal despite their use of randomness.  The QuickCheck properties we
+define for every protocol (for safety-like properties) all make the exact same
+assertion: equality of transcripts.
 
 \paragraph{An Existing Safety Bug in ABA by Crain~\cite{aba}}
-The first step in our experiments was to attempt to validate our ``correct'' implementation of the protocol with our fuzzing apparatus. 
-Specifically, we want to ensure that our generators allow the protocol to progress through rounds while still executing the strategies that we encode and assert that we no distinguishing environments are found.
-The Bracha broadcast and BenOr protocol returned no positives assertions of failure, but we did observe one in the ABA protocol. 
-Specifically, we ran the generator defined in Figure~\ref{lst:genaba} on our ``correct'' implementation of the ABA protocol and arrived at a distringuishing environment after several hundred iterations.
-The output that our fuzzer provides is the input trace of the distinguishing environment which we replayed and discovered a design flaw in the ABA protocol rather than a failure of our implementation.
-The input trace we present is simplified for the $n=4$ case rather than the $n=6$ case that the trace returned.
-Parties $p_1, p_2, p_3$ have inputs $1, 1, 0$ respectively.
-The adversary makes $p_1, p_2$ deliver $1$ and $p_3$ deliver $0$ by controlling the \msf{EST} messages they received.
-As a result, $p_1, p_2$ broadcast $\msf{AUX}(0)$ and $p_3$ broadcasts $\msf{AUX}(1)$. 
-The adversary forces $p_2$ to also deliver $1$, and then delivers all $\msf{AUX}(\cdot)$ messages to all parties.
-Parties flip the common coin $c$. If the outcome of the coin is $c=0$:
+The first step in our experiments was to attempt to validate our ``correct''
+implementation of the protocol with our fuzzing apparatus.  Specifically, we
+want to ensure that our generators allow the protocol to progress through
+rounds while still executing the strategies that we encode and assert that we
+no distinguishing environments are found.  The Bracha broadcast and BenOr
+protocol returned no positives assertions of failure, but we did observe one in
+the ABA protocol.  Specifically, we ran the generator defined in
+Figure~\ref{lst:genaba} on our correct (or so we thought) implementation of the
+ABA protocol and arrived at a distringuishing environment after several hundred
+iterations.  The output that our fuzzer provides is the input trace of the
+distinguishing environment which we replayed and discovered a design flaw in
+the ABA protocol rather than a failure of our implementation.  The input trace
+we present is simplified for the $n=4$ case rather than the $n=6$ case that the
+trace returned.  Parties $p_1, p_2, p_3$ have inputs $1, 1, 0$ respectively.
+The adversary makes $p_1, p_2$ deliver $1$ and $p_3$ deliver $0$ by controlling
+the \msf{EST} messages they received.  As a result, $p_1, p_2$ broadcast
+$\msf{AUX}(0)$ and $p_3$ broadcasts $\msf{AUX}(1)$.  The adversary forces $p_2$
+to also deliver $1$, and then delivers all $\msf{AUX}(\cdot)$ messages to all
+parties.  Parties flip the common coin $c$. If the outcome of the coin is
+$c=0$:
 \begin{itemize}
-\item $p_3$ decides $0$ because $v_1 = \{0\}$. $p_1$ starts next rounds by proposing and broadcasting $0$ because $v_2 = \{1\}$. $p_2$ switches to supporting $0$ (without broadcasting) because $v_3 = \{0,1\}$. 
-\item In the next round the adversary makes $p_1,p_3$ deliver $0$ and $p_1$ decides $0$ if $c_{r+1} = 1$ %\todo{finish and confirm}
+    \item $p_3$ decides $0$ because $v_1 = \{0\}$. $p_1$ starts next rounds by
+        proposing and broadcasting $0$ because $v_2 = \{1\}$. $p_2$ switches to
+        supporting $0$ (without broadcasting) because $v_3 = \{0,1\}$. 
+    \item In the next round the adversary makes $p_1,p_3$ deliver $0$ and $p_1$
+        decides $0$ if $c_{r+1} = 1$ %\todo{finish and confirm}
 \end{itemize}
-Thus two parties were able to decide two different values.
-It is clear from the execution trace that parties ignore the existence of other delivered values when receiving an $\msf{AUX}(\cdot)$ message that contains them.
-We identify that the bug, which we confirm from both the pseudocode and text description of the protocol, is that the set \emph{view} is ``computed from the values included with $\msf{AUX}[r](b)$ messages received $(n-t)$ processes for which the corresponding \emph{bin\_ptr} variables point to a true Boolean''.
-If we alter this statement to require that for every $\msf{AUX}(b)$ received the protocol waits until $bin\_ptr[b] = True$, the bug is resolved and no safety violation is observed.
-We correct this bug, re-run all of our fuzzing models on our correct implementation to find any other such failures before proceeding to inject bugs into it.
+Thus two parties were able to decide two different values.  It is clear from
+the execution trace that parties ignore the existence of other delivered values
+when receiving an $\msf{AUX}(\cdot)$ message that contains them.  We identify
+that the bug, which we confirm from both the pseudocode and text description of
+the protocol, is that the set \emph{view} is ``computed from the values
+included with $\msf{AUX}[r](b)$ messages received $(n-t)$ processes for which
+the corresponding \emph{bin\_ptr} variables point to a true Boolean''.  If we
+alter this statement to require that for every $\msf{AUX}(b)$ received the
+protocol waits until $bin\_ptr[b] = True$, the bug is resolved and no safety
+violation is observed.  We correct this bug, re-run all of our fuzzing models
+on our correct implementation to find any other such failures before proceeding
+to inject bugs into it.
 
-\paragraph{Finding Bugs}
-The bugs that we inject into the protocol span common bugs we expect to appear in any asynchronous distrubuted protocol and some protocol-specific bugs.
-Common bugs that we intuitively think may commonly occur are ones like incorrectly set threstholds for phase/state changes, mishandling message validation, or erroneously modifying state accross rounds.
-The more subtle bugs that we inject are protocol specific and do things like flip the \msf{supportCoin} bit at the end of every round in ABA, or revert the protocol back to the original, flawed, MMR protocol by spawning two new instances of \msf{SBCast} every round.
-We summarize the bugs we inject into the ABA protocol and the outcome of our fuzz testing on them in the table in Figure~\ref{table:aba}
-Some of the bugs listed cause liveness failures, and we put off discussing them until the next section.
+\paragraph{Detecting Bugs}
+The bugs that we inject into the protocol span common bugs we expect to appear
+in any asynchronous distrubuted protocol and some protocol-specific bugs.
+Common bugs that we intuitively think may commonly occur are ones like
+incorrectly set threstholds for phase/state changes, mishandling message
+validation, or erroneously modifying state accross rounds.  The more subtle
+bugs that we inject are protocol-specific and do things like invert the
+\msf{supportCoin} bit at the end of every round in ABA, or revert the protocol
+back to the original (flawed) MMR protocol by spawning two new instances of
+\msf{SBCast} every round.  We summarize the bugs we inject into the ABA
+protocol and the outcome of our fuzz testing on them in the table in
+Figure~\ref{table:aba}. Some of the bugs listed cause liveness failures, and we
+put off discussing them until the next section.
 
 % smaller protocols testing in isolation => smaller surface
 % understanding the protocol's intent => the approach taken here vs in BenOr was different because we understand that with the common coin, the protocol should decide quickly so we can limit our environments to ones that don't need to always guarantee they execute some long strategy or continue to meaningfull explore the protocol beyond a few rounds
@@ -365,21 +462,57 @@ Some of the bugs listed cause liveness failures, and we put off discussing them 
 % smaller UC like protocols => places where failures are likely to occur are easy to determine and target
 % real ideal paradigm => we never had to read the transcripts to extract useful infromation and check specific properties and preconditions, just assert equivalence no need to actually deal with the protocol output in a protocol-specific way
 % fuzzing lets us quantify over what input distributions produce an error and determining the source of the failure is made asier
-First, we inject all bugs on their own and check for distinguishing environments.
-As we expected for both ABA and the BenOr protocol, we never observe any false positives.
-In the case of ABA, our fuzzing apparatus was able to find every true positives and never returned a false negatives.
-In the case of BenOr, we return true positives for the simlpest bug (threshold perturbation and improper validation of round numbers in received messages) but return false negatives for some other relatively simple bugs.
+First, we inject all bugs on their own and check for distinguishing
+environments.  As we expected for both ABA and the BenOr protocol, we never
+observe any false positives.  In the case of ABA, our fuzzing apparatus was
+able to find every true positives and never returned a false negatives.  In the
+case of BenOr, we return true positives for the simlpest bug (threshold
+perturbation and improper validation of round numbers in received messages) but
+return false negatives for some other relatively simple bugs.
 
-We highlight a specific bug and test case in the BenOr protocol because it backs up our previous intuition about this protocol, and confirms that well designed generators can produce distinsguishing environments that perform long-range exploits.
-As we expected the BenOr protocol was resilient to most bugs, and the distinguishing environment we did find came as a result of a targetted generator that specifically attempted to arbitrarily censor specific parties in every round--effectively leaving their messages undelivered in the queue until later.
-The bug injected, removed propert message validation for round numbers in the protocol. This is a relatively simple bug that is easily exploited in the case of ABA (below), but BenOr's safety thresholds mean finding a safety violation as a result is non-trivial.
-Exploiting the bug requires an attack where parties must be evenly split, the party inputs are preserved across the coin flips, and pre-decision messages are saved from sufficient parties in previous rounds to force two parties to decide two different values in the same round,
-Our environment test cases, though seemingly suited to this exploit, still took several hundreds of test cases before performing this exploit for eve a few rounds, let along the 7 rounds required for $n=6$ parties.
-Nonetheless, the success of our fuzzing apparatus in discovering even long-range attacks makes that case that fuzz testing with UC can work through large state space explosion with well designed generators. 
+We highlight a specific bug and test case in the BenOr protocol because it
+backs up our previous intuition about this protocol, and confirms that well
+designed generators can produce distinsguishing environments that perform
+long-range exploits.  As we expected the BenOr protocol was resilient to most
+bugs due to its tight corruption threshold, and the distinguishing environment
+we did find came as a result of a targetted generator that attempt to censor
+specific parties in every round--effectively leaving their messages undelivered
+in the queue until later.  The bug injected removes proper message validation
+for round numbers in the protocol. This is a relatively simple bug that is
+easily exploited in the case of ABA \todo{(below)}, but BenOr's safety
+thresholds mean finding a safety violation is non-trivial.  Exploiting the bug
+requires an attack where parties must be evenly split, the party inputs are
+preserved across the coin flips, and pre-decision messages are saved (and
+replayed) from sufficient numbers of parties in previous rounds to force two
+parties to decide two different values in the same round, Our environment test
+cases, though seemingly suited to this exploit, still took several hundreds of
+test cases before performing this exploit for even a few rounds, let alone the
+7 rounds required for $n=6$ parties.  Nonetheless, the success of our fuzzing
+apparatus in discovering even long-range attacks makes that case that fuzz
+testing with UC can work through large state space explosion with well designed
+generators. 
 
-Owing to its low corruption threshold and use of local randomness, many of the bugs we injected into BenOr never produced distinguishing environments as they only delayed termination rather than one of the properties of the ideal functionality.
+In summary, Ben-Ors low corruption threshold and use of local coin flips that
+the adversary can't influence, mean it is very safe, and many of the bugs we
+injected into the implementation never produced distinguishing environments but
+only delayed termination/decision.
 
-\todo{Mention approaching testing by controlling the randomness tapes of particular parties?}
+%\todo{Mention approaching testing by controlling the randomness tapes of particular parties?}
+
+\paragraph{Fuzzing for Property-Based Definitions}
+As an aside to the aim of this work, we discuss here that UC does not limit the
+ability to test specific properties about a protocol that aren't expressed in
+the ideal functionality.  The ABA protocol, for example, has several lemmas and
+theoresm on paper reasoning about performance based on specific state
+transitions of collections of parties.  An implementation resulting from
+literature requires that the implementation framework can also assert desired
+state transitions or reason about how performant the protocol is.  We used the
+unaltered UC implementation and found that we are able to check specific state
+transition by relying on the adversary and the leaks it receives from the
+message-passing functionality.  This ensures that aside from just being to
+check if a protocol is safe or eventuall terminates (we discuss this in the
+next section), we can still do traditional test of specific desired properties
+that aren't expressable in the ideal functionality.
 
 %The distinguishing environment discovered for the BenOr protocol was the most complex test case generated so far by any of our generators.
 %Briefly, the distinguishing environent that we found executed a clever strategy, dependent on the sequence of coin flips made by the parties.
@@ -405,12 +538,12 @@ Owing to its low corruption threshold and use of local randomness, many of the b
 %In the case of BenOr terminating test cases early when the local coin flips don't maintain the protocol state that we want may help.
 
 The success of fuzzing for finding distinguishing environments for non-liveness bugs conforms to our original hypothesis.
-There are a few key takeaways here.
+These are a few key takeaways.
 \begin{enumerate}
-\item It is clear that for more efficient protocols like ABA, simple generators suffice to catch most of the bugs that we select, and there is a turning point where longer protocols require better targetted generators.
-\item Intimate protocol understanding is required to even begin to catch bugs in more expansive protocols like BenOr where local randomness balloons state space. More dynamic and adaptive adversaries are needed to find bugs that take several rounds to discover.
-\item How the protocol uses randomness, shared or local, has a big impact on the abilitt of generators to target and explore interesting state space.
-\item The real-ideal paradigm suffices to catch most bugs and for protocols that are finely tuned like ABA bugs more readily manifest as distinguishing environments. The failure in catching all lies in creating better generators. 
+\item Protocols like ABA, which aim to be efficient and performant, simple generators suffice to catch many bugs. These protocols terminate quickly making requiring less sophistication of generators. On the opposite end, protocols like Ben-Or with long expected termination time require far more sophistication. Regardless, our fuzzing approach was able to find long-range attacks against the flawed implementations.
+\item Intimate protocol understanding is required to even begin to catch bugs in more expansive protocols like BenOr where local randomness balloons the state space. More dynamic and adaptive adversaries are needed to find bugs that take several rounds to discover. 
+\item How the protocol uses randomness, shared or local, has a big impact on the ability of generators to target and explore interesting state space. Distributed decision making, for coin fips for example, open the protocol to adversarial influence on outcome. 
+\item The real-ideal paradigm suffices to catch most of the safety-like bugs we inject and for protocols that are finely tuned like ABA. The failure to catch certain bugs in all the protocols studied indicates that existing practices of code coverage and more sophisiticated methodology for implementing generators is required. This is a ripe direction of work in the future. We anticipate bringing in more of the existing wisdom and techniques from fuzzing should open the doors to better analysis for increasingly complex protocols.
 \item Traditional testing techniques are still possible with UC and fuzzing by examining the adversary's leaks and asserting specific state transitions.
 \end{enumerate}
 
