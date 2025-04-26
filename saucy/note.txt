@@ -1,3 +1,19 @@
+F_lotto:
+========
+for simplicity we need that the environment learns about the outcome of every coin flip (as does the adversary) and then tell the functionality the next
+pair of parties to play
+the actual parties that play aren't important just choose random pairs of parties or the "right" pairs
+
+an interesting thing is that if we run this protocol with fuzzing without these guards then of course our testing does find the many ways that this protocol is buggy
+
+f_lotto(P, H, C):
+	- wait to receive (init) from each p_i
+	- wait to receive (p_i, p_j) from P = p_i or P = p_j and store this flip
+		- if same party in more than one tuple, halt
+	- once received log(P) from Z: do coin flips and leak winners to the adv
+	-- repeat the above for P \ Losers until one party remains
+	- if one party remains: output winner to the winning party
+
 developers need faster, standard, battle-tested languages (add to intro)
 
 

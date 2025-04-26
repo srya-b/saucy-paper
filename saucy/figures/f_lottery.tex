@@ -1,11 +1,24 @@
 \begin{minipage}{0.5\textwidth}
 \begin{bbox}[title={Functionality $\F_\m{lottery}(\mathcal{P} = p_1,...p_n)$}]
 ~
-let \honest by the set of honest parties and \crupt the corrupt ones 
+Let \honest by the set of honest parties, \crupt the corrupt ones, and $\mathcal{L}$ the set of losers.
 
+Loop with $\mathcal{P} := \mathcal{P} \setminus \mathcal{L}$ until $\mathcal{P} = \{p_i\}$:
+
+\hspace*{0.5cm}%
+\begin{minipage}{0.8\textwidth}
 \begin{itemize}[leftmargin=*]
 \item[--] wait to receive \inmsg{init} from all $p_i \in \honest$, send \m{ok} back in the mean time
-\item[--] generate a random number $w \xleftarrow{\$} \{0,1\}^{\log n}$ and eventually send $(\m{winner})$ to $p_{w}$
+\item[--] wait to receive $\log |\mathcal{P}|$ tuples $(p_i, p_j)$ from $P \in \mathcal{P}$ and ($P = p_i \vee P = p_j$) identifying the individual coin flips. If one party is in more than one tuple, halt.
+\item[--] For each $(p_j, p_i)$ (define $(p_0, p_1) := (p_j, p_i)$):
+
+\quad generate $b \xleftarrow{\$} \{0, 1\}$
+
+\quad add $p_{! b}$ to $\mathcal{L}$, and leak $(\msf{winner}, p_b)$ to \A
 \end{itemize}
+\end{minipage}%
+
+When $\mathcal{P} = \{p_i\}$, leak $(\msf{winner}, p_i)$ to \A and output it to $p_i$.
+
 \end{bbox}
 \end{minipage}

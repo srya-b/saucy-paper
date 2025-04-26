@@ -15,15 +15,27 @@ We conclude by covering the appropriate composition operators.
 
 \subsection{Capturing the UC Computation Model}
 %A limitation of binary session types is the communication topologies that they can realize.
-When a linear channel is created, it is offered by a process called the ``provider'' and given to a process called the ``client'', and this imposes a strict parent-child relationship between processes.
-The process configuration in Figure~\ref{fig:pandq}, for example, is not realizable with just linear channels, because of the following circular dependency: 
-Finally, we cover a simplified composition theorem (Theorem~\ref{thm:singlecomp}, in detail and show how it is extended to full UC composition.
-$P$ must already exist in order for $Q$ to be given its channel, but $Q$ must first exist in order for $P$ to be spawed with $Q$s channel.
+%When a linear channel is created, it is offered by a process called the ``provider'' and given to a process called the ``client'', and this imposes a strict parent-child relationship between processes.
+All linear channels are created when they are offered by a process called the ``provider'', and they are given to a process called the ``client''. 
+This parent-child relationship creates a constraint that prevents the process configurations in Figures \ref{fig:pandq} and \ref{fig:threeway}.
+If we opt to communicate only over channels offered by these main processes in the configuration, then we are limited to acyclical topologies.
+In Figure \ref{fig:pandq} $P$ must already exist to offer its channel to $Q$, but $Q$ must also exist before $P$ to offer its channel to $P$.
+Similarly, in the three-way configuration in Figure \ref{fig:threeway}, it is a more naturally occuring situation that suffers from the same problem.
 We overcome this limitation by using shared session types to create a new abstract channel called a \emph{providerless channel}.
-Shared channels allow us to define a message buffer called a communictor, that allows multiple other processes act as its clients and use its channel to send messages.
-Any process can attempt to \emph{acquire} its channel, check for new messages with \mb{poll}, and place another message in the bugger with \m{push} (similar to shared memory accessed via a lock).
+Shared channels can be inserted to interrupt cyclical topologies because they can have multiple concurrent clients regardless (i.e. shared) regardless of how they were created.
+They allow us to define a message buffer called a communictor, that allows multiple other processes act as its clients and use its channel to send messages.
+Any process can attempt to \emph{acquire} its channel through a locking mechanism, check for new messages with the label \mb{poll}, and place another message in the bugger with \m{push}.
 The session type of the communicator is given below, along with operators to acquire ($\up$) and release ($\down$) operators, below, and the full typing rules of shared session types is given in Appendix~\ref{app:typing_rules}.
-We provide the full typing rule of shared session types and the communicator in the Appendix.
+
+
+%The process configuration in Figure~\ref{fig:pandq}, for example, is not realizable with just linear channels, because of the following circular dependency: 
+%Finally, we cover a simplified composition theorem (Theorem~\ref{thm:singlecomp}, in detail and show how it is extended to full UC composition.
+%$P$ must already exist in order for $Q$ to be given its channel, but $Q$ must first exist in order for $P$ to be spawed with $Q$s channel.
+%We overcome this limitation by using shared session types to create a new abstract channel called a \emph{providerless channel}.
+%Shared channels allow us to define a message buffer called a communictor, that allows multiple other processes act as its clients and use its channel to send messages.
+%Any process can attempt to \emph{acquire} its channel, check for new messages with \mb{poll}, and place another message in the bugger with \m{push} (similar to shared memory accessed via a lock).
+%The session type of the communicator is given below, along with operators to acquire ($\up$) and release ($\down$) operators, below, and the full typing rules of shared session types is given in Appendix~\ref{app:typing_rules}.
+%We provide the full typing rule of shared session types and the communicator in the Appendix.
 
 % \vspace{-1mm}
 {\centering
@@ -38,11 +50,51 @@ $\m{comm[\tau]\{n\}} = \up \echoice{$\=$ \textcolor{red}{\getpot^n} \mb{push}: \
 
 The construction of a providerless channel between $P$ and $Q$ is shown in Figure~\ref{fig:newpandq}.
 Each providerless channel has a communicator process in between its two endpoints, and dummy processes are defined that relay with the communicator and offer the desired session type to $P$ or $Q$.
-In the figure, the dummy process \m{a_P} offers session type \m{PtoQ} to $P$ and \m{a_Q} offers the dual of \m{PtoQ} where ther internal and external choice operators are swapped, beacuse \m{a_P} and \m{a_Q} are both providers of the channel to $P$ and $Q$. 
-All internal choice operators correspond to messages from the dummy operator.
-We don't lose expressivity by doing this, but it does require the programmer to select one process to see a type $T$ and the other to see its dual. 
-The dummy programs are simple case statements that translate between the type offered by the communicator to the type that they offer to the actual process (the desired session type).
+In the figure, the dummy process \m{a_P} offers session type \m{PtoQ} to $P$ and \m{a_Q} offers the dual of \m{PtoQ}.
+The session type \m{PtoQ} offered to $P$ is almost identical to the type offered to $Q$. 
+The type offered to $Q$ swaps internal and external choice operations because $P$ and $Q$ are both ``clients'' of linear channels at easch end of the providerless channel.
+The only constraint this imposes on the programmer is implementing all ITMs (as processes) as if they are clients to a linear channel.
+The dummy processes that offer the linear channels are simple case statemes that translate between the type offered by the communicator (a functional type) to the type offered to either $P$ or $Q$, and vice versa.
 Owing to their simplicity, given a specification of the two types and a mapping between them, these process are easily generated at compile-time, and the programmer can ignore them entirely.
+
+%where ther internal and external choice operators are swapped, beacuse \m{a_P} and \m{a_Q} are both providers of the channel to $P$ and $Q$. 
+%All internal choice operators correspond to messages from the dummy operator.
+%We don't lose expressivity by doing this, but it does require the programmer to select one process to see a type $T$ and the other to see its dual. 
+%The dummy programs are simple case statements that translate between the type offered by the communicator to the type that they offer to the actual process (the desired session type).
+%Owing to their simplicity, given a specification of the two types and a mapping between them, these process are easily generated at compile-time, and the programmer can ignore them entirely.
+
+Providerless channels are easy to spawn, all the processes involved are simple. 
+We provide an insight into how providerless channels are implemented by showing how to realize the topology in Figure \ref{fig:threeway}.
+Canonically, we define one process, in this case $M$ to be the first process spawned is responsible for creating the rest of the topology.
+
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em]
+$\nproc$ main{n}: (k: Int), (rng: [Bit]), (sid: someSID) |- ($\$$ch: 1) =
+{
+    $\$$pq2p, $\$$qp2q $\leftarrow$ providerless[q2p,p2q,qandp]{q2pn,p2qn} $\leftarrow$ k rng sid
+    
+    $\$$2mep, $\$$2p $\leftarrow$ providerless[m2p,p2m,mandp]{m2pn,p2mn} $\leftarrow$ k rng sid
+    $\$$pch $\leftarrow$ P $\leftarrow$ k rng sid $\$$2p $\$$pq2p
+    $\$$2meq, $\$$2a $\leftarrow$ providerless[m2q,q2m,mandq]{m2qn,q2mn} $\leftarrow$ k rng sid
+    $\$$qch $\leftarrow$ Q $\leftarrow$ k rng sid $\$$2p $\$$qp2q
+    $\$$ch $\leftarrow$ main{n} $\leftarrow$ k rng sid 
+}
+\end{lstlisting}
+The first providerless channel call is syntax sugar for the following code. We use diffeent channel nemaes to make it clear which channels they are.
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em]
+#c $\leftarrow$ communicator_p2q $\leftarrow$ k rng
+$\$$forq $\leftarrow$ convert_p2q $\leftarrow$ #c
+$\$$forp $\leftarrow$ convert_q2p $\leftarrow$ #c
+\end{lstlisting}
+The processes $P$ spawned with these channels is typed as follows.
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em]
+$\nproc$ P{n}: (k: Int), (rng: [Bit]), (sid: SID\_P), ($\$$p2m: pandm),
+  ($\$$p2a: pandq{n}) |- ($\$$ch: 1) =
+{
+  $\nmatch$ $\$$p2m, $\$$p2q (
+    $\tg{-- work with the channels}$
+  )
+}
+\end{lstlisting}
 
 \paragraph{Design Constraing on Import}
 Shared session types are less constrained in how they are used, but we use them sparingly because they constrain execution to the session types they use.
@@ -87,14 +139,22 @@ We refer the reader to Appendix~\ref{app:itm} for an example of what the generat
 %Otherwise the channel takes the $\mb{no}$ branch.
 %We provide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
 \begin{figure}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{0.3\textwidth}
     \begin{center}
     \includegraphics[scale=0.5]{figures/p_and_q.pdf}
     \caption{ITMs can communicate like this. NomosUC processes can't offer their channels to each other.}
     \label{fig:pandq}
     \end{center}
-    \vspace{1em}
-    \end{subfigure}
+    \end{subfigure} %%
+    \vspace{2em}
+    \hspace{1em}
+    \begin{subfigure}{0.3\textwidth}
+    \begin{center}
+    \includegraphics[scale=0.5]{figures/threeway.png}
+    \caption{A threeway topology with a cycle.}
+    \label{fig:threeway}
+    \end{center}
+    \end{subfigure} %%
     \begin{subfigure}{0.5\textwidth}
     \begin{center}
     \includegraphics[scale=0.4]{figures/newPandQ.pdf}

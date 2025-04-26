@@ -1,22 +1,28 @@
-As mentioned previously, there is a lot of work on the UC side creating
-programming tools and programming languages that apply formal methods to
-writing UC definitions and proving UC security.  These works make using UC
-easier for academics already familiar with UC, but it is unlikely bespoke
-languages or tooling will every find their way out of acacdemia.  On the other
-side of the bridge, there are many extant development frameworks highlighted in
-literature that perscribe a common set of design principles for distributed
-systems and create software tooling to encourage or enforce them.  We cover
-these works in the remainder of the section.
+There is a lot of work on the academic side of UC creating programming tools
+and programming languages that apply formal methods to writing and proving UC
+definitions~\cite{liao2019ilc, canetti2019easyuc} or to creating new
+implemented cryptographic frameworks~\cite{barbosa2021mechanized,
+morrisett2021ipdl}.   These works make the job of cryptographic proving easier
+academics already familiar UC or other existing proving grameworks, but it is
+unlikely bespoke languages or tooling will ever find their way out of
+acacdemia.  On the other side of the bridge, there are many extant development
+frameworks highlighted in literature that perscribe a common set of design
+principles for distributed systems and create software tooling to encourage or
+enforce them, but as we describe below many of them fail to meet the needs of
+modern distributed protocols.  We cover these works in the remainder of the
+section.
 
 \subsection{Existing Frameworks}
 Across the literature we survey, there are a few common themes of designs or
 recommendations that these works share in common when it comes to developing
 distributed systems.  Our discussion of these principles centers around
-demonstrating that, at the very least, UC already exhibits design principles
-that are accepted as practical, useful, and sometimes necessary to ensure safe
-programming.  Later in this section, we highlgight areas where UC is uniquely
-poised as the only framework which enables a generalizable approach to
-analyzing the security of modern distributed systems. 
+outlining the existing frameworks and their commonalities, drawing a parallel
+to design with UC, and highlighting key areas where they fall short of the
+needs of modern distributed systems.  We show that UC, at the very least,
+exhibits many of the design principles detailed in existing frameworks, and, at
+best, is uniquely poised as the only framework that allows for a generalized
+approach to analyzing distributed systems with advantages that we demonstrate
+in the rest of this work.
 
 \paragraph{Layered Programming and Concurrency}
 Layered programming refers to clean abstractions through well-defined

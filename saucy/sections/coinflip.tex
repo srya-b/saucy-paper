@@ -1,39 +1,48 @@
 In this section, we analyze the simple yet subtle coin flipping primitive
 within our framework.  Coin flipping is used throughout cryptographic and
 distributed protocols, and we present variants of a commitment-based protocol
-that attempt to realize the ideal coin functionality $F_\m{coin}$ when composed
-with a higher-level lottery protocol.  Unlike many distributed protocols,
-flipping a coin between two parties requires the additional properties of
-fairness, where all honest parties receive the output, and limited adversarial
-influence, where the adversary is allowed some (limited) or no ability to bias the
-distribution of the protocol's outputs.  Our analysis in this section
-highlights our framework's ability to find distinguishing environments for
-protocols that also fail to express the above properties, a limitation in
-existing work, and how such failures propagate to higher-level protocols to be
-caught by our fuzzer.  Zooming out, the important of studying composed
-protocols fits into the vision of UC as a development framework where
-developers replace their ideal functionalities by real implementations which
-may fail to properly realize them.  As protocols become more complex, testing
-and ensuring that protocols realize their ideal functionalities in every
-setting in which they may be used becomes harder to guarantee when relying on
-informal techniques, and so being able to find bugs in composed protocols is
-necessary.  We begin by defining the ideal 2-party coin flip, $\F_\m{coin}$,
-create a lottery out of instances of it.
-To highlight the subtlety in design 
+that attempts to realize the ideal coin functionality $F_\m{coin}$.  Many coin
+flips are then composed together to implement a lottery protocol.  Unlike the
+distributed protocols most people are familiar with, flipping a coin between
+two parties or taking part in a distributed lottery require additional
+properties of fairness and some limitation on adversarial influence in biasing
+the output.  Our implementation and analysis of these two protocols (and their
+composition) in this section highlight's our framework's ability to reason
+about these properties in a way that most prior work can not do.  \todo{add
+citations}.  Testing for bugs manifesting as distinguishing environment in a
+composed protocol demonstrates that useful parts of the UC framework remain
+useful for protocol analysis in an implementation setting.  Zooming out,
+studying composed protocols is important as the vision of UC as a development
+framework relies on the ability of developers to find bugs in and analyze
+protocols that replace ideal functionalities with software packages implemented
+by others.  As protocols become more complex, programmer code will rely more
+heavily on existing software and will therefore rely more on their ability to
+safely replace ideal functionalities in settings perhaps not imagined by their
+authors.  We begin by defining the ideal 2-party coin flip, $\F_\m{coin}$, and
+create a lottery out of multiple instances of it.
 
-Then terativelty build upon a simple
-protocol that attempts realize it fix the detected failures in the each
-iteration.  Finally, at the end of the section, we discuss checking such
-properties in the context of more complex, higher level protocols like the ABA
-protocol we've studied.
+Implementing a coin flipping protocol is more difficult than it seems, and the
+subtle ways the protocol can fail serve as a good exampple to study.  The
+example highlights the need for a framework for distributed applications that
+can use a generalized testing strategy and approach to test even these
+protocols.  We present the analysis by first implementing $\F_\m{coin}$ in the
+most natural way, and show how its failures are easily discovered by our
+fuzzing method.  Then we iteratively build upon the simple protocol trying to
+patch each new failure, again in the most natural and obvious way.  Doing so we
+make the point that the UC framework is necessary especially in such cases
+where bugs are non-intuitive and consist of failures in adversarial influence
+or fairness.  Finally, at the end of the section we discuss checking such
+properties in the context of more complex, higher-level protocols like the ABA
+protocol described earlier.
 
 \subsection{Lotteries from Coin Flips}
 The ideal 2-party coin flip in Figure~\ref{fig:fcoin} requires both parties to
 initiate the toss, and eventually outputs the result of the coin flip to both
 parties.  The latter step captures a ``fairness'' property, because our
-asynchronous implementation guarantees delivery.  The ideal functionality also
-provides the adversary with no information or input that it can use to import
-bias onto the result of the flip.
+asynchronous implementation guarantees delivery to both parties or neither of
+them.  The ideal functionality also gives the adversary no additional
+information about the honest party's input that it can use to bias the outcome
+with its own choice of input
 
 \begin{figure}
 \centering
@@ -51,22 +60,31 @@ bias onto the result of the flip.
 A fair lottery is a protocol betweeen $n$ parties that ensures that the
 probability of any user winning is $\frac{1}{n}$ and that a winner is
 eventually decided.  Unlike most agreement or broadcast protocols, lotteries
-are also special protocols where the output must follow strict distribution in
+are special in that the output must follow strict distribution in even in
 the face of byzantine parties, because the financial incentives involved
 motivate parties to bias the output in their favor.  We construct a lottery
-protocol that uses the multisession extension of the two-party flip, called
+protocol that uses the multisession extension of the two-party flip, written
 $!\Fcoin$, to run multiple coin flips until a single winner remains. 
 
 We take some liberties in the definition of the lottery, for simplicity, by
 using the environment to inform other parties of the results of others' flips
-rather than require parties to each broadcast results to each other.
-Additional communication complexity isn't a hurdle to checking distributed
-systems using fuzzing, as we make evident in our case studies, and creating and
-debugging a coordination mechanism between them to administer the protocol
-isn't useful to our goal in this section.  The ideal $\F_\m{lotto}$ specifies
+rather than add layers that require parties to each broadcast results to each other.
+The ddditional communication complexity that broadcasting would add wouldn't a hurdle to checking distributed
+systems using fuzzing, as we make evident in our case studies, but creating and debugging
+an additional protocol isn't useful to the point we're making.
+The ideal functionality $\F_\m{lotto}$ in Figure~\ref{fig:flotto} specifies
 that the environment gives input to every party in every round eliminating half
 of the participants.  This continues until a final winner is chosen, at which
-point $\F_\m{lotto}$ output.
+point $\F_\m{lotto}$ output. Note that fairness doesn't mean much in this sense
+as only the winner ever outputs anything.
+\todo{the corruption threshold}
+
+\begin{figure}
+\centering
+\input{figures/f_lottery}
+\caption{The lottery ideal functionality.}
+\label{fig:flotto}
+\end{figure}
 
 In the real world protocol, all the parties are activated with the
 configuration of the current round, and they each initiate and complete their
@@ -78,60 +96,77 @@ the winner.
 We define a simulator for the protocol $\pi_\m{lotto}$ to realize
 $\F_\m{lotto}$ in the natural way since this is a full information protocol.
 Then we run the following real-ideal experiment $!\Fcoin
-\xrightarrow{\pi_\m{lotto}} \F_\m{lotto}$ and fix implementation bugs until we
-are assured that the lottery was correctly implemented.
+\xrightarrow{\pi_\m{lotto}} \F_\m{lotto}$ through our fuzzer and fix
+implementation bugs until we are assured that the lottery was correctly
+implemented.
 
 \subsection{Composing With a Real Coin Flip}
 It is important to underscore that even simple real-world protocols like coin
-flips are subtle, and small design choices can cause them to fail for
-non-obvious reasons.  We start with the simplest coin flip protocol, check it,
-and iterate with subtle protocol changes and show how fuzzing can illuminate
-and safeguard protocols against faulty implementations of the ideal
-functionalities they replace. 
+flips are subtle, small design choices can cause them to fail, and a framework
+capable of discovering failures in such protocols is a necessity.  We start
+with the simplest coin flip protocol, check it, and iterate on its design
+patching bugs and failures that we discover.
 % TODO: point out in the intro that the lottery is a small and contrived example, and the examples with variations of the shared coin in ABA are more representative and worthwhile analyses
 % TODO: but highlight that even this is something other works can't reason about or automatically check
-These faults, like the non-uniform distribution of the output of a coin flip
-with abort, aren't immediately clear, and possibly non-intuitive, therefore
-generating test cases automatically and detecting such failures by only looking
-at the real-ideal relationship is a big advantage of programming with UC.
+The possible failures in question, like the non-uniform distribution of the
+output of a coin flip with abort, aren't immediately clear, and possibly
+non-intuitive, therefore generating test cases automatically and detecting such
+failures by only looking at the real-ideal relationship is a big advantage of
+developing with UC. Generating a specific distribution intuitively requires
+observing the output of the protocol across many runs and many different
+possible inputs and adversaries.
 
-The base coin flip protocol we used relies on ideal bit commitments:
+The base coin flip protocol we used relies on the ideal bit commitments:
 \begin{enumerate}
     \item The first party to activate, the \emph{flipper} $S$, commits to some bit
-        $b$ with a blinding factor $r$ and sends it to $R$.  \item $R$ receives the
-        commitment, flips a random $b'$, and sends it to $S$.
-    \item $S$ waits for $b'$ and opens the commitment to $R$.
-    \item $R$ receives $b$ from the opening. Both parties compute and output $flip
-        = b \oplus b'$.
+        $b$ with a blinding factor $r$ and sends it to $R$.  
+    \item $R$ receives the commitment, flips a random $b'$, and sends it to
+        $S$.
+    \item $S$ waits for $b'$ and then opens the commitment to $R$.
+    \item $R$ receives $b$ from the opening, checks the commitment, and both
+        parties compute and output $flip = b \oplus b'$.
 \end{enumerate}
 
-We test this protocol under composition with the following experiment:
-$$\forall \A, \exists \Sim, \forall \Z: \m{execUC} \, \Z \, \A, \pi_\m{lotto} \circ \pi_\m{coin} \, !\F_\m{com} \, \sim \, \m{execUC} \, \Z \, \Sim := \Sim_\m{coin} \, \pi_\m{lotto} \, !\F_\m{coin}$$
+We test this protocol under composition for the following relationship:
+$$\m{execUC} \; \Z \, \A, \pi_\m{lotto} \circ \pi_\m{coin} \, !\F_\m{com} \, \sim$$ 
+$$\m{execUC} \; \Z \, (\Sim := \Sim_\m{coin}) \, \pi_\m{lotto} \, !\F_\m{coin}$$
 As we expect, our fuzzer is trivially able to find a distinguishing environment
 for this protocol that results in a \emph{liveness failure} caused by a
-\emph{fairness bug} in the real world protocol.  The byzantine committing party
-always learns the output of the flip first and can refuse to ever open its
-commitment.
+\emph{fairness bug} in the real world protocol. There is an information asymmetry 
+in the protocol where the byzantine committing party always learns the output of the flip
+(it knows $R$'s $b'$ and its own $b$) first, and it can refuse to ever open its commitment
+if it doesn't like the outcome.
+
+Requiring both parties to commit to a bit also doesn't overcome the information assymetry.
 
 \paragraph{Iteration: Security with Abort}
-This is a simple fairness violation, and we can try to fix it by forcing the
-byzantine party to be explicit about aborting the protocol by sending the
-honest party an \m{abort} message (a standard practice in UC security with
-abort).  The new protocol adds a step betwenn 3 and 4 where party $R$ waits for
+We patch this fix by forcing the byzantine party to be explicit about aborting the protocol
+by sending
+honest party an \m{abort} message (a standard practice in UC based literature~\cite{common, abort, defs}
+and is enforceable in a system where financial incentives are at play).  
+The new protocol adds a step between 3 and 4 where party $R$ waits for
 the commitment opening or an abort message from $S$.  On \m{abort}, the honest
 $R$ locally computes a coin flip $c \xleftarrow{\$} \{0,1\}$ and outputs it as
 the result of the protocol, thus ensuring that honest parties always output a
-result.  Performing the same experiment again with an adapted simulator
-$\Sim_\m{coin}$, our fuzzer asserts another failure.  Despite solving the issue
-of fairness, the new protocol fails to meet the uniform distribution
-requirement of the coin flip when the adversary, a corrupt $S$, explicitly
-aborts the protocol.  This a subtle and non-obvious failure given that the
-local flip performed by $R$ is flipped performed honestly.  A corrupt $S$ with
-preference $c$ aborts whenever $b \oplus b' = \not c$ and biases the output
-towards its preference.  This failure propagates up throught the lottery
-protocol which also requires a unform distribution of lottery winners. 
+result and the output is the result of a real local coin flip.
+Performing the same experiment again with an adapted simulator
+$\Sim'_\m{coin}$, our fuzzer no longer finds a liveness error but now asserts another failure.  Despite solving the issue
+of fairness, the new protocol now fails the other desired property: a uniform 
+output distribution when $S$ aborts the protocols despite the local coin flip over many runs of the protocol.
+It is a non-obvious failure, but careful study of the protocol
+confirms the bug. Imagine $S$ has 
+preference $c$ and aborts whenever $b \oplus b' = \neg c$.
+The additional local flip by $R$ makes it so that two coin flips have to result in $c$ for it to be the output, and only 1 (between $S$ and $R$) for $\neg c$.
+Therefore, $P(c) = \frac{1}{4}$ and $P(\neg c) = \frac{3}{4}$.
+This failure propagates up to the lottery protocol where the fuzzer observes the $P(p_i \text{ winner}) \neq \frac{1}{n}$.
+% NOTE: failures can be anything but k corrupt means we tolerate k/n prob the adv wins
 
-\paragraph{Iteration: Propogate Abort}
+\paragraph{Iteration: Move Away from 2-Party Coin Flips}
+Implementing the above protocols, and the asociated failures we found, makes it clear that the information assymetry can't be overcome in a 2-party coin flip unless the network can enforce some kind of fair exchange between the two parties.
+This result, inferred from the outcomes of the above experiments, conforms to the current theoretical understanding of the limitations of two-party coin flips~\cite{two, party, coin, results}.
+This means we must either except a certain amount of bias in the result of the coin flip, a bias of $\Omega (1/4)$~\cite{cleve, and the others}, and the lottery that uses it, or search for another primitive to construct the lottery out of. 
+
+
 It is clear from reviewing the cause of the failure of the above experiment that 2-party coin flips will always result in a distribution failure as a result of one party learning the output before the other.
 Naive attempts at fixing this, like requiring both parties to commit to their bits, results in similar failures.
 Instead, we opt for an ideal functionality that ideally allows abort with the functionality in Figure~\ref{fig:fcoinabort}.
@@ -182,13 +217,6 @@ primitives.
 %UC tells us that we can compose and arbitrary number of instances of \Fflip in order to realize a lottery.
 %At a high level, our protocol \prot{lotto}, flips $\log n$ pair-wise coins in order to choose one of $n$ parties as the winner. 
 %\todo{should the lottery property only be that the prob of win is 1/(|honest| + 1)? because we don't care which adverasry wins?}
-
-\begin{figure}
-\centering
-\input{figures/f_lottery}
-\caption{The lottery ideal functionality.}
-\label{fig:flotto}
-\end{figure}
 
 
 %\paragraph{The Ideal Coin Flip}
