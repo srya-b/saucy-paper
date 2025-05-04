@@ -130,10 +130,10 @@ towards testing the liveness properties of distributed protocols.
 
 % second research querstion
 As far as we know, no work has explored using UC as an implementation framework
-relying only on existing informal analysis tools, commonplace in modern
-software engineering to test and located bugs.  Of course, such approaches can
+relying only on existing informal analysis tools which are commonplace in modern
+software engineering to test and locate bugs.  Of course, such approaches can
 not guarantee correct code, but we believe that programming within UC
-simplifies the required assertion to the single property of
+simplifies the analysis to only assertion of the single property of
 UC-indistinguishability of a protocol with an ideal functionality.  Relying on
 ideal functionalities to describe protocols, and the real-ideal paradigm to
 test them, is an unexplored concept, and a generalizable approach to
@@ -141,26 +141,45 @@ distributed systems programming that we believe is an improvement on the status
 quo.  We address this claim, and the associated research question above, by
 specifically examining whether relying on UC emulation (real-ideal
 indistinguishability), suffices to catch implementation bugs in UC
-implementations.  Specifically, do implementation-level bugs manigest
+implementations.  Specifically, do implementation-level bugs manifest
 themselves as distinguishing environments (test cases) that fuzzing can find.
 Furthermore, we confirm that UC implementations, and specifically fuzz testing,
 allows implementations to analyze protocols for properties related to fairness
-and probability distribution.\todo{maybe mention existing work}.  The
+and probability distribution that related works don't support~\cite{some, of, the, standards}.  The
 experimental method in this work consists of implementating candidate
 distributed protocols, injecting bugs into them which we believe are
 representative of reality, and examining the false negatives and false
 positives with the lens of our research questions.  Our findings suggest that
 for non-liveness bugs, even simple fuzz test generators are capable of
 discovering distinguishing environments for most bugs that lead to protocol
-property violation.  \todo{say something about the other bugs that don't
-manifest themselves are a result of un-stated properties about efficiency of a
-protocol or distributions of output}.  \todo{rephrase the following better as
-higher-level concluding thoughts} The cases in which we fail are a consequence
-of our fuzzing strategies, and this is expected because fuzzing is only a
-method of finding bugs not ruling them out.  In the case of liveness-related
-properties, cycle-checking is made easy as part of the UC proof obligation for
-real-ideal emulation, but neither our eventual delivery model nor our attempts
-at being clever with import yield much success beyond that. 
+property violation. It also provides a method for arbitrary fuzz testing of 
+implementations in the standard way. 
+
+Fuzzing isn't perfect, however, and this is expected. 
+Fuzzing is only a method of finding bugs, not ruling them out.
+In the case of liveness-like properties, cycle-checking is made easy as part of the UC simulator, but neither our eventual delivery model nor our attempts at being clever with import gave a significant advantage over it.
+Cycle-checking for liveness failure is straightforward in deterministic protocols as evidenced by Tholoniat et al.~\cite{tholoniat2022formal}, but is complicated by non-deterministic protocols where parties can be forced into the same state multiple times due to randomness.
+The false negatives we encountered for safety-like properties arose from our generators finding the adversarial action that would have forced the failure but not executing it for enough consecutive rounds. 
+\todo{What did we say about these two in the main section?}
+
+%Like any fuzz tester, it isn't always possible to catch every bug, and this is a known limitation of detecting bugs by fuzzing.
+%In the case of liveness-like properties, cycle-checking is made wasy as part of the UC simulator, but neither our eventual delivery model nor our attempts at being clever with how we use import gave a significant advantage over it.
+%Checking cycles also has limitations for non-deterministic protocols because a live protocol can still put parties in the same state based on randomness.
+%Finally, for some safety-like properties, we encountered limitations in our test generators' ability to 
+
+%The cases in which we fail are a consequence
+%of our fuzzing strategies, and this is expected because fuzzing is only a
+%method of finding bugs not ruling them out.  In the case of liveness-related
+%properties, cycle-checking is made easy as part of the UC proof obligation for
+%real-ideal emulation, but neither our eventual delivery model nor our attempts
+%at being clever with import yield much success beyond that. 
+
+% third question
+The advantages of the ideal functionality model are evident in the cryptography literature~\cite{people, praising, it} and highlighted earlier in thit section.
+Our attention in this paper is on understanding whether ideal functionalities and the real-ideal paradigm provides similar advantages in comparison to existing frameworks for protocol analysis.
+Our main motivator in this regard is the limited expressivity provided in existing works~\cite{tholoniat, and, all, the, others}.
+
+
 
 Our attention now turns to ideal functionalities and protocols that express
 properties relating to output fairness, adversarial influence on input/output
@@ -169,7 +188,7 @@ outputs.  The example we use is the canonical coin flipping primitve that is
 used throughout distributed systems literature and construct a ``fair'' lottery
 out of it.  The lottery is a canonical example of the kinds of byzantine
 protocols common in the decentralized setting, but is a protocol not readily
-expressable in existing distributed development frameworks.  \todo{finish} The
+expressable in existing distributed development frameworks. \todo{finish} The
 canonical example we use here is the coin flips and ``fair'' lotteries which
 have become important byzantine protocols in the blockchain space, and
 implementation frameworks must be able to express thes properties in a
