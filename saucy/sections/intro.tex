@@ -175,30 +175,61 @@ The false negatives we encountered for safety-like properties arose from our gen
 %at being clever with import yield much success beyond that. 
 
 % third question
-The advantages of the ideal functionality model are evident in the cryptography literature~\cite{people, praising, it} and highlighted earlier in thit section.
-Our attention in this paper is on understanding whether ideal functionalities and the real-ideal paradigm provides similar advantages in comparison to existing frameworks for protocol analysis.
-Our main motivator in this regard is the limited expressivity provided in existing works~\cite{tholoniat, and, all, the, others}.
+The advantages of the ideal functionality model are evident in the cryptography
+literature~\cite{people, praising, it} and were highlighted earlier in this
+section.  Our attention in this paper is on understanding whether ideal
+functionalities and the real-ideal paradigm provides similar advantages in
+comparison to existing frameworks for protocol analysis.  The main motivator is
+that no existing framework or specification language provides a truly
+generalized approach to checking arbitrary properties and byzantine behaviors.
+The ideal functionality approach of modelling protocol behavior as a
+computation itself, doesn't require the designer to specifically encode
+protocol properties as standalone statements and reduces the testing of
+protocols to checking that UC emulation holds with respect to the ideal
+functionality.  Most existing works do no model byzantine behavior, and those
+that do are limited by assumptions on adversarial behavior and the inability to
+specify, say, that the output of a coin-flipping protocol should be uniformly
+distributed in the face of a computationally bounded adversary.  The adverasry
+in UC is itself a small program and that can encode arbitrary behavior, so the
+UC emulation relationship is a powerful security definition.  We add to the
+``standard'' distributed protocols we study by examining a ``fair'' lotttery
+protocol constructed from distributed coin flipping.  A distributed lottery can
+be considered a canonical example blockchain protocol, and development
+frameworks must be able to specify and test/check it.  It is constructed out of
+distributed coin flip ideal functionality, and we check that the protocol
+remains secure under composition when the functionality is replaced by
+implementations of variations on coin flipping protocol.  This case study
+highlights that our imlementation allows for specifying and finding bugs that
+cause \emph{output fairness} failures and failures where the adversary's
+knowledge allows it to influence the output of the protocol.  We do similar
+experiments with the strong common coin used by the ABA protocols, checking
+input and output distributions, and demonstrate that bugs causing failures in
+randomness generation also manifest themselves in arbitrary protocols that only
+care about safety and liveness properties.
+
+While our 
 
 
 
-Our attention now turns to ideal functionalities and protocols that express
-properties relating to output fairness, adversarial influence on input/output
-(related to adversarial knowledge), and their effect on the distribution of
-outputs.  The example we use is the canonical coin flipping primitve that is
-used throughout distributed systems literature and construct a ``fair'' lottery
-out of it.  The lottery is a canonical example of the kinds of byzantine
-protocols common in the decentralized setting, but is a protocol not readily
-expressable in existing distributed development frameworks. \todo{finish} The
-canonical example we use here is the coin flips and ``fair'' lotteries which
-have become important byzantine protocols in the blockchain space, and
-implementation frameworks must be able to express thes properties in a
-protocol's specification, Some non-blockchain protocols, such as the ABA
-protocol we study in this work, make use of distributed protocols to generate
-shared common coins that must specify what the adversary learns about the
-execution and its ability to influence the outcome.  Existing frameworks fail
-to express and/or analyze protocols that require such definitions.  Not only
-does the ideal functionality enable greater expressiveness than existing
-specification frameworks in this situation, but UC's 
+
+%Our attention now turns to ideal functionalities and protocols that express
+%properties relating to output fairness, adversarial influence on input/output
+%(related to adversarial knowledge), and their effect on the distribution of
+%outputs.  The example we use is the canonical coin flipping primitve that is
+%used throughout distributed systems literature and construct a ``fair'' lottery
+%out of it.  The lottery is a canonical example of the kinds of byzantine
+%protocols common in the decentralized setting, but is a protocol not readily
+%expressable in existing distributed development frameworks. \todo{finish} The
+%canonical example we use here is the coin flips and ``fair'' lotteries which
+%have become important byzantine protocols in the blockchain space, and
+%implementation frameworks must be able to express thes properties in a
+%protocol's specification, Some non-blockchain protocols, such as the ABA
+%protocol we study in this work, make use of distributed protocols to generate
+%shared common coins that must specify what the adversary learns about the
+%execution and its ability to influence the outcome.  Existing frameworks fail
+%to express and/or analyze protocols that require such definitions.  Not only
+%does the ideal functionality enable greater expressiveness than existing
+%specification frameworks in this situation, but UC's 
 
 
 %Exising development and analysis frameworks fall short of desirable properties in that most lack support for byzantine protocols and for obvious reasons.
