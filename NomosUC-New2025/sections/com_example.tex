@@ -1,0 +1,323 @@
+% Comments:
+% Why use session types? The advantages
+% Maybe have an untyped commitment protocol
+% Benefit of session types: extra type annotations, concise specification
+% Does not provide a complete term, only a specification
+% Might make sense to talk about extending session types with dependencies for commitment
+
+%Just like distributed protocols, cryptographic protocols follow a predefined communication pattern.
+Session types play a central role in defining and analyzing ideal functionalities.
+Expressing bi-directional communication in the type system reveals more information to a programmer of
+what a protocol or ideal functionality does, and enforcing it statically eases programming burden
+and prevents communication errors.
+In this section, we will illustrate how session types can be used to describe protocol interfaces,
+what information is leaked to the adversary, and, as we'll see in Section~\ref{sec:motivate}, what its runtime requirements are.
+%We do so and introduce our running example throughout the paper: a simple, linear database functionality, \Fdb
+We do so through a running example we will use throughout this paper: the cryptographic commitment functionality \Fcom.
+
+\paragraph*{\textbf{\textit{The Ideal Bit Commitment}}}
+The ideal functionality \Fcom is a straightforward primitive that underlies many important and widely used protocols. 
+The version presented in Figure~\ref{fig:fcomideal} allows a sender $S$ commit to a single bit $b$ and reveal it later to a receiver $R$.
+To begin a commitment on bit $b$, $S$ sends a (\m{commit}, $b$) message to \Fcom.
+\Fcom leaks this to \A with the \m{committed} and waits for an acknowledgment before notifying the receiver
+that a bit has been committed to with a \m{committed} message.
+Finally, $S$ opens the commitment by sending \m{open} to \Fcom, which then sends (\m{open}, $b$) to $R$.
+This commitment asserts two properties: \emph{binding} and \emph{hiding}.
+Binding guarantees that $S$ cannot alter the bit that was committed to, and hiding guarantees that $R$,
+or the adversary, learns nothing about the bit $b$ until it is revealed.
+Moreover, the leak to \A is absolutely necessary, because it quantifies what the adversary is allowed to
+learn in a protocol that will realize \Fcom. 
+If \Fcom leaks no information, then no simulator proof will be possible for any real-world protocol is the two parties are both honest.
+
+\begin{figure}
+\centering
+\begin{subfigure}{.4\textwidth}
+\input{figures/f_com}
+\end{subfigure}%
+\hspace{2em}
+\begin{subfigure}{.5\textwidth}
+\input{figures/f_ro}
+\end{subfigure}%
+\\[3ex]
+\begin{subfigure}{\linewidth}
+\input{figures/prot_com}
+\end{subfigure}
+\\[3ex]
+\begin{subfigure}{\linewidth}
+\input{figures/prot_com_receiver}
+\end{subfigure}
+%\Description{commitment}
+\caption{Protocol and Functionality for Bit Commitment}
+\label{fig:fcom}
+\end{figure}
+
+Our description of the commitment is summarized by the following binary session types that
+outline the communication between \Fcom and each of $S$, $R$, and \A.
+These same types will exist in the real world between \Z and each of $S$ and $R$.
+For now, ignore the $\triangleleft$ and $\triangleright$ annotations in red.
+These relate to import and will become clear in the next section.
+% \begin{mathpar}
+%   \mi{type} \; \m{sender} = \textcolor{red}{\getpot^2} \ichoice{\mb{commit} : \m{bit} \product \ichoice{\textcolor{red}{\getpot^0}\mb{Open} : \one}} \\
+%   \mi{type} \; \m{receiver} = \textcolor{red}{\paypot^1} \echoice{\mb{rcommit} \arrow \echoice{\textcolor{red}{\paypot^0}\mb{ropen}: \m{bit} : \one}} \\
+%   \mi{type} \; \m{adv} = \echoice{\mb{acommit}: \ichoice{\mb{ok}: \one}}
+% \end{mathpar}
+\begin{align*}
+  &\mi{type} \; \m{sender} = \textcolor{red}{\getpot^2} \ichoice{\mb{commit} : \m{bit} \product \textcolor{red}{\getpot^0} \ichoice{\mb{open} : \one}} \\
+  &\mi{type} \; \m{receiver} = \textcolor{red}{\paypot^1} \echoice{\mb{committed} \arrow \textcolor{red}{\paypot^0} \echoice{\mb{open}: \m{bit} \arrow \one}} \\
+  &\mi{type} \; \m{adv} = \echoice{\mb{committed}: \ichoice{\mb{ok}: \one}}
+\end{align*}
+Session types are in a Curry-Howard isomorphism~\cite{caires2010session} with
+linear logic~\cite{girard1987linear} giving each linear logic connective
+an operational intepretation.
+In a session type system~\cite{HondaCONCUR1993,Scalas19POPL,HondaPOPL2008},
+types are assigned to bi-directional channels that connect processes.
+Binary session types~\cite{PfenningFOSSACS2015,Das20FSCD}
+establish a \emph{provider-client} relationship between the two processes connected
+to a channel, i.e., each channel has a unique provider and client.
+Choices in binary session types are defined via two dual type constructors,
+$\ichoice{\ell : A_\ell}_{\ell \in L}$ (internal choice) and $\echoice{\ell : A_\ell}_{\ell \in L}$
+(external choice).
+The $\ichoiceop$ constructor requires the \emph{provider} to send one of the labels $k \in L$
+and continues to provide type $A_k$.
+Consequently, the client must \emph{branch} on the label received from the provider.
+Its dual type constructor $\echoiceop$ reverses the role of the provider and client:
+the client sends a label that the provider branches on.
+To receive data, session types use two dual type constructors $\product$ and $\arrow$:
+the provider sends an object of type $\tau$ to the client using type $\tau \product A$,
+while the provider receives from the client using type $\tau \arrow A$.
+In either case, continuation $A$ is the type of the channel after the exchange.
+The type $\one$ is the multiplicative unit in linear logic and indicates
+termination in session types.
+
+For the types above, we use \Fcom as the client while $S$, $R$, and \A are providers.
+Thus, the type $\mi{sender}$ prescribes that $S$ sends a $\mb{commit}$ message to \Fcom
+followed by a bit ($\product$ operator).
+Then, at a later time, $S$ sends an $\mb{open}$ message to \Fcom after which the communication terminates.
+The type of receiver uses dual type constructors since the communication direction is reversed;
+provider $R$ only receives messages from client \Fcom.
+As the type dictates, $R$ first receives a $\mb{committed}$ message from \Fcom.
+Later, $R$ receives $\mb{open}$ from \Fcom followed by the bit ($\arrow$ operator), after
+which the protocol terminates.
+Finally, the leak to the adversary is captured in the $\mi{adv}$, where \A first receives
+a $\mb{committed}$ message from \Fcom and acknowledges it by replying with $\mb{ok}$
+and terminating the channel.
+From this desciption, we can see that the communication in the commitment protocol is fully captured
+using session types.
+% The sender's choice above only uses $\ichoice$ because \Fcom never gives it any output, and the receiver's type only uses $\echoice$.
+% At any given moment only one of $\ichoice$ or $\echoice$ can be valid, meaning only one of the two endpoints of the channel can send a message on it.
+% For cases where non-determinism is needed and either endpoint can send a message, communication can be split over multiple channels as necessary.
+
+% \todo{revise the point about polymorphism here}
+
+In the real-ideal paradigm, we compare two worlds each with its own protocol.
+The ideal world consits of \Fcom along with a dummy protocol where parties forward all
+communication between \Z and the functionality.
+The dummy protocol provide the same session types as used by \Fcom, and, therefore, the real
+world where parties locally run \protcom also exhibit the same type.
+
+%\begin{figure}
+%\input{figures/f_ro}
+%\end{figure}
+
+\paragraph*{\textbf{\textit{Random Oracle}}}
+The commitment protocol \protcom that realizes \Fcom operates in the random oracle model. 
+The random oracle model assumes protocol parties have access to an idealized hash function \Fro.
+It is queried to ``hash'' items and is deterministic. 
+The session type below concretizes \Fro to take integers as pre-images and output integers, and we give its pseudocode in Figure~\ref{fig:fro}.
+\begin{tabbing}
+    $\mi{type} \; \m{oracle} = \textcolor{red}{\getpot^1} \ichoice{$\=$\mb{query}: \m{pid} \product \m{int} \tensor \textcolor{red}{\paypot^1} \echoice{\mb{hash}: \m{pid} \arrow \m{int} \tensor \m{oracle}}}$ 
+\end{tabbing}
+Any arbitrary data type can be hashed, hence the type parameter \m{a}, but the resulting hash is always represented as an integer. 
+The commitment protocol concretizes this type to hashing queries of type $\m{(Bit,Int)}$ as shown in the type definition \protcom in Figure~\ref{fig:fcomideal}.
+\Fro receives label \mb{query} on its channel along with the identifier of the calling party and the pre-image to be hashed. 
+Unlike \Fcom, where there are only two parties whose identities are known, \Fro accepts messages from an arbitrary number of parties.
+Therefore, we include the \m{pid} in the message rather than attempt to give every party its own channel to \Fro.
+After returning the resulting \m{hash} to \m{pid}, the type recurses back to the beginning (back to \m{oracle}) to accept more queries rather than terminating like \Fcom.
+
+In reality \protcom, and in fact most protocols, require an additional primitive for authenticated message passing.
+We augment \Fro with the additional functionality of two-way channel between two parties $S$ and $R$. 
+An alternative to this design is to create two standalong functionalities, \Fro and \Fchan, and define a composition operator to combine them into one. 
+This retains the original \m{oracle} session type. 
+In order to achieve this we split communication between two channels:
+
+\begin{align*}
+    \m{RoP2F} = \ichoice{&\textcolor{red}{\getpot^1} \mb{query}: \m{pid} \product (\m{bit},\m{int}) \product RoP2F[b], \\
+    &\rgetpot{1} \mb{sendmsg}: \m{pid} \product \m{comp2f} \product \m{RoP2F}}
+\end{align*}
+\begin{align*}
+    \m{RoF2P} = \echoice{&\rpaypot{0} \mb{hash}: \m{pid} \arrow \m{int} \arrow \m{oracle}, \\
+    &\rpaypot{1} \mb{msg}: \m{pid} \arrow \m{comf2p} \arrow \m{RoF2P}}
+\end{align*}
+
+\paragraph{Process Code for Using Session Types}
+In the code snippet in Figure~\ref{fig:fcomideal} we show the NomosUC process for the case of the sender sending a commitment in real world protocol, \protcom, that realizes \Fcom.
+In the \protcom snippet in Figure~\ref{fig:fcomideal}, we see how a NomosUC process sends and receives messages. We ignore the \ipay and \iget operators for now.
+The type of all processes in NomosUC accept some common parameters: security parameter \m{k}, a stream of random bits \m{rng}, and a session it \m{sid} that can be used to encode execution parameters like the identities of the sender/receiver.
+Protocol parties generically accept two channels for for communication with each of \F and \Z. 
+Despite their names are \inline{p2f} and \inline{f2p}, the channels don't have to be uni-directional and can exhibit any session types desired. We include both to accomodate protocols whose communication can't be captured with a single session.
+The process definition for the sender only uses one channel for communication with \Z, because it only receives messages from \Z and never sends anything back.
+The sender uses both channels with \Fro, \ic{p2f} and \ic{f2p}, due to the addition of the channel, so that it can send and receive messages alongside hashing. 
+
+The sender first uses a case statemtnt to wait for a message on channel \ic{z2p} and only label \mb{commit} can be received according to the session type (lines 5-6).
+Once the label is received, the process can used \inline{$\nrecv$} to receive the data carried with the label: the bit to be committed (line 7). 
+The sender in \protcom commits to a bit by generating a blinding nonce and hashing the bit with the nonce using \Fro.
+It sends the label $\mb{query}$, its \m{PID}, and the tuple $\m{(b,r)}$ to be hashed.
+\Fro writes the hash back immediately and the sender activates it again to send resulting commitment $\m{Commit(h)}$ to the receiver (line 12-13).
+
+\paragraph{The Full Commitment Protocol}
+The full commitment protocol proceeds in a similar fashion so we describe it here for brevity and relegate the full code to Appendix~\ref{app:commitment}.
+When the receiver receives the commitment from \Fro, it stores hash $h$ and sends $\mb{rcommitted}$ to \Z.
+THe receiver then waits for an opening fom $S$.
+\Z tells $S$ to \mb{open} the commitment, and $S$ sends \m{Open(b,r)} to $R$. 
+$R$ makes sure that the possibly corrupt sender isn't attempting to equivocate by hashing \m{(b,r)} exactly like $S$ does in Figure~\ref{fig:fcomideal}.
+It checkes the resulting hash with the stored commitment and outputs $\mb{ropen}$ and $b$ to \Z.
+If the hashes fail, $R$ outputs nothing to \Z. In either case, $R$ then halts.
+
+
+\todo{modify RO type to have sendmsg, talk more about the session type as a descriptor of the functionality, more exposition about our goals rather than just technical detail}
+
+\todo{some final statements}
+
+%Canonically in NomosUC, functionalities and parties are given two channels, here the two are \ic{p2f} and \ic{f2p}, to allow unidirectional communication over each if desired or necessary. 
+%In Figure~\ref{fig:fdbideal}, the communication pattern is easily captured by just one channel and one type, therefore \ic{f2p} is unused and typed with the terminating \m{1}. 
+%In general, a functionality can be written to accept any number of channels, even one channel per party but, as we explain in Section~\ref{sec:execuc}, this requires some additional multiplexing code which can be generated at compile-time.\todo{explain in section}
+
+%In fact, the session type can not enforce that \Fdb sends \mb{yes} on a hit and \mb{no} on a miss. This is only what a correct functionality \emph{should} do. 
+%An functionaliy that doesn't always behave this way satisfies some other set of properties than those intutively desired from a database and would likely fail to be emulated by a correct protocol that implements a database.
+%The type of \Fdb in Figure~\ref{fig:fdbideal} also indicates a channel with \A called \ic{a2f}. 
+%Given just the type we can infer that \A has access to the same interface as protocol parties, and, importantly, that \Fdb doesn't leak any information to it~\footnote{We exclude it to save space.}.
+%\emph{Leaks define a crucial part of the adversarial model for functionalities, and the session type succinctly describe it}.
+%\begin{tabbing}
+%   $\mi{type} \; \m{db[k][v]} = \ichoice{$\=$\textcolor{red}{\paypot{1}}$\=$ \; \mb{store}:\m{PID} \arrow \m{k} \arrow$ \\
+%   \>\>$\echoice{ \mb{OK}: \m{PID} \arrow \m{db[k][v]}},$ \\
+%   \>$\textcolor{red}{\paypot{1}}$\=$ \; \mb{get}: \m{PID} \arrow \m{k} \arrow$ \\
+%   \>\>$\echoice{$\=$\mb{yes}: \m{v} \arrow \m{db[k][v]},$ \\
+%   \>\>\>$\mb{no}: \m{db[k][v]}}}$
+%\end{tabbing}
+
+
+%A cryptographic commitment is a protocol consisting of a sender that knows some witness $x$ and sends a commitment message $C = f(x)$ that is
+%some function of the witness such that $f^{-1}(C) \neq x$ with negligible probability. 
+%The ideal functionality \Fcom in Figure~\ref{fig:fcomideal}(a) describes the properties of the commitment
+%It consists of a  \emph{sender} ITM $S$ and a \emph{receiver} ITM $R$ connected to 
+%the ideal functionality ITM $\Fcom$. It enforces that the committer can not equivocate on the witness $x$ once it creates a commitment.
+%This property is called \emph{hiding}.
+%Similarly, the receiver can not learn the witness from just the commitment, which we call the \emph{binding} property.
+%%\Fcom encapsulates the security properties of a two-phase, two-party commitment: (\emph{binding}) committer can't change what they committed to, and (hiding) the receiver can't open the commitment itself. 
+
+%The communication pattern outlined in Figure~\ref{fig:fcomideal} between the sender $S$ and $\Fcom$ (and also the receiver $R$
+%and $\Fcom$) is enforced via \emph{binary session types}.
+%% Session types are a type system for statically expressing bi-directional communication protocols
+%% in message-passing process systems.
+%The key insight here is that we assign a session type to the communication channel connecting
+%two processes.
+%As notation, every channel has a unique \emph{provider} process that offers the channel and a
+%\emph{client} process that uses it, and the session type governs the type and direction of messages exchanged between them. 
+%%the processes, with the provider and client processes performing dual send/receive actions.
+%As an example, we start with the session type of the channel offered by $S$ that is used by
+%$\Fcom$.
+%\begin{mathpar}
+%  \mi{type} \; \m{sender} = \ichoice{\mb{Commit} : \m{bit} \product \ichoice{\mb{Open} : \one}}
+%\end{mathpar}
+%The type constructor $\ichoiceop$ denotes an \emph{internal choice}
+%\footnote{Although $\ichoiceop$ with only one choice is redundant, we still use
+%it here for the purpose of exposition.}
+%dictating that the provider $S$ first sends a
+%$\mb{Commit}$ message to $\Fcom$.
+%Next, the type constructor $\product$ denotes that $S$
+%sends a value of type $\m{bit}$ ($\m{bit} \product \ldots$).
+%Finally, the $\ichoiceop$ constructor
+%enforces that $S$ sends $\mb{Open}$ to $\Fcom$ followed by type $\one$
+%that indicates $S$ terminates and closes its channel.
+%In UC, one-shot functionalities terminate after a single instance, and reactive
+%functionalities persist and run many times. 
+%It is important to point out that session types capture communication over one channel.
+%For example, the session type of the sender does not capture what, if any, information is leaked to the adversary when \Fcom is activated.
+%This helps with modularity: since one session type only captures the local communication
+%between two processes, we can modify the adversary's implementation or communication interface
+%without impacting the session type between $S$ and $\Fcom$.
+%Local session types also do not directly capture \Fcom's security property that the same bit that was committed is the one that is opened.
+%\footnote{With refinement session types~\cite{Das20CONCUR,Das20FSCD}, such advanced properties can be captured but they would significantly
+%complicate the type system.}
+
+%In this work \emph{import session types} extend the above session type $\m{sender}$ with annotations that express import tokens, which act as runtime budgets, passed over a channel between processes. 
+%Though a trivia example because \Fcom does a constant amount of work, we still give some import below so that a protocol that does polynomial work can realize \Fcom as well.
+%Such restrictions are important to consider when creating types.
+%%Though a trivial example of import, given that $\Fcom$ is a one-shot functionality which does only a constant amount of work, the import session type for $\m{sender}$ is given below.
+%\begin{mathpar}
+%  \mi{type} \; \m{sender} = \textcolor{red}{\paypot^{2}} \ichoice{\mb{Commit}: \m{bit} \product \textcolor{red}{\paypot^{0}} \ichoice{\mb{Open}: \one}}
+%\end{mathpar}
+%The annotation \textcolor{red}{$\paypot^2$} asserts that the sender gives 1 import with \m{Commit} and 0 with \m{Open}. 
+%%Despite doing constant work, requiring 0 tokens would
+%%contrain protocols that can realize it (which will necessarily have the same type as \Fcom) to those that do constant work. Such restrictions are important to 
+%%consider when defining import session types in NomosUC.
+%The dual of $\paypot$ is given by $\getpot$ where an external choice operation can be specified with a required amount of import to be received. 
+%The typing rules for both $\paypot$ and $\getpot$, and a more comprehensive discussion about the handling of import tokens, is given in Section~\ref{sec:import}.
+%
+%Similar to the sender, we define a channel provided by the receiver $R$ 
+%used by $\Fcom$ with the following session type
+%\begin{mathpar}
+%   \mi{type} \; \m{receiver} = \textcolor{red}{\getpot^0} \echoice{\mb{Committed}: \textcolor{red}{\getpot^0} \echoice{\mb{Opened} : \m{bit} \arrow \one}}
+%\end{mathpar}
+%Dual to internal choice, the $\echoiceop$ type constructor represents \emph{external choice}
+%prescribing that the provider $R$ must receive a $\mb{Committed}$ message from $\Fcom$
+%followed by an $\mb{Opened}$ message (using another $\echoiceop$ constructor) from $\Fcom$.
+%Then, $R$ must receive a bit from $\Fcom$ as depicted by the $\arrow$ constructor (dual to $\product$)
+%followed by termination (indicated by $\one$).
+%Dual to $\mb{sender}$, the receiver here expects to receive no import from $\Fcom$.
+
+%Protocols expressed via session typed channels are realized by process implementations.
+%A session-typed process \emph{uses} a set of channels in its context (similar to a function
+%having arguments) and provides a unique channel (similar to a function returning a single value).
+%NomosUC also allows processes to store functional data (like integers, booleans, lists, etc.)
+%and either transfer them to other processes or perform local computation on them.
+%The type checker guarantees that every process adheres to the protocol on every channel as defined by
+%the corresponding session type.
+
+%As an illustration, consider the $\Fcom$ process implemented in Figure~\ref{fig:fcomideal}(b)
+%that \emph{uses} channels $S$ and $R$ and \emph{provides} channel \inline{fc}.
+%The used channels with their types are written to the left of the turnstile
+%($\vdash$) while the offered channel and type are written on the right.
+%The process first case analyzes on channel $S$ branching on the
+%message received.
+%Since there is only one choice $\mb{Commit}$, we only have one
+%branch in the definition.
+%$\Fcom$ then receives the bit $b$ (line 3) on $S$, followed by sending the
+%\m{Committed} message on channel $R$ to the receiver (line 4).
+%Then, $\Fcom$ receives the $\mb{Open}$ message on $S$ followed by sending the
+%$\mb{Opened}$ message on $R$ (line 6), followed by the bit $b$ (line 7).
+%$\Fcom$ then waits for the channels $R$ and $S$ to terminate and then finally
+%terminates the \inline{fc} channel (code not shown for brevity).
+
+%The types associated with \Fcom here don't make use of the import tokens encoding we 
+%introduce later in this work. An important reason for it is that most functionalities
+%in NomosUC are designed to be parametric in the amount of import they, and their
+%session types, require. A static amount of import for some \F constrains the 
+%amount of import, or computation, that a protocol realizing \F can use. 
+%Such a constraint is unnecessarily restrictive requiring multiple versions
+%of the same functionality for different protocols. 
+
+%A protocol may consist parties with different roles with different sets of inputs and messages in the protocol. 
+%A session type defines the protocol for only one role in an ideal functionality and others may have their own types.
+%The sender and receiver are different roles in the same protocol, and, therefore, must have their own channels to \Fcom rather than communicating over a common channel.
+
+%The protocol initiates with $S$ sending a $\mb{commit}$ message to $\Fcom$
+%indicating its intent to \emph{commit} to a bit.
+%Next, $S$ sends this committed bit to $\Fcom$.
+%After receiving the committed bit, $\Fcom$ sends a $\mb{commit}$ message
+%to $R$ indicating that a bit has been committed to, but does not reveal
+%this bit to $R$.
+%At a later time, $S$ sends an $\mb{open}$ message to $\Fcom$ expressing
+%that $S$ wishes to reveal the secret bit to $R$.
+%Receiving this message, $\Fcom$ in turn sends an $\mb{open}$ message
+%to $R$ followed by this bit.
+%The protocol concludes with each party (process) terminating.
+%Finally, the type $\one$ denotes termination, indicating that
+%$S$ will send $\m{close}$ message to $\Fcom$.
+
+%\begin{figure*}[!ht]
+%\input{figures/commitment}
+%\caption{The $\mathcal{F}_{\msf{comm}}$ commitment ideal functionality in Nomos. The types for the sender and receiver channel define what inputs they can give to the functionality and what messsages are sent from the functionality back to the receiver.}
+%\label{fig:nomos:commitment}
+%\end{figure*}
+

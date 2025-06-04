@@ -1,0 +1,13 @@
+\centering
+\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, frame=single, mathescape, numbers=left, xleftmargin=2em, xrightmargin=2em]
+$\nproc$ protCom$\_$recv[K] : (k: Int), (sid: SID[comSid]), (pid: Int), 
+  ($\$$z2p: 1), ($\$$p2z: receiver), ($\$$p2f: rop2f[(Bit,Int)]), ($\$$f2p: 1) |- ($\$$c: 1) = {
+  $\ncase$ $\$$rop2f (
+    *,recvmsg => $\nget$ {1} K $\$$rop2f ; Commit h = $\nrecv$ $\$$rof2p
+        $\$$p2z.committed 
+        $\tg{(* wait to receive the opening *)}$
+) }
+\end{lstlisting}
+\vspace{-0.5em}
+\caption{The commit case fo the receiver in \protcom.}
+\label{fig:protcomreceiver}

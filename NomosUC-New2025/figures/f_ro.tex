@@ -1,0 +1,12 @@
+% \centering
+\begin{bbox}[title={Functionality $\F_{\m{RO}}$}]
+~
+Initialize empty table $\ell \leftarrow \emptyset$\\
+\qquad -- On input \inmsg{\m{query}}{$x$} from $P_i$: send $h'$ to $P_i$;\\
+\qquad if $(x,h')$ exists in $\ell$, else add $(x, h \xleftarrow{\$}\{0,1\}^k)$ to $\ell$\\
+\qquad and send it to $P_i$
+
+\end{bbox}
+\vspace{-0.5em}
+\caption{Pseudocode for the random oracle.}
+\label{fig:fro}

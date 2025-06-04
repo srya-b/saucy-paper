@@ -1,0 +1,124 @@
+In this section we expand on the real world protocol that realizes \Fcom in the \Fropp-hybrid model.
+The type of \Fropp in Figure~\ref{fig:fropptype} builds on the \Fro type presented in Section~\ref{sec:commitment}. 
+Because the receiver gets a message from \Fropp and potentially sends it a hash query, we split communication between two uni-directional channels.
+The adversary's type with the functionality, that lets it query hashes, isn't shown but requires 1 unit of import to be sent along with a query. 
+
+\begin{figure}
+\begin{center}
+	\parbox{0cm}{
+	\begin{tabbing}
+		$\m{sender}[a] =  \ichoice{ $\=$ \mb{query}: \textcolor{red}{\paypot^1} \m{PID} \product \tgr{\m{Int}} \product \m{sender}[a],$ \\
+		\>$\mb{sendmsg}: \textcolor{red}{\paypot^1} \m{ PID} \product \m{a} \product \m{sender}[a]}$ \\
+		$\m{shash} = \echoice{ \mb{hash}: \m{ PID} \arrow \tgr{\m{Int}} \arrow \m{hash}}$ \\
+		$\m{rquery} =  \ichoice{ \mb{query}: \textcolor{red}{\paypot^1} \m{PID} \product \tgr{\m{Int}} \product \m{rquery} }$ \\
+		$\m{receive}[a] = \echoice{ $\=$\mb{hash}: \m{PID} \arrow \tgr{\m{Int}} \arrow \m{receive}[a],$ \\
+		\>$\mb{msg}: \textcolor{red}{\getpot^1} \m{PID} \arrow \m{a} \arrow \m{receive}[a]}$
+	\end{tabbing}}
+\end{center}
+\caption{The two types for each of the committer and receiver. The first to types are the senders type to \Fropp and the next is received from \Fropp, and the same holds for the next two and the receiver. Two units of import are sent with a message from the committer. One is sent to the receiver so that it has enough import to query the oracle and check the commitment.}
+\label{fig:fropptype}
+\end{figure}
+
+Due to the fact that there is a single channel connecting the \partywrapper and the functionality, the amount of import sent from the \partywrapper to the wrapped \Fropp is constant. Similarly, a constant amount of import is sent back from \Fropp to the \partywrapper.
+In general, the \partywrapper must send/receive, with every message, at least the maximum import any of its sessions ever requires. 
+This constant import is sent with the functional messages (recall intermdeiate processes convert functonal messages from communicators to session types) in the shared part of the providerless channel.
+If we take the session type specified by the session type in Figure~\ref{fig:fropptype} (this is THE session types that the wrapped committer and receiver see inside the \partywrapper) it would result in the \partywrapper sending 1 import to \Fropp with every message and receiving 1 import with from \Fropp with every message--resulting \Fropp having 0 net import.
+This is undesirable as we want to ensure \Fropp has 1 net import token, at least in order to compute a poynomial number of hashes. 
+
+Below we describe what the import constants should be for \Fcom and \Fropp. \emph{Note} we desribe the import values applied on top of the familiar 
+session types of the two functionalities. In actuality these assignments are sent with the functional message equivalents of the sessions. 
+
+The import for the type of $\Fcom$:
+\begin{center}
+	\parbox{0cm}{
+	\begin{tabbing}
+		$\m{sender} =  \ichoice{ \mb{commit}: \textcolor{red}{\paypot^4} \m{Bit} \product \ichoice{ \mb{open}: \rpaypot{4} \mb{1}}}$ \\
+		$\m{receiver} = \echoice{ \mb{committed}: \echoice{ \mb{opened}: \m{Bit} \arrow \mb{1}}}$
+	\end{tabbing}}
+\end{center}
+The following for \Fropp:
+\begin{center}
+	\parbox{0cm}{
+	\begin{tabbing}
+		$\m{sender}[a] =  \ichoice{ $\=$ \mb{query}: \textcolor{red}{\paypot^2} \m{PID} \product \tgr{\m{Int}} \product \m{sender}[a],$ \\
+		\>$\mb{sendmsg}: \textcolor{red}{\paypot^2} \m{ PID} \product \m{a} \product \m{sender}[a]}$ \\
+		$\m{shash} = \echoice{ \mb{hash}: \textcolor{red}{\getpot^1} \m{ PID} \arrow \tgr{\m{Int}} \arrow \m{hash}}$ \\
+		$\m{rquery} =  \ichoice{ \mb{query}: \textcolor{red}{\paypot^2} \m{PID} \product \tgr{\m{Int}} \product \m{rquery} }$ \\
+		$\m{receive}[a] = \echoice{ $\=$\mb{hash}: \textcolor{red}{\getpot^1} \m{PID} \arrow \tgr{\m{Int}} \arrow \m{receive}[a],$ \\
+		\>$\mb{msg}: \textcolor{red}{\getpot^1} \m{PID} \arrow \m{a} \arrow \m{receive}[a]}$
+	\end{tabbing}}
+\end{center}
+
+We give a brief explanation on how such an assignment is detemrined. We note beforehand that there are many such assignments that satisfy the basic invariant we want to ensure:
+the wrapped \Fropp always has at least 1 net import token and the \partywrapper (for the sake of the receiver) has 2 net import tokens at the end of the protocol to allow the receiver to 
+check the commitment with a random oracle query. 
+Even though the session type the receiver sees only requires 1 import, the \partywrapper, forced to send a constant amount (and must send 2 for hash queries), must still have 2 import to send on behalf of the receiver. 
+On \m{commit} with 4 import, the \partywrapper spends 2 for the receiver's query and gets one in return with the hash. When the committer sends 
+the commitment to the receiver the \partywrapper again spends 2 and ends with 2 import tokens. Finally on \m{open} with 4 tokens the \partywrapper
+spends tokens to send the opening to the receiver and has enough tokens for the receiver's last query to the random oracle. Notice that 
+any arbitrarily high number for \m{commit} and \m{open} would work here, but \Fropp still always requires 1 import token. 
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+$\tg{(* committer code after receiving a 'commit'}$
+        $\tg{message from the environment *)}$
+b = $\nrecv$ $\$$z2p ;
+$\nget$ $\$$z2p {2} ;
+bits = sample (k-1) rng ;
+$\$$p2f.query ;
+$\npay$ K {2} $\$$p2f ;
+$\nsend$ $\$$p2f pid ;
+$\nsend$ $\$$p2f (b || bits) ;
+$\ncase$ $\$$f2p (
+  hash => pid = $\nrecv$ $\$$p2f ; 
+    h = $\nrecv$ $\$$p2f ;
+    $\$$p2f.sendmsg ;
+    $\nsend$ $\$$p2f pid 2 hash;
+	$\npay$ K {2} $\$$p2f ;
+\end{lstlisting}
+\caption{The code for the committer in $\prot{com}$ when it receives a \msf{commit} message from \Z. It obtains a hash of the message from \Fropp over \msf{p2f} and sends it to the receiver (pid=2) through the same functionality.}
+\label{lst:committer}
+\vspace{-2mm}
+\end{figure}
+
+\begin{figure}
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single, mathescape]
+$\tg{(* receiver waiting for the commitment opening}$
+        $\tg{from the random oracle channel *)}$
+sender = $\nrecv$ $\$$f2p ;
+p = $\nrecv$ $\tm{recv}$ $\$$f2p ;
+b:hs = p
+$\nget$ $\$$f2p {1} ; 
+$\tg{...}$
+$\tg{(* query the hash of b || hs with 1 import *)}$
+$\tg{...}$
+h = $\nrecv$ $\$$p2f ;
+$\nif$ h == hash
+$\nthen$
+  $\$$z2p.open
+$\nend$
+\end{lstlisting}
+\caption{The code for the receiver checks for a new message and receives the bit and nonce from the committer. If the hash of the bit and nonce matches the commitment it received, it returns \msf{open} to \Z to confirm the commitment.}
+\label{lst:receiver}
+\vspace{-3mm}
+\end{figure}
+
+In Figures~\ref{lst:committer} and \ref{lst:receiver} we see the code for the committer reacting to a $\mb{commit}$ message from \Z and the receiver reacting to an open commit from the committer, respectively. 
+
+%\subsection{Simulation}
+%Finally, we present a simulator \simcom, for the dummy adversary, for which the \Fcom is realized by \prot{com} in the \Fropp-hybrid world.
+%Recall that the import requirements for the ideal world, in this case for \Fcom. Therefore, the simulator is parameterized by import parameters required in the real world for the parties of $\pi_\m{com}$ and \Fro.
+%The simulator is straightforward and internally maintains a table like \Fro and responds to the environments queries for hashes. 
+%When the receiver is corrupt:
+%\begin{itemize}
+%\item \simcom responds with \inline{P2A2Z(2, no)} to all messages by \Z to get a message from the functionality
+%\item On \inline{Committed} by the ideal receiver, \simcom generates a random $r$ and sends \inline{P2A2Z(2, RHash(h))} with no import.
+%\item On \inline{Open(b)} from the ideal receiver, \simcom generates a random nonce $x$ and stores \inline{b+x : h} in its \Fro table, and sends \inline{Yes(1, (b,x))} to \Z when asked for messages for the corrupt receiver.
+%\end{itemize}
+%
+%The corrupt committer is not much different from the above case. In this case
+%the simulator stores the bit $b$, the none $x$, the corresponding hash $h$, and the import that \Z uses to create a commitment.
+%When the simulator receives the message to send the commitment to the receiver, it tells the ideal world committer to commit to $b$ along with 2 import given by \Z, and when it's told to open the commitment it opens it in the ideal world. 
+%
+%It is immediately clear that this simulator satisfied $\Fro \xrightarrow{\prot{com}} \Fcom$ for the dummy adversary.
+

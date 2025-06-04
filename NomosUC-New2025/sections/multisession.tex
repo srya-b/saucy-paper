@@ -1,0 +1,81 @@
+In Nomos, we use potetial to impement the import mechanism.
+One of the sonequences of this is that the potential exchanged over a channel between any two parties must be statically defined.
+Consider an ideal functionality that requires different amount of import for different messages from protocol parties. 
+This may happen in a case where a certain activation requires the functionality to send import to another ITM.
+In this, despite the different requirements, the single shared channel (hence, communicator) from the parties to the functionality must be statically typed to receive the greatest of the required imports.
+The type of the communicator's channel is given in Figure~\ref{fig:communicator:potential}.
+\begin{figure}
+\begin{sill}
+$\m{comm}[a]\{n\} = \m{<}\{n\}~ \& \{ \m{SEND}: \m{a} \rightarrow |\{n\} \vee \m{comm}[a]\{n\},$ \\
+\qquad \qquad \qquad \qquad $\m{RECV}: \oplus\{ \m{no}: |\{0\}\m{<} \vee \m{comm}[a]\{n\}$ \\
+\qquad \qquad \qquad \qquad \qquad \qquad \quad $\m{yes}: \m{a} \* |\{n\}\m{>} \m{comm}[a]\{n\}\}$
+\end{sill}
+\caption{The type of the communicator accepting a single parameter for the import sent over this communicator.\todo{This is in Nomos code. It should be like the types in the nomosuc section.}}
+\label{fig:nomos:communicator:potential}
+\end{figure}
+Despite the parameterization, we can only affix integer values to the type parameter $n$.
+A potential future work may extend potential in Nomos to be more expressive allowing types for potential. \todo{ not sure what the right terminology is here }
+
+We do not lose all from of expressibility, as we can see from a process definition, for the forthcoming $\F_{\msf{com}}$, in Figure~\ref{fig:fcom:proc}
+In this example the protocol specific code can specify what message types are sent over each of the channes and the import sent with the messages (\texttt{receiver2f} and \texttt{r2fn}, respectively)
+
+\begin{figure*}[!ht]
+\begin{lstlisting}[basicstyle=\small\ttfamily,frame=single]
+proc asset ideal_functionality :
+    (#s: comm[sender2f]{s2fn}), (#r: comm[receiver2f]{r2fn}), 
+    (#f2sender: comm[f2sender]{f2sn}, (#f2receiver: comm[f2receiver]{f2rn})  |- ($ch : 1)
+\end{lstlisting}
+\caption{The process definition of the $\F_{\msf{com}}$ functionality. The channels are all parmaeterized with user-defined message types for each channel and the corresponding import sent.}
+\label{fig:fcom:proc}
+\end{figure*}
+\subsection{Database}
+
+\subsection{Multisession}
+The multisession operator is an extension in UC that allows multiple sessions of an ideal functionality to be spawned and interacted with.
+It is referred to as the $!$ operator, and it acts as wrapper around some functionality, $\F$, and routes messages between copies of $\F$ and the protocol parties/adversary/environment.
+The full pseudo-code of the operator can be seen in Figure~\ref{fig:bangf}.
+When \bangf is activated with a new message it expects the caller to enode the subsession ID, or \msf{ssid}, of the instance of \F~it wants to communicate with in the messages.
+If $\F^{\msf{ssid}}$ doesn't exist, a new one is instantiated and appended to the list of $\F$ copies.
+
+\begin{figure}
+\input{figures/multisession}
+\caption{The multisession operator, referred to as $!\F$ creates multiple copies of the input functionality $\F$ with different session IDs. It routes messages to and from the copies of the functionality. The enlarging data structure \msf{Fs} requires consideration of polynomial bounds with import token requirements indicated in \color{red} red\color{black}.}
+\label{fig:bangf}
+\end{figure}
+
+We implement \bangf in Nomos and a UC execution of it parameterized by the $\F_{\msf{com}}$ functionality. 
+An important consideration when working with the multisession operator is the import mechanism.
+The underlying functionality, $\F_{\msf{com}}$ does not explicitly require any import because it is a one-shot constant-work functionality: it works for commitment to a single bit, performs a constant amount of work and terminates.
+The multisession operator on the other hand, maintains an append-only list of instances of $\F_{\msf{com}}$.
+It is important to enable $!\F$ to read over a list of polynomial size in the future.
+Notice that the import mechanism here also constrains the size.
+
+To ensure that even simple ITMs don't need to specify import consraints for all their messages, in Nomos we default the amount of import (i.e. potential) for every message to 1.
+This ensures that simple database 
+
+In general, we ensure that every message send in Nomos is accompanied by a default of 1 import token unless specified otherwise.
+This ensures all there will always exist a polynomil for which any polynomial-time computation an be completed by an ITM.
+However, leaving a default of 1 import limits the expressiveness of the system as ITMs receiving 1 import have no import to give other ITMs.\footnote{A party $p_i$ that receives 1 import from the environment can not perform computation and send 1 import to $!\F_{\msf{com}}$. In such a scenario, $p_i$ requires at least 2 units of import.}
+
+\todo{below is not to be considered.}
+
+Implementing the multisession wrapper in Nomos is straightforward because the only amount of import it ever accepts is 1 unit.
+Recall that the use of communicators requires that the maximum amount import must be sent between two ITMs.
+More specifically, if messages types sent from $M_1$ to $M_2$ require different amounts of import in the pseudo-code, they must all send the highest of these imports.
+
+Recall the type of communicator messages between two parties in Figure~\ref{fig:nomos:communicatortype}. 
+
+%\begin{figure}
+%\begin{sill}
+%$\m{comm}[a]\{n\} = \m{<}\{n\}~ \& \{ \m{SEND}: \m{a} \rightarrow |\{n\} \vee \m{comm}[a]\{n\},$ \\
+%\qquad \qquad \qquad \qquad $\m{RECV}: \oplus\{ \m{no}: |\{0\}\m{<} \vee \m{comm}[a]\{n\}$ \\
+%\qquad \qquad \qquad \qquad \qquad \qquad \quad $\m{yes}: \m{a} \* |\{n\}\m{>} \m{comm}[a]\{n\}\}$
+%\end{sill}
+%\caption{The type of the communicator accepting a single parameter for the import sent over this communicator.}
+%\label{fig:nomos:communicatortype}
+%\end{figure}
+%\todo{What's with the $\wedge$?}
+
+%The multisession communicates with protocol parties and the adversary.
+%Hence, $!\F$ is parameterized with an amount of potential for each of these communicator.
+%When a new 

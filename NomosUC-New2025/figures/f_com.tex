@@ -1,0 +1,29 @@
+% \centering
+\begin{bbox}[title={Functionality $\F_{\m{com}}(S, R)$}]
+~
+-- On input \inmsg{\m{commit}}{$b$} from $S$: store $b$, leak $\m{committed}$ to \A and send $\m{committed}$ to $R$. \\
+-- On input \inmsg{\m{open}} from $S$: send $(\m{open}, b)$ to $R$
+%
+%\OnInput \inmsg{\msf{Commit}}{$b$} from $S$: 
+%
+%\qquad store $b$ and \Send $(\m{Committed})$ to $R$
+%
+%then \OnInput \inmsg{Open} from $S$: 
+%
+%\qquad \Send $(\m{Opened}, b)$ to $R$
+\end{bbox}
+%\caption{(a) Pseudocode for \Fcom parameterized by sender $S$ and receiver $R$,
+%and (b) corresponding code in NomosUC}
+\vspace{-0.5em}
+\caption{Pseudocode for a single-shot bit commitment from $S$ to $R$.}
+\label{fig:fcomideal}
+%\vspace{-4mm}
+%%%\Description{Ideal Fcom}
+%$\nproc$ Fcom: (S: sender), (R: receiver)  |- (fc: 1) =
+%  $\ncase$ S (
+%    Commit => b = $\nrecv$ S ;
+%              $\nget$ {2} S ;
+%              R.Committed ;
+%              $\ncase$ S (
+%                Open => R.Opened ;
+%                        $\nsend$ R b ; ))
