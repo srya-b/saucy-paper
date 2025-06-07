@@ -29,7 +29,7 @@ Moreover, the leak to \A is absolutely necessary, because it quantifies what the
 learn in a protocol that will realize \Fcom. 
 If \Fcom leaks no information, then no simulator proof will be possible for any real-world protocol is the two parties are both honest.
 
-\begin{figure}
+\begin{figure*}
 \centering
 \begin{subfigure}{.4\textwidth}
 \input{figures/f_com}
@@ -49,7 +49,7 @@ If \Fcom leaks no information, then no simulator proof will be possible for any 
 %\Description{commitment}
 \caption{Protocol and Functionality for Bit Commitment}
 \label{fig:fcom}
-\end{figure}
+\end{figure*}
 
 Our description of the commitment is summarized by the following binary session types that
 outline the communication between \Fcom and each of $S$, $R$, and \A.
@@ -66,12 +66,13 @@ These relate to import and will become clear in the next section.
   &\mi{type} \; \m{receiver} = \textcolor{red}{\paypot^1} \echoice{\mb{committed} \arrow \textcolor{red}{\paypot^0} \echoice{\mb{open}: \m{bit} \arrow \one}} \\
   &\mi{type} \; \m{adv} = \echoice{\mb{committed}: \ichoice{\mb{ok}: \one}}
 \end{align*}
-Session types are in a Curry-Howard isomorphism~\cite{caires2010session} with
-linear logic~\cite{girard1987linear} giving each linear logic connective
+
+Session types are in a Curry-Howard isomorphism \cite{caires2010session} with
+linear logic \cite{girard1987linear} giving each linear logic connective
 an operational intepretation.
-In a session type system~\cite{HondaCONCUR1993,Scalas19POPL,HondaPOPL2008},
+In a session type system \cite{HondaCONCUR1993,Scalas19POPL,HondaPOPL2008},
 types are assigned to bi-directional channels that connect processes.
-Binary session types~\cite{PfenningFOSSACS2015,Das20FSCD}
+Binary session types \cite{PfenningFOSSACS2015,Das20FSCD}
 establish a \emph{provider-client} relationship between the two processes connected
 to a channel, i.e., each channel has a unique provider and client.
 Choices in binary session types are defined via two dual type constructors,
@@ -125,7 +126,7 @@ The random oracle model assumes protocol parties have access to an idealized has
 It is queried to ``hash'' items and is deterministic. 
 The session type below concretizes \Fro to take integers as pre-images and output integers, and we give its pseudocode in Figure~\ref{fig:fro}.
 \begin{tabbing}
-    $\mi{type} \; \m{oracle} = \textcolor{red}{\getpot^1} \ichoice{$\=$\mb{query}: \m{pid} \product \m{int} \tensor \textcolor{red}{\paypot^1} \echoice{\mb{hash}: \m{pid} \arrow \m{int} \tensor \m{oracle}}}$ 
+    $\mi{type} \; \m{oracle} = \textcolor{red}{\getpot^1} \ichoice{$\=$\mb{query}: \m{pid} \product \m{int} \tensor \textcolor{red}{\paypot^1}$ \\ \+ $\echoice{\mb{hash}: \m{pid} \arrow \m{int} \tensor \m{oracle}}}$ 
 \end{tabbing}
 Any arbitrary data type can be hashed, hence the type parameter \m{a}, but the resulting hash is always represented as an integer. 
 The commitment protocol concretizes this type to hashing queries of type $\m{(Bit,Int)}$ as shown in the type definition \protcom in Figure~\ref{fig:fcomideal}.

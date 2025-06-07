@@ -375,9 +375,11 @@ Defining different token types also creates additional useful guard rails for sa
 %$\$$fdb $\leftarrow$ Fdb$\tr{[K1]}$[k][v] $\leftarrow$ $\tg{...}$
 %\end{lstlisting}
 
-\begin{figure}
+\begin{figure*}
 \input{figures/sim_com}
-\end{figure}
+\caption{The simulator for the corrupt sender, intercepting and replaying hash queries in its sandboxed \Fro.}
+\label{fig:simcom}
+\end{figure*}
 
 \paragraph{Creating Virtual Import}
 NomosUC processes create virtual tokens by withdrawing them from their real token type. 
