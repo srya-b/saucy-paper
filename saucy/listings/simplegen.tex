@@ -1,17 +1,17 @@
 \begin{lstlisting}
 -- Step 1: give parties arbitrary input
-forM honest $ \h -> do
+forM honest $ \h !$\rightarrow$! do
   b !$\leftarrow$! generate arbitrary
   writeChan z2p (h, ABAInput b)
 
-forM [1..rounds] $ \r -> do
+forM [1..rounds] $ \r !$\rightarrow$! do
   c !$\leftarrow$! queueSize
   -- Step 2: choose some way to deliver messages
   case deliveryStrategy of
   	-- shuffle all current queue items and deliver them
-    AllRandom -> (shuffleListM c) !$\gg =$! deliver
+    AllRandom !$\rightarrow$! (shuffleListM c) !$>>=$! deliver
 	-- deliver queue items in order, the 0th index
-    Sequential -> forM [1..c] $ deliver 0
+    Sequential !$\rightarrow$! forM [1..c] $ deliver 0
 	-- delivering all ESTs first (shuffled) then all the AUX messages
     ProtocolOrder -> do
       (allEsts r) >>= deliver . shuffleM

@@ -207,10 +207,12 @@ input and output distributions, and demonstrate that bugs causing failures in
 randomness generation also manifest themselves in arbitrary protocols that only
 care about safety and liveness properties.
 
-While our 
-
-
-
+Our main contributions in this work can be summarized as:
+\begin{itemize}
+\item A new asynchronous network model that is the first to make use of the import mechanism for polynomial time for eventual delivery, and a set of accompanying design recommendations to minimize programmer interaction with framework-specific code. We create our design in the most natural way, borrowing from existing designs, and discover that existing constraints in the framework must be relaxed in order to achieve eventual delivery.
+\item We make the case that the ideal functionality model and UC's security definition allow for generalizable testing of distributed protocol under stronger byzantine adversaries and without the expressivity limitations of prior work. We discover a new bug in the ABA protocol we study, and our test case generators are very successful at finding bugs that cause safety-like failures. The analysis of the lottery and coin flipping examples show a fundamental advantage of using UC over exisitng frameworks.
+\item Despite the success of the traditional cycle-checking approach to liveness testing (simply done as part of the simulator), we see that import and our async wrapper don't significantly provide an advantage to find bugs that cause liveness failures. 
+\end{itemize}
 
 %Our attention now turns to ideal functionalities and protocols that express
 %properties relating to output fairness, adversarial influence on input/output

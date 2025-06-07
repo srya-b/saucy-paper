@@ -16,7 +16,7 @@ The first is the notion of \emph{balance environments}.
 A balanced environment always gives the adversary at least as much import as it gives the rest of the execution.
 Simply put, adversaries that have arbitrarily less import than the protocol may not be able to read even a fraction of the protocol's messages. 
 Allowing such a restirction on simulation posseses no advantage and needlessly makes the framework less expressive.
-\plan{Worth mentioning parameterized environmments?}
+%\plan{Worth mentioning parameterized environmments?}
 The second is \emph{parameterized systems}: no ITM in the execution performs any computation, when activated, until it first receives $k$ import tokens.
 This constraint is far more ``for the sake of simplicity'' than balanced environments and is intuitive as UC doesn't aim to model relative computational differences between ITMs, so the framework wants to ``bound the variability in the computing powers of different ITMs''.
 

@@ -186,10 +186,11 @@ interaction with the underlying model or framework.
 Second, import plays a direct role in the function of the asynchronous network
 and its eventual delivery guarantees.  All parties, including the adversary and
 environment, directly use import to interact with the mechanism and delay or
-force progress in \fwrapper.  \plan{it's possible that I didn't introduce the
-concepts of delay and force progress enough in the above section, but i'm
-saving them for later in this section where eventual delivery definitions are
-discussed and compared}
+force progress in \fwrapper.  
+%\plan{it's possible that I didn't introduce the
+%concepts of delay and force progress enough in the above section, but i'm
+%saving them for later in this section where eventual delivery definitions are
+%discussed and compared}
 
 Third, we abstract asynchrony to the execution of blocks of code rather than
 just messages.  Asychronous code definitions, and execution, are already
@@ -245,30 +246,31 @@ path that ensures the adversary is always automatically activated.
 \label{fig:wrapper}
 \end{figure}
 
-\paragraph{Asynchronous Code Execution} \plan{Wax a little about the benefits
-of this over just messages: stateful execution in the future, can access state
-in the future when the adversary decides it's time} Our first departure from
-existing models is extending asynchronous message-passing to asynchronous code
-execution.  The wrapper around the ideal functionality defines a keyword
-\texttt{eventually} that schedules blocks of code to be executed with
-adversarial delay.  In the simple channel functionality \Fchan, the change to
-the functionality is laregly costmetic, and it simplifies the definition, as
-shown in Figure~\ref{fig:fchaneventually}.  The advantage of this design is
-best realized by more complex ideal functionalities.  For example a
-functionality that must perform varied stateful computations, receive multiple
-inputs from parties over time, and maintain a causal relationship between
-computations can make use of the abstraction to more cleanly orchestrate all of
-its different interfaces.  The obvious place this occurs is in a blockchain
-functionality like \cite{badertscher2024bitcoin} or \cite{miller2019sprites}
-where a delayed code execution abstraction might greatly simpify the ideal
-functionalities and protocols, and it provides a more precise notion eventual
-delivery in the latter.  Abstracting to code execution simplifies the machinery
-required to perform asyncrhonous computation, and it is a programming
-abstraction already familiar to most developers.  Furthermore, as we show in
-this section, the definition removes any trace of the underlying network model
-from ideal functionality and protocol code.  It enables programs to be entirely
-model independent and allowes software packages to be reused under arbitrarily
-stronger network assumptions.
+\paragraph{Asynchronous Code Execution} 
+%\plan{Wax a little about the benefits
+%of this over just messages: stateful execution in the future, can access state
+%in the future when the adversary decides it's time} 
+Our first departure from existing models is extending asynchronous
+message-passing to asynchronous code execution.  The wrapper around the ideal
+functionality defines a keyword \texttt{eventually} that schedules blocks of
+code to be executed with adversarial delay.  In the simple channel
+functionality \Fchan, the change to the functionality is laregly costmetic, and
+it simplifies the definition, as shown in Figure~\ref{fig:fchaneventually}.
+The advantage of this design is best realized by more complex ideal
+functionalities.  For example a functionality that must perform varied stateful
+computations, receive multiple inputs from parties over time, and maintain a
+causal relationship between computations can make use of the abstraction to
+more cleanly orchestrate all of its different interfaces.  The obvious place
+this occurs is in a blockchain functionality like \cite{badertscher2024bitcoin}
+or \cite{miller2019sprites} where a delayed code execution abstraction might
+greatly simpify the ideal functionalities and protocols, and it provides a more
+precise notion eventual delivery in the latter.  Abstracting to code execution
+simplifies the machinery required to perform asyncrhonous computation, and it
+is a programming abstraction already familiar to most developers.  Furthermore,
+as we show in this section, the definition removes any trace of the underlying
+network model from ideal functionality and protocol code.  It enables programs
+to be entirely model independent and allowes software packages to be reused
+under arbitrarily stronger network assumptions.
 
 %\todo{include a figure for processing blockchain transactions, something real simple}
 
@@ -433,7 +435,16 @@ is concerned by still ensuring the adversary gets the same import from \Z as
 the protocol parties, but we add an additional rule to the constraint ensuring
 \msf{MakeProgress} calles from \Z to \F don't also give import to \A.
 
-\todo{concluding paragraph}
+%\todo{concluding paragraph}
+The asynchronous model we describe is relied upon heavily in the remainder of
+this work, and improves in some critical ways when brought into the software
+development domain.  We make special use of it, and the import mechanism, when
+we examine testing liveness properties using import and our eventual delivery
+model as new tools.  Our intuition is that concretizing the notion of
+polynomial time, and our ability to directly interact with it, should yield new
+insights into liveness testing.
+
+
 %\plan{deprecated below}
 %
 %The usual structure of modelling asynchronous communication is thorugh adversarial

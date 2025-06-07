@@ -360,7 +360,7 @@ given to which parties in round $r$.
 
 %\emph{$\diamond$ For distributed protocols, the modularity of UC encourages small design, and a small surface for potential bugs and failures that are more easily detectable than testing monolithic code bases.}
 
-\plan{Commented out: a paragraph about the output quickcheck gives when a failure is detected}
+\plan{Andrew: a paragraph commented out about the output quickcheck gives when a failure is detected, should I include something like that?}
 %\paragraph{Fuzzing Output}
 %We check properties by finding distinguishing environments between the two worlds. 
 %The first step is that our generator makes random choices based on its structure and outputs the execution trace that it runs against the real world.
@@ -593,8 +593,8 @@ They are key to the definitions of asynchronous distributed protocols, and we ex
 %Trying to prove, analytically, the existence of distinguishing environments as a result of specific bugs is proeblematic as well, because it leans too far into defining generators for bugs.
 %Despitie this limitation, we are still able to detect distinguishing environments for different combinations of injected faults and identify, using the input trace, where the bugs are.
 
-\paragraph{Incorrect Thresholds}
-\plan{commented out: a paragraph giving a trace of an execution that violates safety from incorrect thresholds. Since we have the above, we don't need another execution trace.}
+%\paragraph{Incorrect Thresholds}
+%\plan{commented out: a paragraph giving a trace of an execution that violates safety from incorrect thresholds. Since we have the above, we don't need another execution trace.}
 %We give an example of an execution trace identified by a straightforward generator that is designed to explore safety violations.
 %Our implementation of the ABA protocol implements SB-Broadcast a part of the protocol code, rather than treat is as an ideal functionality primitive. 
 %We run our suite of generators against a faulty version of the SB-Broadcast where its thresholds are set too small to cause a violation of its \emph{validity} property.
@@ -609,8 +609,8 @@ They are key to the definitions of asynchronous distributed protocols, and we ex
 %The adversary targets the set of parties with input, this round, opposite the coin flip.
 %It does the same above steps but this time for $B,C$ and gets them to deliver only 1, receive $n-t$ $\m{AUX}(\cdot)$ messages and decide 1 if the coin flip in this round is 1.
 
-\paragraph{Identifying the Bugs from a Trace}
-\plan{Commented out: paragraph on the process of going from output trace from quickcheck to replaying and identifying where the bug occurs}
+%\paragraph{Identifying the Bugs from a Trace}
+%\plan{Commented out: paragraph on the process of going from output trace from quickcheck to replaying and identifying where the bug occurs}
 %The trace above, replayed in both worlds, only outputs environment transcripts that differ.
 %Discovering the source of the discrepency consits of replaying the input trace, input by input (or binary search), to find the point of disagreement.
 %From there, it is clear what property was violated, in this case safety, and the states of the protocol can be observed.
