@@ -398,3 +398,65 @@
 %%% mode: plain-tex
 %%% TeX-master: "pldi19"
 %%% End:
+
+\newcommand{\oplusP}{{\oplus_{\textsf{P}}}}
+\newcommand{\TUnit}{\mathbf{1}}
+
+% PReSt syntax highlight
+
+\definecolor{dkgreen}{rgb}{0,0.4,0}
+\definecolor{ltblue}{rgb}{0,0.4,0.4}
+\definecolor{dkblue}{rgb}{0,0,0.6}
+\definecolor{dkviolet}{rgb}{0.3,0,0.5}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{eminence}{RGB}{108,48,130}
+
+\lstdefinelanguage{prest}{
+  morekeywords=[1]{
+    define, proc, yield, type
+  },
+  morekeywords=[2]{
+    flip, match, case, pcase, send, recv, assert, assume, wait, close
+  },
+  morekeywords=[3]{},
+  % Size of tabulations
+  tabsize=2,
+  % Case sensitivity
+  sensitive=true,
+  % Disable automatic breaking of long lines
+  breaklines=false,
+  % Additional characters
+  extendedchars=true,
+  alsoletter=*,
+  % Position of captions is bottom
+  captionpos=b,
+  % comments
+  morecomment=[l]{//},
+  % unicode characters
+  mathescape=true,
+  % Basic Style
+  basicstyle=\footnotesize\BeraMonottFamily, 
+  frame=single,
+  % Style for (listings') identifiers
+  identifierstyle={\footnotesize\BeraMonottFamily\color{black}},
+  % Style for toplevel keywords
+  keywordstyle=[1]{\footnotesize\BeraMonottFamily\color{dkblue}},
+  % Style for expression keywords
+  keywordstyle=[2]{\footnotesize\BeraMonottFamily\color{dkviolet}},
+  % Style for declaration keywords
+  keywordstyle=[3]{\footnotesize\BeraMonottFamily\color{ltblue}},
+  % Style for strings
+  stringstyle=\BeraMonottFamily,
+  % Style for comments
+  commentstyle={\BeraMonottFamily\color{dkgreen}},
+  literate=
+  {|-}{$\vdash\ $}{2}
+  {<-}{$\ \leftarrow\ $}{2}
+  {=>}{$\ \Rightarrow\ $}{3}
+  {<->}{$\ \leftrightarrow\ $}{2}
+  {|\{*\}-}{$\mathlarger{\mathlarger{\vdash^*}}$}{3}
+}
+
+\newcommand{\lst}[1]{\lstinline[mathescape,language=prest]!#1!}
+
+
