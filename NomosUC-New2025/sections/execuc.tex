@@ -1,10 +1,16 @@
-So far we have covered how import session types can describe communication protocols and allow processes to exchange runtime through import tokens.
-In this section we relate it to the UC frameowwor and illustrate how NomosUC can be used to realizes UC.
-We solve a key challenge introduced by linear channels on process configurations that can be described, and mitigate it by proposing an abstract channel design, called \emph{providerless channels}.
-Providerless channels appeared earlier in the code of \simcom in Figure~\ref{fig:simcom} (lines 4,5), where we create a set of channels for \Fro.
-Below, we explain how this mechanism works.
-Providerless channels allow UC execution to support an arbitrary number of instances of a protocol or ideal functionality.
-We conclude by covering the appropriate composition operators.
+So far we have covered how import session types can describe communication
+protocols and allow processes to exchange runtime through import tokens.  In
+this section, we apply our definitions to realizing UC, and elaborate on how we
+support the dynamic creation of functionalities and parties, and we We propose
+a new construction called \emph{providerless channels} to over a limitation of
+linear channels that prevents cyclical topologies of processes.  Providerless
+channels were introduced and used in the code of \simcom in Figure
+\ref{fig:simcom} (\todo{which lines?}) to create channels for \Fro.  These
+channels can be thought of syntactic sugar over the design we describe in this
+section.  Not only do they allow cyclical topologies, but they are instrumental
+in allowing NomosUC to support dynamic creation of functionalities and
+protocols.  Finally, at the end of the section we describe the UC composition
+operator in NomosUC.
 \todo{We might limit to just the single comp depending on space}
 
 %So far we have introduced a type system and process calculus for writing and checking runtime that conforms to the import mechanism for polynomial time.
@@ -16,17 +22,35 @@ We conclude by covering the appropriate composition operators.
 \subsection{Capturing the UC Computation Model}
 %A limitation of binary session types is the communication topologies that they can realize.
 %When a linear channel is created, it is offered by a process called the ``provider'' and given to a process called the ``client'', and this imposes a strict parent-child relationship between processes.
-All linear channels are created when they are offered by a process called the ``provider'', and they are given to a process called the ``client''. 
-This parent-child relationship creates a constraint that prevents the process configurations in Figures \ref{fig:pandq} and \ref{fig:threeway}.
-If we opt to communicate only over channels offered by these main processes in the configuration, then we are limited to acyclical topologies.
-In Figure \ref{fig:pandq} $P$ must already exist to offer its channel to $Q$, but $Q$ must also exist before $P$ to offer its channel to $P$.
-Similarly, in the three-way configuration in Figure \ref{fig:threeway}, it is a more naturally occuring situation that suffers from the same problem.
-We overcome this limitation by using shared session types to create a new abstract channel called a \emph{providerless channel}.
-Shared channels can be inserted to interrupt cyclical topologies because they can have multiple concurrent clients regardless (i.e. shared) regardless of how they were created.
-They allow us to define a message buffer called a communictor, that allows multiple other processes act as its clients and use its channel to send messages.
-Any process can attempt to \emph{acquire} its channel through a locking mechanism, check for new messages with the label \mb{poll}, and place another message in the bugger with \m{push}.
-The session type of the communicator is given below, along with operators to acquire ($\up$) and release ($\down$) operators, below, and the full typing rules of shared session types is given in Appendix~\ref{app:typing_rules}.
+Linear channels are created when a process, called the ``client'', spawns a
+process called the ``provider'' that creates and offers (i.e. returns) the
+channel.  The parent-child relationship this creates, prevents cyclical
+topologies using only linear channels like the one in Figure \ref{fig:pandq}.
+Here, $P$ takes $Q$'s channel as input and $Q$ takes $P$'s channel as input,
+but one must be spawned before the other making this topology unrealizable.
 
+We overcome this limitation by using shared session types to create a new
+abstract channel called a \emph{providerless channel}.  Providerless channels
+are built from processes that use shared channels, but offer linear channels at
+both ends to $P$ and $Q$.  Shared channels interrupt cyclical topologies by
+allowing multiple concurrent clients that acquire the channel via a locking
+mechanism.  Using only shared channels throughout NomosUC is an inviting
+prospect, but we show below that they constrain message types.  In the
+remainder of the paper, we will use pchannels to refer to providerless
+channels, for brevity.
+
+The first piece of the construction is the communicator: a message buffer
+offering a shared channel where multiple parties can read from and write to.
+It's type, given below, $\up$ indicates a party must \emph{acquire} it, and
+potentially wait for another process to \emph{release} ($\down$), before
+checking for new messages with \mb{poll} or put a new message in with \mb{push}
+if it is empty.  The type of the messages written and read are constrained by
+the parameter $\tau$, and the number of import sent across it by the parameter
+$n$.  The message type in this case can only be a functional message type.  We
+can not allow $\tau$ to be a sessiom type itself because allowing channels to
+be sent over other channels introduces behavior prohibited by the UC framework.
+Refer to Appendix \ref{app:typing_rules} for the full typing rules of shared
+session types.
 
 %The process configuration in Figure~\ref{fig:pandq}, for example, is not realizable with just linear channels, because of the following circular dependency: 
 %Finally, we cover a simplified composition theorem (Theorem~\ref{thm:singlecomp}, in detail and show how it is extended to full UC composition.
@@ -37,7 +61,6 @@ The session type of the communicator is given below, along with operators to acq
 %The session type of the communicator is given below, along with operators to acquire ($\up$) and release ($\down$) operators, below, and the full typing rules of shared session types is given in Appendix~\ref{app:typing_rules}.
 %We provide the full typing rule of shared session types and the communicator in the Appendix.
 
-% \vspace{-1mm}
 {\centering
 \scalebox{0.9}{
 \parbox{0cm}{
@@ -48,53 +71,56 @@ $\m{comm[\tau]\{n\}} = \up \echoice{$\=$ \textcolor{red}{\getpot^n} \mb{push}: \
 \end{tabbing}}}
 \par}
 
-The construction of a providerless channel between $P$ and $Q$ is shown in Figure~\ref{fig:newpandq}.
-Each providerless channel has a communicator process in between its two endpoints, and dummy processes are defined that relay with the communicator and offer the desired session type to $P$ or $Q$.
-In the figure, the dummy process \m{a_P} offers session type \m{PtoQ} to $P$ and \m{a_Q} offers the dual of \m{PtoQ}.
-The session type \m{PtoQ} offered to $P$ is almost identical to the type offered to $Q$. 
-The type offered to $Q$ swaps internal and external choice operations because $P$ and $Q$ are both ``clients'' of linear channels at easch end of the providerless channel.
-The only constraint this imposes on the programmer is implementing all ITMs (as processes) as if they are clients to a linear channel.
-The dummy processes that offer the linear channels are simple case statemes that translate between the type offered by the communicator (a functional type) to the type offered to either $P$ or $Q$, and vice versa.
-Owing to their simplicity, given a specification of the two types and a mapping between them, these process are easily generated at compile-time, and the programmer can ignore them entirely.
+The diagram in Figure \ref{fig:newpandq} outlines the full construction of a pchannel realizing the $P$ and $Q$ previously unrealizable by linear channels alone.
+The main idea is to convert between session types and functional message types, in each direction, by using dummy parties \m{a_P}, \m{a_Q}, \m{b_P}, and \m{b_Q} which communicate via session types and pass a functionally typed message to the communicator.
+The communicator passes the message to the dummy party at the other end that's waiting to acquire the channel, read the message and send the appropriate label along its offered session-typed channel to the receving party. 
+Note that in this figure, $P$ and $Q$ are connected by \emph{two} pchannels. 
+Processes in NomosUC, can be connected together by arbitrarily many channels.
 
-%where ther internal and external choice operators are swapped, beacuse \m{a_P} and \m{a_Q} are both providers of the channel to $P$ and $Q$. 
-%All internal choice operators correspond to messages from the dummy operator.
-%We don't lose expressivity by doing this, but it does require the programmer to select one process to see a type $T$ and the other to see its dual. 
-%The dummy programs are simple case statements that translate between the type offered by the communicator to the type that they offer to the actual process (the desired session type).
-%Owing to their simplicity, given a specification of the two types and a mapping between them, these process are easily generated at compile-time, and the programmer can ignore them entirely.
+Handling communication through pchannels allows NomosUC to make meaningful use of session types while still overcoming the topology limitation.
+Additionally, the code for the dummy processes in the channel can be trivially generated (as switch statements) given the session type and its analogous functional type.
 
-Providerless channels are easy to spawn, all the processes involved are simple. 
-We provide an insight into how providerless channels are implemented by showing how to realize the topology in Figure \ref{fig:threeway}.
-Canonically, we define one process, in this case $M$ to be the first process spawned is responsible for creating the rest of the topology.
-
+\paragraph{Realizing a pchannel.}
+Imagine a process $M$ that wants to create the topology with $P$ and $Q$ in Figure \ref{fig:pandq} and communicate with then itself--effectively created a triangle topology.
+Call the session types between the three parties \m{PQ}, \m{PM}, and \m{QM}, and call their functional counterparts \m{fPQ}, \m{fPM}, and \m{fQM}.
+For communication between $P$ and $Q$, the first process spawned is the communicator parameterized by type \m{fPQ}.
+The dummy party offering a channel to $P$, from $Q$, takes the shared channel offered by the communicator as a parmeter and has type:
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em]
-$\nproc$ main{n}: (k: Int), (rng: [Bit]), (sid: someSID) |- ($\$$ch: 1) =
-{
-    $\$$pq2p, $\$$qp2q $\leftarrow$ providerless[q2p,p2q,qandp]{q2pn,p2qn} $\leftarrow$ k rng sid
-    
-    $\$$2mep, $\$$2p $\leftarrow$ providerless[m2p,p2m,mandp]{m2pn,p2mn} $\leftarrow$ k rng sid
-    $\$$pch $\leftarrow$ P $\leftarrow$ k rng sid $\$$2p $\$$pq2p
-    $\$$2meq, $\$$2a $\leftarrow$ providerless[m2q,q2m,mandq]{m2qn,q2mn} $\leftarrow$ k rng sid
-    $\$$qch $\leftarrow$ Q $\leftarrow$ k rng sid $\$$2p $\$$qp2q
-    $\$$ch $\leftarrow$ main{n} $\leftarrow$ k rng sid 
-}
+$\nproc$ convertp2q: (k: Int), (rng: [Bit]), (sid: someSID), 
+   (#c: comm[fPQ])  $\vdash$ ($\$$ch: PQ)
 \end{lstlisting}
-The first providerless channel call is syntax sugar for the following code. We use diffeent channel nemaes to make it clear which channels they are.
+If the session type specifies that $P$ writes a message first, it first waits to receive a message over its offered channel of type \m{PQ}, otherwise it runs in a loop waiting to consume a message from the communicator. 
+The converter runs in a loop, reading messages from one side and sending the corresponding message on the other side via a big swtich statement. 
+The pchannel syntax returns two linear channels, \m{PQforp} for $P$ and \m{PQforq} for $Q$, and it is sugar for the following real process code:
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em]
-#c $\leftarrow$ communicator_p2q $\leftarrow$ k rng
-$\$$forq $\leftarrow$ convert_p2q $\leftarrow$ #c
-$\$$forp $\leftarrow$ convert_q2p $\leftarrow$ #c
+#c $\leftarrow$ communicatorp2q $\leftarrow$ k rng
+$\$$PQforq $\leftarrow$ convertp2q $\leftarrow$ #c
+$\$$PQforp $\leftarrow$ convertq2p $\leftarrow$ #c
 \end{lstlisting}
-The processes $P$ spawned with these channels is typed as follows.
+Analogous linear channels are create for communication with $M$ (\m{MPforp} and \m{MPform})
+The type of process $P$ accepts two linear channels for communication as follows:
 \begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em]
-$\nproc$ P{n}: (k: Int), (rng: [Bit]), (sid: SID\_P), ($\$$p2m: pandm),
-  ($\$$p2a: pandq{n}) |- ($\$$ch: 1) =
-{
+$\nproc$ P: (k: Int), (rng: [Bit]), (sid: someSID), 
+  ($\$$p2m: PM), ($\$$p2a: PQ) |- ($\$$ch: 1) = {
   $\nmatch$ $\$$p2m, $\$$p2q (
     $\tg{-- work with the channels}$
   )
 }
 \end{lstlisting}
+
+
+%\begin{lstlisting}[basicstyle=\scriptsize\BeraMonottFamily, mathescape, frame=single, numbers=left, xleftmargin=2em, xrightmargin=0.9em]
+%$\nproc$ main{n}: (k: Int), (rng: [Bit]), (sid: someSID) |- ($\$$ch: 1) =
+%{
+%    $\$$pq2p, $\$$qp2q $\leftarrow$ providerless[q2p,p2q,qandp]{q2pn,p2qn} $\leftarrow$ k rng sid
+%    
+%    $\$$2mep, $\$$2p $\leftarrow$ providerless[m2p,p2m,mandp]{m2pn,p2mn} $\leftarrow$ k rng sid
+%    $\$$pch $\leftarrow$ P $\leftarrow$ k rng sid $\$$2p $\$$pq2p
+%    $\$$2meq, $\$$2a $\leftarrow$ providerless[m2q,q2m,mandq]{m2qn,q2mn} $\leftarrow$ k rng sid
+%    $\$$qch $\leftarrow$ Q $\leftarrow$ k rng sid $\$$2p $\$$qp2q
+%    $\$$ch $\leftarrow$ main{n} $\leftarrow$ k rng sid 
+%}
+%\end{lstlisting}
 
 \paragraph{Design Constraing on Import}
 Shared session types are less constrained in how they are used, but we use them sparingly because they constrain execution to the session types they use.
@@ -139,31 +165,32 @@ We refer the reader to Appendix~\ref{app:itm} for an example of what the generat
 %Otherwise the channel takes the $\mb{no}$ branch.
 %We provide the full typing rule of shared session types in Appendix~\ref{app:typing_rules}.
 \begin{figure}
+    \begin{center}
     \begin{subfigure}{0.3\textwidth}
     \begin{center}
     \includegraphics[scale=0.5]{figures/p_and_q.pdf}
     \caption{ITMs can communicate like this. NomosUC processes can't offer their channels to each other.}
     \label{fig:pandq}
-    \end{center}
-    \end{subfigure} %%
     \vspace{2em}
-    \hspace{1em}
-    \begin{subfigure}{0.3\textwidth}
-    \begin{center}
-    \includegraphics[scale=0.5]{figures/threeway.png}
-    \caption{A threeway topology with a cycle.}
-    \label{fig:threeway}
     \end{center}
     \end{subfigure} %%
+    %\hspace{1em}
+    %\begin{subfigure}{0.3\textwidth}
+    %\begin{center}
+    %\includegraphics[scale=0.35]{figures/threeway.png}
+    %\caption{A threeway topology with a cycle.}
+    %\label{fig:threeway}
+    %\end{center}
+    %\end{subfigure} %%
     \begin{subfigure}{0.5\textwidth}
     \begin{center}
     \includegraphics[scale=0.4]{figures/newPandQ.pdf}
     \caption{Processes that make up providerless channels.}
     \label{fig:newpandq}
     \end{center}
-    \vspace{0.5em}
     \end{subfigure}
-    \caption{Channels are labeled with their types.}
+    %\caption{Channels are labeled with their types.}
+    \end{center}
 \end{figure}
 
 %\plan{Right here was a more in depth about providerless channel constructions and how the different processes are spawned, but we move that to the appendix. Describing it here concisely only makes it more confusing rather than less. In the appendix they can be presented with a full descriptive example of a cycle of three ITMs.}
