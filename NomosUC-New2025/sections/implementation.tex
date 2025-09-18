@@ -1,34 +1,24 @@
 To check programs with our UC framework in practice, we extend the type checker of the
 PReST language~\cite{prest} with additional primitives for modeling UC. The PReST
-language, through probabilistic refinement session types, already allows users to define
+language, through probabilistic refinement session types, allows users to define
 probabilistic concurrent protocols and \emph{symbolically} reason about the programs that
 realize said protocols. The following $\m{pcoins}[p]$ type is an illustrative example of 
 specifying probabilistic types in PReST:
-\begin{small}
 \begin{align*}
   \m{pcoins}[p \mid 0 \leq p \leq 1] \triangleq 
     \oplusP\{ \m{true}^{p} : \m{pcoins}[p]
            ,\ \m{false}^{1 - p} : \m{pcoins}[p] \}
 \end{align*}
-\end{small}
 The $\m{pcoins}[p]$ is parameterized by a symbolic variable $p$ from the
 interval $[0, 1]$. This type represents a stream of biased coins, which through
 the $\oplusP$ connective, one could either receive a $\m{true}$ message
 with symbolic probability $p$ or receive a $\m{false}$ message with
-probability $1 - p$.  During type checking, the checker traverses the syntax
-tree of processes and synthesizes logical constraints to ensure the operations
-performed by processes are always in strict coherence with the types of
-channels. The constraints are then checked by an SMT solver backend
-(z3~\cite{Moura08Z3} or cvc5~\cite{Barbosa22CVC5}). If these constraints are solvable, then the
-meta-theory of PReST ensures that the distribution of communicated messages over
-a probabilistically typed channel at runtime is always \emph{consistent} with
-the probability of messages specified by the type. For this reason, the PReST
-type checker conservatively accepts processes that generate constraints solvable
-by the SMT backend as well-typed.
+probability $1 - p$.
 
-Importantly, PReST features a cost analysis mechanism that allows users to
-statically check the cost of programs. For example, one could define a 
-\lst{debias1} program for converting a biased coin into a fair coin.
+While the UC framework we present here is not probabilistic in nature, the 
+refinement type based cost analysis mechanism of PReST is easy to adapt for our
+purposes.  For example, one could define a \lst{debias1} program for converting
+a biased coin into a fair coin.
 \begin{lstlisting}[
   language=prest,
 ]
@@ -39,21 +29,28 @@ $\vdash^{\color{red} (2 \cdot p^2 - 2 \cdot p + 1) / (2 \cdot p \cdot (1- p)) }$
 In the elided body of \lst{debias1}, it is constructed such that it uses 1 unit 
 of potential to recurse. The expression $(2 \cdot p^2 - 2 \cdot p + 1) / (2 \cdot p \cdot (1- p))$
 which annotates the turnstile is a bound on the \emph{expected cost} of running
-\lst{debias1} until termination. Similarly to checking probabilistic refinement 
-session types, the PReST type checker synthesizes logical constraints regarding
-the potential used by process invocations and attempts to solve these
-constraints using its SMT backend. While the cost analysis feature of PReST is
-related to the UC framework we propose here, there are subtle differences that
-prevent its direct application for UC. For instance, in PReST, potential is
+\lst{debias1} until termination. During type checking, the checker 
+synthesizes logical constraints to ensure the operations
+performed by processes strictly adhere to the types of
+channels and can be paid for with the available potential.
+The constraints are then checked by an SMT solver backend
+(z3~\cite{Moura08Z3} or cvc5~\cite{Barbosa22CVC5}). 
+
+There are subtle differences between the cost analysis of PReST and the import
+mechanism of UC which necessitate modifications. For instance, in PReST, potential is
 directly given to programs and programs that are running in parallel may
 exchange potential to perform work. This is different from the UC setting which
 requires programs to exchange import instead of potential. It is then through
-import that processes may derive the potential they need for computation.
-So unlike PReST processes whose potential is irreversibly lost upon usage, the
-import mechanism of UC allows for processes to continue generating potential so
-long as the amount generated is upper bounded by a polynomial of import.
-To adapt PReST for usage with UC, we first modified its potential exchanging types to
-exchange import instead. In order for processes to properly utilize import, we 
-extended PReST with new constructs that derive potential from import. Finally,  
-we adjust the cost checking algorithm of PReST to account for these changes and
-make sure that the derived potential are always polynomially bounded.
+import that processes may derive the potential they need for computation. 
+To model this, we make the following changes to PReST:
+\begin{enumerate}
+\item We change the refinement domain of PReST from $\mathbb{R}$ of probabilities to $\mathbb{N}$ of tokens.
+\item The \lst{pay} and \lst{get} constructs are modified to exchange import instead of directly exchanging potential.
+\item To perform work, a \lst{generate[$x.P$]} construct is added to generate potential given the current amount 
+of import. The amount of potential generated is $P$ where $x$ is the current amount of import and $P$ is a user 
+defined non-negative polynomial of $x$.
+\item The type checking algorithm now tracks both import and potential. During type checking, the checker synthesizes constraints to ensure that processes never exchange more import than they own and never use more potential
+for performing work than are available.
+
+
+\end{enumerate}
