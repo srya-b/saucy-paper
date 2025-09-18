@@ -19,12 +19,10 @@ While the UC framework we present here is not probabilistic in nature, the
 refinement type based cost analysis mechanism of PReST is easy to adapt for our
 purposes.  For example, one could define a \lst{debias1} program for converting
 a biased coin into a fair coin.
-\begin{lstlisting}[
-  language=prest,
-]
-proc debias1[$p$ | $0 < p < 1$] (x : coin1[$p$])
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
+$\nproc$ debias1[$p$ | $0 < p < 1$] (x : coin1[$p$])
 $\vdash^{\color{red} (2 \cdot p^2 - 2 \cdot p + 1) / (2 \cdot p \cdot (1- p)) }$ 
-  (y : $\oplusP${ true$^{0.5}$ : $\TUnit$, false$^{0.5}$ : $\TUnit$ }) = ...
+  (y : $\oplusP${ true$^{0.5}$ : $\TUnit$, false$^{0.5}$ : $\TUnit$ }) { ... }
 \end{lstlisting}
 In the elided body of \lst{debias1}, it is constructed such that it uses 1 unit 
 of potential to recurse. The expression $(2 \cdot p^2 - 2 \cdot p + 1) / (2 \cdot p \cdot (1- p))$
@@ -51,6 +49,30 @@ of import. The amount of potential generated is $P$ where $x$ is the current amo
 defined non-negative polynomial of $x$.
 \item The type checking algorithm now tracks both import and potential. During type checking, the checker synthesizes constraints to ensure that processes never exchange more import than they own and never use more potential
 for performing work than are available.
-
-
 \end{enumerate}
+
+For instance, consider the following \inline{worker} process which receives import on channel \inline{c} and generates potential to perform work before sending import on channel \inline{d}.
+\begin{lstlisting}[basicstyle=\footnotesize\BeraMonottFamily, frame=single,  mathescape]
+$\nproc$ worker[$t$ | $1 < t$] (c : $\triangleright^{t}$ $\mathbf{1}$) |- (d: $\triangleright^{t - 1}$ $\mathbf{1}$) 
+{
+    $\nget$ c; $\tb{wait}$ c;
+    $\ngenpot$[$x. 10 * x^2$]; $\ntick$ $40$;
+    $\npay$ d; $\tb{close}$ d
+}
+\end{lstlisting}
+The type checker first begins checking \inline{worker} starting from 0 import and 0 potential.
+When it reaches the \inline{get} statement, it obtains $t$ units of import of channel \inline{c}.
+Afterwards, channel \inline{c} is closed and the process proceeds to generate 
+$(10 * x^2)[t/x] = 10 * t^2$ units of potential. Once potential is generated, the process
+performs $40$ units of work. The $40$ units of potential need here induces a constraint $10 * t^2 \geq 40$
+on the amount of potential currently available. Finally, the process sends $t-1$ units of import on channel 
+\inline{d} and closes it. This induces another constraint $t \geq t - 1$ on the amount of import. Now that
+the checker has finished traversing the process, it collects the constraints generated and builds the
+overall formula:
+\begin{align*}
+  \forall t. (1 < t) \Rightarrow (10 * t^2 \geq 40 \land t \geq t - 1) 
+\end{align*}
+The formula is then sent to the SMT solver backend to check for satisfiability. If the formula is valid, then
+the process is well-typed. Otherwise, the process is rejected. For our example, the precondition $1 < t$ 
+ensures that the formula is satisfiable and hence \inline{worker} is well-typed.
+
