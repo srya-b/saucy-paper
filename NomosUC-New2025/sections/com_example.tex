@@ -67,6 +67,7 @@ These relate to import and will become clear in the next section.
   &\mi{type} \; \m{adv} = \echoice{\mb{committed}: \ichoice{\mb{ok}: \one}}
 \end{align*}
 
+\paragraph*{\textbf{Session Type Notation}}
 Session types are in a Curry-Howard isomorphism \cite{caires2010session} with
 linear logic \cite{girard1987linear} giving each linear logic connective
 an operational intepretation.
@@ -79,8 +80,8 @@ Choices in binary session types are defined via two dual type constructors,
 $\ichoice{\ell : A_\ell}_{\ell \in L}$ (internal choice) and $\echoice{\ell : A_\ell}_{\ell \in L}$
 (external choice).
 The $\ichoiceop$ constructor requires the \emph{provider} to send one of the labels $k \in L$
-and continues to provide type $A_k$.
-Consequently, the client must \emph{branch} on the label received from the provider.
+and continues to provide type $A_k$. 
+The \emph{client} "branches" on the label received and the type of its channel changes.
 Its dual type constructor $\echoiceop$ reverses the role of the provider and client:
 the client sends a label that the provider branches on.
 To receive data, session types use two dual type constructors $\product$ and $\arrow$:
@@ -91,7 +92,7 @@ The type $\one$ is the multiplicative unit in linear logic and indicates
 termination in session types.
 
 For the types above, we use \Fcom as the client while $S$, $R$, and \A are providers.
-Thus, the type $\mi{sender}$ prescribes that $S$ sends a $\mb{commit}$ message to \Fcom
+Thus, the type $\mi{sender}$ prescribed that $S$ can only send the $\mb{commit}$ message to \Fcom
 followed by a bit ($\product$ operator).
 Then, at a later time, $S$ sends an $\mb{open}$ message to \Fcom after which the communication terminates.
 The type of receiver uses dual type constructors since the communication direction is reversed;
@@ -99,8 +100,8 @@ provider $R$ only receives messages from client \Fcom.
 As the type dictates, $R$ first receives a $\mb{committed}$ message from \Fcom.
 Later, $R$ receives $\mb{open}$ from \Fcom followed by the bit ($\arrow$ operator), after
 which the protocol terminates.
-Finally, the leak to the adversary is captured in the $\mi{adv}$, where \A first receives
-a $\mb{committed}$ message from \Fcom and acknowledges it by replying with $\mb{ok}$
+Finally, \Fcom leaking some information to the adversary is captured in the type $\mi{adv}$, where \A first receives
+a $\mb{committed}$ message from \Fcom, indicating the protocol has started, and acknowledges it by replying with $\mb{ok}$
 and terminating the channel.
 From this desciption, we can see that the communication in the commitment protocol is fully captured
 using session types.

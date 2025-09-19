@@ -1,4 +1,6 @@
-\documentclass[acmsmall,screen,review,anonymous]{IEEEtran}
+%%\documentclass[acmsmall,screen,review,anonymous]{IEEEtran}
+\documentclass[conference]{IEEEtran}
+
 
 \AtBeginDocument{%
   \providecommand\BibTeX{{%
@@ -48,9 +50,9 @@
 \setlength{\belowcaptionskip}{-10pt}
 
 
-\AtBeginDocument{%
-  \providecommand\BibTeX{{%
-    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+%\AtBeginDocument{%
+%  \providecommand\BibTeX{{%
+%    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
 
 %% Rights management information.  This information is sent to you
 %% when you complete the rights form.  These commands have SAMPLE
@@ -73,8 +75,8 @@
 
 %\citestyle{acmauthoryear}
 
-%\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-%    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
 \usetikzlibrary{matrix, arrows.meta, calc, positioning}
@@ -224,7 +226,7 @@
 \input{sections/safety}
 
 \section{Implementation} \label{sec:implementation}
-%\input{sections/implementation}
+\input{sections/implementation}
 
 \section{The UC Experiment} \label{sec:execuc}
 \input{sections/execuc}
@@ -244,7 +246,7 @@
 \section{Conclusions and Future Work}
 \input{sections/future}
 
-\bibliographystyle{ACM-Reference-Format}
+\bibliographystyle{IEEEtran}
 \bibliography{nomosuc}
 
 %input{figures/asyncwrapper}

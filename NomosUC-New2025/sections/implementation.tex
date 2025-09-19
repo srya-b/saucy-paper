@@ -24,6 +24,7 @@ $\nproc$ debias1[$p$ | $0 < p < 1$] (x : coin1[$p$])
 $\vdash^{\color{red} (2 \cdot p^2 - 2 \cdot p + 1) / (2 \cdot p \cdot (1- p)) }$ 
   (y : $\oplusP${ true$^{0.5}$ : $\TUnit$, false$^{0.5}$ : $\TUnit$ }) { ... }
 \end{lstlisting}
+
 In the elided body of \lst{debias1}, it is constructed such that it uses 1 unit 
 of potential to recurse. The expression $(2 \cdot p^2 - 2 \cdot p + 1) / (2 \cdot p \cdot (1- p))$
 which annotates the turnstile is a bound on the \emph{expected cost} of running
