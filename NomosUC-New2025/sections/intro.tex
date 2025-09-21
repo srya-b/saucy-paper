@@ -106,7 +106,7 @@ ITM as any other code in the body of the host ITM that doesn't have its own
 standalone import or runtime budget.  Similarly, we want to enable the same
 NomosUC process definition to be run generically in a sandbox, and still
 satisfy the import requirements in its type, while our cost analysis constrains
-them only through the host's runtime budget.  To do this, we introduce
+it only through the host's runtime budget.  To do this, we introduce
 \emph{virtual import tokens} that ensure proper cost analysis in any runtime
 environment.  As we describe in detail in Section~\ref{sec:explainsimport},
 only allowing processes to be run with real import greatly constrains the
