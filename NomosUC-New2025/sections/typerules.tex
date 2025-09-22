@@ -1,0 +1,147 @@
+We introduce some of the base type system from Nomos augmented with import, but focus mainly on the the new additions for handling import, potential, and virtual tokens.
+The blue highlights in the typing rules and judgements denotes differences from those of Nomos \cite{dasnomos}.
+
+% | token heirarch and token validity context 
+%Session types are derived from a Curry-Howard interpretation of intuitionistic linear logic. 
+A Nomos process term is assigned the following judgement: 
+\[
+(x_1 : A_1), (x_2 : A_2), \ldots, (x_n : A_n) \vdash P :: (z : C)
+\]
+which states that process $P$ \emph{provides} a service
+of session type $C$ along channel $z$, \emph{using} the services of session
+types $A_1, \ldots, A_n$ provided along channels $x_1, \ldots, x_n$ respectively.
+For a \emph{well-formed} judgment, all channel names need to be distinct.
+The linear antecedents are often abbreviated to $\D$.
+
+The NomosUC judgment has some additional components
+\[
+\Sg \semi k \semi \Tokens \semi \Psi \semi \D \entailpot{q}{q'} P :: (x : A)
+\]
+$\Sg$ denotes the signature containing type and process definitions and $k$
+denotes the security parameter.
+Both of these quantities are globally known and fixed, therefore we omit them from
+most typing rules for brevity.
+$\Tokens$ describes the total (ever received) and current ($=$ received - sent) import tokens
+of each type stored in the process.
+$\Psi$ represents the functional data structures and $\D$ collects the
+session-typed channels along with an optional \emph{write token} $\wt$
+(to resolve non-determinism in the semantics) used by the process. \todo{Ankush: I forget what $\Psi$ actually encodes}
+The write token globally determines which process is activated to take the next execution step.
+We borrow the concept from ILC~\cite{ilc}, and, intuitively, a process sending a message must possess the write token. 
+The typing rules below for $\getpot R$ nd $\getpot L$ (sending and receiving import on both endpoints of the channel) specify write token ownership, and the full typing rules for sending/receiving messages on channels (Appendix~\ref{app:basic}) details how the $\wt$ is exchanged.
+Finally we denote the total potential created and the potential remaining for $P$ with $q$ and $q'$ above and below the turnstile.
+
+The token context $\Tokens$ tracks the number of tokens of each type from the token hierarchy described in the previous section.
+For each token type $\gamma_i$, $\Tokens$ stores $(t_i,t_i')$ which are the total tokens of type $i$ and the currently possessed tokens of type $i$.
+We define a side condition for a well-typed process: its token context myst always be valid \emph{w.r.t. the security parameter $k$}.
+To this end we define a globally known polynomial $\GlobalF : (\msf{nat}, \msf{nat}) \rightarrow \msf{nat}$ as the bound between two successive token types. UC requires this function to be \emph{super additive}, i.e. $\GlobalF(x+y,k) \geq \GlobalF(x,k) + \GlobalF(y,k)$.
+The polynomial constrains the created tokens $t_{i+1} \leq \GlobalF(t_i, k)$.
+We express this condition with the following inductive rules.
+\begin{mathpar}
+  \infer
+  {\K_0 \hookrightarrow (t_0, t_0') \;\; \m{valid}(k)}
+  {}
+  \and
+  \infer
+  {\Tokens, \K_{i+1} \hookrightarrow (t_{i+1}, t_{i+1}')\;\; \m{valid}(k)}
+  {\Tokens\;\; \m{valid}(k) \and
+  \K_{i} \hookrightarrow (t_i, t_i') \in \Tokens \and
+  t_{i+1} \leq \GlobalF(t_i',k)}
+\end{mathpar}
+We mandate that this condition is satisfied by all the process typing rules presented in this paper.
+
+% | creating virtual tokens: withdraw tokens 
+The first import token-specific typing rule we present is creating new tokens with \inline{$\nwithdraw\ $ K0 K1 n}.
+\begin{mathpar} \small
+  \inferrule*[right=$\m{tok}$]
+  {\textcolor{blue}{\Tokens, \K_{i+1} \hookrightarrow} (t_{\textcolor{blue}{i+1}} + n, t_{\textcolor{blue}{i+1}}' + n) \semi
+  \Psi \semi\wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
+  {\textcolor{blue}{\Tokens, \K_{i+1} \hookrightarrow} (t_{\textcolor{blue}{i+1}}, t_{\textcolor{blue}{i+1}}') \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} \hspace{4em} \\
+    \hspace{5em}\m{withdrawToken} \; \K_i \; n\; \K_{i+1}  \semi P :: (x : A)}
+% \vspace{-0.5em}
+\end{mathpar}
+We highlight the importance of the constraint that only tokens of type $\gamma_i$ can create tokens of type $\gamma_{i+1}$.
+Here the ``real'' token type for $P$ is $\gamma_i$ and executing \inline{$\nwithdraw$} $K_i K_{i+1} n$ increases only the virtual token counts ($t_{i+1}$ and $t_{i+1}'$) by $n$. 
+The side condition of token validity ensures that $t_{i+1} + n \leq \GlobalF(t_i, k)$ where $K_i \hookrightarrow (t_i, t_i') \in \Gamma$. 
+
+% | how does this manifest in the rules for choice: the new type constructors for sending import 
+\paragraph*{\textbf{Exchanging Import Tokens}}
+Here we present the full typing rule for $\getpot$ for each side of the channel.
+We highlight in blue the additions when taking token types into account.
+\begin{mathpar} \small
+  \infer[\getpot R]
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i') \semi \Psi \semi \D \entailpot{\B{q}}{\B{q'}} \eget{x}{r \textcolor{blue}{: \K_i}} \semi P ::
+  (x : \tgetpot{A}{r \textcolor{blue}{: \K_i}})}
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i'+r) \semi \Psi \semi \wt, \D \entailpot{\B{q}}{\B{q'}} P :: (x : A)}
+  %
+  \and
+  %
+  \inferrule*[Right=$\getpot L$]
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i') \semi \Psi \semi \D, (x : A) \entailpot{\B{q}}{\B{q'}} P :: (z : C)}
+  {\textcolor{blue}{\Tokens, \K_i \hookrightarrow} (t_i, t_i'+r) \semi \Psi \semi \wt, \D, (x : \tgetpot{A}{r \textcolor{blue}{: \K_i}}) \\\ \entailpot{\B{q}}{\B{q'}} 
+  \epay{x}{r \textcolor{blue}{: \K_i}} \semi P :: (z : C)}
+\end{mathpar}
+In the rule $\getpot R$, process $P$ storing $(t_i, t_i')$ import tokens of type $\K_i$
+receives $r$ additional $\K_i$ tokens adding it to the current token counter, thus
+the continuation executes with $(t_i, t_i'+r)$ tokens of type $\K_i$.
+Note that validity of token context is trivially satisfied in this case since the
+process is gaining import tokens.
+%
+In the dual rule $\getpot L$, a process containing $(t_i, t_i'+r)$ tokens of type $\K_i$
+pays $r$ units along channel $x$ leaving $(t_i, t_i')$ import tokens of type $\K_i$ with
+the continuation.
+In this case, the validity of the token context establishes that $t_{i+1} \leq \GlobalF(t_i',k)$,
+a condition that is necessary for successful typechecking.
+The typing rules for the dual constructor $\tpaypot{A}{r : \K}$
+are the exact inverse and omitted for brevity.
+Finally, the paying process must possess the $\wt$ and the receiver obtains it.
+
+% | the write tokens is added: UC requires one activation at any time and so the write-token is required in the context of processes when external/internal choice are used
+
+% | potential: genpot, tick 
+\paragraph{Potential}
+Potential is another key design in import session types.
+The main operation to interact with the potential mechanism is processes generating  potential to be used with \igenpot and consuming it with \itick.
+\begin{mathpar}
+  \inferrule*[right=$\m{pot}$]
+  {q+r \leq \GlobalF(t_{m}',k) \and K_{m} \hookrightarrow (t_{m}, t_{m}') \in \Tokens \\\
+  k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q+r}{q'+r} P :: (x : A)}
+  {k \semi \Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} \m{genPot} \; r \semi P :: (x : A)}
+\end{mathpar}
+A process initially storing $(q, q')$ potential units generates $r$ potential so that
+the continuation contains $(q+r, q'+r)$ potential units.
+Note, however, that the maximum potential that can be stored in a process is bounded by $\GlobalF(t_{m}',k)$
+where $\GlobalF$ is the connection rate, $m$ is the simulation depth, and $k$ is the security parameter.
+This restricts us from generating an unbounded amount of potential which could have violated the
+polynomial execution cost bound.
+
+Processes explicitly account for their own computation by executing \itick for every syntactic construct. NomosUC can be instrumented to automatically insert these before/after every operation.
+\begin{mathpar}
+  \infer[\m{tick}]
+  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'+r} \etick{r} \semi P :: (x : A)}
+  {\Tokens \semi \Psi \semi \wt, \D \entailpot{q}{q'} P :: (x : A)}
+\end{mathpar}
+Note how the process starts with $q'+r$ potential units, and executing $\etick{r}$
+consumes $r$ units leaving $q'$ potential for the continuation.
+This is the only rule that increments the work counter of a process, and since this operation consumes $r$ units of potential, we can infer
+that the total sum of potential and work of a closed set of processes will always be bounded.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\subsection{Remarks on Polynomial Time}
+%\todo{ what do we want to talk about here that doesn't already exist above? }
+%These are out of place remarks trying to address some comments from reviewers. There are some todo's for ankush to look over.
+%
+%\todo{some related work discussion from the time credits that were brought up in the latest round of reviews. like why not use those rather than import here?}
+%
+%\todo{should we talk about the DDH reduction here that was brought up in the first round of reviews.}
+%
+%We want to capture a polynomial time notion that can jugde open tersm as polynomial without factoring in what other processes they are connected to. 
+%For example, we want to conclude that an adverasry is polynomial time if it performs at most polynomial work on every activation.
+%Even if activated a super-polynomial number of times, the process is still considered polynomial time.
+%A process providing super-polynomial activatesion of the adversary would fail to type check ensuring that this isn't a corner case which allows unbounded computation.
+
+
+
